@@ -139,7 +139,7 @@ impl FromStr for Command {
     }
 }
 
-impl fmt::Show for Command {
+impl fmt::Default for Command {
     /// Format SMTP command display
     fn fmt(s: &Command, f: &mut fmt::Formatter) {
         f.buf.write(match *s {
