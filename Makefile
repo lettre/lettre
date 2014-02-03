@@ -29,7 +29,7 @@ doc/smtp/index.html: $(smtp_files)
 examples: smtp $(example_files)
 	$(RUSTC) $(RUSTFLAGS) -L build/ src/examples/client.rs -o build/client
 
-tests: $(smtp_files)
+build/tests: $(smtp_files)
 	$(RUSTC) --test -o build/tests src/smtp/lib.rs
 
 check: all build/tests
