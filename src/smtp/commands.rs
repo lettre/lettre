@@ -5,7 +5,7 @@
  */
 
 use std::fmt;
-use common::CRLF;
+use std::io;
 
 /*
  * HELO <SP> <domain> <CRLF>
@@ -139,10 +139,10 @@ impl FromStr for Command {
     }
 }
 
-impl fmt::Default for Command {
+impl fmt::Show for Command {
     /// Format SMTP command display
-    fn fmt(s: &Command, f: &mut fmt::Formatter) {
-        f.buf.write(match *s {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
+        f.buf.write(match *self {
             Ehello        => "EHLO".as_bytes(),
             Hello         => "HELO".as_bytes(),
             Mail          => "MAIL FROM:".as_bytes(),
@@ -186,8 +186,8 @@ impl SmtpCommand {
     /// Return the formatted command, ready to be used in an SMTP session.
     pub fn get_formatted_command(&self) -> ~str {
         match (self.command.takes_argument(), self.command.needs_argument(), self.argument.clone()) {
-            (true, _, Some(argument)) => format!("{} {}{}", self.command, argument, CRLF),
-            (_, false, None)   => format!("{}{}", self.command, CRLF),
+            (true, _, Some(argument)) => format!("{} {}", self.command, argument),
+            (_, false, None)   => format!("{}", self.command),
             _                  => fail!("Wrong SMTP syntax")
         }
     }
@@ -206,11 +206,11 @@ mod test {
 
     #[test]
     fn test_get_simple_command() {
-        assert!(SmtpCommand::new(~"TURN", None).get_formatted_command() == format!("TURN{}", ::common::CRLF));
+        assert!(SmtpCommand::new(~"TURN", None).get_formatted_command() == ~"TURN");
     }
 
     #[test]
     fn test_get_argument_command() {
-        assert!(SmtpCommand::new(~"EHLO", Some(~"example.example")).get_formatted_command() == format!("EHLO example.example{}", ::common::CRLF));
+        assert!(SmtpCommand::new(~"EHLO", Some(~"example.example")).get_formatted_command() == ~"EHLO example.example");
     }
 }
