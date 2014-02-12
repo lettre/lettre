@@ -1,7 +1,7 @@
 RUSTC ?= rustc
 RUSTDOC ?= rustdoc
 RUSTPKG ?= rustpkg
-RUSTFLAGS ?= -O -Z debug-info
+RUSTFLAGS ?= -g
 VERSION=0.1-pre
 
 libsmtp_so=build/libsmtp-4c61a8ad-0.1-pre.so

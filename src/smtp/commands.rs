@@ -170,12 +170,7 @@ pub struct SmtpCommand {
 
 impl SmtpCommand {
     /// Return a new structure from the name of the command and an optionnal argument.
-    pub fn new(command_str: ~str, argument: Option<~str>) -> SmtpCommand {
-        let command = match from_str::<Command>(command_str) {
-            Some(x) => x,
-            None    => fail!("Unrecognized SMTP command")
-        };
-
+    pub fn new(command: Command, argument: Option<~str>) -> SmtpCommand {
         match (command.takes_argument(), command.needs_argument(), argument.clone()) {
             (true, true, None)      => fail!("Wrong SMTP syntax : argument needed"),
             (false, false, Some(x)) => fail!("Wrong SMTP syntax : {:s} not accepted", x),

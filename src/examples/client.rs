@@ -1,9 +1,10 @@
 #[crate_id = "client"];
 
 extern mod smtp;
+use std::io::net::tcp::TcpStream;
 use smtp::client::SmtpClient;
 
 fn main() {
-    let mut email_client: SmtpClient = SmtpClient::new("localhost", None, None);
-    email_client.send_mail("moostik@minet.net", [&"moostik@localhost"], "plop");
+    let mut email_client: SmtpClient<TcpStream> = SmtpClient::new("localhost", None, None);
+    email_client.send_mail("amousset@localhost", [&"amousset@localhost"], "Test email");
 }
