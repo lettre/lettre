@@ -201,11 +201,11 @@ mod test {
 
     #[test]
     fn test_get_simple_command() {
-        assert!(SmtpCommand::new(~"TURN", None).get_formatted_command() == ~"TURN");
+        assert!(SmtpCommand::new(super::Turn, None).get_formatted_command() == ~"TURN");
     }
 
     #[test]
     fn test_get_argument_command() {
-        assert!(SmtpCommand::new(~"EHLO", Some(~"example.example")).get_formatted_command() == ~"EHLO example.example");
+        assert!(SmtpCommand::new(super::Ehello, Some(~"example.example")).get_formatted_command() == ~"EHLO example.example");
     }
 }
