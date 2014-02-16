@@ -1,6 +1,6 @@
 #[crate_id = "client"];
 
-extern mod smtp;
+extern crate smtp;
 use std::io::net::tcp::TcpStream;
 use smtp::client::SmtpClient;
 

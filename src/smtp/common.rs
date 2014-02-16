@@ -32,7 +32,6 @@ pub fn unquote_email_address(addr: &str) -> ~str {
 
 #[cfg(test)]
 mod test {
-
     #[test]
     fn test_quote_email_address() {
         assert!(super::quote_email_address("plop") == ~"<plop>");

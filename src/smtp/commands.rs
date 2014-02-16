@@ -27,21 +27,35 @@ use std::io;
 /// List of SMTP commands
 #[deriving(Eq,Clone)]
 pub enum Command {
+    /// Hello command
     Hello,
+    /// Ehello command
     Ehello,
+    /// Mail command
     Mail,
+    /// Recipient command
     Recipient,
+    /// Data command
     Data,
+    /// Reset command
     Reset,
+    /// SendMail command
     SendMail,
+    /// SendOrMail command
     SendOrMail,
+    /// SendAndMail command
     SendAndMail,
+    /// Verify command
     Verify,
+    /// Expand command
     Expand,
+    /// Help command
     Help,
+    /// Noop command
     Noop,
+    /// Quit command
     Quit,
-    /// Deprecated in RFC 5321
+    /// Turn command, deprecated in RFC 5321
     Turn,
 }
 
@@ -164,7 +178,9 @@ impl fmt::Show for Command {
 
 /// Structure for a complete SMTP command, containing an optionnal string argument.
 pub struct SmtpCommand {
+    /// The SMTP command (e.g. MAIL, QUIT, ...)
     command: Command,
+    /// An optionnal argument to the command
     argument: Option<~str>
 }
 
@@ -177,20 +193,31 @@ impl SmtpCommand {
             _                       => SmtpCommand {command: command, argument: argument}
         }
     }
+}
 
+impl ToStr for SmtpCommand {
     /// Return the formatted command, ready to be used in an SMTP session.
-    pub fn get_formatted_command(&self) -> ~str {
+    fn to_str(&self) -> ~str {
         match (self.command.takes_argument(), self.command.needs_argument(), self.argument.clone()) {
-            (true, _, Some(argument)) => format!("{} {}", self.command, argument),
-            (_, false, None)   => format!("{}", self.command),
-            _                  => fail!("Wrong SMTP syntax")
+                (true, _, Some(argument)) => format!("{} {}", self.command, argument),
+                (_, false, None)   => format!("{}", self.command),
+                _                  => fail!("Wrong SMTP syntax")
         }
+    }
+}
+
+impl fmt::Show for SmtpCommand {
+    /// Return the formatted command, ready to be used in an SMTP session.
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
+        f.buf.write(
+            self.to_str().as_bytes()
+        )
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::SmtpCommand;
+    use super::{Command, SmtpCommand};
 
     #[test]
     fn test_command_parameters() {
@@ -200,12 +227,27 @@ mod test {
     }
 
     #[test]
+    fn test_to_str() {
+        assert!(super::Turn.to_str() == ~"TURN");
+    }
+
+//     #[test]
+//     fn test_from_str() {
+//         assert!(from_str == ~"TURN");
+//     }
+
+    #[test]
+    fn test_fmt() {
+        assert!(format!("{}", super::Turn) == ~"TURN");
+    }
+
+    #[test]
     fn test_get_simple_command() {
-        assert!(SmtpCommand::new(super::Turn, None).get_formatted_command() == ~"TURN");
+        assert!(SmtpCommand::new(super::Turn, None).to_str() == ~"TURN");
     }
 
     #[test]
     fn test_get_argument_command() {
-        assert!(SmtpCommand::new(super::Ehello, Some(~"example.example")).get_formatted_command() == ~"EHLO example.example");
+        assert!(SmtpCommand::new(super::Ehello, Some(~"example.example")).to_str() == ~"EHLO example.example");
     }
 }
