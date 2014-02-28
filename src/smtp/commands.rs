@@ -5,6 +5,8 @@
  */
 
 use std::fmt;
+// use std::from_str::FromStr;
+// use std::to_str::ToStr;
 use std::io;
 
 /*
@@ -53,7 +55,7 @@ pub enum Command {
     Help,
     /// Noop command
     Noop,
-    /// Quit command
+    /// Quit commandopenclassroom vim
     Quit,
     /// Turn command, deprecated in RFC 5321
     Turn,
@@ -103,56 +105,6 @@ impl Command {
     }
 }
 
-impl ToStr for Command {
-    /// Get the name of a command.
-    fn to_str(&self) -> ~str {
-        match *self {
-            Hello           => ~"HELO",
-            Ehello          => ~"EHLO",
-            Mail            => ~"MAIL",
-            Recipient       => ~"RCPT",
-            Data            => ~"DATA",
-            Reset           => ~"RSET",
-            SendMail        => ~"SEND",
-            SendOrMail      => ~"SOML",
-            SendAndMail     => ~"SAML",
-            Verify          => ~"VRFY",
-            Expand          => ~"EXPN",
-            Help            => ~"HELP",
-            Noop            => ~"NOOP",
-            Quit            => ~"QUIT",
-            Turn            => ~"TURN",
-        }
-    }
-}
-
-impl FromStr for Command {
-    /// Get the Command from its name.
-    fn from_str(command: &str) -> Option<Command> {
-        if !command.is_ascii() {
-            return None;
-        }
-        match command {
-            "HELO" => Some(Hello),
-            "EHLO" => Some(Ehello),
-            "MAIL" => Some(Mail),
-            "RCPT" => Some(Recipient),
-            "DATA" => Some(Data),
-            "RSET" => Some(Reset),
-            "SEND" => Some(SendMail),
-            "SOML" => Some(SendOrMail),
-            "SAML" => Some(SendAndMail),
-            "VRFY" => Some(Verify),
-            "EXPN" => Some(Expand),
-            "HELP" => Some(Help),
-            "NOOP" => Some(Noop),
-            "QUIT" => Some(Quit),
-            "TURN" => Some(Turn),
-            _      => None,
-        }
-    }
-}
-
 impl fmt::Show for Command {
     /// Format SMTP command display
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
@@ -195,22 +147,15 @@ impl SmtpCommand {
     }
 }
 
-impl ToStr for SmtpCommand {
-    /// Return the formatted command, ready to be used in an SMTP session.
-    fn to_str(&self) -> ~str {
-        match (self.command.takes_argument(), self.command.needs_argument(), self.argument.clone()) {
-                (true, _, Some(argument)) => format!("{} {}", self.command, argument),
-                (_, false, None)   => format!("{}", self.command),
-                _                  => fail!("Wrong SMTP syntax")
-        }
-    }
-}
-
 impl fmt::Show for SmtpCommand {
     /// Return the formatted command, ready to be used in an SMTP session.
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
         f.buf.write(
-            self.to_str().as_bytes()
+            match (self.command.takes_argument(), self.command.needs_argument(), self.argument.clone()) {
+                (true, _, Some(argument)) => format!("{} {}", self.command, argument),
+                (_, false, None)   => format!("{}", self.command),
+                _                  => fail!("Wrong SMTP syntax")
+            }.as_bytes()
         )
     }
 }

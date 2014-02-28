@@ -51,31 +51,39 @@ pub struct SmtpResponse {
     message: ~str
 }
 
-impl ToStr for SmtpResponse {
-    /// Get the server reply
-    fn to_str(&self) -> ~str {
-        return format!("{} {}", self.code.to_str(), self.message);
-    }
-}
-
 impl fmt::Show for SmtpResponse {
     /// Format SMTP response display
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
-        f.buf.write(self.to_str().as_bytes())
+        f.buf.write(
+            format!("{} {}", self.code.to_str(), self.message).as_bytes()
+        )
     }
 }
 
 impl SmtpResponse {
     /// Check the response code
     fn with_code(&self, expected_codes: &[uint]) -> Result<SmtpResponse,SmtpResponse> {
+        let response = SmtpResponse{code: self.code, message: self.message.clone()};
         for &code in expected_codes.iter() {
             if code == self.code {
-                return Ok(SmtpResponse{code: self.code, message: self.message.clone()});
+                return Ok(response);
             }
         }
-        return Err(SmtpResponse{code: self.code, message: self.message.clone()});
+        return Err(response);
     }
 }
+
+/// Information about an SMTP server
+#[deriving(Eq,Clone)]
+pub struct SmtpServerInfo {
+    /// Server name
+    name: ~str,
+    /// Does the server supports ESMTP
+    does_esmtp: bool,
+    /// ESMTP features supported by the server
+    esmtp_features: Option<~[~str]>
+}
+
 
 /// Structure that implements a simple SMTP client
 pub struct SmtpClient<S> {
@@ -87,10 +95,8 @@ pub struct SmtpClient<S> {
     port: Port,
     /// Our hostname for HELO/EHLO commands
     my_hostname: ~str,
-    /// Does the server supports ESMTP
-    does_esmtp: Option<bool>,
-    /// ESMTP features supported by the server
-    esmtp_features: Option<~[~str]>
+    /// Information about the server
+    server_info: Option<SmtpServerInfo>
 }
 
 impl<S> SmtpClient<S> {
@@ -101,14 +107,31 @@ impl<S> SmtpClient<S> {
             host: host.to_owned(),
             port: port.unwrap_or(SMTP_PORT),
             my_hostname: my_hostname.unwrap_or("localhost").to_owned(),
-            does_esmtp: None,
-            esmtp_features: None
+            server_info: None
         }
     }
+
+
+
+//    use std::io::{stdin, BufferedReader};
+//     fn main() {
+//         let mut stdin = BufferedReader::new(stdin());
+//         for line in stdin.lines() {
+//             println!("{}", line);
+//         }
+//     }
+
 
 //     fn parse_ehello_or_hello_response(response: &str) {
 //         // split
 //     }
+//     pub fn parse_ehlo_features(response: &str) ->  {
+//
+//
+//         // split \n
+//         // let b: ~[int] = a.iter().map(|&x| x).to_owned_vec();
+//     }
+
 }
 
 impl SmtpClient<TcpStream> {
@@ -191,11 +214,11 @@ impl SmtpClient<TcpStream> {
         // Ehello or Hello
         match self.send_command(commands::Ehello, Some(my_hostname.clone())).with_code([250, 500]) {
             Ok(SmtpResponse{code: 250, message: message}) => {
-                self.does_esmtp = Some(true);
+                self.server_info = Some(SmtpServerInfo{name: message.clone(), does_esmtp: true, esmtp_features: None});
                 info!("{:u} {:s}", 250u, message);
             },
             Ok(SmtpResponse{code: code, message: message}) => {
-                self.does_esmtp = Some(false);
+                self.server_info = Some(SmtpServerInfo{name: message.clone(), does_esmtp: false, esmtp_features: None});
                 info!("{:u} {:s}", code, message);
                 match self.send_command(commands::Ehello, Some(my_hostname.clone())).with_code([250]) {
                     Ok(response) => info!("{:u} {:s}", response.code, response.message),
