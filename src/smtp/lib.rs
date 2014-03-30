@@ -16,6 +16,9 @@
 #[deny(non_camel_case_types)];
 #[deny(missing_doc)];
 
+#[feature(phase)];
+#[phase(syntax, link)] extern crate log;
+
 pub mod commands;
 pub mod common;
 pub mod client;

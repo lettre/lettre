@@ -5,8 +5,6 @@
  */
 
 use std::fmt;
-// use std::from_str::FromStr;
-// use std::to_str::ToStr;
 use std::io;
 
 /*
@@ -30,77 +28,77 @@ use std::io;
 #[deriving(Eq,Clone)]
 pub enum Command {
     /// Hello command
-    Hello,
-    /// Ehello command
-    Ehello,
+    HELO,
+    /// Extended Hello command
+    EHLO,
     /// Mail command
-    Mail,
+    MAIL,
     /// Recipient command
-    Recipient,
+    RCPT,
     /// Data command
-    Data,
+    DATA,
     /// Reset command
-    Reset,
-    /// SendMail command
-    SendMail,
-    /// SendOrMail command
-    SendOrMail,
-    /// SendAndMail command
-    SendAndMail,
+    RSET,
+    /// Send command, deprecated in RFC 5321
+    SEND,
+    /// Send Or Mail command, deprecated in RFC 5321
+    SOML,
+    /// Send And Mail command, deprecated in RFC 5321
+    SAML,
     /// Verify command
-    Verify,
+    VRFY,
     /// Expand command
-    Expand,
+    EXPN,
     /// Help command
-    Help,
+    HELP,
     /// Noop command
-    Noop,
-    /// Quit commandopenclassroom vim
-    Quit,
+    NOOP,
+    /// Quit command
+    QUIT,
     /// Turn command, deprecated in RFC 5321
-    Turn,
+    TURN,
 }
 
 impl Command {
     /// Tell if the command accetps an string argument.
     pub fn takes_argument(&self) -> bool{
         match *self {
-            Ehello        => true,
-            Hello         => true,
-            Mail          => true,
-            Recipient     => true,
-            Data          => false,
-            Reset         => false,
-            SendMail      => true,
-            SendOrMail    => true,
-            SendAndMail   => true,
-            Verify        => true,
-            Expand        => true,
-            Help          => true,
-            Noop          => false,
-            Quit          => false,
-            Turn          => false,
+            EHLO => true,
+            HELO => true,
+            MAIL => true,
+            RCPT => true,
+            DATA => false,
+            RSET => false,
+            SEND => true,
+            SOML => true,
+            SAML => true,
+            VRFY => true,
+            EXPN => true,
+            HELP => true,
+            NOOP => false,
+            QUIT => false,
+            TURN => false,
         }
     }
 
     /// Tell if an argument is needed by the command.
     pub fn needs_argument(&self) -> bool {
         match *self {
-            Ehello        => true,
-            Hello         => true,
-            Mail          => true,
-            Recipient     => true,
-            Data          => false,
-            Reset         => false,
-            SendMail      => true,
-            SendOrMail    => true,
-            SendAndMail   => true,
-            Verify        => true,
-            Expand        => true,
-            Help          => false,
-            Noop          => false,
-            Quit          => false,
-            Turn          => false,
+            EHLO => true,
+            HELO => true,
+            MAIL => true,
+            RCPT => true,
+            DATA => false,
+            RSET => false,
+            SEND => true,
+            SOML => true,
+            SAML => true,
+            VRFY => true,
+            EXPN => true,
+            HELP => false,
+            NOOP => false,
+            QUIT => false,
+            TURN => false,
         }
     }
 }
@@ -109,22 +107,22 @@ impl fmt::Show for Command {
     /// Format SMTP command display
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
         f.buf.write(match *self {
-            Ehello        => "EHLO".as_bytes(),
-            Hello         => "HELO".as_bytes(),
-            Mail          => "MAIL FROM:".as_bytes(),
-            Recipient     => "RCPT TO:".as_bytes(),
-            Data          => "DATA".as_bytes(),
-            Reset         => "RSET".as_bytes(),
-            SendMail      => "SEND TO:".as_bytes(),
-            SendOrMail    => "SOML TO:".as_bytes(),
-            SendAndMail   => "SAML TO:".as_bytes(),
-            Verify        => "VRFY".as_bytes(),
-            Expand        => "EXPN".as_bytes(),
-            Help          => "HELP".as_bytes(),
-            Noop          => "NOOP".as_bytes(),
-            Quit          => "QUIT".as_bytes(),
-            Turn          => "TURN".as_bytes()
-        })
+            EHLO => "EHLO",
+            HELO => "HELO",
+            MAIL => "MAIL FROM:",
+            RCPT => "RCPT TO:",
+            DATA => "DATA",
+            RSET => "RSET",
+            SEND => "SEND TO:",
+            SOML => "SOML TO:",
+            SAML => "SAML TO:",
+            VRFY => "VRFY",
+            EXPN => "EXPN",
+            HELP => "HELP",
+            NOOP => "NOOP",
+            QUIT => "QUIT",
+            TURN => "TURN"
+        }.as_bytes())
     }
 }
 
@@ -160,39 +158,46 @@ impl fmt::Show for SmtpCommand {
     }
 }
 
+/// Supported ESMTP keywords
+#[deriving(Eq,Clone)]
+pub enum EhloKeyword {
+    /// STARTTLS keyword
+    STARTTLS,
+    /// 8BITMIME keyword
+    BITMIME,
+    /// SMTP authentification
+    AUTH
+}
+
+
 #[cfg(test)]
 mod test {
     use super::{Command, SmtpCommand};
 
     #[test]
     fn test_command_parameters() {
-        assert!((super::Help).takes_argument() == true);
-        assert!((super::Reset).takes_argument() == false);
-        assert!((super::Hello).needs_argument() == true);
+        assert!((super::HELP).takes_argument() == true);
+        assert!((super::RSET).takes_argument() == false);
+        assert!((super::HELO).needs_argument() == true);
     }
 
     #[test]
     fn test_to_str() {
-        assert!(super::Turn.to_str() == ~"TURN");
+        assert!(super::TURN.to_str() == ~"TURN");
     }
-
-//     #[test]
-//     fn test_from_str() {
-//         assert!(from_str == ~"TURN");
-//     }
 
     #[test]
     fn test_fmt() {
-        assert!(format!("{}", super::Turn) == ~"TURN");
+        assert!(format!("{}", super::TURN) == ~"TURN");
     }
 
     #[test]
     fn test_get_simple_command() {
-        assert!(SmtpCommand::new(super::Turn, None).to_str() == ~"TURN");
+        assert!(SmtpCommand::new(super::TURN, None).to_str() == ~"TURN");
     }
 
     #[test]
     fn test_get_argument_command() {
-        assert!(SmtpCommand::new(super::Ehello, Some(~"example.example")).to_str() == ~"EHLO example.example");
+        assert!(SmtpCommand::new(super::EHLO, Some(~"example.example")).to_str() == ~"EHLO example.example");
     }
 }

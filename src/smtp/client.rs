@@ -11,13 +11,15 @@ email_client.send_mail("user@example.org", [&"user@localhost"], "Message content
 
 # TODO
 
+Think about RFC compliance in the SMTP library.
+
+
+
 Support ESMTP : Parse server answer, and manage mail and rcpt options.
 
 * Client options: `mail_options` and `rcpt_options` lists
 
 * Server options: helo/ehlo, parse and store ehlo response
-
-Manage errors
 
 Support SSL/TLS
 
@@ -32,15 +34,9 @@ use std::io::net::tcp::TcpStream;
 use std::io::net::addrinfo::get_host_addresses;
 use common::{SMTP_PORT, CRLF};
 use commands;
-use commands::{Command, SmtpCommand};
+use commands::{Command, SmtpCommand, EhloKeyword};
 
-// // Define smtp_fail! and smtp_success!
-// macro_rules! smtp_fail(
-//     ($command:expr $code:ident $message:expr) => (
-//         fail!("{} failed: {:u} {:s}", $command, $code, $message);
-//     );
-// )
-
+// Define smtp_fail! and smtp_success!
 
 /// Contains an SMTP reply, with separed code and message
 #[deriving(Eq,Clone)]
@@ -81,7 +77,7 @@ pub struct SmtpServerInfo {
     /// Does the server supports ESMTP
     does_esmtp: bool,
     /// ESMTP features supported by the server
-    esmtp_features: Option<~[~str]>
+    esmtp_features: Option<~[EhloKeyword]>
 }
 
 
@@ -112,16 +108,7 @@ impl<S> SmtpClient<S> {
     }
 
 
-
-//    use std::io::{stdin, BufferedReader};
-//     fn main() {
-//         let mut stdin = BufferedReader::new(stdin());
-//         for line in stdin.lines() {
-//             println!("{}", line);
-//         }
-//     }
-
-
+//    pub fn does_esmtp_feature(keyword: EhloKeyword)
 //     fn parse_ehello_or_hello_response(response: &str) {
 //         // split
 //     }
@@ -195,9 +182,14 @@ impl SmtpClient<TcpStream> {
         }
     }
 
+    /// Print an SMTP response as info
+    fn smtp_success(&mut self, response: SmtpResponse) {
+        info!("{:u} {:s}", response.code, response.message);
+    }
+
     /// Send a QUIT command and end the program
     fn smtp_fail(&mut self, command: ~str, response: SmtpResponse) {
-        self.send_command(commands::Quit, None);
+        self.send_command(commands::QUIT, None);
         fail!("{} failed: {:u} {:s}", command, response.code, response.message);
     }
 
@@ -207,21 +199,22 @@ impl SmtpClient<TcpStream> {
 
         // Connect
         match self.connect().with_code([220]) {
-            Ok(response) => info!("{:u} {:s}", response.code, response.message),
+            Ok(response) => self.smtp_success(response),
             Err(response) => self.smtp_fail(~"CONNECT", response)
         }
 
-        // Ehello or Hello
-        match self.send_command(commands::Ehello, Some(my_hostname.clone())).with_code([250, 500]) {
+        // Extended Hello or Hello
+        match self.send_command(commands::EHLO, Some(my_hostname.clone())).with_code([250, 500]) {
             Ok(SmtpResponse{code: 250, message: message}) => {
                 self.server_info = Some(SmtpServerInfo{name: message.clone(), does_esmtp: true, esmtp_features: None});
-                info!("{:u} {:s}", 250u, message);
+                self.smtp_success(SmtpResponse{code: 250u, message: message});
             },
-            Ok(SmtpResponse{code: code, message: message}) => {
-                self.server_info = Some(SmtpServerInfo{name: message.clone(), does_esmtp: false, esmtp_features: None});
-                info!("{:u} {:s}", code, message);
-                match self.send_command(commands::Ehello, Some(my_hostname.clone())).with_code([250]) {
-                    Ok(response) => info!("{:u} {:s}", response.code, response.message),
+            Ok(..) => {
+                match self.send_command(commands::HELO, Some(my_hostname.clone())).with_code([250]) {
+                    Ok(response) => {
+                        self.server_info = Some(SmtpServerInfo{name: response.message.clone(), does_esmtp: false, esmtp_features: None});
+                        self.smtp_success(response);
+                    },
                     Err(response) => self.smtp_fail(~"HELO", response)
                 }
             },
@@ -229,34 +222,34 @@ impl SmtpClient<TcpStream> {
         }
 
         // Mail
-        match self.send_command(commands::Mail, Some(from_addr.to_owned())).with_code([250]) {
-            Ok(response) => info!("{:u} {:s}", response.code, response.message),
+        match self.send_command(commands::MAIL, Some(from_addr.to_owned())).with_code([250]) {
+            Ok(response) => self.smtp_success(response),
             Err(response) => self.smtp_fail(~"MAIL", response)
         }
 
         // Recipient
         for &to_addr in to_addrs.iter() {
-            match self.send_command(commands::Recipient, Some(to_addr.to_owned())).with_code([250]) {
-                Ok(response) => info!("{:u} {:s}", response.code, response.message),
+            match self.send_command(commands::RCPT, Some(to_addr.to_owned())).with_code([250]) {
+                Ok(response) => self.smtp_success(response),
                 Err(response) => self.smtp_fail(~"RCPT", response)
             }
         }
 
         // Data
-        match self.send_command(commands::Data, None).with_code([354]) {
-                Ok(response) => info!("{:u} {:s}", response.code, response.message),
+        match self.send_command(commands::DATA, None).with_code([354]) {
+                Ok(response) => self.smtp_success(response),
                 Err(response) => self.smtp_fail(~"DATA", response)
         }
 
         // Message content
         match self.send_message(message.to_owned()).with_code([250]) {
-                Ok(response) => info!("{:u} {:s}", response.code, response.message),
+                Ok(response) => self.smtp_success(response),
                 Err(response) => self.smtp_fail(~"MESSAGE", response)
         }
 
         // Quit
-        match self.send_command(commands::Quit, None).with_code([221]) {
-                Ok(response) => info!("{:u} {:s}", response.code, response.message),
+        match self.send_command(commands::QUIT, None).with_code([221]) {
+                Ok(response) => self.smtp_success(response),
                 Err(response) => self.smtp_fail(~"DATA", response)
         }
     }
