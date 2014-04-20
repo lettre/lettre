@@ -1,38 +1,25 @@
 /*!
 
-Simple SMTP client, without ESMTP and SSL/TLS support for now.
+Simple SMTP client.
 
 # Usage
 
 ```
-let mut email_client: SmtpClient = SmtpClient::new("localhost", None, "myhost.example.org");
-email_client.send_mail("user@example.org", [&"user@localhost"], "Message content.");
+let mut email_client: SmtpClient<TcpStream> = SmtpClient::new("localhost", None, None);
+email_client.send_mail("user@example.org", [&"user@example.com"], "Example email");
 ```
-
-# TODO
-
-Think about RFC compliance in the SMTP library.
-
-
-
-Support ESMTP : Parse server answer, and manage mail and rcpt options.
-
-* Client options: `mail_options` and `rcpt_options` lists
-
-* Server options: helo/ehlo, parse and store ehlo response
-
-Support SSL/TLS
 
 */
 
 use std::fmt;
+use std::from_str;
 use std::str::from_utf8;
 use std::result::Result;
 use std::io::{IoResult, IoError};
 use std::io::net::ip::{SocketAddr, Port};
 use std::io::net::tcp::TcpStream;
 use std::io::net::addrinfo::get_host_addresses;
-use common::{SMTP_PORT, CRLF};
+use common::{SMTP_PORT, CRLF, get_first_word};
 use commands;
 use commands::{Command, SmtpCommand, EhloKeyword};
 
@@ -56,6 +43,24 @@ impl fmt::Show for SmtpResponse {
     }
 }
 
+impl from_str::FromStr for SmtpResponse {
+    /// Parse an SMTP response line
+    fn from_str(s: &str) -> Option<SmtpResponse> {
+        if s.len() < 5 {
+            None
+        } else {
+            if [" ", "-"].contains(&s.slice(3,4)) {
+                Some(SmtpResponse{
+                    code: from_str(s.slice_to(3)).unwrap(),
+                    message: s.slice_from(4).to_owned()
+                })
+            } else {
+                None
+            }
+        }
+    }
+}
+
 impl SmtpResponse {
     /// Check the response code
     fn with_code(&self, expected_codes: &[uint]) -> Result<SmtpResponse,SmtpResponse> {
@@ -74,12 +79,50 @@ impl SmtpResponse {
 pub struct SmtpServerInfo {
     /// Server name
     name: ~str,
-    /// Does the server supports ESMTP
-    does_esmtp: bool,
     /// ESMTP features supported by the server
     esmtp_features: Option<~[EhloKeyword]>
 }
 
+impl SmtpServerInfo {
+    /// Parse supported ESMTP features
+    fn parse_esmtp_response(message: &str) -> Option<~[EhloKeyword]> {
+        let mut esmtp_features: ~[EhloKeyword] = ~[];
+        for line in message.split_str(CRLF) {
+            match from_str::<SmtpResponse>(line) {
+                Some(SmtpResponse{code: 250, message: message}) => {
+                    match from_str::<EhloKeyword>(message) {
+                        Some(keyword) => esmtp_features.push(keyword),
+                        None          => ()
+                    }
+                },
+                _ => ()
+            }
+        }
+        match esmtp_features.len() {
+                    0 => None,
+                    _ => Some(esmtp_features)
+        }
+    }
+
+    /// Checks if the server supports an ESMTP feature
+    fn supports_feature(&self, keyword: EhloKeyword) -> bool {
+        match self.esmtp_features.clone() {
+            Some(esmtp_features) => {
+                esmtp_features.contains(&keyword)
+            },
+            None => false
+        }
+    }
+}
+
+impl fmt::Show for SmtpServerInfo {
+    /// Format SMTP server information display
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
+        f.buf.write(
+            format!("{:s} with {}", self.name, self.esmtp_features).as_bytes()
+        )
+    }
+}
 
 /// Structure that implements a simple SMTP client
 pub struct SmtpClient<S> {
@@ -106,19 +149,6 @@ impl<S> SmtpClient<S> {
             server_info: None
         }
     }
-
-
-//    pub fn does_esmtp_feature(keyword: EhloKeyword)
-//     fn parse_ehello_or_hello_response(response: &str) {
-//         // split
-//     }
-//     pub fn parse_ehlo_features(response: &str) ->  {
-//
-//
-//         // split \n
-//         // let b: ~[int] = a.iter().map(|&x| x).to_owned_vec();
-//     }
-
 }
 
 impl SmtpClient<TcpStream> {
@@ -136,31 +166,24 @@ impl SmtpClient<TcpStream> {
     fn send_and_get_response(&mut self, string: ~str) -> SmtpResponse {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
                 .write_str(format!("{:s}{:s}", string, CRLF)) {
-            Err(..) => fail!("Could not write to stream"),
-            Ok(..) => debug!("Write success")
+            Ok(..)  => debug!("Write success"),
+            Err(..) => fail!("Could not write to stream")
         }
 
         match self.get_reply() {
-            None => fail!("No answer on {}", self.host),
-            Some(response) => response
+            Some(response) => response,
+            None           => fail!("No answer on {}", self.host)
         }
     }
 
     /// Get the SMTP response
     fn get_reply(&mut self) -> Option<SmtpResponse> {
         let response = match self.read_to_str() {
-            Err(..) => fail!("No answer"),
-            Ok(string) => string
+            Ok(string) => string,
+            Err(..)    => fail!("No answer")
         };
 
-        if response.len() > 4 {
-            Some(SmtpResponse {
-                    code: from_str(response.slice_to(3)).unwrap(),
-                    message: response.slice_from(4).to_owned()
-                 })
-        } else {
-            None
-        }
+        from_str::<SmtpResponse>(response)
     }
 
     /// Connect to the configured server
@@ -170,15 +193,15 @@ impl SmtpClient<TcpStream> {
         }
         let ip = match get_host_addresses(self.host.clone()) {
             Ok(ip_vector) => ip_vector[0],
-            Err(..)    => fail!("Cannot resolve {}", self.host)
+            Err(..)       => fail!("Cannot resolve {}", self.host)
         };
         self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
-            Err(..) => fail!("Cannot connect to {}:{}", self.host, self.port),
-            Ok(stream) => Some(stream)
+            Ok(stream) => Some(stream),
+            Err(..)    => fail!("Cannot connect to {}:{}", self.host, self.port)
         };
         match self.get_reply() {
-            None => fail!("No banner on {}", self.host),
-            Some(response) => response
+            Some(response) => response,
+            None           => fail!("No banner on {}", self.host)
         }
     }
 
@@ -188,9 +211,9 @@ impl SmtpClient<TcpStream> {
     }
 
     /// Send a QUIT command and end the program
-    fn smtp_fail(&mut self, command: ~str, response: SmtpResponse) {
-        self.send_command(commands::QUIT, None);
-        fail!("{} failed: {:u} {:s}", command, response.code, response.message);
+    fn smtp_fail(&mut self, command: ~str, reason: &str) {
+        self.send_command(commands::Quit, None);
+        fail!("{} failed: {:s}", command, reason);
     }
 
     /// Send an email
@@ -199,58 +222,77 @@ impl SmtpClient<TcpStream> {
 
         // Connect
         match self.connect().with_code([220]) {
-            Ok(response) => self.smtp_success(response),
-            Err(response) => self.smtp_fail(~"CONNECT", response)
+            Ok(response)  => self.smtp_success(response),
+            Err(response) => self.smtp_fail(~"CONNECT", response.to_str())
         }
 
         // Extended Hello or Hello
-        match self.send_command(commands::EHLO, Some(my_hostname.clone())).with_code([250, 500]) {
+        match self.send_command(commands::Ehlo, Some(my_hostname.clone())).with_code([250, 500]) {
             Ok(SmtpResponse{code: 250, message: message}) => {
-                self.server_info = Some(SmtpServerInfo{name: message.clone(), does_esmtp: true, esmtp_features: None});
+                self.server_info = Some(
+                    SmtpServerInfo{
+                        name: get_first_word(message.clone()), 
+                        esmtp_features: SmtpServerInfo::parse_esmtp_response(message.clone())
+                    }
+                );
                 self.smtp_success(SmtpResponse{code: 250u, message: message});
             },
             Ok(..) => {
-                match self.send_command(commands::HELO, Some(my_hostname.clone())).with_code([250]) {
+                match self.send_command(commands::Helo, Some(my_hostname.clone())).with_code([250]) {
                     Ok(response) => {
-                        self.server_info = Some(SmtpServerInfo{name: response.message.clone(), does_esmtp: false, esmtp_features: None});
+                        self.server_info = Some(
+                            SmtpServerInfo{
+                                name: get_first_word(response.message.clone()), 
+                                esmtp_features: None
+                            }
+                        );
                         self.smtp_success(response);
                     },
-                    Err(response) => self.smtp_fail(~"HELO", response)
+                    Err(response) => self.smtp_fail(~"HELO", response.to_str())
                 }
             },
-            Err(response) => self.smtp_fail(~"EHLO", response)
+            Err(response) => self.smtp_fail(~"EHLO", response.to_str())
+        }
+
+        debug!("SMTP server : {:s}", self.server_info.clone().unwrap().to_str())
+
+        // Check message encoding according to the server's capability
+        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime) {
+            if ! message.is_ascii() {
+                self.smtp_fail(~"DATA", "Server does not accepts UTF-8 strings")
+            }
         }
 
         // Mail
-        match self.send_command(commands::MAIL, Some(from_addr.to_owned())).with_code([250]) {
-            Ok(response) => self.smtp_success(response),
-            Err(response) => self.smtp_fail(~"MAIL", response)
+        match self.send_command(commands::Mail, Some(from_addr.to_owned())).with_code([250]) {
+            Ok(response)  => self.smtp_success(response),
+            Err(response) => self.smtp_fail(~"MAIL", response.to_str())
         }
 
         // Recipient
         for &to_addr in to_addrs.iter() {
-            match self.send_command(commands::RCPT, Some(to_addr.to_owned())).with_code([250]) {
-                Ok(response) => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"RCPT", response)
+            match self.send_command(commands::Rcpt, Some(to_addr.to_owned())).with_code([250]) {
+                Ok(response)  => self.smtp_success(response),
+                Err(response) => self.smtp_fail(~"RCPT", response.to_str())
             }
         }
 
         // Data
-        match self.send_command(commands::DATA, None).with_code([354]) {
-                Ok(response) => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"DATA", response)
+        match self.send_command(commands::Data, None).with_code([354]) {
+                Ok(response)  => self.smtp_success(response),
+                Err(response) => self.smtp_fail(~"DATA", response.to_str())
         }
 
         // Message content
         match self.send_message(message.to_owned()).with_code([250]) {
-                Ok(response) => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"MESSAGE", response)
+                Ok(response)  => self.smtp_success(response),
+                Err(response) => self.smtp_fail(~"MESSAGE", response.to_str())
         }
 
         // Quit
-        match self.send_command(commands::QUIT, None).with_code([221]) {
-                Ok(response) => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"DATA", response)
+        match self.send_command(commands::Quit, None).with_code([221]) {
+                Ok(response)  => self.smtp_success(response),
+                Err(response) => self.smtp_fail(~"DATA", response.to_str())
         }
     }
 }
@@ -266,8 +308,8 @@ impl Reader for SmtpClient<TcpStream> {
         let mut buf = [0u8, ..1000];
 
         let response = match self.read(buf) {
-            Err(..) => fail!("Read error"),
-            Ok(bytes_read) => from_utf8(buf.slice_to(bytes_read - 1)).unwrap()
+            Ok(bytes_read) => from_utf8(buf.slice_to(bytes_read - 1)).unwrap(),
+            Err(..)        => fail!("Read error")
         };
         debug!("Read: {:s}", response);
 

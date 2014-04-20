@@ -1,6 +1,5 @@
 RUSTC ?= rustc
 RUSTDOC ?= rustdoc
-RUSTPKG ?= rustpkg
 RUSTFLAGS ?= -g
 VERSION=0.1-pre
 

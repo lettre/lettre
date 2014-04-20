@@ -30,6 +30,11 @@ pub fn unquote_email_address(addr: &str) -> ~str {
     }
 }
 
+/// Returns the first word of a string, or the string if it contains no space
+pub fn get_first_word(string: &str) -> ~str {
+    string.split_str(CRLF).next().unwrap().splitn(' ', 1).next().unwrap().to_owned()
+}
+
 #[cfg(test)]
 mod test {
     #[test]
@@ -42,5 +47,12 @@ mod test {
     fn test_unquote_email_address() {
         assert!(super::unquote_email_address("<plop>") == ~"plop");
         assert!(super::unquote_email_address("plop") == ~"plop");
+    }
+
+    #[test]
+    fn test_get_first_word() {
+        assert!(super::get_first_word("first word") == ~"first");
+        assert!(super::get_first_word("first word\ntest") == ~"first");
+        assert!(super::get_first_word("first") == ~"first");
     }
 }

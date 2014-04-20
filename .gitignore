@@ -1,4 +1,5 @@
 build/
 doc/
-.kate*
+*~
+*.sh
 .directory

@@ -1,104 +1,89 @@
 /*!
- * SMTP commands library
+ * SMTP commands and ESMTP features library
  *
- * RFC 5321 : http://tools.ietf.org/html/rfc5321#section-4.1
+ * RFC 5321 : https://tools.ietf.org/html/rfc5321#section-4.1
  */
 
 use std::fmt;
 use std::io;
-
-/*
- * HELO <SP> <domain> <CRLF>
- * MAIL <SP> FROM:<reverse-path> <CRLF>
- * RCPT <SP> TO:<forward-path> <CRLF>
- * DATA <CRLF>
- * RSET <CRLF>
- * SEND <SP> FROM:<reverse-path> <CRLF>
- * SOML <SP> FROM:<reverse-path> <CRLF>
- * SAML <SP> FROM:<reverse-path> <CRLF>
- * VRFY <SP> <string> <CRLF>
- * EXPN <SP> <string> <CRLF>
- * HELP [<SP> <string>] <CRLF>
- * NOOP <CRLF>
- * QUIT <CRLF>
- * TURN <CRLF>
- */
+use std::from_str;
+use std::io::IoError;
 
 /// List of SMTP commands
 #[deriving(Eq,Clone)]
 pub enum Command {
-    /// Hello command
-    HELO,
     /// Extended Hello command
-    EHLO,
+    Ehlo,
+    /// Hello command
+    Helo,
     /// Mail command
-    MAIL,
+    Mail,
     /// Recipient command
-    RCPT,
+    Rcpt,
     /// Data command
-    DATA,
+    Data,
     /// Reset command
-    RSET,
+    Rset,
     /// Send command, deprecated in RFC 5321
-    SEND,
+    Send,
     /// Send Or Mail command, deprecated in RFC 5321
-    SOML,
+    Soml,
     /// Send And Mail command, deprecated in RFC 5321
-    SAML,
+    Saml,
     /// Verify command
-    VRFY,
+    Vrfy,
     /// Expand command
-    EXPN,
+    Expn,
     /// Help command
-    HELP,
+    Help,
     /// Noop command
-    NOOP,
+    Noop,
     /// Quit command
-    QUIT,
+    Quit,
     /// Turn command, deprecated in RFC 5321
-    TURN,
+    Turn,
 }
 
 impl Command {
     /// Tell if the command accetps an string argument.
     pub fn takes_argument(&self) -> bool{
         match *self {
-            EHLO => true,
-            HELO => true,
-            MAIL => true,
-            RCPT => true,
-            DATA => false,
-            RSET => false,
-            SEND => true,
-            SOML => true,
-            SAML => true,
-            VRFY => true,
-            EXPN => true,
-            HELP => true,
-            NOOP => false,
-            QUIT => false,
-            TURN => false,
+            Ehlo => true,
+            Helo => true,
+            Mail => true,
+            Rcpt => true,
+            Data => false,
+            Rset => false,
+            Send => true,
+            Soml => true,
+            Saml => true,
+            Vrfy => true,
+            Expn => true,
+            Help => true,
+            Noop => false,
+            Quit => false,
+            Turn => false,
         }
     }
 
     /// Tell if an argument is needed by the command.
     pub fn needs_argument(&self) -> bool {
         match *self {
-            EHLO => true,
-            HELO => true,
-            MAIL => true,
-            RCPT => true,
-            DATA => false,
-            RSET => false,
-            SEND => true,
-            SOML => true,
-            SAML => true,
-            VRFY => true,
-            EXPN => true,
-            HELP => false,
-            NOOP => false,
-            QUIT => false,
-            TURN => false,
+            Ehlo => true,
+            Helo => true,
+            Mail => true,
+            Rcpt => true,
+            Data => false,
+            Rset => false,
+            Send => true,
+            Soml => true,
+            Saml => true,
+            Vrfy => true,
+            Expn => true,
+            Help => false,
+            Noop => false,
+            Quit => false,
+            Turn => false,
         }
     }
 }
@@ -107,21 +92,21 @@ impl fmt::Show for Command {
     /// Format SMTP command display
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
         f.buf.write(match *self {
-            EHLO => "EHLO",
-            HELO => "HELO",
-            MAIL => "MAIL FROM:",
-            RCPT => "RCPT TO:",
-            DATA => "DATA",
-            RSET => "RSET",
-            SEND => "SEND TO:",
-            SOML => "SOML TO:",
-            SAML => "SAML TO:",
-            VRFY => "VRFY",
-            EXPN => "EXPN",
-            HELP => "HELP",
-            NOOP => "NOOP",
-            QUIT => "QUIT",
-            TURN => "TURN"
+            Ehlo => "EHLO",
+            Helo => "Helo",
+            Mail => "MAIL FROM:",
+            Rcpt => "RCPT TO:",
+            Data => "DATA",
+            Rset => "RSET",
+            Send => "SEND TO:",
+            Soml => "SOML TO:",
+            Saml => "SAML TO:",
+            Vrfy => "VRFY",
+            Expn => "EXPN",
+            Help => "HELP",
+            Noop => "NOOP",
+            Quit => "QUIT",
+            Turn => "TURN"
         }.as_bytes())
     }
 }
@@ -161,43 +146,70 @@ impl fmt::Show for SmtpCommand {
 /// Supported ESMTP keywords
 #[deriving(Eq,Clone)]
 pub enum EhloKeyword {
-    /// STARTTLS keyword
-    STARTTLS,
     /// 8BITMIME keyword
-    BITMIME,
-    /// SMTP authentification
-    AUTH
+    /// RFC 6152 : https://tools.ietf.org/html/rfc6152
+    EightBitMime,
 }
 
+impl fmt::Show for EhloKeyword {
+    /// Format SMTP response display
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
+        f.buf.write(
+            match self {
+                &EightBitMime  => "8BITMIME".as_bytes()
+            }
+        )
+    }
+}
+
+impl from_str::FromStr for EhloKeyword {
+    // Match keywords
+    fn from_str(s: &str) -> Option<EhloKeyword> {
+        match s {
+            "8BITMIME" => Some(EightBitMime),
+            _          => None
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
-    use super::{Command, SmtpCommand};
+    use super::{SmtpCommand, EhloKeyword};
 
     #[test]
     fn test_command_parameters() {
-        assert!((super::HELP).takes_argument() == true);
-        assert!((super::RSET).takes_argument() == false);
-        assert!((super::HELO).needs_argument() == true);
+        assert!((super::Help).takes_argument() == true);
+        assert!((super::Rset).takes_argument() == false);
+        assert!((super::Helo).needs_argument() == true);
     }
 
     #[test]
-    fn test_to_str() {
-        assert!(super::TURN.to_str() == ~"TURN");
+    fn test_command_to_str() {
+        assert!(super::Turn.to_str() == ~"TURN");
     }
 
     #[test]
-    fn test_fmt() {
-        assert!(format!("{}", super::TURN) == ~"TURN");
+    fn test_command_fmt() {
+        assert!(format!("{}", super::Turn) == ~"TURN");
     }
 
     #[test]
     fn test_get_simple_command() {
-        assert!(SmtpCommand::new(super::TURN, None).to_str() == ~"TURN");
+        assert!(SmtpCommand::new(super::Turn, None).to_str() == ~"TURN");
     }
 
     #[test]
     fn test_get_argument_command() {
-        assert!(SmtpCommand::new(super::EHLO, Some(~"example.example")).to_str() == ~"EHLO example.example");
+        assert!(SmtpCommand::new(super::Ehlo, Some(~"example.example")).to_str() == ~"EHLO example.example");
+    }
+
+    #[test]
+    fn test_ehlokeyword_fmt() {
+        assert!(format!("{}", super::EightBitMime) == ~"8BITMIME");
+    }
+
+    #[test]
+    fn test_ehlokeyword_from_str() {
+        assert!(from_str::<EhloKeyword>("8BITMIME") == Some(super::EightBitMime));
     }
 }

@@ -1,14 +1,39 @@
 Rust SMTP library
 =================
 
-This library implements an SMTP client, and maybe later a simple SMTP server.
+.. image:: https://travis-ci.org/amousset/rust-smtp.png?branch=master
+   :target: https://travis-ci.org/amousset/rust-smtp
 
-It does not support ESMTP nor SSL/TLS for now, and is basically an RFC821 client.
+This library implements an SMTP client, and maybe later a simple SMTP server.
 
 Rust versions
 -------------
 
-This library follows rust master.
+This library is designed for Rust 0.11-pre (master).
+
+Install
+------
+
+Build the library:
+
+    make
+
+To build the example client code:
+
+    make examples
+
+To run the example:
+
+    ./build/client
+
+Todo
+---
+
+- Documentation
+- RFC compliance
+- Test corevage
+- SSL/TLS support
+- Client mail and rcpt options
 
 License
 -------
