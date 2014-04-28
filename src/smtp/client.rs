@@ -1,58 +1,55 @@
-/*!
+// Copyright 2014 Alexis Mousset. See the COPYRIGHT
+// file at the top-level directory of this distribution.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
-Simple SMTP client.
-
-# Usage
-
-```
-let mut email_client: SmtpClient<TcpStream> = SmtpClient::new("localhost", None, None);
-email_client.send_mail("user@example.org", [&"user@example.com"], "Example email");
-```
-
-*/
+/*! A simple SMTP client */
 
 use std::fmt;
-use std::from_str;
+use std::fmt::{Show, Formatter};
+use std::from_str::FromStr;
 use std::str::from_utf8;
 use std::result::Result;
-use std::io::{IoResult, IoError};
+use std::strbuf::StrBuf;
+use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::{SocketAddr, Port};
 use std::io::net::tcp::TcpStream;
 use std::io::net::addrinfo::get_host_addresses;
-use common::{SMTP_PORT, CRLF, get_first_word};
+use common::{CRLF, get_first_word};
 use commands;
-use commands::{Command, SmtpCommand, EhloKeyword};
-
-// Define smtp_fail! and smtp_success!
+use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
 /// Contains an SMTP reply, with separed code and message
 #[deriving(Eq,Clone)]
-pub struct SmtpResponse {
-    /// Server respinse code code
+pub struct SmtpResponse<T> {
+    /// Server response code
     code: uint,
     /// Server response string
-    message: ~str
+    message: T
 }
 
-impl fmt::Show for SmtpResponse {
-    /// Format SMTP response display
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
+impl<T: Show> Show for SmtpResponse<T> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.buf.write(
             format!("{} {}", self.code.to_str(), self.message).as_bytes()
         )
     }
 }
 
-impl from_str::FromStr for SmtpResponse {
-    /// Parse an SMTP response line
-    fn from_str(s: &str) -> Option<SmtpResponse> {
+// FromStr ?
+impl FromStr for SmtpResponse<StrBuf> {
+    fn from_str(s: &str) -> Option<SmtpResponse<StrBuf>> {
         if s.len() < 5 {
             None
         } else {
-            if [" ", "-"].contains(&s.slice(3,4)) {
+            if vec!(" ", "-").contains(&s.slice(3,4)) {
                 Some(SmtpResponse{
                     code: from_str(s.slice_to(3)).unwrap(),
-                    message: s.slice_from(4).to_owned()
+                    message: StrBuf::from_str(s.slice_from(4))
                 })
             } else {
                 None
@@ -61,36 +58,43 @@ impl from_str::FromStr for SmtpResponse {
     }
 }
 
-impl SmtpResponse {
-    /// Check the response code
-    fn with_code(&self, expected_codes: &[uint]) -> Result<SmtpResponse,SmtpResponse> {
-        let response = SmtpResponse{code: self.code, message: self.message.clone()};
-        for &code in expected_codes.iter() {
-            if code == self.code {
-                return Ok(response);
-            }
+impl<T: Clone> SmtpResponse<T> {
+    /// Checks the response code
+    fn with_code(&self, expected_codes: Vec<uint>) -> Result<SmtpResponse<T>,SmtpResponse<T>> {
+        let response = self.clone();
+        if expected_codes.contains(&self.code) {
+            Ok(response)
+        } else {
+            Err(response)
         }
-        return Err(response);
     }
 }
 
 /// Information about an SMTP server
 #[deriving(Eq,Clone)]
-pub struct SmtpServerInfo {
+pub struct SmtpServerInfo<T> {
     /// Server name
-    name: ~str,
+    name: T,
     /// ESMTP features supported by the server
-    esmtp_features: Option<~[EhloKeyword]>
+    esmtp_features: Option<Vec<EsmtpParameter>>
 }
 
-impl SmtpServerInfo {
-    /// Parse supported ESMTP features
-    fn parse_esmtp_response(message: &str) -> Option<~[EhloKeyword]> {
-        let mut esmtp_features: ~[EhloKeyword] = ~[];
-        for line in message.split_str(CRLF) {
-            match from_str::<SmtpResponse>(line) {
+impl<T: Show> Show for SmtpServerInfo<T>{
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.buf.write(
+            format!("{} with {}", self.name, self.esmtp_features).as_bytes()
+        )
+    }
+}
+
+impl<T: Str> SmtpServerInfo<T> {
+    /// Parses supported ESMTP features
+    fn parse_esmtp_response(message: T) -> Option<Vec<EsmtpParameter>> {
+        let mut esmtp_features = Vec::new();
+        for line in message.into_owned().split_str(CRLF) {
+            match from_str::<SmtpResponse<StrBuf>>(line) {
                 Some(SmtpResponse{code: 250, message: message}) => {
-                    match from_str::<EhloKeyword>(message) {
+                    match from_str::<EsmtpParameter>(message.into_owned()) {
                         Some(keyword) => esmtp_features.push(keyword),
                         None          => ()
                     }
@@ -99,13 +103,13 @@ impl SmtpServerInfo {
             }
         }
         match esmtp_features.len() {
-                    0 => None,
-                    _ => Some(esmtp_features)
+            0 => None,
+            _ => Some(esmtp_features)
         }
     }
 
     /// Checks if the server supports an ESMTP feature
-    fn supports_feature(&self, keyword: EhloKeyword) -> bool {
+    fn supports_feature(&self, keyword: EsmtpParameter) -> bool {
         match self.esmtp_features.clone() {
             Some(esmtp_features) => {
                 esmtp_features.contains(&keyword)
@@ -115,195 +119,368 @@ impl SmtpServerInfo {
     }
 }
 
-impl fmt::Show for SmtpServerInfo {
-    /// Format SMTP server information display
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
-        f.buf.write(
-            format!("{:s} with {}", self.name, self.esmtp_features).as_bytes()
-        )
-    }
+/// Contains the state of the current transaction
+#[deriving(Eq,Clone)]
+pub enum SmtpClientState {
+    /// The server is unconnected
+    Unconnected,
+    /// The connection and banner were successful
+    Connected,
+    /// An HELO or EHLO was successfully sent
+    HeloSent,
+    /// A MAIL command was successful
+    MailSent,
+    /// At least one RCPT command was sucessful
+    RcptSent,
+    /// A DATA command was successful
+    DataSent
 }
 
+macro_rules! check_state_in(
+    ($expected_states:expr) => (
+        if ! $expected_states.contains(&self.state) {
+            fail!("Wrong transaction state for this command.");
+        }
+    );
+)
+
+macro_rules! check_state_not_in(
+    ($expected_states:expr) => (
+        if $expected_states.contains(&self.state) {
+            fail!("Wrong transaction state for this command.");
+        }
+    );
+)
+
+macro_rules! smtp_fail_if_err(
+    ($response:expr) => (
+        match $response {
+            Err(response) => {
+                self.smtp_fail(response)
+            },
+            Ok(..) => {}
+        }
+    );
+)
+
 /// Structure that implements a simple SMTP client
-pub struct SmtpClient<S> {
+pub struct SmtpClient<T, S> {
     /// TCP stream between client and server
     stream: Option<S>,
     /// Host we are connecting to
-    host: ~str,
+    host: T,
     /// Port we are connecting on
     port: Port,
     /// Our hostname for HELO/EHLO commands
-    my_hostname: ~str,
+    my_hostname: T,
     /// Information about the server
-    server_info: Option<SmtpServerInfo>
+    /// Value is None before HELO/EHLO
+    server_info: Option<SmtpServerInfo<T>>,
+    /// Transaction state, permits to check order againt RFCs
+    state: SmtpClientState
 }
 
-impl<S> SmtpClient<S> {
-    /// Create a new SMTP client
-    pub fn new(host: &str, port: Option<Port>, my_hostname: Option<&str>) -> SmtpClient<S> {
+impl<S> SmtpClient<StrBuf, S> {
+    /// Creates a new SMTP client
+    pub fn new(host: StrBuf, port: Option<Port>, my_hostname: Option<StrBuf>) -> SmtpClient<StrBuf, S> {
         SmtpClient{
             stream: None,
-            host: host.to_owned(),
+            host: host,
             port: port.unwrap_or(SMTP_PORT),
-            my_hostname: my_hostname.unwrap_or("localhost").to_owned(),
-            server_info: None
+            my_hostname: my_hostname.unwrap_or(StrBuf::from_str("localhost")),
+            server_info: None,
+            state: Unconnected
         }
     }
 }
 
-impl SmtpClient<TcpStream> {
-    /// Send an SMTP command
-    pub fn send_command(&mut self, command: Command, option: Option<~str>) -> SmtpResponse {
-        self.send_and_get_response(SmtpCommand::new(command, option).to_str())
+impl SmtpClient<StrBuf, TcpStream> {
+    /// Connects to the configured server
+    pub fn connect(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        if !self.stream.is_none() {
+            fail!("The connection is already established");
+        }
+        let ip = match get_host_addresses(self.host.clone().into_owned()) {
+            Ok(ip_vector) => ip_vector[0], // TODO : select a random ip
+            Err(..)       => fail!("Cannot resolve {:s}", self.host)
+        };
+        self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
+            Ok(stream) => Some(stream),
+            Err(..)    => fail!("Cannot connect to {:s}:{:u}", self.host, self.port)
+        };
+        match self.get_reply() {
+            Some(response) => match response.with_code(vec!(220)) {
+                                  Ok(response) => {
+                                      self.state = Connected;
+                                      Ok(response)
+                                  },
+                                  Err(response) => {
+                                      Err(response)
+                                  }
+                              },
+            None           => fail!("No banner on {}", self.host)
+        }
+    }
+    
+    
+    /// Sends an email
+    pub fn send_mail(&mut self, from_address: StrBuf, to_addresses: Vec<StrBuf>, message: StrBuf) {
+        let my_hostname = self.my_hostname.clone();
+
+        // Connect
+        match self.connect() {
+            Ok(..) => {},
+            Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}", self.host, self.port, response)
+        }
+        
+        // Extended Hello or Hello
+        match self.ehlo(my_hostname.clone()) {
+            Err(SmtpResponse{code: 550, message: _}) => {
+                smtp_fail_if_err!(self.helo(my_hostname))
+            },
+            Err(response) => {
+                self.smtp_fail(response)
+            }
+            _ => {}
+        }
+
+        info!("SMTP server: {:s}", self.server_info.clone().unwrap().to_str());
+
+        // Checks message encoding according to the server's capability
+        // TODO : Add an encoding check.
+        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime) {
+            if false {
+                self.smtp_fail("Server does not accepts UTF-8 strings");
+            }
+        }
+
+        // Mail
+        smtp_fail_if_err!(self.mail(from_address, None));
+
+        // Recipient
+        // TODO Return rejected addresses
+        for to_address in to_addresses.iter() {
+            smtp_fail_if_err!(self.rcpt(to_address.clone(), None));
+        }
+
+        // Data
+        smtp_fail_if_err!(self.data());
+
+        // Message content
+        smtp_fail_if_err!(self.message(message));
+
+        // Quit
+        smtp_fail_if_err!(self.quit());
+    }
+}
+
+impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
+    /// Sends an SMTP command
+    pub fn send_command(&mut self, command: SmtpCommand<StrBuf>) -> SmtpResponse<StrBuf> {
+        self.send_and_get_response(format!("{}", command))
     }
 
-    /// Send an email
-    pub fn send_message(&mut self, message: ~str) -> SmtpResponse {
-        self.send_and_get_response(format!("{:s}{:s}.", message, CRLF))
+    /// Sends an email
+    pub fn send_message(&mut self, message: StrBuf) -> SmtpResponse<StrBuf> {
+        self.send_and_get_response(format!("{}{:s}.", message, CRLF))
     }
 
-    /// Send a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: ~str) -> SmtpResponse {
+    /// Sends a complete message or a command to the server and get the response
+    fn send_and_get_response(&mut self, string: ~str) -> SmtpResponse<StrBuf> {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
                 .write_str(format!("{:s}{:s}", string, CRLF)) {
-            Ok(..)  => debug!("Write success"),
+            Ok(..)  => debug!("Wrote: {:s}", string),
             Err(..) => fail!("Could not write to stream")
         }
 
         match self.get_reply() {
-            Some(response) => response,
-            None           => fail!("No answer on {}", self.host)
+            Some(response) => {debug!("Read: {:s}", response.to_str()); response},
+            None           => fail!("No answer on {:s}", self.host)
         }
     }
 
-    /// Get the SMTP response
-    fn get_reply(&mut self) -> Option<SmtpResponse> {
+    /// Gets the SMTP response
+    fn get_reply(&mut self) -> Option<SmtpResponse<StrBuf>> {
         let response = match self.read_to_str() {
             Ok(string) => string,
             Err(..)    => fail!("No answer")
         };
 
-        from_str::<SmtpResponse>(response)
+        from_str::<SmtpResponse<StrBuf>>(response)
     }
 
-    /// Connect to the configured server
-    pub fn connect(&mut self) -> SmtpResponse {
-        if !self.stream.is_none() {
-            fail!("The connection is already established");
+    /// Closes the connection and fail with a given messgage
+    fn smtp_fail<T: Show>(&mut self, reason: T) {
+        if self.is_connected() {
+            match self.quit() {
+                Ok(..) => {},
+                Err(response) => fail!("Failed: {}", response)
+            }
         }
-        let ip = match get_host_addresses(self.host.clone()) {
-            Ok(ip_vector) => ip_vector[0],
-            Err(..)       => fail!("Cannot resolve {}", self.host)
-        };
-        self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
-            Ok(stream) => Some(stream),
-            Err(..)    => fail!("Cannot connect to {}:{}", self.host, self.port)
-        };
-        match self.get_reply() {
-            Some(response) => response,
-            None           => fail!("No banner on {}", self.host)
-        }
+        self.close();
+        fail!("Failed: {}", reason);
     }
 
-    /// Print an SMTP response as info
-    fn smtp_success(&mut self, response: SmtpResponse) {
-        info!("{:u} {:s}", response.code, response.message);
+    /// Checks if the server is connected
+    pub fn is_connected(&mut self) -> bool {
+        self.noop().is_ok()
     }
-
-    /// Send a QUIT command and end the program
-    fn smtp_fail(&mut self, command: ~str, reason: &str) {
-        self.send_command(commands::Quit, None);
-        fail!("{} failed: {:s}", command, reason);
+    
+    /// Closes the TCP stream
+    pub fn close(&mut self) {
+        drop(self.stream.clone().unwrap());
     }
-
-    /// Send an email
-    pub fn send_mail(&mut self, from_addr: &str, to_addrs: &[&str], message: &str) {
-        let my_hostname = self.my_hostname.clone();
-
-        // Connect
-        match self.connect().with_code([220]) {
-            Ok(response)  => self.smtp_success(response),
-            Err(response) => self.smtp_fail(~"CONNECT", response.to_str())
-        }
-
-        // Extended Hello or Hello
-        match self.send_command(commands::Ehlo, Some(my_hostname.clone())).with_code([250, 500]) {
-            Ok(SmtpResponse{code: 250, message: message}) => {
+    
+    /// Send a HELO command
+    pub fn helo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!([Connected]);
+        
+        match self.send_command(commands::Hello(my_hostname.clone())).with_code(vec!(250)) {
+            Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(message.clone()), 
-                        esmtp_features: SmtpServerInfo::parse_esmtp_response(message.clone())
+                        name: get_first_word(response.message.clone()), 
+                        esmtp_features: None
                     }
                 );
-                self.smtp_success(SmtpResponse{code: 250u, message: message});
+                self.state = HeloSent;
+                Ok(response)
             },
-            Ok(..) => {
-                match self.send_command(commands::Helo, Some(my_hostname.clone())).with_code([250]) {
-                    Ok(response) => {
-                        self.server_info = Some(
-                            SmtpServerInfo{
-                                name: get_first_word(response.message.clone()), 
-                                esmtp_features: None
-                            }
-                        );
-                        self.smtp_success(response);
-                    },
-                    Err(response) => self.smtp_fail(~"HELO", response.to_str())
+            Err(response) => Err(response)
+        }
+    }
+    
+    
+    /// Sends a EHLO command
+    pub fn ehlo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_not_in!([Unconnected]);
+        
+        match self.send_command(commands::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
+            Ok(response) => {
+                self.server_info = Some(
+                    SmtpServerInfo{
+                        name: get_first_word(response.message.clone()),
+                        esmtp_features: SmtpServerInfo::parse_esmtp_response(response.message.clone())
+                    }
+                );
+                self.state = HeloSent;
+                Ok(response)
+            },
+            Err(response) => Err(response)
+        }
+    }
+    
+    /// Sends a MAIL command
+    pub fn mail(&mut self, from_address: StrBuf, options: Option<StrBuf>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!([HeloSent]);
+        
+        match self.send_command(commands::Mail(from_address, options)).with_code(vec!(250)) {
+            Ok(response) => {
+                self.state = MailSent;
+                Ok(response)
+            },
+            Err(response) => {
+                Err(response)
+            }
+        }
+    }
+    
+    /// Sends a RCPT command
+    pub fn rcpt(&mut self, to_address: StrBuf, options: Option<StrBuf>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!([MailSent, RcptSent]);
+        
+        match self.send_command(commands::Recipient(to_address, options)).with_code(vec!(250)) {
+            Ok(response) => {
+                self.state = RcptSent;
+                Ok(response)
+            },
+            Err(response) => {
+                Err(response)
+            }
+        }
+    }
+    
+    /// Sends a DATA command
+    pub fn data(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!([RcptSent]);
+        
+        match self.send_command(commands::Data).with_code(vec!(354)) {
+            Ok(response) => {
+                self.state = DataSent;
+                Ok(response)
+            },
+            Err(response) => {
+                Err(response)
+            }
+        }
+    }
+    
+    /// Sends the message content
+    pub fn message(&mut self, message_content: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!([DataSent]);
+        
+        match self.send_message(message_content).with_code(vec!(250)) {
+            Ok(response) => {
+                self.state = HeloSent;
+                Ok(response)
+            },
+            Err(response) => {
+                Err(response)
+            }
+        }
+    }
+    
+    
+    /// Sends a QUIT command
+    pub fn quit(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_not_in!([Unconnected]);
+        match self.send_command(commands::Quit).with_code(vec!(221)) {
+            Ok(response) => {
+                self.close();
+                Ok(response)
+            },
+            Err(response) => {
+                Err(response)
+            }
+        }
+    }
+    
+    /// Sends a RSET command
+    pub fn rset(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_not_in!([Unconnected]);
+        match self.send_command(commands::Reset).with_code(vec!(250)) {
+            Ok(response) => {
+                if vec!(MailSent, RcptSent, DataSent).contains(&self.state) {
+                    self.state = HeloSent;
                 }
+                Ok(response)
             },
-            Err(response) => self.smtp_fail(~"EHLO", response.to_str())
-        }
-
-        debug!("SMTP server : {:s}", self.server_info.clone().unwrap().to_str())
-
-        // Check message encoding according to the server's capability
-        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime) {
-            if ! message.is_ascii() {
-                self.smtp_fail(~"DATA", "Server does not accepts UTF-8 strings")
+            Err(response) => {
+                Err(response)
             }
         }
-
-        // Mail
-        match self.send_command(commands::Mail, Some(from_addr.to_owned())).with_code([250]) {
-            Ok(response)  => self.smtp_success(response),
-            Err(response) => self.smtp_fail(~"MAIL", response.to_str())
-        }
-
-        // Recipient
-        for &to_addr in to_addrs.iter() {
-            match self.send_command(commands::Rcpt, Some(to_addr.to_owned())).with_code([250]) {
-                Ok(response)  => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"RCPT", response.to_str())
-            }
-        }
-
-        // Data
-        match self.send_command(commands::Data, None).with_code([354]) {
-                Ok(response)  => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"DATA", response.to_str())
-        }
-
-        // Message content
-        match self.send_message(message.to_owned()).with_code([250]) {
-                Ok(response)  => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"MESSAGE", response.to_str())
-        }
-
-        // Quit
-        match self.send_command(commands::Quit, None).with_code([221]) {
-                Ok(response)  => self.smtp_success(response),
-                Err(response) => self.smtp_fail(~"DATA", response.to_str())
-        }
+    }
+    
+    /// Sends a NOOP commands
+    pub fn noop(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_not_in!([Unconnected]);
+        self.send_command(commands::Noop).with_code(vec!(250))
+    }
+    
+    /// Sends a VRFY command
+    pub fn vrfy(&mut self, to_address: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_not_in!([Unconnected]);
+        self.send_command(commands::Verify(to_address)).with_code(vec!(250))
     }
 }
 
-impl Reader for SmtpClient<TcpStream> {
-    /// Read a string from the client socket
+impl<T, S: Reader + Clone> Reader for SmtpClient<T, S> {
+    /// Reads a string from the client socket
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         self.stream.clone().unwrap().read(buf)
     }
 
-    /// Read a string from the client socket
+    /// Reads a string from the client socket
     fn read_to_str(&mut self) -> IoResult<~str> {
         let mut buf = [0u8, ..1000];
 
@@ -311,21 +488,19 @@ impl Reader for SmtpClient<TcpStream> {
             Ok(bytes_read) => from_utf8(buf.slice_to(bytes_read - 1)).unwrap(),
             Err(..)        => fail!("Read error")
         };
-        debug!("Read: {:s}", response);
 
         return Ok(response.to_owned());
     }
 }
 
-impl Writer for SmtpClient<TcpStream> {
-    /// Send a string on the client socket
+impl<T, S: Writer + Clone> Writer for SmtpClient<T, S> {
+    /// Sends a string on the client socket
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         self.stream.clone().unwrap().write(buf)
     }
 
-    /// Send a string on the client socket
+    /// Sends a string on the client socket
     fn write_str(&mut self, string: &str) -> IoResult<()> {
-        debug!("Wrote: {:s}", string);
         self.stream.clone().unwrap().write_str(string)
     }
 }

@@ -27,17 +27,15 @@ To run the example:
     ./build/client
 
 Todo
----
+----
 
-- Documentation
 - RFC compliance
-- Test corevage
 - SSL/TLS support
-- Client mail and rcpt options
+- AUTH support
 
 License
 -------
 
-This program is distributed under the Apache license (version 2.0).
+This program is distributed under the terms of both the MIT license and the Apache License (Version 2.0).
 
-See LICENSE for details.
+See LICENSE-APACHE, LICENSE-MIT, and COPYRIGHT for details.

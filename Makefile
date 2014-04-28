@@ -1,41 +1,47 @@
 RUSTC ?= rustc
 RUSTDOC ?= rustdoc
 RUSTFLAGS ?= -g
-VERSION=0.1-pre
+BUILDDIR ?= build
+INSTALLDIR ?= /usr/local/lib
+DOCDIR ?= doc
 
-libsmtp_so=build/libsmtp-4c61a8ad-0.1-pre.so
+SMTP_LIB := src/smtp/lib.rs
+
+libsmtp=$(shell $(RUSTC) --crate-file-name $(SMTP_LIB))
 
 smtp_files=\
 	$(wildcard src/smtp/*.rs) \
 	$(wildcard src/smtp/client/*.rs)
 
 example_files=\
-	src/examples/client.rs
+	$(wildcard src/examples/*.rs)
 
-smtp: $(libsmtp_so)
+smtp: $(libsmtp)
 
-$(libsmtp_so): $(smtp_files)
-	mkdir -p build/
-	$(RUSTC) $(RUSTFLAGS) src/smtp/lib.rs --out-dir=build
+$(libsmtp): $(smtp_files)
+	mkdir -p $(BUILDDIR)
+	$(RUSTC) $(RUSTFLAGS) $(SMTP_LIB) --out-dir=$(BUILDDIR)
 
-all: smtp examples docs
+all: smtp examples doc
 
-docs: doc/smtp/index.html
-
-doc/smtp/index.html: $(smtp_files)
-	$(RUSTDOC) src/smtp/lib.rs
+doc: $(smtp_files)
+	$(RUSTDOC) $(SMTP_LIB)
 
 examples: smtp $(example_files)
-	$(RUSTC) $(RUSTFLAGS) -L build/ src/examples/client.rs -o build/client
+	$(RUSTC) $(RUSTFLAGS) -L $(BUILDDIR)/ src/examples/client.rs --out-dir=$(BUILDDIR)
 
-build/tests: $(smtp_files)
-	$(RUSTC) --test -o build/tests src/smtp/lib.rs
+$(BUILDDIR)/tests: $(smtp_files)
+	mkdir -p $(BUILDDIR)/tests
+	$(RUSTC) --test $(SMTP_LIB) --out-dir=$(BUILDDIR)/tests
 
-check: all build/tests
-	build/tests --test
+check: all $(BUILDDIR)/tests
+	$(BUILDDIR)/tests/smtp --test
+
+install: $(libsmtp_so)
+	install $(libsmtp_so) $(INSTALLDIR)
 
 clean:
-	rm -rf build/
-	rm -rf doc/
+	rm -rf $(BUILDDIR)
+	rm -rf $(DOCDIR)
 
 .PHONY: all smtp examples docs clean check tests

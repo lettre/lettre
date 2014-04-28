@@ -1,159 +1,99 @@
-/*!
- * SMTP commands and ESMTP features library
- *
- * RFC 5321 : https://tools.ietf.org/html/rfc5321#section-4.1
- */
+// Copyright 2014 Alexis Mousset. See the COPYRIGHT
+// file at the top-level directory of this distribution.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
 
-use std::fmt;
-use std::io;
-use std::from_str;
-use std::io::IoError;
+/*! SMTP commands [1] and ESMTP features [2] library
 
-/// List of SMTP commands
+[1] https://tools.ietf.org/html/rfc5321#section-4.1
+[2] http://tools.ietf.org/html/rfc1869
+
+*/
+
+use std::fmt::{Show, Formatter, Result};
+use std::io::net::ip::Port;
+use std::from_str::FromStr;
+
+/// Default SMTP port
+pub static SMTP_PORT: Port = 25;
+//pub static SMTPS_PORT: Port = 465;
+//pub static SUBMISSION_PORT: Port = 587;
+
+/// SMTP commands
+/// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
+/// and must not be used by clients :
+/// SEND, SOML, SAML, TURN
 #[deriving(Eq,Clone)]
-pub enum Command {
+pub enum SmtpCommand<T> {
     /// Extended Hello command
-    Ehlo,
+    ExtendedHello(T),
     /// Hello command
-    Helo,
-    /// Mail command
-    Mail,
-    /// Recipient command
-    Rcpt,
+    Hello(T),
+    /// Mail command, takes optionnal options
+    Mail(T, Option<T>),
+    /// Recipient command, takes optionnal options
+    Recipient(T, Option<T>),
     /// Data command
     Data,
     /// Reset command
-    Rset,
-    /// Send command, deprecated in RFC 5321
-    Send,
-    /// Send Or Mail command, deprecated in RFC 5321
-    Soml,
-    /// Send And Mail command, deprecated in RFC 5321
-    Saml,
+    Reset,
     /// Verify command
-    Vrfy,
+    Verify(T),
     /// Expand command
-    Expn,
-    /// Help command
-    Help,
+    Expand(T),
+    /// Help command, takes optionnal options
+    Help(Option<T>),
     /// Noop command
     Noop,
     /// Quit command
     Quit,
-    /// Turn command, deprecated in RFC 5321
-    Turn,
+
 }
 
-impl Command {
-    /// Tell if the command accetps an string argument.
-    pub fn takes_argument(&self) -> bool{
-        match *self {
-            Ehlo => true,
-            Helo => true,
-            Mail => true,
-            Rcpt => true,
-            Data => false,
-            Rset => false,
-            Send => true,
-            Soml => true,
-            Saml => true,
-            Vrfy => true,
-            Expn => true,
-            Help => true,
-            Noop => false,
-            Quit => false,
-            Turn => false,
-        }
-    }
-
-    /// Tell if an argument is needed by the command.
-    pub fn needs_argument(&self) -> bool {
-        match *self {
-            Ehlo => true,
-            Helo => true,
-            Mail => true,
-            Rcpt => true,
-            Data => false,
-            Rset => false,
-            Send => true,
-            Soml => true,
-            Saml => true,
-            Vrfy => true,
-            Expn => true,
-            Help => false,
-            Noop => false,
-            Quit => false,
-            Turn => false,
-        }
-    }
-}
-
-impl fmt::Show for Command {
-    /// Format SMTP command display
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
+impl<T: Show> Show for SmtpCommand<T> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(match *self {
-            Ehlo => "EHLO",
-            Helo => "Helo",
-            Mail => "MAIL FROM:",
-            Rcpt => "RCPT TO:",
-            Data => "DATA",
-            Rset => "RSET",
-            Send => "SEND TO:",
-            Soml => "SOML TO:",
-            Saml => "SAML TO:",
-            Vrfy => "VRFY",
-            Expn => "EXPN",
-            Help => "HELP",
-            Noop => "NOOP",
-            Quit => "QUIT",
-            Turn => "TURN"
+            ExtendedHello(ref my_hostname) =>
+                format!("EHLO {}", my_hostname.clone()),
+            Hello(ref my_hostname) =>
+                format!("HELO {}", my_hostname.clone()),
+            Mail(ref from_address, None) =>
+                format!("MAIL FROM:{}", from_address.clone()),
+            Mail(ref from_address, Some(ref options)) =>
+                format!("MAIL FROM:{} {}", from_address.clone(), options.clone()),
+            Recipient(ref to_address, None) =>
+                format!("RCPT TO:{}", to_address.clone()),
+            Recipient(ref to_address, Some(ref options)) =>
+                format!("RCPT TO:{} {}", to_address.clone(), options.clone()),
+            Data => ~"DATA",
+            Reset => ~"RSET",
+            Verify(ref address) =>
+                format!("VRFY {}", address.clone()),
+            Expand(ref address) =>
+                format!("EXPN {}", address.clone()),
+            Help(None) => ~"HELP",
+            Help(Some(ref argument)) =>
+                format!("HELP {}", argument.clone()),
+            Noop => ~"NOOP",
+            Quit => ~"QUIT",
         }.as_bytes())
-    }
-}
-
-/// Structure for a complete SMTP command, containing an optionnal string argument.
-pub struct SmtpCommand {
-    /// The SMTP command (e.g. MAIL, QUIT, ...)
-    command: Command,
-    /// An optionnal argument to the command
-    argument: Option<~str>
-}
-
-impl SmtpCommand {
-    /// Return a new structure from the name of the command and an optionnal argument.
-    pub fn new(command: Command, argument: Option<~str>) -> SmtpCommand {
-        match (command.takes_argument(), command.needs_argument(), argument.clone()) {
-            (true, true, None)      => fail!("Wrong SMTP syntax : argument needed"),
-            (false, false, Some(x)) => fail!("Wrong SMTP syntax : {:s} not accepted", x),
-            _                       => SmtpCommand {command: command, argument: argument}
-        }
-    }
-}
-
-impl fmt::Show for SmtpCommand {
-    /// Return the formatted command, ready to be used in an SMTP session.
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), io::IoError> {
-        f.buf.write(
-            match (self.command.takes_argument(), self.command.needs_argument(), self.argument.clone()) {
-                (true, _, Some(argument)) => format!("{} {}", self.command, argument),
-                (_, false, None)   => format!("{}", self.command),
-                _                  => fail!("Wrong SMTP syntax")
-            }.as_bytes()
-        )
     }
 }
 
 /// Supported ESMTP keywords
 #[deriving(Eq,Clone)]
-pub enum EhloKeyword {
+pub enum EsmtpParameter {
     /// 8BITMIME keyword
     /// RFC 6152 : https://tools.ietf.org/html/rfc6152
     EightBitMime,
 }
 
-impl fmt::Show for EhloKeyword {
-    /// Format SMTP response display
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), IoError> {
+impl Show for EsmtpParameter {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(
             match self {
                 &EightBitMime  => "8BITMIME".as_bytes()
@@ -162,10 +102,9 @@ impl fmt::Show for EhloKeyword {
     }
 }
 
-impl from_str::FromStr for EhloKeyword {
-    // Match keywords
-    fn from_str(s: &str) -> Option<EhloKeyword> {
-        match s {
+impl FromStr for EsmtpParameter {
+    fn from_str(s: &str) -> Option<EsmtpParameter> {
+        match s.as_slice() {
             "8BITMIME" => Some(EightBitMime),
             _          => None
         }
@@ -174,42 +113,22 @@ impl from_str::FromStr for EhloKeyword {
 
 #[cfg(test)]
 mod test {
-    use super::{SmtpCommand, EhloKeyword};
-
-    #[test]
-    fn test_command_parameters() {
-        assert!((super::Help).takes_argument() == true);
-        assert!((super::Rset).takes_argument() == false);
-        assert!((super::Helo).needs_argument() == true);
-    }
-
-    #[test]
-    fn test_command_to_str() {
-        assert!(super::Turn.to_str() == ~"TURN");
-    }
+    use super::{EsmtpParameter};
 
     #[test]
     fn test_command_fmt() {
-        assert!(format!("{}", super::Turn) == ~"TURN");
+        //assert!(format!("{}", super::Noop) == ~"NOOP");
+        assert!(format!("{}", super::ExtendedHello("me")) == ~"EHLO me");
+        assert!(format!("{}", super::Mail("test", Some("option"))) == ~"MAIL FROM:test option");
     }
 
     #[test]
-    fn test_get_simple_command() {
-        assert!(SmtpCommand::new(super::Turn, None).to_str() == ~"TURN");
-    }
-
-    #[test]
-    fn test_get_argument_command() {
-        assert!(SmtpCommand::new(super::Ehlo, Some(~"example.example")).to_str() == ~"EHLO example.example");
-    }
-
-    #[test]
-    fn test_ehlokeyword_fmt() {
+    fn test_esmtp_parameter_fmt() {
         assert!(format!("{}", super::EightBitMime) == ~"8BITMIME");
     }
 
     #[test]
     fn test_ehlokeyword_from_str() {
-        assert!(from_str::<EhloKeyword>("8BITMIME") == Some(super::EightBitMime));
+        assert!(from_str::<EsmtpParameter>("8BITMIME") == Some(super::EightBitMime));
     }
 }
