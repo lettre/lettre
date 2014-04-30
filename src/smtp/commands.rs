@@ -34,9 +34,9 @@ pub enum SmtpCommand<T> {
     /// Hello command
     Hello(T),
     /// Mail command, takes optionnal options
-    Mail(T, Option<T>),
+    Mail(T, Option<Vec<T>>),
     /// Recipient command, takes optionnal options
-    Recipient(T, Option<T>),
+    Recipient(T, Option<Vec<T>>),
     /// Data command
     Data,
     /// Reset command
@@ -54,7 +54,7 @@ pub enum SmtpCommand<T> {
 
 }
 
-impl<T: Show> Show for SmtpCommand<T> {
+impl<T: Show + Str> Show for SmtpCommand<T> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(match *self {
             ExtendedHello(ref my_hostname) =>
@@ -64,11 +64,11 @@ impl<T: Show> Show for SmtpCommand<T> {
             Mail(ref from_address, None) =>
                 format!("MAIL FROM:{}", from_address.clone()),
             Mail(ref from_address, Some(ref options)) =>
-                format!("MAIL FROM:{} {}", from_address.clone(), options.clone()),
+                format!("MAIL FROM:{} {}", from_address.clone(), options.connect(" ")),
             Recipient(ref to_address, None) =>
                 format!("RCPT TO:{}", to_address.clone()),
             Recipient(ref to_address, Some(ref options)) =>
-                format!("RCPT TO:{} {}", to_address.clone(), options.clone()),
+                format!("RCPT TO:{} {}", to_address.clone(), options.connect(" ")),
             Data => ~"DATA",
             Reset => ~"RSET",
             Verify(ref address) =>
@@ -90,22 +90,34 @@ pub enum EsmtpParameter {
     /// 8BITMIME keyword
     /// RFC 6152 : https://tools.ietf.org/html/rfc6152
     EightBitMime,
+    /// SIZE keyword
+    /// RFC 1427 : https://tools.ietf.org/html/rfc1427
+    Size(uint)
 }
 
 impl Show for EsmtpParameter {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(
             match self {
-                &EightBitMime  => "8BITMIME".as_bytes()
-            }
+                &EightBitMime  => ~"8BITMIME",
+                &Size(ref size) => format!("SIZE={}", size)
+            }.as_bytes()
         )
     }
 }
 
 impl FromStr for EsmtpParameter {
     fn from_str(s: &str) -> Option<EsmtpParameter> {
-        match s.as_slice() {
-            "8BITMIME" => Some(EightBitMime),
+        let splitted : ~[&str] = s.splitn(' ', 1).collect();
+        match splitted.len() {
+            1 => match splitted[0] {
+                     "8BITMIME" => Some(EightBitMime),
+                     _          => None
+                 },
+            2 => match (splitted[0], splitted[1]) {
+                     ("SIZE", size) => Some(Size(from_str::<uint>(size).unwrap())),
+                     _              => None
+                 },
             _          => None
         }
     }
@@ -119,16 +131,18 @@ mod test {
     fn test_command_fmt() {
         //assert!(format!("{}", super::Noop) == ~"NOOP");
         assert!(format!("{}", super::ExtendedHello("me")) == ~"EHLO me");
-        assert!(format!("{}", super::Mail("test", Some("option"))) == ~"MAIL FROM:test option");
+        assert!(format!("{}", super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:test option");
     }
 
     #[test]
     fn test_esmtp_parameter_fmt() {
         assert!(format!("{}", super::EightBitMime) == ~"8BITMIME");
+        assert!(format!("{}", super::Size(42)) == ~"SIZE=42");
     }
 
     #[test]
-    fn test_ehlokeyword_from_str() {
+    fn test_esmtp_parameter_from_str() {
         assert!(from_str::<EsmtpParameter>("8BITMIME") == Some(super::EightBitMime));
+        assert!(from_str::<EsmtpParameter>("SIZE 42") == Some(super::Size(42)));
     }
 }

@@ -24,7 +24,7 @@ use commands;
 use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
 /// Contains an SMTP reply, with separed code and message
-#[deriving(Eq,Clone)]
+#[deriving(Clone)]
 pub struct SmtpResponse<T> {
     /// Server response code
     code: uint,
@@ -71,8 +71,8 @@ impl<T: Clone> SmtpResponse<T> {
 }
 
 /// Information about an SMTP server
-#[deriving(Eq,Clone)]
-pub struct SmtpServerInfo<T> {
+#[deriving(Clone)]
+struct SmtpServerInfo<T> {
     /// Server name
     name: T,
     /// ESMTP features supported by the server
@@ -89,6 +89,7 @@ impl<T: Show> Show for SmtpServerInfo<T>{
 
 impl<T: Str> SmtpServerInfo<T> {
     /// Parses supported ESMTP features
+    /// TODO: Improve parsing
     fn parse_esmtp_response(message: T) -> Option<Vec<EsmtpParameter>> {
         let mut esmtp_features = Vec::new();
         for line in message.into_owned().split_str(CRLF) {
@@ -121,7 +122,7 @@ impl<T: Str> SmtpServerInfo<T> {
 
 /// Contains the state of the current transaction
 #[deriving(Eq,Clone)]
-pub enum SmtpClientState {
+enum SmtpClientState {
     /// The server is unconnected
     Unconnected,
     /// The connection and banner were successful
@@ -139,7 +140,7 @@ pub enum SmtpClientState {
 macro_rules! check_state_in(
     ($expected_states:expr) => (
         if ! $expected_states.contains(&self.state) {
-            fail!("Wrong transaction state for this command.");
+            fail!("Bad sequence of commands.");
         }
     );
 )
@@ -147,7 +148,7 @@ macro_rules! check_state_in(
 macro_rules! check_state_not_in(
     ($expected_states:expr) => (
         if $expected_states.contains(&self.state) {
-            fail!("Wrong transaction state for this command.");
+            fail!("Bad sequence of commands.");
         }
     );
 )
@@ -249,7 +250,7 @@ impl SmtpClient<StrBuf, TcpStream> {
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
         if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime) {
-            if false {
+            if message.clone().into_owned().is_ascii() {
                 self.smtp_fail("Server does not accepts UTF-8 strings");
             }
         }
@@ -259,6 +260,7 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Recipient
         // TODO Return rejected addresses
+        // TODO Manage the number of recipients
         for to_address in to_addresses.iter() {
             smtp_fail_if_err!(self.rcpt(to_address.clone(), None));
         }
@@ -276,6 +278,7 @@ impl SmtpClient<StrBuf, TcpStream> {
 
 impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends an SMTP command
+    // TODO : ensure this is an ASCII string
     pub fn send_command(&mut self, command: SmtpCommand<StrBuf>) -> SmtpResponse<StrBuf> {
         self.send_and_get_response(format!("{}", command))
     }
@@ -333,7 +336,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Send a HELO command
     pub fn helo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_in!([Connected]);
+        check_state_in!(vec!(Connected));
         
         match self.send_command(commands::Hello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
@@ -353,7 +356,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends a EHLO command
     pub fn ehlo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_not_in!([Unconnected]);
+        check_state_not_in!(vec!(Unconnected));
         
         match self.send_command(commands::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
@@ -371,8 +374,8 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     }
     
     /// Sends a MAIL command
-    pub fn mail(&mut self, from_address: StrBuf, options: Option<StrBuf>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_in!([HeloSent]);
+    pub fn mail(&mut self, from_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!(vec!(HeloSent));
         
         match self.send_command(commands::Mail(from_address, options)).with_code(vec!(250)) {
             Ok(response) => {
@@ -386,8 +389,8 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     }
     
     /// Sends a RCPT command
-    pub fn rcpt(&mut self, to_address: StrBuf, options: Option<StrBuf>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_in!([MailSent, RcptSent]);
+    pub fn rcpt(&mut self, to_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+        check_state_in!(vec!(MailSent, RcptSent));
         
         match self.send_command(commands::Recipient(to_address, options)).with_code(vec!(250)) {
             Ok(response) => {
@@ -402,7 +405,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends a DATA command
     pub fn data(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_in!([RcptSent]);
+        check_state_in!(vec!(RcptSent));
         
         match self.send_command(commands::Data).with_code(vec!(354)) {
             Ok(response) => {
@@ -417,7 +420,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends the message content
     pub fn message(&mut self, message_content: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_in!([DataSent]);
+        check_state_in!(vec!(DataSent));
         
         match self.send_message(message_content).with_code(vec!(250)) {
             Ok(response) => {
@@ -433,7 +436,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends a QUIT command
     pub fn quit(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_not_in!([Unconnected]);
+        check_state_not_in!(vec!(Unconnected));
         match self.send_command(commands::Quit).with_code(vec!(221)) {
             Ok(response) => {
                 self.close();
@@ -447,7 +450,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends a RSET command
     pub fn rset(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_not_in!([Unconnected]);
+        check_state_not_in!(vec!(Unconnected));
         match self.send_command(commands::Reset).with_code(vec!(250)) {
             Ok(response) => {
                 if vec!(MailSent, RcptSent, DataSent).contains(&self.state) {
@@ -463,13 +466,13 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     
     /// Sends a NOOP commands
     pub fn noop(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_not_in!([Unconnected]);
+        check_state_not_in!(vec!(Unconnected));
         self.send_command(commands::Noop).with_code(vec!(250))
     }
     
     /// Sends a VRFY command
     pub fn vrfy(&mut self, to_address: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
-        check_state_not_in!([Unconnected]);
+        check_state_not_in!(vec!(Unconnected));
         self.send_command(commands::Verify(to_address)).with_code(vec!(250))
     }
 }
@@ -481,6 +484,7 @@ impl<T, S: Reader + Clone> Reader for SmtpClient<T, S> {
     }
 
     /// Reads a string from the client socket
+    // TODO: Manage long messages.
     fn read_to_str(&mut self) -> IoResult<~str> {
         let mut buf = [0u8, ..1000];
 

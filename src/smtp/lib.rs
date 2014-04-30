@@ -10,12 +10,23 @@
 /*! SMTP library
  
 This library implements a simple SMTP client.
-RFC 5321 : https://tools.ietf.org/html/rfc5321#section-4.1
 
-It does NOT manages email content.
+# What this client is NOT made for
 
-It also implements the following extesnions
+*Send emails to public email servers.* It is not designed to smartly handle servers responses,
+to rate-limit emails, to make retries, and all that complicated stuff needed to politely talk to public
+servers.
+
+What this client does is basically try once to send the email, and say if it worked. It should be
+used to transfer emails to a relay server, 
+
+The client tends to follow RFC 5321 (https://tools.ietf.org/html/rfc5321).
+
+This is an SMTP client, and thus does NOT manages email content but only the enveloppe.
+
+It also implements the following extensions :
     8BITMIME (RFC 6152 : https://tools.ietf.org/html/rfc6152)
+    SIZE (RFC 1427 : https://tools.ietf.org/html/rfc1427)
 
 # Usage
 
@@ -24,17 +35,17 @@ let mut email_client: SmtpClient<StrBuf, TcpStream> = SmtpClient::new(StrBuf::fr
 email_client.send_mail(StrBuf::from_str("<user@example.com>"), vec!(StrBuf::from_str("<user@example.org>")), StrBuf::from_str("Test email"));
 ```
 
-# TODO:
-    Add SSL/TLS
-    Add AUTH
+# Next steps:
+    Add SSL/TLS support
+    Add AUTH support
 
 */
 
 #![crate_id = "smtp#0.1-pre"]
 
 #![desc = "Rust SMTP client"]
-#![comment = "Simple SMTP client"]
-#![license = "ASL2"]
+#![comment = "Simple SMTP client, without AUTH or SSL/TLS for now"]
+#![license = "MIT/ASL2"]
 #![crate_type = "lib"]
 
 #![doc(html_root_url = "http://www.rust-ci.org/amousset/rust-smtp/doc/")]
