@@ -16,5 +16,5 @@ use std::strbuf::StrBuf;
 
 fn main() {
     let mut email_client: SmtpClient<StrBuf, TcpStream> = SmtpClient::new(StrBuf::from_str("localhost"), None, None);
-    email_client.send_mail(StrBuf::from_str("<user@localhost>"), vec!(StrBuf::from_str("<user@localhost>")), StrBuf::from_str("Test email"));
+    email_client.send_mail(StrBuf::from_str("user@localhost"), vec!(StrBuf::from_str("user@localhost")), StrBuf::from_str("Test email"));
 }

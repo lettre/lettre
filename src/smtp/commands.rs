@@ -58,13 +58,13 @@ impl<T: Show + Str> Show for SmtpCommand<T> {
             Hello(ref my_hostname) =>
                 format!("HELO {}", my_hostname.clone()),
             Mail(ref from_address, None) =>
-                format!("MAIL FROM:{}", from_address.clone()),
+                format!("MAIL FROM:<{}>", from_address.clone()),
             Mail(ref from_address, Some(ref options)) =>
-                format!("MAIL FROM:{} {}", from_address.clone(), options.connect(" ")),
+                format!("MAIL FROM:<{}> {}", from_address.clone(), options.connect(" ")),
             Recipient(ref to_address, None) =>
-                format!("RCPT TO:{}", to_address.clone()),
+                format!("RCPT TO:<{}>", to_address.clone()),
             Recipient(ref to_address, Some(ref options)) =>
-                format!("RCPT TO:{} {}", to_address.clone(), options.connect(" ")),
+                format!("RCPT TO:<{}> {}", to_address.clone(), options.connect(" ")),
             Data => ~"DATA",
             Reset => ~"RSET",
             Verify(ref address) =>
@@ -123,13 +123,14 @@ impl FromStr for EsmtpParameter {
 
 #[cfg(test)]
 mod test {
-    use super::{EsmtpParameter};
+    use super::{SmtpCommand, EsmtpParameter};
 
     #[test]
     fn test_command_fmt() {
-        //assert!(format!("{}", super::Noop) == ~"NOOP");
+        let noop: SmtpCommand<StrBuf> = super::Noop;
+        assert!(format!("{}", noop) == ~"NOOP");
         assert!(format!("{}", super::ExtendedHello("me")) == ~"EHLO me");
-        assert!(format!("{}", super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:test option");
+        assert!(format!("{}", super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:<test> option");
     }
 
     #[test]
