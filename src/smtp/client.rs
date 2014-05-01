@@ -24,7 +24,7 @@ use commands;
 use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
 /// Contains an SMTP reply, with separed code and message
-#[deriving(Clone)]
+#[deriving(Clone, Eq)]
 pub struct SmtpResponse<T> {
     /// Server response code
     code: uint,
@@ -46,13 +46,13 @@ impl FromStr for SmtpResponse<StrBuf> {
         if s.len() < 5 {
             None
         } else {
-            if vec!(" ", "-").contains(&s.slice(3,4)) {
-                Some(SmtpResponse{
-                    code: from_str(s.slice_to(3)).unwrap(),
-                    message: StrBuf::from_str(s.slice_from(4))
-                })
-            } else {
-                None
+            match (from_str::<uint>(s.slice_to(3)), vec!(" ", "-").contains(&s.slice(3,4)), StrBuf::from_str(s.slice_from(4))) {
+                (Some(code), true, message) => Some(SmtpResponse{
+                            code: code,
+                            message: message
+                        }),
+                _                           => None
+            
             }
         }
     }
@@ -506,5 +506,41 @@ impl<T, S: Writer + Clone> Writer for SmtpClient<T, S> {
     /// Sends a string on the client socket
     fn write_str(&mut self, string: &str) -> IoResult<()> {
         self.stream.clone().unwrap().write_str(string)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{SmtpResponse};
+
+    #[test]
+    fn test_smtp_response_fmt() {
+        assert!(format!("{}", SmtpResponse{code: 200, message: "message"}) == ~"200 message");
+    }
+    
+    #[test]
+    fn test_smtp_response_from_str() {
+        assert!(from_str::<SmtpResponse<StrBuf>>("200 response message") == 
+            Some(SmtpResponse{
+                code: 200, 
+                message: StrBuf::from_str("response message")
+            })
+        );
+        assert!(from_str::<SmtpResponse<StrBuf>>("200-response message") == 
+            Some(SmtpResponse{
+                code: 200, 
+                message: StrBuf::from_str("response message")
+            })
+        );
+        assert!(from_str::<SmtpResponse<StrBuf>>("2000response message") == None);
+        assert!(from_str::<SmtpResponse<StrBuf>>("20a response message") == None);
+    }
+    
+    #[test]
+    fn test_smtp_response_with_code() {
+        assert!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200)) == 
+            Ok(SmtpResponse{code: 200, message: "message"}));
+        assert!(SmtpResponse{code: 400, message: "message"}.with_code(vec!(200)) == 
+            Err(SmtpResponse{code: 400, message: "message"}));
     }
 }
