@@ -82,7 +82,13 @@ struct SmtpServerInfo<T> {
 impl<T: Show> Show for SmtpServerInfo<T>{
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.buf.write(
-            format!("{} with {}", self.name, self.esmtp_features).as_bytes()
+            format!("{} with {}",
+                self.name,
+                match self.esmtp_features.clone() {
+                    Some(features) => features.to_str(),
+                    None => format!("no supported features")
+                }
+            ).as_bytes()
         )
     }
 }
@@ -511,7 +517,8 @@ impl<T, S: Writer + Clone> Writer for SmtpClient<T, S> {
 
 #[cfg(test)]
 mod test {
-    use super::{SmtpResponse};
+    use super::{SmtpResponse, SmtpServerInfo};
+    use commands;
 
     #[test]
     fn test_smtp_response_fmt() {
@@ -532,6 +539,12 @@ mod test {
                 message: StrBuf::from_str("response message")
             })
         );
+        assert!(from_str::<SmtpResponse<StrBuf>>("200-response\r\nmessage") == 
+            Some(SmtpResponse{
+                code: 200, 
+                message: StrBuf::from_str("response\r\nmessage")
+            })
+        );
         assert!(from_str::<SmtpResponse<StrBuf>>("2000response message") == None);
         assert!(from_str::<SmtpResponse<StrBuf>>("20a response message") == None);
     }
@@ -542,5 +555,28 @@ mod test {
             Ok(SmtpResponse{code: 200, message: "message"}));
         assert!(SmtpResponse{code: 400, message: "message"}.with_code(vec!(200)) == 
             Err(SmtpResponse{code: 400, message: "message"}));
+        assert!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200, 300)) == 
+            Ok(SmtpResponse{code: 200, message: "message"}));
+    }
+    
+    #[test]
+    fn test_smtp_server_info_fmt() {
+        assert!(format!("{}", SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::EightBitMime))
+        }) == ~"name with [8BITMIME]");
+        assert!(format!("{}", SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::EightBitMime, commands::Size(42)))
+        }) == ~"name with [8BITMIME, SIZE=42]");
+        assert!(format!("{}", SmtpServerInfo{
+            name: "name",
+            esmtp_features: None
+        }) == ~"name with no supported features");
+    }
+    
+    #[test]
+    fn test_smtp_server_info_parse_esmtp_response() {
+        
     }
 }
