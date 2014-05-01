@@ -7,12 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-/*! SMTP commands [1] and ESMTP features [2] library
-
-[1] https://tools.ietf.org/html/rfc5321#section-4.1
-[2] http://tools.ietf.org/html/rfc1869
-
-*/
+//! SMTP commands and ESMTP features library
 
 use std::fmt::{Show, Formatter, Result};
 use std::io::net::ip::Port;
@@ -24,6 +19,7 @@ pub static SMTP_PORT: Port = 25;
 //pub static SUBMISSION_PORT: Port = 587;
 
 /// SMTP commands
+///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
 /// and must not be used by clients :
 /// SEND, SOML, SAML, TURN
@@ -88,9 +84,11 @@ impl<T: Show + Str> Show for SmtpCommand<T> {
 #[deriving(Eq,Clone)]
 pub enum EsmtpParameter {
     /// 8BITMIME keyword
+    ///
     /// RFC 6152 : https://tools.ietf.org/html/rfc6152
     EightBitMime,
     /// SIZE keyword
+    ///
     /// RFC 1427 : https://tools.ietf.org/html/rfc1427
     Size(uint)
 }

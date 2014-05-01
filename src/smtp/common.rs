@@ -7,11 +7,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-/*! Common definitions for SMTP
-
-Needs to be organized later.
-
-*/
+//! Common definitions for SMTP
+//!
+//! Needs to be organized later.
  
 use std::strbuf::StrBuf;
 
