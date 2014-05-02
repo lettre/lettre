@@ -31,7 +31,7 @@
 //! let mut email_client: SmtpClient<StrBuf, TcpStream> = SmtpClient::new(StrBuf::from_str("localhost"), None, None);
 //! email_client.send_mail(
 //!     StrBuf::from_str("user@example.com"),
-//!     vec!(StrBuf::from_str("user@example.org")), 
+//!     vec!(StrBuf::from_str("user@example.org")),
 //!     StrBuf::from_str("Test email")
 //! );
 //! ```

@@ -9,8 +9,8 @@
 
 //! Common definitions for SMTP
 //!
-//! Needs to be organized later.
- 
+//! Needs to be organized later
+
 use std::strbuf::StrBuf;
 
 pub static SP: &'static str = " ";

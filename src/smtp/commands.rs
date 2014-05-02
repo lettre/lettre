@@ -21,7 +21,7 @@ pub static SMTP_PORT: Port = 25;
 /// Supported SMTP commands
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
-/// and must not be used by clients :
+/// and must not be used by clients:
 /// SEND, SOML, SAML, TURN
 #[deriving(Eq,Clone)]
 pub enum SmtpCommand<T> {
@@ -112,8 +112,8 @@ impl FromStr for EsmtpParameter {
                      "8BITMIME" => Some(EightBitMime),
                      _          => None
                  },
-            2 => match (splitted[0], splitted[1]) {
-                     ("SIZE", size) => Some(Size(from_str::<uint>(size).unwrap())),
+            2 => match (splitted[0], from_str::<uint>(splitted[1])) {
+                     ("SIZE", Some(size)) => Some(Size(size)),
                      _              => None
                  },
             _          => None
@@ -145,5 +145,9 @@ mod test {
     fn test_esmtp_parameter_from_str() {
         assert!(from_str::<EsmtpParameter>("8BITMIME") == Some(super::EightBitMime));
         assert!(from_str::<EsmtpParameter>("SIZE 42") == Some(super::Size(42)));
+        assert!(from_str::<EsmtpParameter>("SIZ 42") == None);
+        assert!(from_str::<EsmtpParameter>("SIZE 4a2") == None);
+        // TODO: accept trailing spaces
+        assert!(from_str::<EsmtpParameter>("SIZE 42 ") == None);
     }
 }
