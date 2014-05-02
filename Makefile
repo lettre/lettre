@@ -44,4 +44,4 @@ clean:
 	rm -rf $(BUILDDIR)
 	rm -rf $(DOCDIR)
 
-.PHONY: all smtp examples docs clean check tests
+.PHONY: all smtp examples docs clean check

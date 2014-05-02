@@ -16,7 +16,7 @@ use std::strbuf::StrBuf;
 pub static SP: &'static str = " ";
 pub static CRLF: &'static str = "\r\n";
 
-/// Adds quotes to emails
+/// Adds quotes to emails if needed
 pub fn quote_email_address(addr: &str) -> ~str {
     match (addr.slice_to(1), addr.slice_from(addr.len()-1)) {
         ("<", ">") => addr.to_owned(),
@@ -24,7 +24,7 @@ pub fn quote_email_address(addr: &str) -> ~str {
     }
 }
 
-/// Removes quotes from emails
+/// Removes quotes from emails if needed
 pub fn unquote_email_address(addr: &str) -> ~str {
     match (addr.slice_to(1), addr.slice_from(addr.len() - 1)) {
         ("<", ">") => addr.slice(1, addr.len() - 1).to_owned(),

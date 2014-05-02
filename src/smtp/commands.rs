@@ -18,7 +18,7 @@ pub static SMTP_PORT: Port = 25;
 //pub static SMTPS_PORT: Port = 465;
 //pub static SUBMISSION_PORT: Port = 587;
 
-/// SMTP commands
+/// Supported SMTP commands
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
 /// and must not be used by clients :
@@ -130,7 +130,9 @@ mod test {
         let noop: SmtpCommand<StrBuf> = super::Noop;
         assert!(format!("{}", noop) == ~"NOOP");
         assert!(format!("{}", super::ExtendedHello("me")) == ~"EHLO me");
-        assert!(format!("{}", super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:<test> option");
+        assert!(format!("{}", 
+            super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:<test> option"
+        );
     }
 
     #[test]

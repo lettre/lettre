@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-/*! A simple SMTP client */
+//! SMTP client
 
 use std::fmt;
 use std::fmt::{Show, Formatter};
@@ -27,9 +27,9 @@ use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 #[deriving(Clone, Eq)]
 pub struct SmtpResponse<T> {
     /// Server response code
-    code: uint,
+    pub code: uint,
     /// Server response string
-    message: T
+    pub message: T
 }
 
 impl<T: Show> Show for SmtpResponse<T> {
@@ -46,7 +46,11 @@ impl FromStr for SmtpResponse<StrBuf> {
         if s.len() < 5 {
             None
         } else {
-            match (from_str::<uint>(s.slice_to(3)), vec!(" ", "-").contains(&s.slice(3,4)), StrBuf::from_str(s.slice_from(4))) {
+            match (
+                from_str::<uint>(s.slice_to(3)),
+                vec!(" ", "-").contains(&s.slice(3,4)),
+                StrBuf::from_str(s.slice_from(4))
+            ) {
                 (Some(code), true, message) => Some(SmtpResponse{
                             code: code,
                             message: message
@@ -59,7 +63,7 @@ impl FromStr for SmtpResponse<StrBuf> {
 }
 
 impl<T: Clone> SmtpResponse<T> {
-    /// Checks the response code
+    /// Checks the presence of the response code in the array of expected codes.
     fn with_code(&self, expected_codes: Vec<uint>) -> Result<SmtpResponse<T>,SmtpResponse<T>> {
         let response = self.clone();
         if expected_codes.contains(&self.code) {
@@ -95,6 +99,7 @@ impl<T: Show> Show for SmtpServerInfo<T>{
 
 impl<T: Str> SmtpServerInfo<T> {
     /// Parses supported ESMTP features
+    ///
     /// TODO: Improve parsing
     fn parse_esmtp_response(message: T) -> Option<Vec<EsmtpParameter>> {
         let mut esmtp_features = Vec::new();
@@ -131,11 +136,11 @@ impl<T: Str> SmtpServerInfo<T> {
 enum SmtpClientState {
     /// The server is unconnected
     Unconnected,
-    /// The connection and banner were successful
+    /// The connection was successful and the banner was received
     Connected,
-    /// An HELO or EHLO was successfully sent
+    /// An HELO or EHLO was successful
     HeloSent,
-    /// A MAIL command was successful
+    /// A MAIL command was successful send
     MailSent,
     /// At least one RCPT command was sucessful
     RcptSent,
@@ -170,7 +175,7 @@ macro_rules! smtp_fail_if_err(
     );
 )
 
-/// Structure that implements a simple SMTP client
+/// Structure that implements the SMTP client
 pub struct SmtpClient<T, S> {
     /// TCP stream between client and server
     stream: Option<S>,
@@ -237,7 +242,10 @@ impl SmtpClient<StrBuf, TcpStream> {
         // Connect
         match self.connect() {
             Ok(..) => {},
-            Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}", self.host, self.port, response)
+            Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}", 
+                                    self.host, 
+                                    self.port, response
+                             )
         }
         
         // Extended Hello or Hello
@@ -285,12 +293,12 @@ impl SmtpClient<StrBuf, TcpStream> {
 impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends an SMTP command
     // TODO : ensure this is an ASCII string
-    pub fn send_command(&mut self, command: SmtpCommand<StrBuf>) -> SmtpResponse<StrBuf> {
+    fn send_command(&mut self, command: SmtpCommand<StrBuf>) -> SmtpResponse<StrBuf> {
         self.send_and_get_response(format!("{}", command))
     }
 
     /// Sends an email
-    pub fn send_message(&mut self, message: StrBuf) -> SmtpResponse<StrBuf> {
+    fn send_message(&mut self, message: StrBuf) -> SmtpResponse<StrBuf> {
         self.send_and_get_response(format!("{}{:s}.", message, CRLF))
     }
 
