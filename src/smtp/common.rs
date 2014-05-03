@@ -27,7 +27,7 @@ pub fn quote_email_address<T: Str>(address: T) -> StrBuf {
 /// Removes quotes from emails if needed
 pub fn unquote_email_address<T: Str>(address: T) -> StrBuf {
     match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.as_slice().len() - 1)) {
-        ("<", ">") => address.as_slice().slice(1, address.len() - 1).into_strbuf(),
+        ("<", ">") => address.as_slice().slice(1, address.as_slice().len() - 1).into_strbuf(),
         _          => address.into_strbuf()
     }
 }
@@ -41,15 +41,15 @@ pub fn get_first_word<T: Str>(string: T) -> StrBuf {
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert!(super::quote_email_address("plop") == "<plop>");
-        assert!(super::quote_email_address("<plop>") == "<plop>");
+        assert!(super::quote_email_address("plop") == StrBuf::from_str("<plop>"));
+        assert!(super::quote_email_address("<plop>") == StrBuf::from_str("<plop>"));
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert!(super::unquote_email_address("<plop>") == "plop");
-        assert!(super::unquote_email_address("plop") == "plop");
-        assert!(super::unquote_email_address("<plop") == "<plop");
+        assert!(super::unquote_email_address("<plop>") == StrBuf::from_str("plop"));
+        assert!(super::unquote_email_address("plop") == StrBuf::from_str("plop"));
+        assert!(super::unquote_email_address("<plop") == StrBuf::from_str("<plop"));
     }
 
     #[test]
