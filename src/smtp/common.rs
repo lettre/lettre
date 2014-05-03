@@ -17,18 +17,18 @@ pub static SP: &'static str = " ";
 pub static CRLF: &'static str = "\r\n";
 
 /// Adds quotes to emails if needed
-pub fn quote_email_address(addr: &str) -> ~str {
-    match (addr.slice_to(1), addr.slice_from(addr.len()-1)) {
-        ("<", ">") => addr.to_owned(),
-        _          => format!("<{:s}>", addr)
+pub fn quote_email_address<T: Str>(address: T) -> StrBuf {
+    match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.as_slice().len()-1)) {
+        ("<", ">") => address.into_strbuf(),
+        _          => StrBuf::from_str(format!("<{:s}>", address))
     }
 }
 
 /// Removes quotes from emails if needed
-pub fn unquote_email_address(addr: &str) -> ~str {
-    match (addr.slice_to(1), addr.slice_from(addr.len() - 1)) {
-        ("<", ">") => addr.slice(1, addr.len() - 1).to_owned(),
-        _          => addr.to_owned()
+pub fn unquote_email_address<T: Str>(address: T) -> StrBuf {
+    match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.as_slice().len() - 1)) {
+        ("<", ">") => address.as_slice().slice(1, address.len() - 1).into_strbuf(),
+        _          => address.into_strbuf()
     }
 }
 
@@ -41,15 +41,15 @@ pub fn get_first_word<T: Str>(string: T) -> StrBuf {
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert!(super::quote_email_address("plop") == "<plop>".to_owned());
-        assert!(super::quote_email_address("<plop>") == "<plop>".to_owned());
+        assert!(super::quote_email_address("plop") == "<plop>");
+        assert!(super::quote_email_address("<plop>") == "<plop>");
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert!(super::unquote_email_address("<plop>") == "plop".to_owned());
-        assert!(super::unquote_email_address("plop") == "plop".to_owned());
-        assert!(super::unquote_email_address("<plop") == "<plop".to_owned());
+        assert!(super::unquote_email_address("<plop>") == "plop");
+        assert!(super::unquote_email_address("plop") == "plop");
+        assert!(super::unquote_email_address("<plop") == "<plop");
     }
 
     #[test]
