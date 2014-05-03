@@ -495,7 +495,7 @@ impl<T, S: Reader + Clone> Reader for SmtpClient<T, S> {
     }
 
     /// Reads a string from the client socket
-    // TODO: Manage long messages.
+    // TODO: Size of response ?.
     fn read_to_str(&mut self) -> IoResult<~str> {
         let mut buf = [0u8, ..1000];
 
@@ -527,7 +527,7 @@ mod test {
 
     #[test]
     fn test_smtp_response_fmt() {
-        assert!(format!("{}", SmtpResponse{code: 200, message: "message"}) == ~"200 message");
+        assert!(format!("{}", SmtpResponse{code: 200, message: "message"}) == "200 message".to_owned());
     }
     
     #[test]
@@ -569,15 +569,15 @@ mod test {
         assert!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: Some(vec!(commands::EightBitMime))
-        }) == ~"name with [8BITMIME]");
+        }) == "name with [8BITMIME]".to_owned());
         assert!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: Some(vec!(commands::EightBitMime, commands::Size(42)))
-        }) == ~"name with [8BITMIME, SIZE=42]");
+        }) == "name with [8BITMIME, SIZE=42]".to_owned());
         assert!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: None
-        }) == ~"name with no supported features");
+        }) == "name with no supported features".to_owned());
     }
 
     #[test]

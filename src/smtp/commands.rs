@@ -65,17 +65,17 @@ impl<T: Show + Str> Show for SmtpCommand<T> {
                 format!("RCPT TO:<{}>", to_address.clone()),
             Recipient(ref to_address, Some(ref options)) =>
                 format!("RCPT TO:<{}> {}", to_address.clone(), options.connect(" ")),
-            Data => ~"DATA",
-            Reset => ~"RSET",
+            Data => "DATA".to_owned(),
+            Reset => "RSET".to_owned(),
             Verify(ref address) =>
                 format!("VRFY {}", address.clone()),
             Expand(ref address) =>
                 format!("EXPN {}", address.clone()),
-            Help(None) => ~"HELP",
+            Help(None) => "HELP".to_owned(),
             Help(Some(ref argument)) =>
                 format!("HELP {}", argument.clone()),
-            Noop => ~"NOOP",
-            Quit => ~"QUIT",
+            Noop => "NOOP".to_owned(),
+            Quit => "QUIT".to_owned(),
         }.as_bytes())
     }
 }
@@ -97,7 +97,7 @@ impl Show for EsmtpParameter {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(
             match self {
-                &EightBitMime  => ~"8BITMIME",
+                &EightBitMime  => "8BITMIME".to_owned(),
                 &Size(ref size) => format!("SIZE={}", size)
             }.as_bytes()
         )
@@ -114,7 +114,7 @@ impl FromStr for EsmtpParameter {
                  },
             2 => match (splitted[0], from_str::<uint>(splitted[1])) {
                      ("SIZE", Some(size)) => Some(Size(size)),
-                     _              => None
+                     _                    => None
                  },
             _          => None
         }
@@ -128,17 +128,17 @@ mod test {
     #[test]
     fn test_command_fmt() {
         let noop: SmtpCommand<StrBuf> = super::Noop;
-        assert!(format!("{}", noop) == ~"NOOP");
-        assert!(format!("{}", super::ExtendedHello("me")) == ~"EHLO me");
+        assert!(format!("{}", noop) == "NOOP".to_owned());
+        assert!(format!("{}", super::ExtendedHello("me")) == "EHLO me".to_owned());
         assert!(format!("{}", 
-            super::Mail("test", Some(vec!("option")))) == ~"MAIL FROM:<test> option"
+            super::Mail("test", Some(vec!("option")))) == "MAIL FROM:<test> option".to_owned()
         );
     }
 
     #[test]
     fn test_esmtp_parameter_fmt() {
-        assert!(format!("{}", super::EightBitMime) == ~"8BITMIME");
-        assert!(format!("{}", super::Size(42)) == ~"SIZE=42");
+        assert!(format!("{}", super::EightBitMime) == "8BITMIME".to_owned());
+        assert!(format!("{}", super::Size(42)) == "SIZE=42".to_owned());
     }
 
     #[test]
@@ -147,7 +147,7 @@ mod test {
         assert!(from_str::<EsmtpParameter>("SIZE 42") == Some(super::Size(42)));
         assert!(from_str::<EsmtpParameter>("SIZ 42") == None);
         assert!(from_str::<EsmtpParameter>("SIZE 4a2") == None);
-        // TODO: accept trailing spaces
+        // TODO: accept trailing spaces ?
         assert!(from_str::<EsmtpParameter>("SIZE 42 ") == None);
     }
 }

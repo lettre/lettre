@@ -41,15 +41,15 @@ pub fn get_first_word<T: Str>(string: T) -> StrBuf {
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert!(super::quote_email_address("plop") == ~"<plop>");
-        assert!(super::quote_email_address("<plop>") == ~"<plop>");
+        assert!(super::quote_email_address("plop") == "<plop>".to_owned());
+        assert!(super::quote_email_address("<plop>") == "<plop>".to_owned());
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert!(super::unquote_email_address("<plop>") == ~"plop");
-        assert!(super::unquote_email_address("plop") == ~"plop");
-        assert!(super::unquote_email_address("<plop") == ~"<plop");
+        assert!(super::unquote_email_address("<plop>") == "plop".to_owned());
+        assert!(super::unquote_email_address("plop") == "plop".to_owned());
+        assert!(super::unquote_email_address("<plop") == "<plop".to_owned());
     }
 
     #[test]
