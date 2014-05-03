@@ -302,7 +302,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     }
 
     /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: ~str) -> SmtpResponse<StrBuf> {
+    fn send_and_get_response(&mut self, string: &str) -> SmtpResponse<StrBuf> {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
                 .write_str(format!("{:s}{:s}", string, CRLF)) {
             Ok(..)  => debug!("Wrote: {:s}", string),
