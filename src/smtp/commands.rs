@@ -128,26 +128,26 @@ mod test {
     #[test]
     fn test_command_fmt() {
         let noop: SmtpCommand<StrBuf> = super::Noop;
-        assert!(format!("{}", noop) == "NOOP".to_owned());
-        assert!(format!("{}", super::ExtendedHello("me")) == "EHLO me".to_owned());
-        assert!(format!("{}", 
-            super::Mail("test", Some(vec!("option")))) == "MAIL FROM:<test> option".to_owned()
+        assert_eq!(format!("{}", noop), "NOOP".to_owned());
+        assert_eq!(format!("{}", super::ExtendedHello("me")), "EHLO me".to_owned());
+        assert_eq!(format!("{}", 
+            super::Mail("test", Some(vec!("option")))), "MAIL FROM:<test> option".to_owned()
         );
     }
 
     #[test]
     fn test_esmtp_parameter_fmt() {
-        assert!(format!("{}", super::EightBitMime) == "8BITMIME".to_owned());
-        assert!(format!("{}", super::Size(42)) == "SIZE=42".to_owned());
+        assert_eq!(format!("{}", super::EightBitMime), "8BITMIME".to_owned());
+        assert_eq!(format!("{}", super::Size(42)), "SIZE=42".to_owned());
     }
 
     #[test]
     fn test_esmtp_parameter_from_str() {
-        assert!(from_str::<EsmtpParameter>("8BITMIME") == Some(super::EightBitMime));
-        assert!(from_str::<EsmtpParameter>("SIZE 42") == Some(super::Size(42)));
-        assert!(from_str::<EsmtpParameter>("SIZ 42") == None);
-        assert!(from_str::<EsmtpParameter>("SIZE 4a2") == None);
+        assert_eq!(from_str::<EsmtpParameter>("8BITMIME"), Some(super::EightBitMime));
+        assert_eq!(from_str::<EsmtpParameter>("SIZE 42"), Some(super::Size(42)));
+        assert_eq!(from_str::<EsmtpParameter>("SIZ 42"), None);
+        assert_eq!(from_str::<EsmtpParameter>("SIZE 4a2"), None);
         // TODO: accept trailing spaces ?
-        assert!(from_str::<EsmtpParameter>("SIZE 42 ") == None);
+        assert_eq!(from_str::<EsmtpParameter>("SIZE 42 "), None);
     }
 }

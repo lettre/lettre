@@ -527,66 +527,66 @@ mod test {
 
     #[test]
     fn test_smtp_response_fmt() {
-        assert!(format!("{}", SmtpResponse{code: 200, message: "message"}) == "200 message".to_owned());
+        assert_eq!(format!("{}", SmtpResponse{code: 200, message: "message"}), "200 message".to_owned());
     }
     
     #[test]
     fn test_smtp_response_from_str() {
-        assert!(from_str::<SmtpResponse<StrBuf>>("200 response message") ==
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("200 response message"),
             Some(SmtpResponse{
                 code: 200, 
                 message: StrBuf::from_str("response message")
             })
         );
-        assert!(from_str::<SmtpResponse<StrBuf>>("200-response message") ==
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response message"),
             Some(SmtpResponse{
                 code: 200, 
                 message: StrBuf::from_str("response message")
             })
         );
-        assert!(from_str::<SmtpResponse<StrBuf>>("200-response\r\nmessage") ==
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response\r\nmessage"),
             Some(SmtpResponse{
                 code: 200, 
                 message: StrBuf::from_str("response\r\nmessage")
             })
         );
-        assert!(from_str::<SmtpResponse<StrBuf>>("2000response message") == None);
-        assert!(from_str::<SmtpResponse<StrBuf>>("20a response message") == None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("2000response message"), None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("20a response message"), None);
     }
 
     #[test]
     fn test_smtp_response_with_code() {
-        assert!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200)) ==
+        assert_eq!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200)),
             Ok(SmtpResponse{code: 200, message: "message"}));
-        assert!(SmtpResponse{code: 400, message: "message"}.with_code(vec!(200)) ==
+        assert_eq!(SmtpResponse{code: 400, message: "message"}.with_code(vec!(200)),
             Err(SmtpResponse{code: 400, message: "message"}));
-        assert!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200, 300)) ==
+        assert_eq!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200, 300)),
             Ok(SmtpResponse{code: 200, message: "message"}));
     }
 
     #[test]
     fn test_smtp_server_info_fmt() {
-        assert!(format!("{}", SmtpServerInfo{
+        assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: Some(vec!(commands::EightBitMime))
-        }) == "name with [8BITMIME]".to_owned());
-        assert!(format!("{}", SmtpServerInfo{
+        }), "name with [8BITMIME]".to_owned());
+        assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: Some(vec!(commands::EightBitMime, commands::Size(42)))
-        }) == "name with [8BITMIME, SIZE=42]".to_owned());
-        assert!(format!("{}", SmtpServerInfo{
+        }), "name with [8BITMIME, SIZE=42]".to_owned());
+        assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
             esmtp_features: None
-        }) == "name with no supported features".to_owned());
+        }), "name with no supported features".to_owned());
     }
 
     #[test]
     fn test_smtp_server_info_parse_esmtp_response() {
-        assert!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42") ==
+        assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
             Some(vec!(commands::EightBitMime, commands::Size(42))));
-        assert!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42") ==
+        assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
             Some(vec!(commands::EightBitMime)));
-        assert!(SmtpServerInfo::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a") ==
+        assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             None);
     }
 }

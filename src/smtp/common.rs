@@ -41,21 +41,21 @@ pub fn get_first_word<T: Str>(string: T) -> StrBuf {
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert!(super::quote_email_address("plop") == StrBuf::from_str("<plop>"));
-        assert!(super::quote_email_address("<plop>") == StrBuf::from_str("<plop>"));
+        assert_eq!(super::quote_email_address("plop"), StrBuf::from_str("<plop>"));
+        assert_eq!(super::quote_email_address("<plop>"), StrBuf::from_str("<plop>"));
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert!(super::unquote_email_address("<plop>") == StrBuf::from_str("plop"));
-        assert!(super::unquote_email_address("plop") == StrBuf::from_str("plop"));
-        assert!(super::unquote_email_address("<plop") == StrBuf::from_str("<plop"));
+        assert_eq!(super::unquote_email_address("<plop>"), StrBuf::from_str("plop"));
+        assert_eq!(super::unquote_email_address("plop"), StrBuf::from_str("plop"));
+        assert_eq!(super::unquote_email_address("<plop"), StrBuf::from_str("<plop"));
     }
 
     #[test]
     fn test_get_first_word() {
-        assert!(super::get_first_word("first word") == StrBuf::from_str("first"));
-        assert!(super::get_first_word("first word\r\ntest") == StrBuf::from_str("first"));
-        assert!(super::get_first_word("first") == StrBuf::from_str("first"));
+        assert_eq!(super::get_first_word("first word"), StrBuf::from_str("first"));
+        assert_eq!(super::get_first_word("first word\r\ntest"), StrBuf::from_str("first"));
+        assert_eq!(super::get_first_word("first"), StrBuf::from_str("first"));
     }
 }
