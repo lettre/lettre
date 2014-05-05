@@ -19,7 +19,7 @@ use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::{SocketAddr, Port};
 use std::io::net::tcp::TcpStream;
 use std::io::net::addrinfo::get_host_addresses;
-use common::{CRLF, get_first_word};
+use common::{CRLF, get_first_word, unquote_email_address};
 use commands;
 use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
@@ -170,7 +170,7 @@ macro_rules! smtp_fail_if_err(
             Err(response) => {
                 self.smtp_fail(response)
             },
-            Ok(..) => {}
+            Ok(_) => {}
         }
     );
 )
@@ -220,6 +220,10 @@ impl SmtpClient<StrBuf, TcpStream> {
             Ok(stream) => Some(stream),
             Err(..)    => fail!("Cannot connect to {:s}:{:u}", self.host, self.port)
         };
+        
+        // Log the connection
+        info!("Connection established to {}[{}]:{}", self.my_hostname.clone(), ip, self.port);
+        
         match self.get_reply() {
             Some(response) => match response.with_code(vec!(220)) {
                                   Ok(response) => {
@@ -240,7 +244,7 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Connect
         match self.connect() {
-            Ok(..) => {},
+            Ok(_) => {},
             Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}",
                                     self.host, 
                                     self.port, response
@@ -250,7 +254,7 @@ impl SmtpClient<StrBuf, TcpStream> {
         // Extended Hello or Hello
         match self.ehlo(my_hostname.clone()) {
             Err(SmtpResponse{code: 550, message: _}) => {
-                smtp_fail_if_err!(self.helo(my_hostname))
+                smtp_fail_if_err!(self.helo(my_hostname.clone()))
             },
             Err(response) => {
                 self.smtp_fail(response)
@@ -269,7 +273,11 @@ impl SmtpClient<StrBuf, TcpStream> {
         }
 
         // Mail
-        smtp_fail_if_err!(self.mail(from_address, None));
+        smtp_fail_if_err!(self.mail(from_address.clone(), None));
+        
+                
+        // Log the mail command
+        info!("from=<{}>, size={}, nrcpt={}", from_address, 42, to_addresses.len());
 
         // Recipient
         // TODO Return rejected addresses
@@ -281,8 +289,14 @@ impl SmtpClient<StrBuf, TcpStream> {
         // Data
         smtp_fail_if_err!(self.data());
 
-        // Message content
-        smtp_fail_if_err!(self.message(message));
+        // Message content    
+        let sent = self.message(message);
+        
+        if sent.clone().is_err() {
+            self.smtp_fail(sent.clone().err().unwrap())
+        }
+        
+        info!("to=<{}>, status=sent ({})", to_addresses.clone().connect(">, to=<"), sent.clone().ok().unwrap());
 
         // Quit
         smtp_fail_if_err!(self.quit());
@@ -389,7 +403,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn mail(&mut self, from_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(HeloSent));
         
-        match self.send_command(commands::Mail(from_address, options)).with_code(vec!(250)) {
+        match self.send_command(commands::Mail(unquote_email_address(from_address), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = MailSent;
                 Ok(response)
@@ -404,7 +418,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn rcpt(&mut self, to_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(MailSent, RcptSent));
         
-        match self.send_command(commands::Recipient(to_address, options)).with_code(vec!(250)) {
+        match self.send_command(commands::Recipient(unquote_email_address(to_address), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = RcptSent;
                 Ok(response)

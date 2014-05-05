@@ -28,13 +28,22 @@
 //! ## Usage
 //! 
 //! ```rust
-//! let mut email_client: SmtpClient<StrBuf, TcpStream> = SmtpClient::new(StrBuf::from_str("localhost"), None, None);
+//! extern crate smtp;
+//! use std::io::net::tcp::TcpStream;
+//! use smtp::client::SmtpClient;
+//! use std::strbuf::StrBuf;
+//!
+//! let mut email_client: SmtpClient<StrBuf, TcpStream> = 
+//!     SmtpClient::new(StrBuf::from_str("localhost"), None, None);
 //! email_client.send_mail(
 //!     StrBuf::from_str("user@example.com"),
 //!     vec!(StrBuf::from_str("user@example.org")),
 //!     StrBuf::from_str("Test email")
 //! );
 //! ```
+
+// May  4 21:48:18 mx1 smtp-gmail/smtp[12657]: Untrusted TLS connection established to gmail-smtp-in.l.google.com[173.194.66.26]:25: TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits)
+// May  4 21:48:18 mx1 smtp-gmail/smtp[12657]: 69800746A7B: to=<kelvin.moutet@gmail.com>, orig_to=<kelvin@minet.net>, relay=gmail-smtp-in.l.google.com[173.194.66.26]:25, delay=2.6, delays=1.7/0.03/0.19/0.61, dsn=2.0.0, status=sent (250 2.0.0 OK 1399232898 fy10si2284441wib.22 - gsmtp)
 
 #![crate_id = "smtp#0.1-pre"]
 
