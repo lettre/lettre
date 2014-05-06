@@ -262,7 +262,7 @@ impl SmtpClient<StrBuf, TcpStream> {
             _ => {}
         }
 
-        info!("SMTP server: {:s}", self.server_info.clone().unwrap().to_str());
+        debug!("Server {:s}", self.server_info.clone().unwrap().to_str());
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.

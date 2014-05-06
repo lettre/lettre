@@ -42,13 +42,10 @@
 //! );
 //! ```
 
-// May  4 21:48:18 mx1 smtp-gmail/smtp[12657]: Untrusted TLS connection established to gmail-smtp-in.l.google.com[173.194.66.26]:25: TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits)
-// May  4 21:48:18 mx1 smtp-gmail/smtp[12657]: 69800746A7B: to=<kelvin.moutet@gmail.com>, orig_to=<kelvin@minet.net>, relay=gmail-smtp-in.l.google.com[173.194.66.26]:25, delay=2.6, delays=1.7/0.03/0.19/0.61, dsn=2.0.0, status=sent (250 2.0.0 OK 1399232898 fy10si2284441wib.22 - gsmtp)
-
 #![crate_id = "smtp#0.1-pre"]
 
 #![desc = "Rust SMTP client"]
-#![comment = "Simple SMTP client, without AUTH or SSL/TLS for now"]
+#![comment = "Simple SMTP client"]
 #![license = "MIT/ASL2"]
 #![crate_type = "lib"]
 

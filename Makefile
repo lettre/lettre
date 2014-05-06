@@ -22,7 +22,7 @@ $(libsmtp): $(smtp_files)
 	mkdir -p $(BUILDDIR)
 	$(RUSTC) $(RUSTFLAGS) $(SMTP_LIB) --out-dir=$(BUILDDIR)
 
-all: smtp examples doc
+all: smtp doc
 
 doc: $(smtp_files)
 	$(RUSTDOC) $(SMTP_LIB)

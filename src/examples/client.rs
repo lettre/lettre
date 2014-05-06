@@ -11,10 +11,31 @@
 
 extern crate smtp;
 use std::io::net::tcp::TcpStream;
-use smtp::client::SmtpClient;
 use std::strbuf::StrBuf;
+use std::io::net::ip::Port;
+use std::os;
+use smtp::client::SmtpClient;
 
 fn main() {
-    let mut email_client: SmtpClient<StrBuf, TcpStream> = SmtpClient::new(StrBuf::from_str("localhost"), None, None);
-    email_client.send_mail(StrBuf::from_str("user@localhost"), vec!(StrBuf::from_str("user@localhost")), StrBuf::from_str("Test email"));
+    //! For now, only one word messages
+    //!
+    //! TODO: use parameters, flexible syntax
+    let args = os::args();
+    match args.len() {
+        6 => sendmail(args[1], args[2], args[3], args[4], args[5]),
+        _ => {
+            println!("Usage: {} source_address recipient_address message server port", args[0]);
+            return;
+        },
+    };
+}
+
+fn sendmail(source_address: &str, recipient_address: &str, message: &str, server: &str, port: &str) {
+    let mut email_client: SmtpClient<StrBuf, TcpStream> = 
+        SmtpClient::new(StrBuf::from_str(server), from_str::<Port>(port), None);
+    email_client.send_mail(
+            StrBuf::from_str(source_address),
+            vec!(StrBuf::from_str(recipient_address)),
+            StrBuf::from_str(message)
+    );
 }
