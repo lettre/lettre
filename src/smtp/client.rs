@@ -602,5 +602,7 @@ mod test {
             Some(vec!(commands::EightBitMime)));
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             None);
+        assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
+            None);
     }
 }
