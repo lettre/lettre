@@ -24,7 +24,7 @@ To build the example client code:
 
 To run the example:
 
-    ./build/client
+    ./build/client src_addr dest_addr message_of_one_word server port
 
 Todo
 ----
