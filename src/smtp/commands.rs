@@ -97,7 +97,7 @@ impl Show for EsmtpParameter {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.buf.write(
             match self {
-                &EightBitMime  => "8BITMIME".to_owned(),
+                &EightBitMime   => "8BITMIME".to_owned(),
                 &Size(ref size) => format!("SIZE={}", size)
             }.as_bytes()
         )
@@ -121,6 +121,19 @@ impl FromStr for EsmtpParameter {
     }
 }
 
+impl EsmtpParameter {
+    /// Checks if the ESMTP keyword is the same
+    pub fn same_keyword_as(&self, other: EsmtpParameter) -> bool {
+        if *self == other {
+            return true;
+        }
+        match (*self, other) {
+            (Size(_), Size(_)) => true,
+            _                  => false
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::{SmtpCommand, EsmtpParameter};
@@ -133,6 +146,14 @@ mod test {
         assert_eq!(format!("{}", 
             super::Mail("test", Some(vec!("option")))), "MAIL FROM:<test> option".to_owned()
         );
+    }
+
+    #[test]
+    fn test_esmtp_parameter_same_keyword_as() {
+        assert_eq!(super::EightBitMime.same_keyword_as(super::EightBitMime), true);
+        assert_eq!(super::Size(42).same_keyword_as(super::Size(42)), true);
+        assert_eq!(super::Size(42).same_keyword_as(super::Size(43)), true);
+        assert_eq!(super::Size(42).same_keyword_as(super::EightBitMime), false);
     }
 
     #[test]

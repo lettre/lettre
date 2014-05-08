@@ -121,12 +121,17 @@ impl<T: Str> SmtpServerInfo<T> {
     }
 
     /// Checks if the server supports an ESMTP feature
-    fn supports_feature(&self, keyword: EsmtpParameter) -> bool {
+    fn supports_feature(&self, keyword: EsmtpParameter) -> Result<EsmtpParameter, ()> {
         match self.esmtp_features.clone() {
             Some(esmtp_features) => {
-                esmtp_features.contains(&keyword)
+                for feature in esmtp_features.iter() {
+                    if keyword.same_keyword_as(*feature) {
+                        return Ok(*feature);
+                    }
+                }
+                Err({})
             },
-            None => false
+            None => Err({})
         }
     }
 }
@@ -266,8 +271,8 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
-        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime) {
-            if message.clone().into_owned().is_ascii() {
+        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime).is_ok() {
+            if ! message.clone().into_owned().is_ascii() {
                 self.smtp_fail("Server does not accepts UTF-8 strings");
             }
         }
@@ -604,5 +609,25 @@ mod test {
             None);
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
             Some(vec!(commands::Size(42), commands::Size(43))));
+    }
+    
+    #[test]
+    fn test_smtp_server_info_supports_feature() {
+        assert_eq!(SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::EightBitMime))
+        }.supports_feature(commands::EightBitMime), Ok(commands::EightBitMime));
+        assert_eq!(SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::Size(42), commands::EightBitMime))
+        }.supports_feature(commands::EightBitMime), Ok(commands::EightBitMime));
+        assert_eq!(SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::Size(42), commands::EightBitMime))
+        }.supports_feature(commands::Size(0)), Ok(commands::Size(42)));
+        assert!(SmtpServerInfo{
+            name: "name",
+            esmtp_features: Some(vec!(commands::EightBitMime))
+        }.supports_feature(commands::Size(42)).is_err());
     }
 }
