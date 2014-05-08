@@ -19,7 +19,7 @@ use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::{SocketAddr, Port};
 use std::io::net::tcp::TcpStream;
 use std::io::net::addrinfo::get_host_addresses;
-use common::{CRLF, get_first_word, unquote_email_address};
+use common::{CRLF, get_first_word, unquote_email_address, remove_trailing_crlf};
 use commands;
 use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
@@ -49,7 +49,7 @@ impl FromStr for SmtpResponse<StrBuf> {
             match (
                 from_str::<uint>(s.slice_to(3)),
                 vec!(" ", "-").contains(&s.slice(3,4)),
-                StrBuf::from_str(s.slice_from(4))
+                remove_trailing_crlf(s.slice_from(4))
             ) {
                 (Some(code), true, message) => Some(SmtpResponse{
                             code: code,

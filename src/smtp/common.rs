@@ -32,6 +32,17 @@ pub fn unquote_email_address<T: Str>(address: T) -> StrBuf {
     }
 }
 
+/// Removes the trailing line return at the end of a string
+pub fn remove_trailing_crlf<T: Str>(string: T) -> StrBuf {
+    if string.as_slice().slice_from(string.as_slice().len() - 2) == CRLF {
+        StrBuf::from_str(string.as_slice().slice_to(string.as_slice().len() - 2))
+    } else if string.as_slice().slice_from(string.as_slice().len() - 1) == "\r" {
+        StrBuf::from_str(string.as_slice().slice_to(string.as_slice().len() - 1))
+    } else {
+        StrBuf::from_str(string.as_slice())
+    }
+}
+
 /// Returns the first word of a string, or the string if it contains no space
 pub fn get_first_word<T: Str>(string: T) -> StrBuf {
     StrBuf::from_str(string.into_owned().split_str(CRLF).next().unwrap().splitn(' ', 1).next().unwrap())
@@ -50,6 +61,15 @@ mod test {
         assert_eq!(super::unquote_email_address("<plop>"), StrBuf::from_str("plop"));
         assert_eq!(super::unquote_email_address("plop"), StrBuf::from_str("plop"));
         assert_eq!(super::unquote_email_address("<plop"), StrBuf::from_str("<plop"));
+    }
+
+    #[test]
+    fn test_remove_trailing_crlf() {
+        assert_eq!(super::remove_trailing_crlf("word"), StrBuf::from_str("word"));
+        assert_eq!(super::remove_trailing_crlf("word\r\n"), StrBuf::from_str("word"));
+        assert_eq!(super::remove_trailing_crlf("word\r\n "), StrBuf::from_str("word\r\n "));
+        assert_eq!(super::remove_trailing_crlf("word\r"), StrBuf::from_str("word"));
+        
     }
 
     #[test]
