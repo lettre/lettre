@@ -24,18 +24,23 @@ use commands;
 use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 
 /// Contains an SMTP reply, with separed code and message
+///
+/// We do accept messages containing only a code, to comply with RFC5321
 #[deriving(Clone, Eq)]
 pub struct SmtpResponse<T> {
     /// Server response code
     pub code: uint,
     /// Server response string
-    pub message: T
+    pub message: Option<T>
 }
 
-impl<T: Show> Show for SmtpResponse<T> {
+impl<T: Show + Clone> Show for SmtpResponse<T> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.buf.write(
-            format!("{} {}", self.code.to_str(), self.message).as_bytes()
+            match self.clone().message {
+                Some(message) => format!("{} {}", self.code.to_str(), message),
+                None          => self.code.to_str()
+            }.as_bytes()
         )
     }
 }
@@ -43,8 +48,20 @@ impl<T: Show> Show for SmtpResponse<T> {
 // FromStr ?
 impl FromStr for SmtpResponse<StrBuf> {
     fn from_str(s: &str) -> Option<SmtpResponse<StrBuf>> {
-        if s.len() < 5 {
+        // If the string is too short to be a response code
+        if s.len() < 3 {
             None
+        // If we have only a code, with or without a trailing space
+        } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
+            match from_str::<uint>(s.slice_to(3)) {
+                Some(code) => Some(SmtpResponse{
+                            code: code,
+                            message: None
+                        }),
+                None         => None
+            
+            }
+        // If we have a code and a message
         } else {
             match (
                 from_str::<uint>(s.slice_to(3)),
@@ -53,7 +70,7 @@ impl FromStr for SmtpResponse<StrBuf> {
             ) {
                 (Some(code), true, message) => Some(SmtpResponse{
                             code: code,
-                            message: message
+                            message: Some(message)
                         }),
                 _                           => None
             
@@ -106,7 +123,7 @@ impl<T: Str> SmtpServerInfo<T> {
         for line in message.into_owned().split_str(CRLF) {
             match from_str::<SmtpResponse<StrBuf>>(line) {
                 Some(SmtpResponse{code: 250, message: message}) => {
-                    match from_str::<EsmtpParameter>(message.into_owned()) {
+                    match from_str::<EsmtpParameter>(message.unwrap().into_owned()) {
                         Some(keyword) => esmtp_features.push(keyword),
                         None          => ()
                     }
@@ -374,7 +391,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(response.message.clone()), 
+                        name: get_first_word(response.message.clone().unwrap()), 
                         esmtp_features: None
                     }
                 );
@@ -393,8 +410,8 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(response.message.clone()),
-                        esmtp_features: SmtpServerInfo::parse_esmtp_response(response.message.clone())
+                        name: get_first_word(response.message.clone().unwrap()),
+                        esmtp_features: SmtpServerInfo::parse_esmtp_response(response.message.clone().unwrap())
                     }
                 );
                 self.state = HeloSent;
@@ -546,7 +563,7 @@ mod test {
 
     #[test]
     fn test_smtp_response_fmt() {
-        assert_eq!(format!("{}", SmtpResponse{code: 200, message: "message"}), "200 message".to_owned());
+        assert_eq!(format!("{}", SmtpResponse{code: 200, message: Some("message")}), "200 message".to_owned());
     }
     
     #[test]
@@ -554,33 +571,49 @@ mod test {
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200 response message"),
             Some(SmtpResponse{
                 code: 200, 
-                message: StrBuf::from_str("response message")
+                message: Some(StrBuf::from_str("response message"))
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response message"),
             Some(SmtpResponse{
                 code: 200, 
-                message: StrBuf::from_str("response message")
+                message: Some(StrBuf::from_str("response message"))
+            })
+        );
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("200"),
+            Some(SmtpResponse{
+                code: 200, 
+                message: None
+            })
+        );
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("200 "),
+            Some(SmtpResponse{
+                code: 200, 
+                message: None
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response\r\nmessage"),
             Some(SmtpResponse{
                 code: 200, 
-                message: StrBuf::from_str("response\r\nmessage")
+                message: Some(StrBuf::from_str("response\r\nmessage"))
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("2000response message"), None);
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("20a response message"), None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("20 "), None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("20"), None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>("2"), None);
+        assert_eq!(from_str::<SmtpResponse<StrBuf>>(""), None);
     }
 
     #[test]
     fn test_smtp_response_with_code() {
-        assert_eq!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200)),
-            Ok(SmtpResponse{code: 200, message: "message"}));
-        assert_eq!(SmtpResponse{code: 400, message: "message"}.with_code(vec!(200)),
-            Err(SmtpResponse{code: 400, message: "message"}));
-        assert_eq!(SmtpResponse{code: 200, message: "message"}.with_code(vec!(200, 300)),
-            Ok(SmtpResponse{code: 200, message: "message"}));
+        assert_eq!(SmtpResponse{code: 200, message: Some("message")}.with_code(vec!(200)),
+            Ok(SmtpResponse{code: 200, message: Some("message")}));
+        assert_eq!(SmtpResponse{code: 400, message: Some("message")}.with_code(vec!(200)),
+            Err(SmtpResponse{code: 400, message: Some("message")}));
+        assert_eq!(SmtpResponse{code: 200, message: Some("message")}.with_code(vec!(200, 300)),
+            Ok(SmtpResponse{code: 200, message: Some("message")}));
     }
 
     #[test]
