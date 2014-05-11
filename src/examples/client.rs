@@ -22,20 +22,20 @@ fn main() {
     //! TODO: use parameters, flexible syntax
     let args = os::args();
     match args.len() {
-        6 => sendmail(args[1], args[2], args[3], args[4], args[5]),
+        6 => sendmail(args.get(1), args.get(2), args.get(3), args.get(4), args.get(5)),
         _ => {
-            println!("Usage: {} source_address recipient_address message server port", args[0]);
+            println!("Usage: {} source_address recipient_address message server port", args.get(0));
             return;
         },
     };
 }
 
-fn sendmail(source_address: &str, recipient_address: &str, message: &str, server: &str, port: &str) {
+fn sendmail(source_address: &~str, recipient_address: &~str, message: &~str, server: &~str, port: &~str) {
     let mut email_client: SmtpClient<StrBuf, TcpStream> = 
-        SmtpClient::new(StrBuf::from_str(server), from_str::<Port>(port), None);
+        SmtpClient::new(StrBuf::from_str(*server), from_str::<Port>(*port), None);
     email_client.send_mail(
-            StrBuf::from_str(source_address),
-            vec!(StrBuf::from_str(recipient_address)),
-            StrBuf::from_str(message)
+            StrBuf::from_str(*source_address),
+            vec!(StrBuf::from_str(*recipient_address)),
+            StrBuf::from_str(*message)
     );
 }

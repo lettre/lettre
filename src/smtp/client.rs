@@ -59,21 +59,21 @@ impl FromStr for SmtpResponse<StrBuf> {
                             message: None
                         }),
                 None         => None
-            
+
             }
         // If we have a code and a message
         } else {
             match (
                 from_str::<uint>(s.slice_to(3)),
                 vec!(" ", "-").contains(&s.slice(3,4)),
-                remove_trailing_crlf(s.slice_from(4))
+                remove_trailing_crlf(StrBuf::from_str(s.slice_from(4)))
             ) {
                 (Some(code), true, message) => Some(SmtpResponse{
                             code: code,
                             message: Some(message)
                         }),
                 _                           => None
-            
+
             }
         }
     }
@@ -120,7 +120,7 @@ impl<T: Str> SmtpServerInfo<T> {
     /// TODO: Improve parsing
     fn parse_esmtp_response(message: T) -> Option<Vec<EsmtpParameter>> {
         let mut esmtp_features = Vec::new();
-        for line in message.into_owned().split_str(CRLF) {
+        for line in message.as_slice().split_str(CRLF) {
             match from_str::<SmtpResponse<StrBuf>>(line) {
                 Some(SmtpResponse{code: 250, message: message}) => {
                     match from_str::<EsmtpParameter>(message.unwrap().into_owned()) {
@@ -235,17 +235,17 @@ impl SmtpClient<StrBuf, TcpStream> {
             fail!("The connection is already established");
         }
         let ip = match get_host_addresses(self.host.clone().into_owned()) {
-            Ok(ip_vector) => ip_vector[0], // TODO : select a random ip
+            Ok(ip_vector) => *ip_vector.get(0), // TODO : select a random ip
             Err(..)       => fail!("Cannot resolve {:s}", self.host)
         };
         self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
             Ok(stream) => Some(stream),
             Err(..)    => fail!("Cannot connect to {:s}:{:u}", self.host, self.port)
         };
-        
+
         // Log the connection
         info!("Connection established to {}[{}]:{}", self.my_hostname.clone(), ip, self.port);
-        
+
         match self.get_reply() {
             Some(response) => match response.with_code(vec!(220)) {
                                   Ok(response) => {
@@ -268,7 +268,7 @@ impl SmtpClient<StrBuf, TcpStream> {
         match self.connect() {
             Ok(_) => {},
             Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}",
-                                    self.host, 
+                                    self.host,
                                     self.port, response
                              )
         }
@@ -296,8 +296,7 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Mail
         smtp_fail_if_err!(self.mail(from_address.clone(), None));
-        
-                
+
         // Log the mail command
         info!("from=<{}>, size={}, nrcpt={}", from_address, 42, to_addresses.len());
 
@@ -311,13 +310,13 @@ impl SmtpClient<StrBuf, TcpStream> {
         // Data
         smtp_fail_if_err!(self.data());
 
-        // Message content    
+        // Message content
         let sent = self.message(message);
-        
+
         if sent.clone().is_err() {
             self.smtp_fail(sent.clone().err().unwrap())
         }
-        
+
         info!("to=<{}>, status=sent ({})", to_addresses.clone().connect(">, to=<"), sent.clone().ok().unwrap());
 
         // Quit
@@ -377,7 +376,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn is_connected(&mut self) -> bool {
         self.noop().is_ok()
     }
-    
+
     /// Closes the TCP stream
     pub fn close(&mut self) {
         drop(self.stream.clone().unwrap());
@@ -386,12 +385,12 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Send a HELO command
     pub fn helo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(Connected));
-        
+
         match self.send_command(commands::Hello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(response.message.clone().unwrap()), 
+                        name: get_first_word(response.message.clone().unwrap()),
                         esmtp_features: None
                     }
                 );
@@ -405,7 +404,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a EHLO command
     pub fn ehlo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
-        
+
         match self.send_command(commands::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
@@ -424,7 +423,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a MAIL command
     pub fn mail(&mut self, from_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(HeloSent));
-        
+
         match self.send_command(commands::Mail(unquote_email_address(from_address), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = MailSent;
@@ -439,7 +438,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a RCPT command
     pub fn rcpt(&mut self, to_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(MailSent, RcptSent));
-        
+
         match self.send_command(commands::Recipient(unquote_email_address(to_address), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = RcptSent;
@@ -454,7 +453,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a DATA command
     pub fn data(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(RcptSent));
-        
+
         match self.send_command(commands::Data).with_code(vec!(354)) {
             Ok(response) => {
                 self.state = DataSent;
@@ -469,7 +468,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends the message content
     pub fn message(&mut self, message_content: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(DataSent));
-        
+
         match self.send_message(message_content).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = HeloSent;
@@ -565,36 +564,36 @@ mod test {
     fn test_smtp_response_fmt() {
         assert_eq!(format!("{}", SmtpResponse{code: 200, message: Some("message")}), "200 message".to_owned());
     }
-    
+
     #[test]
     fn test_smtp_response_from_str() {
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200 response message"),
             Some(SmtpResponse{
-                code: 200, 
+                code: 200,
                 message: Some(StrBuf::from_str("response message"))
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response message"),
             Some(SmtpResponse{
-                code: 200, 
+                code: 200,
                 message: Some(StrBuf::from_str("response message"))
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200"),
             Some(SmtpResponse{
-                code: 200, 
+                code: 200,
                 message: None
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200 "),
             Some(SmtpResponse{
-                code: 200, 
+                code: 200,
                 message: None
             })
         );
         assert_eq!(from_str::<SmtpResponse<StrBuf>>("200-response\r\nmessage"),
             Some(SmtpResponse{
-                code: 200, 
+                code: 200,
                 message: Some(StrBuf::from_str("response\r\nmessage"))
             })
         );
@@ -643,7 +642,7 @@ mod test {
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
             Some(vec!(commands::Size(42), commands::Size(43))));
     }
-    
+
     #[test]
     fn test_smtp_server_info_supports_feature() {
         assert_eq!(SmtpServerInfo{

@@ -106,13 +106,13 @@ impl Show for EsmtpParameter {
 
 impl FromStr for EsmtpParameter {
     fn from_str(s: &str) -> Option<EsmtpParameter> {
-        let splitted : ~[&str] = s.splitn(' ', 1).collect();
+        let splitted : Vec<&str> = s.splitn(' ', 1).collect();
         match splitted.len() {
-            1 => match splitted[0] {
+            1 => match *splitted.get(0) {
                      "8BITMIME" => Some(EightBitMime),
                      _          => None
                  },
-            2 => match (splitted[0], from_str::<uint>(splitted[1])) {
+            2 => match (*splitted.get(0), from_str::<uint>(*splitted.get(1))) {
                      ("SIZE", Some(size)) => Some(Size(size)),
                      _                    => None
                  },
