@@ -26,14 +26,14 @@
 //! It should only be used to transfer emails to a relay server.
 //!
 //! ## Usage
-//! 
+//!
 //! ```rust
 //! extern crate smtp;
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::SmtpClient;
 //! use std::strbuf::StrBuf;
 //!
-//! let mut email_client: SmtpClient<StrBuf, TcpStream> = 
+//! let mut email_client: SmtpClient<StrBuf, TcpStream> =
 //!     SmtpClient::new(StrBuf::from_str("localhost"), None, None);
 //! email_client.send_mail(
 //!     StrBuf::from_str("user@example.com"),
@@ -43,19 +43,24 @@
 //! ```
 
 #![crate_id = "smtp#0.1-pre"]
+#![crate_type = "rlib"]
+#![crate_type = "dylib"]
 
 #![desc = "Rust SMTP client"]
 #![comment = "Simple SMTP client"]
 #![license = "MIT/ASL2"]
-#![crate_type = "lib"]
-
 
 #![feature(macro_rules)]
+#![feature(phase)]
 #![deny(non_camel_case_types)]
 #![deny(missing_doc)]
+#![deny(unnecessary_qualification)]
+#![deny(non_uppercase_statics)]
+#![deny(unnecessary_typecast)]
+#![deny(unused_result)]
+#![deny(deprecated_owned_vector)]
 
-#![feature(phase)]
-#[phase(syntax, link)] extern crate log;
+#[feature(phase)] #[phase(syntax, link)] extern crate log;
 
 pub mod commands;
 pub mod common;

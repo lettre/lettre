@@ -52,15 +52,15 @@ pub fn get_first_word(string: StrBuf) -> StrBuf {
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert_eq!(super::quote_email_address(StrBuf::from_str("plop")), StrBuf::from_str("<plop>"));
-        assert_eq!(super::quote_email_address(StrBuf::from_str("<plop>")), StrBuf::from_str("<plop>"));
+        assert_eq!(super::quote_email_address(StrBuf::from_str("address")), StrBuf::from_str("<address>"));
+        assert_eq!(super::quote_email_address(StrBuf::from_str("<address>")), StrBuf::from_str("<address>"));
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("<plop>")), StrBuf::from_str("plop"));
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("plop")), StrBuf::from_str("plop"));
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("<plop")), StrBuf::from_str("<plop"));
+        assert_eq!(super::unquote_email_address(StrBuf::from_str("<address>")), StrBuf::from_str("address"));
+        assert_eq!(super::unquote_email_address(StrBuf::from_str("address")), StrBuf::from_str("address"));
+        assert_eq!(super::unquote_email_address(StrBuf::from_str("<address")), StrBuf::from_str("<address"));
     }
 
     #[test]
