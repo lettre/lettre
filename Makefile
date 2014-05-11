@@ -1,6 +1,7 @@
 RUSTC ?= rustc
 RUSTDOC ?= rustdoc
 RUSTC_FLAGS ?= -g
+SHELL = /bin/sh
 
 BIN_DIR = bin
 DOC_DIR = doc
