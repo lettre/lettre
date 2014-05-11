@@ -29,7 +29,7 @@ use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter};
 #[deriving(Clone, Eq)]
 pub struct SmtpResponse<T> {
     /// Server response code
-    pub code: uint,
+    pub code: u16,
     /// Server response string
     pub message: Option<T>
 }
@@ -53,7 +53,7 @@ impl FromStr for SmtpResponse<StrBuf> {
             None
         // If we have only a code, with or without a trailing space
         } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
-            match from_str::<uint>(s.slice_to(3)) {
+            match from_str::<u16>(s.slice_to(3)) {
                 Some(code) => Some(SmtpResponse{
                             code: code,
                             message: None
@@ -64,7 +64,7 @@ impl FromStr for SmtpResponse<StrBuf> {
         // If we have a code and a message
         } else {
             match (
-                from_str::<uint>(s.slice_to(3)),
+                from_str::<u16>(s.slice_to(3)),
                 vec!(" ", "-").contains(&s.slice(3,4)),
                 StrBuf::from_str(remove_trailing_crlf(s.slice_from(4).to_owned()))
             ) {
@@ -81,7 +81,7 @@ impl FromStr for SmtpResponse<StrBuf> {
 
 impl<T: Clone> SmtpResponse<T> {
     /// Checks the presence of the response code in the array of expected codes.
-    fn with_code(&self, expected_codes: Vec<uint>) -> Result<SmtpResponse<T>,SmtpResponse<T>> {
+    fn with_code(&self, expected_codes: Vec<u16>) -> Result<SmtpResponse<T>,SmtpResponse<T>> {
         let response = self.clone();
         if expected_codes.contains(&self.code) {
             Ok(response)
