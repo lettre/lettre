@@ -60,7 +60,7 @@
 #![deny(unused_result)]
 #![deny(deprecated_owned_vector)]
 
-#[feature(phase)] #[phase(syntax, link)] extern crate log;
+#![feature(phase)] #[phase(syntax, link)] extern crate log;
 
 pub mod commands;
 pub mod common;

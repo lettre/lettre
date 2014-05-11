@@ -66,7 +66,7 @@ impl FromStr for SmtpResponse<StrBuf> {
             match (
                 from_str::<uint>(s.slice_to(3)),
                 vec!(" ", "-").contains(&s.slice(3,4)),
-                remove_trailing_crlf(StrBuf::from_str(s.slice_from(4)))
+                StrBuf::from_str(remove_trailing_crlf(s.slice_from(4).to_owned()))
             ) {
                 (Some(code), true, message) => Some(SmtpResponse{
                             code: code,
@@ -390,7 +390,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(response.message.clone().unwrap()),
+                        name: StrBuf::from_str(get_first_word(response.message.clone().unwrap().into_owned())),
                         esmtp_features: None
                     }
                 );
@@ -409,7 +409,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
-                        name: get_first_word(response.message.clone().unwrap()),
+                        name: StrBuf::from_str(get_first_word(response.message.clone().unwrap().to_owned())),
                         esmtp_features: SmtpServerInfo::parse_esmtp_response(response.message.clone().unwrap())
                     }
                 );
@@ -424,7 +424,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn mail(&mut self, from_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(HeloSent));
 
-        match self.send_command(commands::Mail(unquote_email_address(from_address), options)).with_code(vec!(250)) {
+        match self.send_command(commands::Mail(StrBuf::from_str(unquote_email_address(from_address.to_owned())), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = MailSent;
                 Ok(response)
@@ -439,7 +439,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn rcpt(&mut self, to_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(MailSent, RcptSent));
 
-        match self.send_command(commands::Recipient(unquote_email_address(to_address), options)).with_code(vec!(250)) {
+        match self.send_command(commands::Recipient(StrBuf::from_str(unquote_email_address(to_address.to_owned())), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = RcptSent;
                 Ok(response)

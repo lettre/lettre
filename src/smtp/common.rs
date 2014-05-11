@@ -11,70 +11,68 @@
 //!
 //! Needs to be organized later
 
-use std::strbuf::StrBuf;
-
 pub static SP: &'static str = " ";
 pub static CRLF: &'static str = "\r\n";
 
 /// Adds quotes to emails if needed
-pub fn quote_email_address(address: StrBuf) -> StrBuf {
+pub fn quote_email_address(address: ~str) -> ~str {
     match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.as_slice().len()-1)) {
-        ("<", ">") => address.into_strbuf(),
-        _          => StrBuf::from_str(format!("<{:s}>", address))
+        ("<", ">") => address,
+        _          => format!("<{:s}>", address)
     }
 }
 
 /// Removes quotes from emails if needed
-pub fn unquote_email_address(address: StrBuf) -> StrBuf {
+pub fn unquote_email_address(address: ~str) -> ~str {
     match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.as_slice().len() - 1)) {
-        ("<", ">") => address.as_slice().slice(1, address.as_slice().len() - 1).into_strbuf(),
-        _          => address.into_strbuf()
+        ("<", ">") => address.as_slice().slice(1, address.as_slice().len() - 1).to_owned(),
+        _          => address
     }
 }
 
 /// Removes the trailing line return at the end of a string
-pub fn remove_trailing_crlf(string: StrBuf) -> StrBuf {
+pub fn remove_trailing_crlf(string: ~str) -> ~str {
     if string.as_slice().slice_from(string.as_slice().len() - 2) == CRLF {
-        StrBuf::from_str(string.as_slice().slice_to(string.as_slice().len() - 2))
+        string.as_slice().slice_to(string.as_slice().len() - 2).to_owned()
     } else if string.as_slice().slice_from(string.as_slice().len() - 1) == "\r" {
-        StrBuf::from_str(string.as_slice().slice_to(string.as_slice().len() - 1))
+        string.as_slice().slice_to(string.as_slice().len() - 1).to_owned()
     } else {
-        StrBuf::from_str(string.as_slice())
+        string
     }
 }
 
 /// Returns the first word of a string, or the string if it contains no space
-pub fn get_first_word(string: StrBuf) -> StrBuf {
-    StrBuf::from_str(string.into_owned().split_str(CRLF).next().unwrap().splitn(' ', 1).next().unwrap())
+pub fn get_first_word(string: ~str) -> ~str {
+    string.split_str(CRLF).next().unwrap().splitn(' ', 1).next().unwrap().to_owned()
 }
 
 #[cfg(test)]
 mod test {
     #[test]
     fn test_quote_email_address() {
-        assert_eq!(super::quote_email_address(StrBuf::from_str("address")), StrBuf::from_str("<address>"));
-        assert_eq!(super::quote_email_address(StrBuf::from_str("<address>")), StrBuf::from_str("<address>"));
+        assert_eq!(super::quote_email_address("address".to_owned()), "<address>".to_owned());
+        assert_eq!(super::quote_email_address("<address>".to_owned()), "<address>".to_owned());
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("<address>")), StrBuf::from_str("address"));
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("address")), StrBuf::from_str("address"));
-        assert_eq!(super::unquote_email_address(StrBuf::from_str("<address")), StrBuf::from_str("<address"));
+        assert_eq!(super::unquote_email_address("<address>".to_owned()), "address".to_owned());
+        assert_eq!(super::unquote_email_address("address".to_owned()), "address".to_owned());
+        assert_eq!(super::unquote_email_address("<address".to_owned()), "<address".to_owned());
     }
 
     #[test]
     fn test_remove_trailing_crlf() {
-        assert_eq!(super::remove_trailing_crlf(StrBuf::from_str("word")), StrBuf::from_str("word"));
-        assert_eq!(super::remove_trailing_crlf(StrBuf::from_str("word\r\n")), StrBuf::from_str("word"));
-        assert_eq!(super::remove_trailing_crlf(StrBuf::from_str("word\r\n ")), StrBuf::from_str("word\r\n "));
-        assert_eq!(super::remove_trailing_crlf(StrBuf::from_str("word\r")), StrBuf::from_str("word"));
+        assert_eq!(super::remove_trailing_crlf("word".to_owned()), "word".to_owned());
+        assert_eq!(super::remove_trailing_crlf("word\r\n".to_owned()), "word".to_owned());
+        assert_eq!(super::remove_trailing_crlf("word\r\n ".to_owned()), "word\r\n ".to_owned());
+        assert_eq!(super::remove_trailing_crlf("word\r".to_owned()), "word".to_owned());
     }
 
     #[test]
     fn test_get_first_word() {
-        assert_eq!(super::get_first_word(StrBuf::from_str("first word")), StrBuf::from_str("first"));
-        assert_eq!(super::get_first_word(StrBuf::from_str("first word\r\ntest")), StrBuf::from_str("first"));
-        assert_eq!(super::get_first_word(StrBuf::from_str("first")), StrBuf::from_str("first"));
+        assert_eq!(super::get_first_word("first word".to_owned()), "first".to_owned());
+        assert_eq!(super::get_first_word("first word\r\ntest".to_owned()), "first".to_owned());
+        assert_eq!(super::get_first_word("first".to_owned()), "first".to_owned());
     }
 }
