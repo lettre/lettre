@@ -49,7 +49,7 @@
 #![desc = "Rust SMTP client"]
 #![comment = "Simple SMTP client"]
 #![license = "MIT/ASL2"]
-#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/"]
+#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 
 #![feature(macro_rules)]
 #![feature(phase)]
