@@ -18,13 +18,13 @@ Build the library:
 
     make
 
-To build the example client code:
+To build the example command-line client code:
 
     make examples
 
-To run the example:
+To run the example's help:
 
-    ./build/client src_addr dest_addr message_of_one_word server port
+    ./build/client -h
 
 Todo
 ----

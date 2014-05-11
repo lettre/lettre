@@ -143,7 +143,7 @@ mod test {
         let noop: SmtpCommand<StrBuf> = super::Noop;
         assert_eq!(format!("{}", noop), "NOOP".to_owned());
         assert_eq!(format!("{}", super::ExtendedHello("me")), "EHLO me".to_owned());
-        assert_eq!(format!("{}", 
+        assert_eq!(format!("{}",
             super::Mail("test", Some(vec!("option")))), "MAIL FROM:<test> option".to_owned()
         );
     }
