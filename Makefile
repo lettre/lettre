@@ -1,47 +1,65 @@
 RUSTC ?= rustc
 RUSTDOC ?= rustdoc
-RUSTFLAGS ?= -g
-BUILDDIR ?= build
-INSTALLDIR ?= /usr/local/lib
-DOCDIR ?= doc
+RUSTC_FLAGS ?= -g
 
-SMTP_LIB := src/smtp/lib.rs
+BIN_DIR = bin
+DOC_DIR = doc
+SRC_DIR = src
+TARGET_DIR = target
+EXAMPLES_DIR = examples
+LIB = src/lib.rs
 
-libsmtp=$(shell $(RUSTC) --crate-file-name $(SMTP_LIB))
+EXAMPLE_FILES := $(EXAMPLES_DIR)/*.rs
+SOURCE_FILES := $(shell test -e src/ && find src -type f)
 
-smtp_files=\
-	$(wildcard src/smtp/*.rs) \
-	$(wildcard src/smtp/client/*.rs)
+TARGET := $(shell rustc --version | awk "/host:/ { print \$$2 }")
+TARGET_LIB_DIR := $(TARGET_DIR)/$(TARGET)/lib
 
-example_files=\
-	$(wildcard src/examples/*.rs)
+RLIB_FILE := $(shell rustc --crate-type=rlib --crate-file-name "src/lib.rs" 2> /dev/null)
+RLIB := $(TARGET_LIB_DIR)/$(RLIB_FILE)
+DYLIB_FILE := $(shell rustc --crate-type=dylib --crate-file-name "src/lib.rs" 2> /dev/null)
+DYLIB := $(TARGET_LIB_DIR)/$(DYLIB_FILE)
 
-smtp: $(libsmtp)
+all: lib
 
-$(libsmtp): $(smtp_files)
-	mkdir -p $(BUILDDIR)
-	$(RUSTC) $(RUSTFLAGS) $(SMTP_LIB) --out-dir=$(BUILDDIR)
+lib: rlib dylib
 
-all: smtp doc
+rlib: $(RLIB)
 
-doc: $(smtp_files)
-	$(RUSTDOC) $(SMTP_LIB)
+$(RLIB): $(SOURCE_FILES) | $(LIB) $(TARGET_LIB_DIR)
+	$(RUSTC) --target $(TARGET) $(RUSTC_FLAGS) --crate-type=rlib $(LIB) --out-dir $(TARGET_LIB_DIR)
 
-examples: smtp $(example_files)
-	$(RUSTC) $(RUSTFLAGS) -L $(BUILDDIR)/ src/examples/client.rs --out-dir=$(BUILDDIR)
+dylib: $(DYLIB)
 
-$(BUILDDIR)/tests: $(smtp_files)
-	mkdir -p $(BUILDDIR)/tests
-	$(RUSTC) --test $(SMTP_LIB) --out-dir=$(BUILDDIR)/tests
+$(DYLIB): $(SOURCE_FILES) | $(LIB) $(TARGET_LIB_DIR)
+	$(RUSTC) --target $(TARGET) $(RUSTC_FLAGS) --crate-type=dylib $(LIB) --out-dir $(TARGET_LIB_DIR)
 
-check: all $(BUILDDIR)/tests
-	$(BUILDDIR)/tests/smtp --test
+$(TARGET_LIB_DIR):
+	mkdir -p $(TARGET_LIB_DIR)
 
-install: $(libsmtp_so)
-	install $(libsmtp_so) $(INSTALLDIR)
+test: $(BIN_DIR)/test
+
+$(BIN_DIR)/test: $(SOURCE_FILES) | rlib $(BIN_DIR)
+	$(RUSTC) --target $(TARGET) $(RUSTC_FLAGS) --test $(LIB) -o $(BIN_DIR)/test -L $(TARGET_LIB_DIR)
+
+doc: $(SOURCE_FILES)
+	mkdir -p $(DOC_DIR)
+	$(RUSTDOC) $(LIB) -L $(TARGET_LIB_DIR) -o $(DOC_DIR)
+
+examples: $(EXAMPLE_FILES)
+
+$(EXAMPLE_FILES): lib | $(BIN_DIR)
+	$(RUSTC) --target $(TARGET) $(RUSTC_FLAGS) $@ -L $(TARGET_LIB_DIR) --out-dir $(BIN_DIR)
+
+$(BIN_DIR):
+	mkdir -p $(BIN_DIR)
+
+check: test
+	$(BIN_DIR)/test --test
 
 clean:
-	rm -rf $(BUILDDIR)
-	rm -rf $(DOCDIR)
+	rm -rf $(TARGET_DIR)
+	rm -rf $(DOC_DIR)
+	rm -rf $(BIN_DIR)
 
-.PHONY: all smtp examples docs clean check
+.PHONY: all lib rlib dylib test doc examples clean check
