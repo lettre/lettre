@@ -15,7 +15,7 @@ use std::str::from_utf8;
 use std::result::Result;
 use std::strbuf::StrBuf;
 use std::io::{IoResult, Reader, Writer};
-use std::io::net::ip::{SocketAddr, Port};
+use std::io::net::ip::Port;
 use std::io::net::tcp::TcpStream;
 
 use common::{resolve_host, get_first_word, unquote_email_address};
@@ -174,7 +174,7 @@ impl SmtpClient<StrBuf, TcpStream> {
             Ok(ip)  => ip,
             Err(..) => fail!("Cannot resolve {:s}", self.host)
         };
-        self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
+        self.stream = match TcpStream::connect(ip.to_str(), self.port) {
             Ok(stream) => Some(stream),
             Err(..)    => fail!("Cannot connect to {:s}:{:u}", self.host, self.port)
         };
