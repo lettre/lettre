@@ -11,8 +11,18 @@
 //!
 //! Needs to be organized later
 
-pub static SP: &'static str = " ";
-pub static CRLF: &'static str = "\r\n";
+use std::io::net::addrinfo::get_host_addresses;
+use std::io::net::ip::IpAddr;
+
+use smtp::CRLF;
+
+/// Resolves an hostname and returns a random IP
+pub fn resolve_host(hostname: ~str) -> Result<IpAddr, ()> {
+    match get_host_addresses(hostname) {
+        Ok(ip_vector) => Ok(*ip_vector.get(ip_vector.len() - 1)),
+        Err(..)       => Err({})
+    }
+}
 
 /// Adds quotes to emails if needed
 pub fn quote_email_address(address: ~str) -> ~str {
@@ -54,6 +64,13 @@ pub fn get_first_word(string: ~str) -> ~str {
 
 #[cfg(test)]
 mod test {
+    use std::io::net::ip::IpAddr;
+
+    #[test]
+    fn test_resolve_host() {
+        assert_eq!(super::resolve_host("localhost".to_owned()), Ok(from_str::<IpAddr>("127.0.0.1").unwrap()));
+    }
+
     #[test]
     fn test_quote_email_address() {
         assert_eq!(super::quote_email_address("address".to_owned()), "<address>".to_owned());

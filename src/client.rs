@@ -17,10 +17,14 @@ use std::strbuf::StrBuf;
 use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::{SocketAddr, Port};
 use std::io::net::tcp::TcpStream;
-use std::io::net::addrinfo::get_host_addresses;
-use common::{CRLF, get_first_word, unquote_email_address};
-use commands;
-use commands::{SMTP_PORT, SmtpCommand, EsmtpParameter, SmtpResponse};
+
+use common::{resolve_host, get_first_word, unquote_email_address};
+use smtp::smtp_response::SmtpResponse;
+use smtp::esmtp_parameter;
+use smtp::esmtp_parameter::EsmtpParameter;
+use smtp::smtp_command;
+use smtp::smtp_command::SmtpCommand;
+use smtp::{SMTP_PORT, CRLF};
 
 /// Information about an SMTP server
 #[deriving(Clone)]
@@ -131,6 +135,7 @@ macro_rules! smtp_fail_if_err(
 /// Structure that implements the SMTP client
 pub struct SmtpClient<T, S> {
     /// TCP stream between client and server
+    /// Value is None before connection
     stream: Option<S>,
     /// Host we are connecting to
     host: T,
@@ -141,7 +146,7 @@ pub struct SmtpClient<T, S> {
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<SmtpServerInfo<T>>,
-    /// Transaction state, permits to check order againt RFCs
+    /// Transaction state, to check the sequence of commands
     state: SmtpClientState
 }
 
@@ -165,9 +170,9 @@ impl SmtpClient<StrBuf, TcpStream> {
         if !self.stream.is_none() {
             fail!("The connection is already established");
         }
-        let ip = match get_host_addresses(self.host.clone().into_owned()) {
-            Ok(ip_vector) => *ip_vector.get(0), // TODO : select a random ip
-            Err(..)       => fail!("Cannot resolve {:s}", self.host)
+        let ip = match resolve_host(self.host.clone().into_owned()) {
+            Ok(ip)  => ip,
+            Err(..) => fail!("Cannot resolve {:s}", self.host)
         };
         self.stream = match TcpStream::connect(SocketAddr{ip: ip, port: self.port}) {
             Ok(stream) => Some(stream),
@@ -219,7 +224,7 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
-        if ! self.server_info.clone().unwrap().supports_feature(commands::EightBitMime).is_ok() {
+        if ! self.server_info.clone().unwrap().supports_feature(esmtp_parameter::EightBitMime).is_ok() {
             if ! message.clone().into_owned().is_ascii() {
                 self.smtp_fail("Server does not accepts UTF-8 strings");
             }
@@ -310,14 +315,19 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
 
     /// Closes the TCP stream
     pub fn close(&mut self) {
+        // Close the TCP connection
         drop(self.stream.clone().unwrap());
+        // Reset client state
+        self.stream = None;
+        self.state = Unconnected;
+        self.server_info = None;
     }
 
     /// Send a HELO command
     pub fn helo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(Connected));
 
-        match self.send_command(commands::Hello(my_hostname.clone())).with_code(vec!(250)) {
+        match self.send_command(smtp_command::Hello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
@@ -336,7 +346,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn ehlo(&mut self, my_hostname: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
 
-        match self.send_command(commands::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
+        match self.send_command(smtp_command::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
                     SmtpServerInfo{
@@ -355,7 +365,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn mail(&mut self, from_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(HeloSent));
 
-        match self.send_command(commands::Mail(StrBuf::from_str(unquote_email_address(from_address.to_owned())), options)).with_code(vec!(250)) {
+        match self.send_command(smtp_command::Mail(StrBuf::from_str(unquote_email_address(from_address.to_owned())), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = MailSent;
                 Ok(response)
@@ -370,7 +380,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn rcpt(&mut self, to_address: StrBuf, options: Option<Vec<StrBuf>>) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(MailSent, RcptSent));
 
-        match self.send_command(commands::Recipient(StrBuf::from_str(unquote_email_address(to_address.to_owned())), options)).with_code(vec!(250)) {
+        match self.send_command(smtp_command::Recipient(StrBuf::from_str(unquote_email_address(to_address.to_owned())), options)).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = RcptSent;
                 Ok(response)
@@ -385,7 +395,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     pub fn data(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_in!(vec!(RcptSent));
 
-        match self.send_command(commands::Data).with_code(vec!(354)) {
+        match self.send_command(smtp_command::Data).with_code(vec!(354)) {
             Ok(response) => {
                 self.state = DataSent;
                 Ok(response)
@@ -414,9 +424,8 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a QUIT command
     pub fn quit(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
-        match self.send_command(commands::Quit).with_code(vec!(221)) {
+        match self.send_command(smtp_command::Quit).with_code(vec!(221)) {
             Ok(response) => {
-                self.close();
                 Ok(response)
             },
             Err(response) => {
@@ -428,7 +437,7 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a RSET command
     pub fn rset(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
-        match self.send_command(commands::Reset).with_code(vec!(250)) {
+        match self.send_command(smtp_command::Reset).with_code(vec!(250)) {
             Ok(response) => {
                 if vec!(MailSent, RcptSent, DataSent).contains(&self.state) {
                     self.state = HeloSent;
@@ -444,13 +453,13 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
     /// Sends a NOOP commands
     pub fn noop(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
-        self.send_command(commands::Noop).with_code(vec!(250))
+        self.send_command(smtp_command::Noop).with_code(vec!(250))
     }
 
     /// Sends a VRFY command
     pub fn vrfy(&mut self, to_address: StrBuf) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         check_state_not_in!(vec!(Unconnected));
-        self.send_command(commands::Verify(to_address)).with_code(vec!(250))
+        self.send_command(smtp_command::Verify(to_address)).with_code(vec!(250))
     }
 }
 
@@ -489,17 +498,17 @@ impl<T, S: Writer + Clone> Writer for SmtpClient<T, S> {
 #[cfg(test)]
 mod test {
     use super::SmtpServerInfo;
-    use commands;
+    use smtp::esmtp_parameter;
 
     #[test]
     fn test_smtp_server_info_fmt() {
         assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::EightBitMime))
+            esmtp_features: Some(vec!(esmtp_parameter::EightBitMime))
         }), "name with [8BITMIME]".to_owned());
         assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::EightBitMime, commands::Size(42)))
+            esmtp_features: Some(vec!(esmtp_parameter::EightBitMime, esmtp_parameter::Size(42)))
         }), "name with [8BITMIME, SIZE=42]".to_owned());
         assert_eq!(format!("{}", SmtpServerInfo{
             name: "name",
@@ -510,13 +519,13 @@ mod test {
     #[test]
     fn test_smtp_server_info_parse_esmtp_response() {
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            Some(vec!(commands::EightBitMime, commands::Size(42))));
+            Some(vec!(esmtp_parameter::EightBitMime, esmtp_parameter::Size(42))));
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
-            Some(vec!(commands::EightBitMime)));
+            Some(vec!(esmtp_parameter::EightBitMime)));
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             None);
         assert_eq!(SmtpServerInfo::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            Some(vec!(commands::Size(42), commands::Size(43))));
+            Some(vec!(esmtp_parameter::Size(42), esmtp_parameter::Size(43))));
         assert_eq!(SmtpServerInfo::parse_esmtp_response(""),
             None);
     }
@@ -525,19 +534,19 @@ mod test {
     fn test_smtp_server_info_supports_feature() {
         assert_eq!(SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::EightBitMime))
-        }.supports_feature(commands::EightBitMime), Ok(commands::EightBitMime));
+            esmtp_features: Some(vec!(esmtp_parameter::EightBitMime))
+        }.supports_feature(esmtp_parameter::EightBitMime), Ok(esmtp_parameter::EightBitMime));
         assert_eq!(SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::Size(42), commands::EightBitMime))
-        }.supports_feature(commands::EightBitMime), Ok(commands::EightBitMime));
+            esmtp_features: Some(vec!(esmtp_parameter::Size(42), esmtp_parameter::EightBitMime))
+        }.supports_feature(esmtp_parameter::EightBitMime), Ok(esmtp_parameter::EightBitMime));
         assert_eq!(SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::Size(42), commands::EightBitMime))
-        }.supports_feature(commands::Size(0)), Ok(commands::Size(42)));
+            esmtp_features: Some(vec!(esmtp_parameter::Size(42), esmtp_parameter::EightBitMime))
+        }.supports_feature(esmtp_parameter::Size(0)), Ok(esmtp_parameter::Size(42)));
         assert!(SmtpServerInfo{
             name: "name",
-            esmtp_features: Some(vec!(commands::EightBitMime))
-        }.supports_feature(commands::Size(42)).is_err());
+            esmtp_features: Some(vec!(esmtp_parameter::EightBitMime))
+        }.supports_feature(esmtp_parameter::Size(42)).is_err());
     }
 }

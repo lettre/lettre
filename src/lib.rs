@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! # Rust SMTP client
+//! # Rust SMTP library
 //!
 //! The client does its best to follow RFC 5321 (https://tools.ietf.org/html/rfc5321).
 //!
@@ -63,6 +63,6 @@
 
 #![feature(phase)] #[phase(syntax, link)] extern crate log;
 
-pub mod commands;
+pub mod smtp;
 pub mod common;
 pub mod client;
