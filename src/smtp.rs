@@ -59,7 +59,7 @@ pub mod command {
 
     impl<T: Show + Str> Show for SmtpCommand<T> {
         fn fmt(&self, f: &mut Formatter) -> Result {
-            f.buf.write(match *self {
+            f.write(match *self {
                 ExtendedHello(ref my_hostname) =>
                     format!("EHLO {}", my_hostname.clone()),
                 Hello(ref my_hostname) =>
@@ -108,7 +108,7 @@ pub mod extension {
 
     impl Show for SmtpExtension {
         fn fmt(&self, f: &mut Formatter) -> Result {
-            f.buf.write(
+            f.write(
                 match self {
                     &EightBitMime   => "8BITMIME".to_owned(),
                     &Size(ref size) => format!("SIZE={}", size)
@@ -167,7 +167,7 @@ pub mod response {
 
     impl<T: Show + Clone> Show for SmtpResponse<T> {
         fn fmt(&self, f: &mut Formatter) -> Result {
-            f.buf.write(
+            f.write(
                 match self.clone().message {
                     Some(message) => format!("{} {}", self.code.to_str(), message),
                     None          => self.code.to_str()
@@ -247,7 +247,7 @@ pub mod transaction_state {
 
     impl Show for TransactionState {
         fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-            f.buf.write(
+            f.write(
                 match *self {
                     OutOfTransaction => "OutOfTransaction",
                     HelloSent => "HelloSent",

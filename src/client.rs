@@ -37,7 +37,7 @@ struct SmtpServerInfo<T> {
 
 impl<T: Show> Show for SmtpServerInfo<T>{
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.buf.write(
+        f.write(
             format!("{} with {}",
                 self.name,
                 match self.esmtp_features.clone() {
