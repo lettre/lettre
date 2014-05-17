@@ -18,7 +18,7 @@ use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::Port;
 use std::io::net::tcp::TcpStream;
 
-use common::{resolve_host, get_first_word, unquote_email_address};
+use common::{get_first_word, unquote_email_address};
 use smtp::response::SmtpResponse;
 use smtp::extension;
 use smtp::extension::SmtpExtension;
@@ -166,22 +166,20 @@ impl<S> SmtpClient<StrBuf, S> {
 
 impl SmtpClient<StrBuf, TcpStream> {
     /// Connects to the configured server
-    pub fn connect(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
+    pub fn connect(&mut self) -> IoResult<TcpStream> {
+        // connect should not be called when the client is already connected
         if !self.stream.is_none() {
             fail!("The connection is already established");
         }
-        let ip = match resolve_host(self.host.clone().into_owned()) {
-            Ok(ip)  => ip,
-            Err(..) => fail!("Cannot resolve {:s}", self.host)
-        };
-        self.stream = match TcpStream::connect(ip.to_str(), self.port) {
-            Ok(stream) => Some(stream),
-            Err(..)    => fail!("Cannot connect to {:s}:{:u}", self.host, self.port)
-        };
 
-        // Log the connection
-        info!("Connection established to {}[{}]:{}", self.my_hostname.clone(), ip, self.port);
+        // Try to connect
+        TcpStream::connect(self.host.clone().as_slice(), self.port)
 
+
+    }
+
+    /// bla
+    pub fn get_banner(&mut self) -> Result<SmtpResponse<StrBuf>, SmtpResponse<StrBuf>> {
         match self.get_reply() {
             Some(response) => match response.with_code(vec!(220)) {
                                   Ok(response) => {
@@ -202,6 +200,14 @@ impl SmtpClient<StrBuf, TcpStream> {
 
         // Connect
         match self.connect() {
+            Ok(stream) => self.stream = Some(stream),
+            Err(..) => fail!("Cannot connect to the server")
+        }
+
+        // Log the connection
+        info!("Connection established to {}[{}]:{}", self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
+
+        match self.get_banner() {
             Ok(_) => {},
             Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}",
                                     self.host,
@@ -292,7 +298,6 @@ impl<S: Writer + Reader + Clone> SmtpClient<StrBuf, S> {
             Ok(string) => string,
             Err(..)    => fail!("No answer")
         };
-
         from_str::<SmtpResponse<StrBuf>>(response)
     }
 

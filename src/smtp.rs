@@ -33,6 +33,8 @@ pub mod command {
     /// SEND, SOML, SAML, TURN
     #[deriving(Eq,Clone)]
     pub enum SmtpCommand<T> {
+        /// A fake command
+        Connect,
         /// Extended Hello command
         ExtendedHello(T),
         /// Hello command
@@ -60,6 +62,7 @@ pub mod command {
     impl<T: Show + Str> Show for SmtpCommand<T> {
         fn fmt(&self, f: &mut Formatter) -> Result {
             f.write(match *self {
+                Connect => "CONNECT".to_owned(),
                 ExtendedHello(ref my_hostname) =>
                     format!("EHLO {}", my_hostname.clone()),
                 Hello(ref my_hostname) =>
