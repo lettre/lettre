@@ -31,25 +31,24 @@
 //! extern crate smtp;
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::SmtpClient;
-//! use std::strbuf::StrBuf;
+//! use std::string::String;
 //!
-//! let mut email_client: SmtpClient<StrBuf, TcpStream> =
-//!     SmtpClient::new(StrBuf::from_str("localhost"), None, None);
+//! let mut email_client: SmtpClient<String, TcpStream> =
+//!     SmtpClient::new(String::from_str("localhost"), None, None);
 //! email_client.send_mail(
-//!     StrBuf::from_str("user@example.com"),
-//!     vec!(StrBuf::from_str("user@example.org")),
-//!     StrBuf::from_str("Test email")
+//!     String::from_str("user@example.com"),
+//!     vec!(String::from_str("user@example.org")),
+//!     String::from_str("Test email")
 //! );
 //! ```
 
-#![crate_id = "smtp#0.1-pre"]
 #![crate_type = "rlib"]
 #![crate_type = "dylib"]
 
-#![desc = "Rust SMTP client"]
-#![comment = "Simple SMTP client"]
+#![desc = "Rust SMTP library"]
+#![comment = "Simple and modern SMTP library"]
 #![license = "MIT/ASL2"]
-#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
+#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtpcommon/")]
 
 #![feature(macro_rules)]
 #![feature(phase)]
@@ -59,10 +58,9 @@
 #![deny(non_uppercase_statics)]
 #![deny(unnecessary_typecast)]
 #![deny(unused_result)]
-#![deny(deprecated_owned_vector)]
 
-#![feature(phase)] #[phase(syntax, link)] extern crate log;
-
-pub mod smtp;
 pub mod common;
-pub mod client;
+pub mod command;
+pub mod extension;
+pub mod response;
+pub mod transaction;

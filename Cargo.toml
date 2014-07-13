@@ -1,0 +1,16 @@
+[package]
+
+name = "rust-smtp"
+version = "0.0.1"
+#readme = "README.md"
+authors = [ "Alexis Mousset <contact@amousset.eu>" ]
+#tags = ["smtp", "email", "library"]
+
+[[lib]]
+name = "smtpcommon"
+path = "src/smtpcommon/lib.rs"
+
+#[[lib]]
+#name = "smtpc"
+#path = "src/smtpc/lib.rs"
+

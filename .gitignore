@@ -1,6 +1,3 @@
 target/
-bin/
+TAGS
 doc/
-*~
-*.sh
-.directory

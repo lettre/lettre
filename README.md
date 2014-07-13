@@ -9,22 +9,14 @@ This library implements an SMTP client, and maybe later a simple SMTP server.
 Rust versions
 -------------
 
-This library is designed for Rust 0.11-pre (master).
+This library is designed for Rust 0.11.0-nightly (master).
 
 Install
 ------
 
-Build the library:
+Use Cargo to build this library.
 
-    make
-
-To build the example command-line client code:
-
-    make examples
-
-To run the example's help:
-
-    ./build/client -h
+    cargo build
 
 Todo
 ----
