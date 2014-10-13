@@ -1,7 +1,7 @@
 language: rust
 env:
   global:
-    - secure: OQR++Fdd4QL2qSCTChrWHyBQDwWAfcbupveh+c7EEZO6Gb+8OMEQLKX50rr9MzLvr64BTbFBS9yJEBAcyQUxQFJRM0qfJlT6dkkm2Kfp+FagIOQmz9f7PQhf/NNPyR0RxxkpEkd4OeQUy8bcPq0xhBV9WzviZo8fh7WLoeejfaU=
+    - secure: Bq5TOq+w8A3YjW5JvtxhouZx2MWISE3Niofi7Rzp3OZOa+4RtJ9AhMkCZ3i/nTvBiS1gKhSwY4fm7AVRgbDRjcE90828JfOeLmoH5JfLX2kajNg+DqW/j4U8qbGiO+xv7mMntC/0OXd/LH8iYi579SLnzFtgTGGgQMfWZLjFrPo=
 os:
   - osx
   - linux
@@ -9,8 +9,5 @@ script:
   - cargo build
   - cargo test
   - cargo doc
-after_success: |
-  [ $TRAVIS_BRANCH = master ] &&
-  [ $TRAVIS_PULL_REQUEST = false ] &&
-  cd target/doc &&
-  (curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh)
+after_script:
+  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh

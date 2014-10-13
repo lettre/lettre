@@ -1,8 +1,5 @@
-Rust SMTP library
+Rust SMTP library [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp)
 =================
-
-.. image:: https://travis-ci.org/amousset/rust-smtp.png?branch=master
-   :target: https://travis-ci.org/amousset/rust-smtp
 
 This library implements an SMTP library and a simple client.
 
