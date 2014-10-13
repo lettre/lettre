@@ -1,16 +1,11 @@
 [package]
 
-name = "rust-smtp"
-version = "0.0.1"
+name = "smtp"
+version = "0.0.1-pre"
 #readme = "README.md"
-authors = [ "Alexis Mousset <contact@amousset.eu>" ]
+authors = ["Alexis Mousset <contact@amousset.eu>"]
 #tags = ["smtp", "email", "library"]
 
-[[lib]]
+[lib]
 name = "smtpcommon"
-path = "src/smtpcommon/lib.rs"
-
-#[[lib]]
-#name = "smtpc"
-#path = "src/smtpc/lib.rs"
-
+path = "src/lib.rs"

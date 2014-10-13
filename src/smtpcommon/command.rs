@@ -80,7 +80,7 @@ impl Show for SmtpCommand {
 
 #[cfg(test)]
 mod test {
-    use command;
+    use smtpcommon::command;
 
     #[test]
     fn test_command_fmt() {

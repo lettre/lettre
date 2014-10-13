@@ -43,14 +43,14 @@ impl Show for SmtpExtension {
 
 impl FromStr for SmtpExtension {
     fn from_str(s: &str) -> Option<SmtpExtension> {
-        let splitted : Vec<&str> = s.splitn(' ', 1).collect();
+        let splitted : Vec<&str> = s.splitn(1, ' ').collect();
         match splitted.len() {
-            1 => match *splitted.get(0) {
+            1 => match splitted[0] {
                      "8BITMIME" => Some(EightBitMime),
                      "SMTPUTF8" => Some(SmtpUtfEight),
                      _          => None
                  },
-            2 => match (*splitted.get(0), from_str::<uint>(*splitted.get(1))) {
+            2 => match (splitted[0], from_str::<uint>(splitted[1])) {
                      ("SIZE", Some(size)) => Some(Size(size)),
                      _                    => None
                  },
@@ -74,8 +74,8 @@ impl SmtpExtension {
 
 #[cfg(test)]
 mod test {
-    use extension;
-    use extension::SmtpExtension;
+    use smtpcommon::extension;
+    use smtpcommon::extension::SmtpExtension;
 
     #[test]
     fn test_extension_same_extension_as() {

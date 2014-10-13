@@ -1,14 +1,16 @@
+language: rust
 env:
   global:
     - secure: OQR++Fdd4QL2qSCTChrWHyBQDwWAfcbupveh+c7EEZO6Gb+8OMEQLKX50rr9MzLvr64BTbFBS9yJEBAcyQUxQFJRM0qfJlT6dkkm2Kfp+FagIOQmz9f7PQhf/NNPyR0RxxkpEkd4OeQUy8bcPq0xhBV9WzviZo8fh7WLoeejfaU=
-before_install:
-  - wget http://static.rust-lang.org/dist/rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-  - tar xf rust-nightly-x86_64-unknown-linux-gnu.tar.gz
-install:
-  - sudo ./rust-nightly-x86_64-unknown-linux-gnu/install.sh
-  - rustc -v
+os:
+  - osx
+  - linux
 script:
-  - make examples
-  - make check
-after_script:
-  - curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh
+  - cargo build
+  - cargo test
+  - cargo doc
+after_success: |
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  cd target/doc &&
+  (curl http://www.rust-ci.org/artifacts/put?t=$RUSTCI_TOKEN | sh)

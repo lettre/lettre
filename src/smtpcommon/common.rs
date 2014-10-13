@@ -28,7 +28,7 @@ pub static CRLF: &'static str = "\r\n";
 /// Adds quotes to emails if needed
 pub fn quote_email_address(address: String) -> String {
     match address.len() {
-        0..1 => format!("<{:s}>", address),
+        0 ... 1 => format!("<{:s}>", address),
         _   => match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.len() - 1)) {
                    ("<", ">") => address,
                    _          => format!("<{:s}>", address)
@@ -39,7 +39,7 @@ pub fn quote_email_address(address: String) -> String {
 /// Removes quotes from emails if needed
 pub fn unquote_email_address(address: String) -> String {
     match address.len() {
-        0..1 => address,
+        0 ... 1 => address,
         _    => match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.len() - 1)) {
                     ("<", ">") => address.as_slice().slice(1, address.len() - 1).to_string(),
                     _          => address
@@ -60,7 +60,7 @@ pub fn remove_trailing_crlf(string: String) -> String {
 
 /// Returns the first word of a string, or the string if it contains no space
 pub fn get_first_word(string: String) -> String {
-    string.as_slice().split_str(CRLF).next().unwrap().splitn(' ', 1).next().unwrap().to_string()
+    string.as_slice().split_str(CRLF).next().unwrap().splitn(1, ' ').next().unwrap().to_string()
 }
 
 #[cfg(test)]

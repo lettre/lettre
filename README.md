@@ -4,15 +4,15 @@ Rust SMTP library
 .. image:: https://travis-ci.org/amousset/rust-smtp.png?branch=master
    :target: https://travis-ci.org/amousset/rust-smtp
 
-This library implements an SMTP client, and maybe later a simple SMTP server.
+This library implements an SMTP library and a simple client.
 
 Rust versions
 -------------
 
-This library is designed for Rust 0.11.0-nightly (master).
+This library is designed for Rust 0.13.0-nightly (master).
 
 Install
-------
+-------
 
 Use Cargo to build this library.
 

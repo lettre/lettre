@@ -27,7 +27,7 @@
 //!
 //! ## Usage
 //!
-//! ```rust
+//! ```tmp
 //! extern crate smtp;
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::SmtpClient;
@@ -46,9 +46,9 @@
 #![crate_type = "dylib"]
 
 #![desc = "Rust SMTP library"]
-#![comment = "Simple and modern SMTP library"]
+#![comment = "Simple SMTP client and library"]
 #![license = "MIT/ASL2"]
-#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtpcommon/")]
+#![doc(html_root_url = "http://www.rust-ci.org/amousset/rust-smtp/doc")]
 
 #![feature(macro_rules)]
 #![feature(phase)]
@@ -59,8 +59,15 @@
 #![deny(unnecessary_typecast)]
 #![deny(unused_result)]
 
-pub mod common;
-pub mod command;
-pub mod extension;
-pub mod response;
-pub mod transaction;
+#![feature(phase)] #[phase(plugin, link)] extern crate log;
+
+pub mod smtpcommon;
+//pub mod smtpc;
+
+//pub mod client;
+//pub mod connecter;
+//pub mod common;
+//pub mod command;
+//pub mod extension;
+//pub mod response;
+//pub mod transaction;

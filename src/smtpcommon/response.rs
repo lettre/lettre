@@ -9,9 +9,11 @@
 
 //! SMTP responses, contaiing a mandatory return code, and an optional text message
 
+//extern crate common;
+
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
-use common::remove_trailing_crlf;
+use smtpcommon::common::remove_trailing_crlf;
 use std::result;
 
 /// Contains an SMTP reply, with separed code and message
@@ -84,7 +86,7 @@ impl SmtpResponse {
 
 #[cfg(test)]
 mod test {
-    use response::SmtpResponse;
+    use smtpcommon::response::SmtpResponse;
 
     #[test]
     fn test_response_fmt() {

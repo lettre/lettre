@@ -1,3 +1,5 @@
-target/
-TAGS
-doc/
+/target/
+/doc/
+/Cargo.lock
+*~
+*.swp
