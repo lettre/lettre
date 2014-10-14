@@ -63,11 +63,3 @@
 
 pub mod smtpcommon;
 //pub mod smtpc;
-
-//pub mod client;
-//pub mod connecter;
-//pub mod common;
-//pub mod command;
-//pub mod extension;
-//pub mod response;
-//pub mod transaction;
