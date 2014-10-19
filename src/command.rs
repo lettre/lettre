@@ -7,7 +7,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Represents a complete SMTP command, ready to be sent to a server
+#![unstable]
+
+//! Represents a valid complete SMTP command, ready to be sent to a server
 
 use std::fmt::{Show, Formatter, Result};
 /// Supported SMTP commands
@@ -80,7 +82,7 @@ impl Show for SmtpCommand {
 
 #[cfg(test)]
 mod test {
-    use smtpcommon::command;
+    use command;
 
     #[test]
     fn test_command_fmt() {

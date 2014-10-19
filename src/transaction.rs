@@ -11,8 +11,8 @@
 
 use std::fmt;
 use std::fmt::{Show, Formatter};
-use smtpcommon::command;
-use smtpcommon::command::SmtpCommand;
+use command;
+use command::SmtpCommand;
 
 /// Contains the state of the current transaction
 #[deriving(PartialEq,Eq,Clone)]
@@ -102,7 +102,7 @@ impl TransactionState {
 
 #[cfg(test)]
 mod test {
-    use smtpcommon::command;
+    use command;
 
     #[test]
     fn test_transaction_state_is_command_possible() {

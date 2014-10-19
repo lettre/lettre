@@ -9,6 +9,8 @@
 
 //! SMTP commands and ESMTP features library
 
+#![unstable]
+
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 
@@ -74,8 +76,8 @@ impl SmtpExtension {
 
 #[cfg(test)]
 mod test {
-    use smtpcommon::extension;
-    use smtpcommon::extension::SmtpExtension;
+    use extension;
+    use extension::SmtpExtension;
 
     #[test]
     fn test_extension_same_extension_as() {

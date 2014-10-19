@@ -1,5 +1,2 @@
 /target/
-/doc/
 /Cargo.lock
-*~
-*.swp

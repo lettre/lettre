@@ -11,16 +11,20 @@ This library is designed for Rust 0.13.0-nightly (master).
 Install
 -------
 
-Use Cargo to build this library.
+If you're using `Cargo`, just add this to your `Cargo.toml`:
 
-    cargo build
+```toml
+[dependencies.smtp]
 
-Todo
-----
+git = "https://github.com/amousset/rust-smtp.git"
+```
 
-- RFC compliance
-- SSL/TLS support
-- AUTH support
+Otherwise, just clone this repo and run `cargo build`.
+
+Documentation
+-------------
+
+The documentation is available on [GitHub pages](amousset.github.io/rust-smtp/smtp/).
 
 License
 -------

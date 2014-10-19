@@ -2,10 +2,4 @@
 
 name = "smtp"
 version = "0.0.1-pre"
-#readme = "README.md"
 authors = ["Alexis Mousset <contact@amousset.eu>"]
-#tags = ["smtp", "email", "library"]
-
-[lib]
-name = "smtpcommon"
-path = "src/lib.rs"

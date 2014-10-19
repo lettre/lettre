@@ -103,7 +103,7 @@ mod test {
         assert_eq!(super::get_first_word("".to_string()), "".to_string());
         assert_eq!(super::get_first_word("\r\n".to_string()), "".to_string());
         assert_eq!(super::get_first_word("a\r\n".to_string()), "a".to_string());
-        // Manage cases of empty line, spaces at the beginning, ...
+        // Manage cases of empty line, spaces at the beginning
         //assert_eq!(super::get_first_word(" a".to_string()), "a".to_string());
         //assert_eq!(super::get_first_word("\r\n a".to_string()), "a".to_string());
         assert_eq!(super::get_first_word(" \r\n".to_string()), "".to_string());

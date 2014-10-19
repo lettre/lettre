@@ -27,15 +27,15 @@
 //!
 //! ## Usage
 //!
-//! ```tmp
+//! ```ignore
 //! extern crate smtp;
 //! use std::io::net::tcp::TcpStream;
-//! use smtp::client::SmtpClient;
+//! use smtp::smtpc::client::SmtpClient;
 //! use std::string::String;
 //!
-//! let mut email_client: SmtpClient<String, TcpStream> =
+//! let mut email_client: SmtpClient<TcpStream> =
 //!     SmtpClient::new(String::from_str("localhost"), None, None);
-//! email_client.send_mail(
+//! email_client.send_mail::<TcpStream>(
 //!     String::from_str("user@example.com"),
 //!     vec!(String::from_str("user@example.org")),
 //!     String::from_str("Test email")
@@ -48,7 +48,8 @@
 #![desc = "Rust SMTP library"]
 #![comment = "Simple SMTP client and library"]
 #![license = "MIT/ASL2"]
-#![doc(html_root_url = "http://www.rust-ci.org/amousset/rust-smtp/doc")]
+#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
+#![experimental]
 
 #![feature(macro_rules)]
 #![feature(phase)]
@@ -61,5 +62,9 @@
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
-pub mod smtpcommon;
-//pub mod smtpc;
+pub mod client;
+pub mod command;
+pub mod extension;
+pub mod response;
+pub mod transaction;
+pub mod common;
