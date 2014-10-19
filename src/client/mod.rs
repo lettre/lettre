@@ -89,7 +89,8 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
         };
 
         // Log the connection
-        info!("Connection established to {}[{}]:{}", self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
+        info!("Connection established to {}[{}]:{}",
+              self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
 
         match self.get_reply() {
             Some(response) => match response.with_code(vec!(220)) {
@@ -106,7 +107,8 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends an email
-    pub fn send_mail<S>(&mut self, from_address: String, to_addresses: Vec<String>, message: String) {
+    pub fn send_mail<S>(&mut self, from_address: String,
+                        to_addresses: Vec<String>, message: String) {
         let my_hostname = self.my_hostname.clone();
         let mut smtp_result: Result<SmtpResponse, SmtpResponse>;
 
@@ -166,7 +168,8 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
             self.smtp_fail::<S, SmtpResponse>(sent.clone().err().unwrap())
         }
 
-        info!("to=<{}>, status=sent ({})", to_addresses.clone().connect(">, to=<"), sent.clone().ok().unwrap());
+        info!("to=<{}>, status=sent ({})",
+              to_addresses.clone().connect(">, to=<"), sent.clone().ok().unwrap());
 
         // Quit
         smtp_result = self.quit::<S>();
@@ -262,7 +265,9 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
                 self.server_info = Some(
                     SmtpServerInfo{
                         name: get_first_word(response.message.clone().unwrap()),
-                        esmtp_features: SmtpServerInfo::parse_esmtp_response(response.message.clone().unwrap())
+                        esmtp_features: SmtpServerInfo::parse_esmtp_response(
+                                            response.message.clone().unwrap()
+                                        )
                     }
                 );
                 self.state = transaction::HelloSent;
@@ -273,8 +278,11 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a MAIL command
-    pub fn mail<S>(&mut self, from_address: String, options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
-        match self.send_command(command::Mail(unquote_email_address(from_address.to_string()), options)).with_code(vec!(250)) {
+    pub fn mail<S>(&mut self, from_address: String,
+                   options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
+        match self.send_command(
+            command::Mail(unquote_email_address(from_address.to_string()), options)
+        ).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::MailSent;
                 Ok(response)
@@ -286,8 +294,11 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a RCPT command
-    pub fn rcpt<S>(&mut self, to_address: String, options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
-        match self.send_command(command::Recipient(unquote_email_address(to_address.to_string()), options)).with_code(vec!(250)) {
+    pub fn rcpt<S>(&mut self, to_address: String,
+                   options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
+        match self.send_command(
+            command::Recipient(unquote_email_address(to_address.to_string()), options)
+        ).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::RecipientSent;
                 Ok(response)
@@ -340,7 +351,8 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     pub fn rset<S>(&mut self) -> Result<SmtpResponse, SmtpResponse> {
         match self.send_command(command::Reset).with_code(vec!(250)) {
             Ok(response) => {
-                if vec!(transaction::MailSent, transaction::RecipientSent, transaction::DataSent).contains(&self.state) {
+                if vec!(transaction::MailSent, transaction::RecipientSent,
+                        transaction::DataSent).contains(&self.state) {
                     self.state = transaction::HelloSent;
                 }
                 Ok(response)

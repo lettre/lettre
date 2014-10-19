@@ -115,7 +115,8 @@ mod test {
     #[test]
     fn test_super_next_state() {
         assert_eq!(super::MailSent.next_state(command::Noop), Some(super::MailSent));
-        assert_eq!(super::HelloSent.next_state(command::Mail("".to_string(), None)), Some(super::MailSent));
+        assert_eq!(super::HelloSent.next_state(command::Mail("".to_string(), None)),
+                   Some(super::MailSent));
         assert_eq!(super::MailSent.next_state(command::Mail("".to_string(), None)), None);
     }
 }

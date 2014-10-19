@@ -74,7 +74,8 @@ impl FromStr for SmtpResponse {
 
 impl SmtpResponse {
     /// Checks the presence of the response code in the array of expected codes.
-    pub fn with_code(&self, expected_codes: Vec<u16>) -> result::Result<SmtpResponse,SmtpResponse> {
+    pub fn with_code(&self,
+                     expected_codes: Vec<u16>) -> result::Result<SmtpResponse,SmtpResponse> {
         let response = self.clone();
         if expected_codes.contains(&self.code) {
             Ok(response)
@@ -90,7 +91,8 @@ mod test {
 
     #[test]
     fn test_response_fmt() {
-        assert_eq!(format!("{}", SmtpResponse{code: 200, message: Some("message".to_string())}), "200 message".to_string());
+        assert_eq!(format!("{}", SmtpResponse{code: 200, message: Some("message".to_string())}),
+                   "200 message".to_string());
     }
 
     #[test]
@@ -135,11 +137,20 @@ mod test {
 
     #[test]
     fn test_response_with_code() {
-        assert_eq!(SmtpResponse{code: 200, message: Some("message".to_string())}.with_code(vec!(200)),
-            Ok(SmtpResponse{code: 200, message: Some("message".to_string())}));
-        assert_eq!(SmtpResponse{code: 400, message: Some("message".to_string())}.with_code(vec!(200)),
-            Err(SmtpResponse{code: 400, message: Some("message".to_string())}));
-        assert_eq!(SmtpResponse{code: 200, message: Some("message".to_string())}.with_code(vec!(200, 300)),
-            Ok(SmtpResponse{code: 200, message: Some("message".to_string())}));
+        assert_eq!(
+            SmtpResponse{code: 200, message: Some("message".to_string())}.with_code(vec!(200)),
+            Ok(SmtpResponse{code: 200, message: Some("message".to_string())})
+        );
+        assert_eq!(
+            SmtpResponse{code: 400, message: Some("message".to_string())}.with_code(vec!(200)),
+            Err(SmtpResponse{code: 400, message: Some("message".to_string())})
+        );
+        assert_eq!(
+            SmtpResponse{
+                code: 200,
+                message: Some("message".to_string())
+            }.with_code(vec!(200, 300)),
+            Ok(SmtpResponse{code: 200, message: Some("message".to_string())})
+        );
     }
 }

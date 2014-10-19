@@ -29,7 +29,8 @@ pub static CRLF: &'static str = "\r\n";
 pub fn quote_email_address(address: String) -> String {
     match address.len() {
         0 ... 1 => format!("<{:s}>", address),
-        _   => match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.len() - 1)) {
+        _   => match (address.as_slice().slice_to(1),
+                      address.as_slice().slice_from(address.len() - 1)) {
                    ("<", ">") => address,
                    _          => format!("<{:s}>", address)
                }
@@ -40,7 +41,8 @@ pub fn quote_email_address(address: String) -> String {
 pub fn unquote_email_address(address: String) -> String {
     match address.len() {
         0 ... 1 => address,
-        _    => match (address.as_slice().slice_to(1), address.as_slice().slice_from(address.len() - 1)) {
+        _    => match (address.as_slice().slice_to(1),
+                       address.as_slice().slice_from(address.len() - 1)) {
                     ("<", ">") => address.as_slice().slice(1, address.len() - 1).to_string(),
                     _          => address
                 }

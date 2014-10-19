@@ -87,9 +87,13 @@ mod test {
     #[test]
     fn test_command_fmt() {
         assert_eq!(format!("{}", command::Noop), "NOOP".to_string());
-        assert_eq!(format!("{}", command::ExtendedHello("this".to_string())), "EHLO this".to_string());
-        assert_eq!(format!("{}",
-            command::Mail("test".to_string(), Some(vec!("option".to_string())))), "MAIL FROM:<test> option".to_string()
+        assert_eq!(
+            format!("{}", command::ExtendedHello("this".to_string())),
+            "EHLO this".to_string()
+        );
+        assert_eq!(
+            format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string())))),
+            "MAIL FROM:<test> option".to_string()
         );
     }
 }
