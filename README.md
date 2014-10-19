@@ -19,12 +19,12 @@ If you're using `Cargo`, just add this to your `Cargo.toml`:
 git = "https://github.com/amousset/rust-smtp.git"
 ```
 
-Otherwise, just clone this repo and run `cargo build`.
+Otherwise, clone this repo and run `cargo build`.
 
 Documentation
 -------------
 
-The documentation is available on [GitHub pages](amousset.github.io/rust-smtp/smtp/).
+The documentation is available on [GitHub pages](http://amousset.github.io/rust-smtp/smtp/).
 
 License
 -------
