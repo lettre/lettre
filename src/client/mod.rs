@@ -9,8 +9,7 @@
 
 //! SMTP client
 
-use std::fmt;
-use std::fmt::{Show, Formatter};
+use std::fmt::Show;
 use std::str::from_utf8;
 use std::result::Result;
 use std::string::String;
@@ -20,77 +19,16 @@ use std::io::net::ip::Port;
 use common::{get_first_word, unquote_email_address};
 use response::SmtpResponse;
 use extension;
-use extension::SmtpExtension;
 use command;
 use command::SmtpCommand;
 use common::{SMTP_PORT, CRLF};
 use transaction;
 use transaction::TransactionState;
 use client::connecter::Connecter;
+use client::server_info::SmtpServerInfo;
 
 mod connecter;
-
-/// Information about an SMTP server
-#[deriving(Clone)]
-struct SmtpServerInfo {
-    /// Server name
-    name: String,
-    /// ESMTP features supported by the server
-    esmtp_features: Option<Vec<SmtpExtension>>
-}
-
-impl Show for SmtpServerInfo {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write(
-            format!("{} with {}",
-                self.name,
-                match self.esmtp_features.clone() {
-                    Some(features) => features.to_string(),
-                    None => format!("no supported features")
-                }
-            ).as_bytes()
-        )
-    }
-}
-
-impl SmtpServerInfo {
-    /// Parses supported ESMTP features
-    ///
-    /// TODO: Improve parsing
-    fn parse_esmtp_response(message: String) -> Option<Vec<SmtpExtension>> {
-        let mut esmtp_features = Vec::new();
-        for line in message.as_slice().split_str(CRLF) {
-            match from_str::<SmtpResponse>(line) {
-                Some(SmtpResponse{code: 250, message: message}) => {
-                    match from_str::<SmtpExtension>(message.unwrap().as_slice()) {
-                        Some(keyword) => esmtp_features.push(keyword),
-                        None          => ()
-                    }
-                },
-                _ => ()
-            }
-        }
-        match esmtp_features.len() {
-            0 => None,
-            _ => Some(esmtp_features)
-        }
-    }
-
-    /// Checks if the server supports an ESMTP feature
-    fn supports_feature(&self, keyword: SmtpExtension) -> Result<SmtpExtension, ()> {
-        match self.esmtp_features.clone() {
-            Some(esmtp_features) => {
-                for feature in esmtp_features.iter() {
-                    if keyword.same_extension_as(*feature) {
-                        return Ok(*feature);
-                    }
-                }
-                Err({})
-            },
-            None => Err({})
-        }
-    }
-}
+mod server_info;
 
 /// Structure that implements the SMTP client
 pub struct SmtpClient<S> {
@@ -453,61 +391,5 @@ impl<S: Writer + Clone> Writer for SmtpClient<S> {
     /// Sends a string on the client socket
     fn write_str(&mut self, string: &str) -> IoResult<()> {
         self.stream.clone().unwrap().write_str(string)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::SmtpServerInfo;
-    use extension;
-
-    #[test]
-    fn test_smtp_server_info_fmt() {
-        assert_eq!(format!("{}", SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::EightBitMime))
-        }), "name with [8BITMIME]".to_string());
-        assert_eq!(format!("{}", SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::EightBitMime, extension::Size(42)))
-        }), "name with [8BITMIME, SIZE=42]".to_string());
-        assert_eq!(format!("{}", SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: None
-        }), "name with no supported features".to_string());
-    }
-
-    #[test]
-    fn test_smtp_server_info_parse_esmtp_response() {
-        assert_eq!(SmtpServerInfo::parse_esmtp_response(String::from_str("me\r\n250-8BITMIME\r\n250 SIZE 42")),
-            Some(vec!(extension::EightBitMime, extension::Size(42))));
-        assert_eq!(SmtpServerInfo::parse_esmtp_response(String::from_str("me\r\n250-8BITMIME\r\n250 UNKNON 42")),
-            Some(vec!(extension::EightBitMime)));
-        assert_eq!(SmtpServerInfo::parse_esmtp_response(String::from_str("me\r\n250-9BITMIME\r\n250 SIZE a")),
-            None);
-        assert_eq!(SmtpServerInfo::parse_esmtp_response(String::from_str("me\r\n250-SIZE 42\r\n250 SIZE 43")),
-            Some(vec!(extension::Size(42), extension::Size(43))));
-        assert_eq!(SmtpServerInfo::parse_esmtp_response(String::from_str("")),
-            None);
-    }
-
-    #[test]
-    fn test_smtp_server_info_supports_feature() {
-        assert_eq!(SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::EightBitMime))
-        }.supports_feature(extension::EightBitMime), Ok(extension::EightBitMime));
-        assert_eq!(SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
-        }.supports_feature(extension::EightBitMime), Ok(extension::EightBitMime));
-        assert_eq!(SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
-        }.supports_feature(extension::Size(0)), Ok(extension::Size(42)));
-        assert!(SmtpServerInfo{
-            name: String::from_str("name"),
-            esmtp_features: Some(vec!(extension::EightBitMime))
-        }.supports_feature(extension::Size(42)).is_err());
     }
 }
