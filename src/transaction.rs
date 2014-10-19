@@ -12,7 +12,7 @@
 use std::fmt;
 use std::fmt::{Show, Formatter};
 use command;
-use command::SmtpCommand;
+use command::Command;
 
 /// Contains the state of the current transaction
 #[deriving(PartialEq,Eq,Clone)]
@@ -48,7 +48,7 @@ impl Show for TransactionState {
 
 impl TransactionState {
     /// bla bla
-    pub fn is_command_possible(&self, command: SmtpCommand) -> bool {
+    pub fn is_command_possible(&self, command: Command) -> bool {
         match (*self, command) {
             (Unconnected, command::Connect) => true,
             (Unconnected, _) => false,
@@ -74,7 +74,7 @@ impl TransactionState {
     }
 
     /// a method
-    pub fn next_state(&mut self, command: SmtpCommand) -> Option<TransactionState> {
+    pub fn next_state(&mut self, command: Command) -> Option<TransactionState> {
         match (*self, command) {
             (Unconnected, command::Connect) => Some(Connected),
             (Unconnected, _) => None,
@@ -105,7 +105,7 @@ mod test {
     use command;
 
     #[test]
-    fn test_transaction_state_is_command_possible() {
+    fn test_is_command_possible() {
         assert!(!super::Unconnected.is_command_possible(command::Noop));
         assert!(!super::DataSent.is_command_possible(command::Noop));
         assert!(super::HelloSent.is_command_possible(command::Mail("".to_string(), None)));
@@ -113,7 +113,7 @@ mod test {
     }
 
     #[test]
-    fn test_super_next_state() {
+    fn test_next_state() {
         assert_eq!(super::MailSent.next_state(command::Noop), Some(super::MailSent));
         assert_eq!(super::HelloSent.next_state(command::Mail("".to_string(), None)),
                    Some(super::MailSent));

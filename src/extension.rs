@@ -16,7 +16,7 @@ use std::fmt::{Show, Formatter, Result};
 
 /// Supported ESMTP keywords
 #[deriving(PartialEq,Eq,Clone)]
-pub enum SmtpExtension {
+pub enum Extension {
     /// 8BITMIME keyword
     ///
     /// RFC 6152 : https://tools.ietf.org/html/rfc6152
@@ -31,7 +31,7 @@ pub enum SmtpExtension {
     Size(uint)
 }
 
-impl Show for SmtpExtension {
+impl Show for Extension {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write(
             match self {
@@ -43,8 +43,8 @@ impl Show for SmtpExtension {
     }
 }
 
-impl FromStr for SmtpExtension {
-    fn from_str(s: &str) -> Option<SmtpExtension> {
+impl FromStr for Extension {
+    fn from_str(s: &str) -> Option<Extension> {
         let splitted : Vec<&str> = s.splitn(1, ' ').collect();
         match splitted.len() {
             1 => match splitted[0] {
@@ -61,9 +61,9 @@ impl FromStr for SmtpExtension {
     }
 }
 
-impl SmtpExtension {
+impl Extension {
     /// Checks if the ESMTP keyword is the same
-    pub fn same_extension_as(&self, other: SmtpExtension) -> bool {
+    pub fn same_extension_as(&self, other: Extension) -> bool {
         if *self == other {
             return true;
         }
@@ -77,10 +77,10 @@ impl SmtpExtension {
 #[cfg(test)]
 mod test {
     use extension;
-    use extension::SmtpExtension;
+    use extension::Extension;
 
     #[test]
-    fn test_extension_same_extension_as() {
+    fn test_same_extension_as() {
         assert_eq!(extension::EightBitMime.same_extension_as(extension::EightBitMime), true);
         assert_eq!(extension::Size(42).same_extension_as(extension::Size(42)), true);
         assert_eq!(extension::Size(42).same_extension_as(extension::Size(43)), true);
@@ -88,18 +88,18 @@ mod test {
     }
 
     #[test]
-    fn test_extension_fmt() {
+    fn test_fmt() {
         assert_eq!(format!("{}", extension::EightBitMime), "8BITMIME".to_string());
         assert_eq!(format!("{}", extension::Size(42)), "SIZE=42".to_string());
     }
 
     #[test]
-    fn test_extension_from_str() {
-        assert_eq!(from_str::<SmtpExtension>("8BITMIME"), Some(extension::EightBitMime));
-        assert_eq!(from_str::<SmtpExtension>("SIZE 42"), Some(extension::Size(42)));
-        assert_eq!(from_str::<SmtpExtension>("SIZ 42"), None);
-        assert_eq!(from_str::<SmtpExtension>("SIZE 4a2"), None);
+    fn test_from_str() {
+        assert_eq!(from_str::<Extension>("8BITMIME"), Some(extension::EightBitMime));
+        assert_eq!(from_str::<Extension>("SIZE 42"), Some(extension::Size(42)));
+        assert_eq!(from_str::<Extension>("SIZ 42"), None);
+        assert_eq!(from_str::<Extension>("SIZE 4a2"), None);
         // TODO: accept trailing spaces ?
-        assert_eq!(from_str::<SmtpExtension>("SIZE 42 "), None);
+        assert_eq!(from_str::<Extension>("SIZE 42 "), None);
     }
 }

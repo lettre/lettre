@@ -18,7 +18,7 @@ use std::fmt::{Show, Formatter, Result};
 /// and must not be used by clients:
 /// SEND, SOML, SAML, TURN
 #[deriving(PartialEq,Eq,Clone)]
-pub enum SmtpCommand {
+pub enum Command {
     /// A fake command to represent the connection step
     Connect,
     /// Extended Hello command
@@ -45,7 +45,7 @@ pub enum SmtpCommand {
     Quit,
 }
 
-impl Show for SmtpCommand {
+impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write(match *self {
             Connect => "CONNECT".to_string(),
@@ -85,7 +85,7 @@ mod test {
     use command;
 
     #[test]
-    fn test_command_fmt() {
+    fn test_fmt() {
         assert_eq!(format!("{}", command::Noop), "NOOP".to_string());
         assert_eq!(
             format!("{}", command::ExtendedHello("this".to_string())),

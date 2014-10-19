@@ -17,21 +17,21 @@ use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::Port;
 
 use common::{get_first_word, unquote_email_address};
-use response::SmtpResponse;
+use response::Response;
 use extension;
 use command;
-use command::SmtpCommand;
+use command::Command;
 use common::{SMTP_PORT, CRLF};
 use transaction;
 use transaction::TransactionState;
 use client::connecter::Connecter;
-use client::server_info::SmtpServerInfo;
+use client::server_info::ServerInfo;
 
 mod connecter;
 mod server_info;
 
 /// Structure that implements the SMTP client
-pub struct SmtpClient<S> {
+pub struct Client<S> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<S>,
@@ -43,15 +43,15 @@ pub struct SmtpClient<S> {
     my_hostname: String,
     /// Information about the server
     /// Value is None before HELO/EHLO
-    server_info: Option<SmtpServerInfo>,
+    server_info: Option<ServerInfo>,
     /// Transaction state, to check the sequence of commands
     state: TransactionState
 }
 
-impl<S> SmtpClient<S> {
+impl<S> Client<S> {
     /// Creates a new SMTP client
-    pub fn new(host: String, port: Option<Port>, my_hostname: Option<String>) -> SmtpClient<S> {
-        SmtpClient{
+    pub fn new(host: String, port: Option<Port>, my_hostname: Option<String>) -> Client<S> {
+        Client{
             stream: None,
             host: host,
             port: port.unwrap_or(SMTP_PORT),
@@ -63,20 +63,20 @@ impl<S> SmtpClient<S> {
 }
 
 // T : String ou String, selon le support
-impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
+impl<S: Connecter + Reader + Writer + Clone> Client<S> {
 
     /// TODO
-    fn smtp_fail_if_err<S>(&mut self, response: Result<SmtpResponse, SmtpResponse>) {
+    fn smtp_fail_if_err<S>(&mut self, response: Result<Response, Response>) {
         match response {
             Err(response) => {
-                self.smtp_fail::<S, SmtpResponse>(response)
+                self.smtp_fail::<S, Response>(response)
             },
             Ok(_) => {}
         }
     }
 
     /// Connects to the configured server
-    pub fn connect(&mut self) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn connect(&mut self) -> Result<Response, Response> {
         // connect should not be called when the client is already connected
         if !self.stream.is_none() {
             fail!("The connection is already established");
@@ -110,7 +110,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     pub fn send_mail<S>(&mut self, from_address: String,
                         to_addresses: Vec<String>, message: String) {
         let my_hostname = self.my_hostname.clone();
-        let mut smtp_result: Result<SmtpResponse, SmtpResponse>;
+        let mut smtp_result: Result<Response, Response>;
 
         match self.connect() {
             Ok(_) => {},
@@ -122,12 +122,12 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
 
         // Extended Hello or Hello
         match self.ehlo::<S>(my_hostname.clone().to_string()) {
-            Err(SmtpResponse{code: 550, message: _}) => {
+            Err(Response{code: 550, message: _}) => {
                 smtp_result = self.helo::<S>(my_hostname.clone());
                 self.smtp_fail_if_err::<S>(smtp_result);
             },
             Err(response) => {
-                self.smtp_fail::<S, SmtpResponse>(response)
+                self.smtp_fail::<S, Response>(response)
             }
             _ => {}
         }
@@ -165,7 +165,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
         let sent = self.message::<S>(message);
 
         if sent.clone().is_err() {
-            self.smtp_fail::<S, SmtpResponse>(sent.clone().err().unwrap())
+            self.smtp_fail::<S, Response>(sent.clone().err().unwrap())
         }
 
         info!("to=<{}>, status=sent ({})",
@@ -178,7 +178,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
 
     /// Sends an SMTP command
     // TODO : ensure this is an ASCII string
-    fn send_command(&mut self, command: SmtpCommand) -> SmtpResponse {
+    fn send_command(&mut self, command: Command) -> Response {
         if !self.state.is_command_possible(command.clone()) {
             fail!("Bad command sequence");
         }
@@ -186,12 +186,12 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends an email
-    fn send_message(&mut self, message: String) -> SmtpResponse {
+    fn send_message(&mut self, message: String) -> Response {
         self.send_and_get_response(format!("{}{:s}.", message, CRLF).as_slice())
     }
 
     /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: &str) -> SmtpResponse {
+    fn send_and_get_response(&mut self, string: &str) -> Response {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
                 .write_str(format!("{:s}{:s}", string, CRLF).as_slice()) { // TODO improve this
             Ok(..)  => debug!("Wrote: {:s}", string),
@@ -205,12 +205,12 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Gets the SMTP response
-    fn get_reply(&mut self) -> Option<SmtpResponse> {
+    fn get_reply(&mut self) -> Option<Response> {
         let response = match self.read_to_string() {
             Ok(string) => string,
             Err(..)    => fail!("No answer")
         };
-        from_str::<SmtpResponse>(response.as_slice())
+        from_str::<Response>(response.as_slice())
     }
 
     /// Closes the connection and fail with a given messgage
@@ -242,11 +242,11 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Send a HELO command
-    pub fn helo<S>(&mut self, my_hostname: String) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn helo<S>(&mut self, my_hostname: String) -> Result<Response, Response> {
         match self.send_command(command::Hello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
-                    SmtpServerInfo{
+                    ServerInfo{
                         name: get_first_word(response.message.clone().unwrap()),
                         esmtp_features: None
                     }
@@ -259,13 +259,13 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a EHLO command
-    pub fn ehlo<S>(&mut self, my_hostname: String) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn ehlo<S>(&mut self, my_hostname: String) -> Result<Response, Response> {
         match self.send_command(command::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
-                    SmtpServerInfo{
+                    ServerInfo{
                         name: get_first_word(response.message.clone().unwrap()),
-                        esmtp_features: SmtpServerInfo::parse_esmtp_response(
+                        esmtp_features: ServerInfo::parse_esmtp_response(
                                             response.message.clone().unwrap()
                                         )
                     }
@@ -279,7 +279,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
 
     /// Sends a MAIL command
     pub fn mail<S>(&mut self, from_address: String,
-                   options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
+                   options: Option<Vec<String>>) -> Result<Response, Response> {
         match self.send_command(
             command::Mail(unquote_email_address(from_address.to_string()), options)
         ).with_code(vec!(250)) {
@@ -295,7 +295,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
 
     /// Sends a RCPT command
     pub fn rcpt<S>(&mut self, to_address: String,
-                   options: Option<Vec<String>>) -> Result<SmtpResponse, SmtpResponse> {
+                   options: Option<Vec<String>>) -> Result<Response, Response> {
         match self.send_command(
             command::Recipient(unquote_email_address(to_address.to_string()), options)
         ).with_code(vec!(250)) {
@@ -310,7 +310,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a DATA command
-    pub fn data<S>(&mut self) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn data<S>(&mut self) -> Result<Response, Response> {
         match self.send_command(command::Data).with_code(vec!(354)) {
             Ok(response) => {
                 self.state = transaction::DataSent;
@@ -323,7 +323,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends the message content
-    pub fn message<S>(&mut self, message_content: String) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn message<S>(&mut self, message_content: String) -> Result<Response, Response> {
         match self.send_message(message_content).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::HelloSent;
@@ -336,7 +336,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a QUIT command
-    pub fn quit<S>(&mut self) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn quit<S>(&mut self) -> Result<Response, Response> {
         match self.send_command(command::Quit).with_code(vec!(221)) {
             Ok(response) => {
                 Ok(response)
@@ -348,7 +348,7 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a RSET command
-    pub fn rset<S>(&mut self) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn rset<S>(&mut self) -> Result<Response, Response> {
         match self.send_command(command::Reset).with_code(vec!(250)) {
             Ok(response) => {
                 if vec!(transaction::MailSent, transaction::RecipientSent,
@@ -364,17 +364,17 @@ impl<S: Connecter + Reader + Writer + Clone> SmtpClient<S> {
     }
 
     /// Sends a NOOP commands
-    pub fn noop<S>(&mut self) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn noop<S>(&mut self) -> Result<Response, Response> {
         self.send_command(command::Noop).with_code(vec!(250))
     }
 
     /// Sends a VRFY command
-    pub fn vrfy<S, T>(&mut self, to_address: String) -> Result<SmtpResponse, SmtpResponse> {
+    pub fn vrfy<S, T>(&mut self, to_address: String) -> Result<Response, Response> {
         self.send_command(command::Verify(to_address, None)).with_code(vec!(250))
     }
 }
 
-impl<S: Reader + Clone> Reader for SmtpClient<S> {
+impl<S: Reader + Clone> Reader for Client<S> {
     /// Reads a string from the client socket
     fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
         self.stream.clone().unwrap().read(buf)
@@ -394,7 +394,7 @@ impl<S: Reader + Clone> Reader for SmtpClient<S> {
     }
 }
 
-impl<S: Writer + Clone> Writer for SmtpClient<S> {
+impl<S: Writer + Clone> Writer for Client<S> {
     /// Sends a string on the client socket
     fn write(&mut self, buf: &[u8]) -> IoResult<()> {
         self.stream.clone().unwrap().write(buf)

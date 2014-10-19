@@ -14,12 +14,12 @@ use std::io::net::tcp::TcpStream;
 use std::string::String;
 use std::io::net::ip::Port;
 use std::os;
-use smtp::client::SmtpClient;
+use smtp::client::Client;
 use getopts::{optopt,optflag,getopts,OptGroup,usage};
 
 fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, server: String, port: Option<Port>, my_hostname: Option<String>) {
-    let mut email_client: SmtpClient<TcpStream> =
-        SmtpClient::new(
+    let mut email_client: Client<TcpStream> =
+        Client::new(
             server,
             port,
             my_hostname);
