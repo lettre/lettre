@@ -26,10 +26,9 @@ use command::SmtpCommand;
 use common::{SMTP_PORT, CRLF};
 use transaction;
 use transaction::TransactionState;
-
 use client::connecter::Connecter;
 
-pub mod connecter;
+mod connecter;
 
 /// Information about an SMTP server
 #[deriving(Clone)]
