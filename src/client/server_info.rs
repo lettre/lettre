@@ -47,7 +47,7 @@ impl ServerInfo {
         let mut esmtp_features = Vec::new();
         for line in message.as_slice().split_str(CRLF) {
             match from_str::<Response>(line) {
-                Some(Response{code: 250, message: message}) => {
+                Some(Response{code: 250, message}) => {
                     match from_str::<Extension>(message.unwrap().as_slice()) {
                         Some(keyword) => esmtp_features.push(keyword),
                         None          => ()

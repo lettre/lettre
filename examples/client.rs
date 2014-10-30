@@ -58,7 +58,7 @@ fn main() {
     ];
     let matches = match getopts(args_string.tail(), opts) {
         Ok(m) => { m }
-        Err(f) => { fail!("{}", f) }
+        Err(f) => { panic!("{}", f) }
     };
     if matches.opt_present("h") {
         print_usage(description, opts);

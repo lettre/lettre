@@ -79,13 +79,13 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
     pub fn connect(&mut self) -> Result<Response, Response> {
         // connect should not be called when the client is already connected
         if !self.stream.is_none() {
-            fail!("The connection is already established");
+            panic!("The connection is already established");
         }
 
         // Try to connect
         self.stream = match Connecter::connect(self.host.clone().as_slice(), self.port) {
             Ok(stream) => Some(stream),
-            Err(..) => fail!("Cannot connect to the server")
+            Err(..) => panic!("Cannot connect to the server")
         };
 
         // Log the connection
@@ -102,7 +102,7 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
                                       Err(response)
                                   }
                               },
-            None           => fail!("No banner on {}", self.host)
+            None           => panic!("No banner on {}", self.host)
         }
     }
 
@@ -114,7 +114,7 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
 
         match self.connect() {
             Ok(_) => {},
-            Err(response) => fail!("Cannot connect to {:s}:{:u}. Server says: {}",
+            Err(response) => panic!("Cannot connect to {:s}:{:u}. Server says: {}",
                                     self.host,
                                     self.port, response
                              )
@@ -180,7 +180,7 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
     // TODO : ensure this is an ASCII string
     fn send_command(&mut self, command: Command) -> Response {
         if !self.state.is_command_possible(command.clone()) {
-            fail!("Bad command sequence");
+            panic!("Bad command sequence");
         }
         self.send_and_get_response(format!("{}", command).as_slice())
     }
@@ -195,12 +195,12 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
                 .write_str(format!("{:s}{:s}", string, CRLF).as_slice()) { // TODO improve this
             Ok(..)  => debug!("Wrote: {:s}", string),
-            Err(..) => fail!("Could not write to stream")
+            Err(..) => panic!("Could not write to stream")
         }
 
         match self.get_reply() {
             Some(response) => {debug!("Read: {}", response); response},
-            None           => fail!("No answer on {:s}", self.host)
+            None           => panic!("No answer on {:s}", self.host)
         }
     }
 
@@ -208,7 +208,7 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
     fn get_reply(&mut self) -> Option<Response> {
         let response = match self.read_to_string() {
             Ok(string) => string,
-            Err(..)    => fail!("No answer")
+            Err(..)    => panic!("No answer")
         };
         from_str::<Response>(response.as_slice())
     }
@@ -219,11 +219,11 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
         if is_connected {
             match self.quit::<S>() {
                 Ok(..) => {},
-                Err(response) => fail!("Failed: {}", response)
+                Err(response) => panic!("Failed: {}", response)
             }
         }
         self.close();
-        fail!("Failed: {}", reason);
+        panic!("Failed: {}", reason);
     }
 
     /// Checks if the server is connected
@@ -387,7 +387,7 @@ impl<S: Reader + Clone> Reader for Client<S> {
 
         let response = match self.read(buf) {
             Ok(bytes_read) => from_utf8(buf.slice_to(bytes_read - 1)).unwrap(),
-            Err(..)        => fail!("Read error")
+            Err(..)        => panic!("Read error")
         };
 
         return Ok(response.to_string());
