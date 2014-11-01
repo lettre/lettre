@@ -193,14 +193,14 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
     /// Sends a complete message or a command to the server and get the response
     fn send_and_get_response(&mut self, string: &str) -> Response {
         match (&mut self.stream.clone().unwrap() as &mut Writer)
-                .write_str(format!("{:s}{:s}", string, CRLF).as_slice()) { // TODO improve this
-            Ok(..)  => debug!("Wrote: {:s}", string),
+                .write_str(format!("{}", string).as_slice()) { // TODO improve this
+            Ok(..)  => debug!("Wrote: {}", string),
             Err(..) => panic!("Could not write to stream")
         }
 
         match self.get_reply() {
             Some(response) => {debug!("Read: {}", response); response},
-            None           => panic!("No answer on {:s}", self.host)
+            None           => panic!("No answer on {}", self.host)
         }
     }
 

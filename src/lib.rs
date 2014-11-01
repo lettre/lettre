@@ -52,7 +52,7 @@
 #![experimental]
 
 #![feature(phase)]
-#![deny(missing_doc, warnings)]
+#![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
