@@ -1,10 +1,12 @@
 //! TODO
 
-use response::Response;
 use std::io::net::tcp::TcpStream;
 use std::io::IoResult;
 use std::str::from_utf8;
 use std::vec::Vec;
+
+use response::Response;
+use common::escape_crlf;
 
 static BUFFER_SIZE: uint = 1024;
 
@@ -22,12 +24,12 @@ impl ClientStream for TcpStream {
     /// Sends a complete message or a command to the server and get the response
     fn send_and_get_response(&mut self, string: &str) -> Response {
         match self.write_str(format!("{}", string).as_slice()) {
-            Ok(..)  => debug!("Wrote: {}", string),
+            Ok(..)  => debug!("Wrote: {}", escape_crlf(string.to_string())),
             Err(..) => panic!("Could not write to stream")
         }
 
         match self.get_reply() {
-            Some(response) => {debug!("Read: {}", response); response},
+            Some(response) => response,
             None           => panic!("No answer")
         }
     }
@@ -55,7 +57,7 @@ impl ClientStream for TcpStream {
             };
             result.push_str(response);
         }
-        debug!("Read: {}", result);
+        debug!("Read: {}", escape_crlf(result.clone()));
         return Ok(result);
     }
 

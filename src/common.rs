@@ -66,6 +66,11 @@ pub fn get_first_word(string: String) -> String {
     string.as_slice().split_str(CRLF).next().unwrap().splitn(1, ' ').next().unwrap().to_string()
 }
 
+/// TODO
+pub fn escape_crlf(string: String) -> String {
+    string.replace(CRLF, "<CRLF>")
+}
+
 #[cfg(test)]
 mod test {
     #[test]
