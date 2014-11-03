@@ -63,17 +63,17 @@ impl ServerInfo {
     }
 
     /// Checks if the server supports an ESMTP feature
-    pub fn supports_feature(&self, keyword: Extension) -> Result<Extension, ()> {
+    pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
         match self.esmtp_features.clone() {
             Some(esmtp_features) => {
                 for feature in esmtp_features.iter() {
                     if keyword.same_extension_as(*feature) {
-                        return Ok(*feature);
+                        return Some(*feature);
                     }
                 }
-                Err({})
+                None
             },
-            None => Err({})
+            None => None
         }
     }
 }
@@ -118,18 +118,18 @@ mod test {
         assert_eq!(ServerInfo{
             name: String::from_str("name"),
             esmtp_features: Some(vec!(extension::EightBitMime))
-        }.supports_feature(extension::EightBitMime), Ok(extension::EightBitMime));
+        }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: String::from_str("name"),
             esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
-        }.supports_feature(extension::EightBitMime), Ok(extension::EightBitMime));
+        }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: String::from_str("name"),
             esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
-        }.supports_feature(extension::Size(0)), Ok(extension::Size(42)));
+        }.supports_feature(extension::Size(0)), Some(extension::Size(42)));
         assert!(ServerInfo{
             name: String::from_str("name"),
             esmtp_features: Some(vec!(extension::EightBitMime))
-        }.supports_feature(extension::Size(42)).is_err());
+        }.supports_feature(extension::Size(42)).is_none());
     }
 }

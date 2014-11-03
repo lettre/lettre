@@ -118,15 +118,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
-        if ! self.server_info.clone().unwrap().supports_feature(extension::EightBitMime).is_ok() {
-            if ! message.clone().to_string().is_ascii() {
+        if ! self.server_info.clone().unwrap().supports_feature(extension::EightBitMime).is_some() {
+            if ! message.clone().is_ascii() {
                 self.smtp_fail::<S, &str>("Server does not accepts UTF-8 strings");
             }
         }
 
         // Get maximum message size if defined
         let max_size = match self.server_info.clone().unwrap().supports_feature(extension::Size(0)) {
-            Ok(extension::Size(max)) => max,
+            Some(extension::Size(max)) => max,
             _ => -1
         };
 
