@@ -13,6 +13,7 @@
 
 use std::fmt::{Show, Formatter, Result};
 use common::{SP, CRLF};
+
 /// Supported SMTP commands
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
@@ -83,6 +84,26 @@ impl Show for Command {
     }
 }
 
+impl Command {
+    /// Tests if the Command is ASCII-only
+    pub fn is_ascii(&self) -> bool {
+        match *self {
+            ExtendedHello(ref my_hostname) => my_hostname.is_ascii(),
+            Hello(ref my_hostname) => my_hostname.is_ascii(),
+            Mail(ref from_address, None) => from_address.is_ascii(),
+            Mail(ref from_address, Some(ref options)) => from_address.is_ascii() && options.concat().is_ascii(),
+            Recipient(ref to_address, None) => to_address.is_ascii(),
+            Recipient(ref to_address, Some(ref options)) => to_address.is_ascii() && options.concat().is_ascii(),
+            Verify(ref address, None) => address.is_ascii(),
+            Verify(ref address, Some(ref options)) => address.is_ascii() && options.concat().is_ascii(),
+            Expand(ref address, None) => address.is_ascii(),
+            Expand(ref address, Some(ref options)) => address.is_ascii() && options.concat().is_ascii(),
+            Help(Some(ref argument)) => argument.is_ascii(),
+            _ => true
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use command;
@@ -106,5 +127,14 @@ mod test {
             format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string())))),
             format!("MAIL FROM:<test> option option2{}", CRLF)
         );
+    }
+
+    #[test]
+    fn test_is_ascii() {
+        assert!(command::Help(None).is_ascii());
+        assert!(command::ExtendedHello("my_name".to_string()).is_ascii());
+        assert!(!command::ExtendedHello("my_namé".to_string()).is_ascii());
+        assert!(command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string()))).is_ascii());
+        assert!(!command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2à".to_string()))).is_ascii());
     }
 }
