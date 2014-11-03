@@ -75,35 +75,17 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         }
     }
 
-    /// Connects to the configured server
-    pub fn connect(&mut self) -> Result<Response, Response> {
-        // connect should not be called when the client is already connected
-        if !self.stream.is_none() {
-            panic!("The connection is already established");
+    /// Closes the connection and fail with a given messgage
+    fn smtp_fail<S, T: Show>(&mut self, reason: T) {
+        let is_connected = self.is_connected::<S>();
+        if is_connected {
+            match self.quit::<S>() {
+                Ok(..) => {},
+                Err(response) => panic!("Failed: {}", response)
+            }
         }
-
-        // Try to connect
-        self.stream = match Connecter::connect(self.host.clone().as_slice(), self.port) {
-            Ok(stream) => Some(stream),
-            Err(..) => panic!("Cannot connect to the server")
-        };
-
-        // Log the connection
-        info!("Connection established to {}[{}]:{}",
-              self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
-
-        match self.stream.clone().unwrap().get_reply() {
-            Some(response) => match response.with_code(vec!(220)) {
-                                  Ok(response)  => {
-                                      self.state = transaction::Connected;
-                                      Ok(response)
-                                  },
-                                  Err(response) => {
-                                      Err(response)
-                                  }
-                              },
-            None           => panic!("No banner on {}", self.host)
-        }
+        self.close();
+        panic!("Failed: {}", reason);
     }
 
     /// Sends an email
@@ -142,12 +124,23 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             }
         }
 
+        // Get maximum message size if defined
+        let max_size = match self.server_info.clone().unwrap().supports_feature(extension::Size(0)) {
+            Ok(extension::Size(max)) => max,
+            _ => -1
+        };
+
+        // Check maximum message size
+        if max_size > 0 && message.len() > max_size {
+            self.smtp_fail::<S, &str>("Message is too big. The limit is {}");
+        }
+
         // Mail
         smtp_result = self.mail::<S>(from_address.clone(), None);
         self.smtp_fail_if_err::<S>(smtp_result);
 
         // Log the mail command
-        info!("from=<{}>, size={}, nrcpt={}", from_address, 42u, to_addresses.len());
+        info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
 
         // Recipient
         // TODO Return rejected addresses
@@ -185,22 +178,40 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         self.stream.clone().unwrap().send_and_get_response(format!("{}", command).as_slice())
     }
 
-    /// Sends an email
+    /// Sends the email content
     fn send_message(&mut self, message: String) -> Response {
         self.stream.clone().unwrap().send_and_get_response(format!("{}{}.{}", message, CRLF, CRLF).as_slice())
     }
 
-    /// Closes the connection and fail with a given messgage
-    fn smtp_fail<S, T: Show>(&mut self, reason: T) {
-        let is_connected = self.is_connected::<S>();
-        if is_connected {
-            match self.quit::<S>() {
-                Ok(..) => {},
-                Err(response) => panic!("Failed: {}", response)
-            }
+    /// Connects to the configured server
+    pub fn connect(&mut self) -> Result<Response, Response> {
+        // connect should not be called when the client is already connected
+        if !self.stream.is_none() {
+            panic!("The connection is already established");
         }
-        self.close();
-        panic!("Failed: {}", reason);
+
+        // Try to connect
+        self.stream = match Connecter::connect(self.host.clone().as_slice(), self.port) {
+            Ok(stream) => Some(stream),
+            Err(..) => panic!("Cannot connect to the server")
+        };
+
+        // Log the connection
+        info!("Connection established to {}[{}]:{}",
+              self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
+
+        match self.stream.clone().unwrap().get_reply() {
+            Some(response) => match response.with_code(vec!(220)) {
+                                  Ok(response)  => {
+                                      self.state = transaction::Connected;
+                                      Ok(response)
+                                  },
+                                  Err(response) => {
+                                      Err(response)
+                                  }
+                              },
+            None           => panic!("No banner on {}", self.host)
+        }
     }
 
     /// Checks if the server is connected
