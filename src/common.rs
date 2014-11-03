@@ -16,8 +16,9 @@ use std::string::String;
 
 /// Default SMTP port
 pub static SMTP_PORT: Port = 25;
-//pub static SMTPS_PORT: Port = 465;
-//pub static SUBMISSION_PORT: Port = 587;
+
+// Maximum length of an SMTP command line
+//pub static MAX_SMTP_LINE_LENGTH: uint = 1034;
 
 /// The word separator for SMTP transactions
 pub static SP: &'static str = " ";

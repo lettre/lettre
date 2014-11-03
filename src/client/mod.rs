@@ -10,10 +10,8 @@
 //! SMTP client
 
 use std::fmt::Show;
-use std::str::from_utf8;
 use std::result::Result;
 use std::string::String;
-use std::io::{IoResult, Reader, Writer};
 use std::io::net::ip::Port;
 
 use common::{get_first_word, unquote_email_address};
@@ -26,9 +24,11 @@ use transaction;
 use transaction::TransactionState;
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
+use client::stream::ClientStream;
 
 mod connecter;
 mod server_info;
+mod stream;
 
 /// Structure that implements the SMTP client
 pub struct Client<S> {
@@ -63,7 +63,7 @@ impl<S> Client<S> {
 }
 
 // T : String ou String, selon le support
-impl<S: Connecter + Reader + Writer + Clone> Client<S> {
+impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// TODO
     fn smtp_fail_if_err<S>(&mut self, response: Result<Response, Response>) {
@@ -92,7 +92,7 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
         info!("Connection established to {}[{}]:{}",
               self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
 
-        match self.get_reply() {
+        match self.stream.clone().unwrap().get_reply() {
             Some(response) => match response.with_code(vec!(220)) {
                                   Ok(response)  => {
                                       self.state = transaction::Connected;
@@ -182,35 +182,12 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
         if !self.state.is_command_possible(command.clone()) {
             panic!("Bad command sequence");
         }
-        self.send_and_get_response(format!("{}", command).as_slice())
+        self.stream.clone().unwrap().send_and_get_response(format!("{}", command).as_slice())
     }
 
     /// Sends an email
     fn send_message(&mut self, message: String) -> Response {
-        self.send_and_get_response(format!("{}{:s}.", message, CRLF).as_slice())
-    }
-
-    /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: &str) -> Response {
-        match (&mut self.stream.clone().unwrap() as &mut Writer)
-                .write_str(format!("{}", string).as_slice()) { // TODO improve this
-            Ok(..)  => debug!("Wrote: {}", string),
-            Err(..) => panic!("Could not write to stream")
-        }
-
-        match self.get_reply() {
-            Some(response) => {debug!("Read: {}", response); response},
-            None           => panic!("No answer on {}", self.host)
-        }
-    }
-
-    /// Gets the SMTP response
-    fn get_reply(&mut self) -> Option<Response> {
-        let response = match self.read_to_string() {
-            Ok(string) => string,
-            Err(..)    => panic!("No answer")
-        };
-        from_str::<Response>(response.as_slice())
+        self.stream.clone().unwrap().send_and_get_response(format!("{}{}.{}", message, CRLF, CRLF).as_slice())
     }
 
     /// Closes the connection and fail with a given messgage
@@ -371,37 +348,5 @@ impl<S: Connecter + Reader + Writer + Clone> Client<S> {
     /// Sends a VRFY command
     pub fn vrfy<S, T>(&mut self, to_address: String) -> Result<Response, Response> {
         self.send_command(command::Verify(to_address, None)).with_code(vec!(250))
-    }
-}
-
-impl<S: Reader + Clone> Reader for Client<S> {
-    /// Reads a string from the client socket
-    fn read(&mut self, buf: &mut [u8]) -> IoResult<uint> {
-        self.stream.clone().unwrap().read(buf)
-    }
-
-    /// Reads a string from the client socket
-    // TODO: Size of response ?.
-    fn read_to_string(&mut self) -> IoResult<String> {
-        let mut buf = [0u8, ..1034];
-
-        let response = match self.read(buf) {
-            Ok(bytes_read) => from_utf8(buf.slice_to(bytes_read - 1)).unwrap(),
-            Err(..)        => panic!("Read error")
-        };
-
-        return Ok(response.to_string());
-    }
-}
-
-impl<S: Writer + Clone> Writer for Client<S> {
-    /// Sends a string on the client socket
-    fn write(&mut self, buf: &[u8]) -> IoResult<()> {
-        self.stream.clone().unwrap().write(buf)
-    }
-
-    /// Sends a string on the client socket
-    fn write_str(&mut self, string: &str) -> IoResult<()> {
-        self.stream.clone().unwrap().write_str(string)
     }
 }
