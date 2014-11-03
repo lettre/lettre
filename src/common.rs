@@ -73,6 +73,8 @@ pub fn escape_crlf(string: String) -> String {
 
 #[cfg(test)]
 mod test {
+    use super::CRLF;
+
     #[test]
     fn test_quote_email_address() {
         assert_eq!(super::quote_email_address("address".to_string()), "<address>".to_string());
@@ -116,5 +118,12 @@ mod test {
         //assert_eq!(super::get_first_word("\r\n a".to_string()), "a".to_string());
         assert_eq!(super::get_first_word(" \r\n".to_string()), "".to_string());
         assert_eq!(super::get_first_word("\r\n ".to_string()), "".to_string());
+    }
+
+    #[test]
+    fn test_escape_crlf() {
+        assert_eq!(super::escape_crlf(format!("{}", CRLF)), "<CRLF>".to_string());
+        assert_eq!(super::escape_crlf(format!("EHLO my_name{}", CRLF)), "EHLO my_name<CRLF>".to_string());
+        assert_eq!(super::escape_crlf(format!("EHLO my_name{}SIZE 42{}", CRLF, CRLF)), "EHLO my_name<CRLF>SIZE 42<CRLF>".to_string());
     }
 }
