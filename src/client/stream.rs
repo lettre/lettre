@@ -23,8 +23,8 @@ pub trait ClientStream {
 impl ClientStream for TcpStream {
     /// Sends a complete message or a command to the server and get the response
     fn send_and_get_response(&mut self, string: &str, end: &str) -> Response {
-        match self.write_str(format!("{}{}", escape_dot(string.to_string()), end).as_slice()) {
-            Ok(..)  => debug!("Wrote: {}", escape_crlf(escape_dot(string.to_string()))),
+        match self.write_str(format!("{}{}", escape_dot(string), end).as_slice()) {
+            Ok(..)  => debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice())),
             Err(..) => panic!("Could not write to stream")
         }
 
@@ -57,7 +57,7 @@ impl ClientStream for TcpStream {
             };
             result.push_str(response);
         }
-        debug!("Read: {}", escape_crlf(result.clone()));
+        debug!("Read: {}", escape_crlf(result.as_slice()));
         return Ok(result);
     }
 

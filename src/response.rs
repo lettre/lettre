@@ -59,11 +59,11 @@ impl FromStr for Response {
             match (
                 from_str::<u16>(s.slice_to(3)),
                 vec!(" ", "-").contains(&s.slice(3,4)),
-                (remove_trailing_crlf(s.slice_from(4).to_string()))
+                (remove_trailing_crlf(s.slice_from(4)))
             ) {
                 (Some(code), true, message) => Some(Response{
                             code: code,
-                            message: Some(message)
+                            message: Some(message.to_string())
                         }),
                 _                           => None
 

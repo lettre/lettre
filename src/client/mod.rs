@@ -237,7 +237,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             Ok(response) => {
                 self.server_info = Some(
                     ServerInfo{
-                        name: get_first_word(response.message.clone().unwrap()),
+                        name: get_first_word(response.message.clone().unwrap().as_slice()).to_string(),
                         esmtp_features: None
                     }
                 );
@@ -254,7 +254,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             Ok(response) => {
                 self.server_info = Some(
                     ServerInfo{
-                        name: get_first_word(response.message.clone().unwrap()),
+                        name: get_first_word(response.message.clone().unwrap().as_slice()).to_string(),
                         esmtp_features: ServerInfo::parse_esmtp_response(
                                             response.message.clone().unwrap()
                                         )
@@ -271,7 +271,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     pub fn mail<S>(&mut self, from_address: String,
                    options: Option<Vec<String>>) -> Result<Response, Response> {
         match self.send_command(
-            command::Mail(unquote_email_address(from_address.to_string()), options)
+            command::Mail(unquote_email_address(from_address.as_slice()).to_string(), options)
         ).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::MailSent;
@@ -287,7 +287,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     pub fn rcpt<S>(&mut self, to_address: String,
                    options: Option<Vec<String>>) -> Result<Response, Response> {
         match self.send_command(
-            command::Recipient(unquote_email_address(to_address.to_string()), options)
+            command::Recipient(unquote_email_address(to_address.as_slice()).to_string(), options)
         ).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::RecipientSent;
