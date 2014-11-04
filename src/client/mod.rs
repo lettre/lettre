@@ -19,7 +19,7 @@ use response::Response;
 use extension;
 use command;
 use command::Command;
-use common::{SMTP_PORT, CRLF};
+use common::SMTP_PORT;
 use transaction;
 use transaction::TransactionState;
 use client::connecter::Connecter;
@@ -175,12 +175,12 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         if !self.state.is_command_possible(command.clone()) {
             panic!("Bad command sequence");
         }
-        self.stream.clone().unwrap().send_and_get_response(format!("{}", command).as_slice())
+        self.stream.clone().unwrap().send_and_get_response(format!("{}", command).as_slice(), false)
     }
 
     /// Sends the email content
     fn send_message(&mut self, message: String) -> Response {
-        self.stream.clone().unwrap().send_and_get_response(format!("{}{}.{}", message, CRLF, CRLF).as_slice())
+        self.stream.clone().unwrap().send_and_get_response(format!("{}", message).as_slice(), true)
     }
 
     /// Connects to the configured server

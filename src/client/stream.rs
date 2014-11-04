@@ -6,14 +6,14 @@ use std::str::from_utf8;
 use std::vec::Vec;
 
 use response::Response;
-use common::escape_crlf;
+use common::{escape_crlf, escape_dot, CRLF};
 
 static BUFFER_SIZE: uint = 1024;
 
 /// TODO
 pub trait ClientStream {
     /// TODO
-    fn send_and_get_response(&mut self, string: &str) -> Response;
+    fn send_and_get_response(&mut self, string: &str, is_message: bool) -> Response;
     /// TODO
     fn get_reply(&mut self) -> Option<Response>;
     /// TODO
@@ -22,9 +22,13 @@ pub trait ClientStream {
 
 impl ClientStream for TcpStream {
     /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: &str) -> Response {
-        match self.write_str(format!("{}", string).as_slice()) {
-            Ok(..)  => debug!("Wrote: {}", escape_crlf(string.to_string())),
+    fn send_and_get_response(&mut self, string: &str, is_message: bool) -> Response {
+        let end = match is_message {
+            true => format!("{}.{}", CRLF, CRLF),
+            false => format!("{}", CRLF)
+        };
+        match self.write_str(format!("{}{}", escape_dot(string.to_string()), end).as_slice()) {
+            Ok(..)  => debug!("Wrote: {}", escape_crlf(escape_dot(string.to_string()))),
             Err(..) => panic!("Could not write to stream")
         }
 

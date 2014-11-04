@@ -12,7 +12,7 @@
 //! Represents a valid complete SMTP command, ready to be sent to a server
 
 use std::fmt::{Show, Formatter, Result};
-use common::{SP, CRLF};
+use common::SP;
 
 /// Supported SMTP commands
 ///
@@ -49,7 +49,7 @@ pub enum Command {
 
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        let mut line = match *self {
+        f.write( match *self {
             Connect => "CONNECT".to_string(),
             ExtendedHello(ref my_hostname) =>
                 format!("EHLO {}", my_hostname.clone()),
@@ -78,9 +78,7 @@ impl Show for Command {
                 format!("HELP {}", argument.clone()),
             Noop => "NOOP".to_string(),
             Quit => "QUIT".to_string(),
-        };
-        line.push_str(CRLF);
-        f.write(line.as_bytes())
+        }.as_bytes())
     }
 }
 
@@ -107,25 +105,24 @@ impl Command {
 #[cfg(test)]
 mod test {
     use command;
-    use common::CRLF;
 
     #[test]
     fn test_fmt() {
         assert_eq!(
             format!("{}", command::Noop),
-            format!("NOOP{}", CRLF)
+            format!("NOOP")
         );
         assert_eq!(
             format!("{}", command::ExtendedHello("my_name".to_string())),
-            format!("EHLO my_name{}", CRLF)
+            format!("EHLO my_name")
         );
         assert_eq!(
             format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string())))),
-            format!("MAIL FROM:<test> option{}", CRLF)
+            format!("MAIL FROM:<test> option")
         );
         assert_eq!(
             format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string())))),
-            format!("MAIL FROM:<test> option option2{}", CRLF)
+            format!("MAIL FROM:<test> option option2")
         );
     }
 

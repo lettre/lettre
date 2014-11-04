@@ -25,6 +25,8 @@ pub static SP: &'static str = " ";
 
 /// The line ending for SMTP transactions
 pub static CRLF: &'static str = "\r\n";
+pub static CR: &'static str = "\r";
+pub static LF: &'static str = "\n";
 
 /// Adds quotes to emails if needed
 pub fn quote_email_address(address: String) -> String {
@@ -66,14 +68,27 @@ pub fn get_first_word(string: String) -> String {
     string.as_slice().split_str(CRLF).next().unwrap().splitn(1, ' ').next().unwrap().to_string()
 }
 
-/// TODO
+/// Returns the string replacing all the CRLF with "<CRLF>"
+#[inline]
 pub fn escape_crlf(string: String) -> String {
-    string.replace(CRLF, "<CRLF>")
+    string.replace(CRLF, "<CR><LF>")
+}
+
+/// Returns the string after adding a dot at the beginning of each line starting with a dot
+/// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
+#[inline]
+pub fn escape_dot(string: String) -> String {
+    if string.len() > 0 && string.chars().next().unwrap() == '.' {
+        format!(".{}", string)
+    } else {
+        string
+    }.replace(format!("{}.", CR).as_slice(), format!("{}..", CR).as_slice())
+     .replace(format!("{}.", LF).as_slice(), format!("{}..", LF).as_slice())
 }
 
 #[cfg(test)]
 mod test {
-    use super::CRLF;
+    use super::{CRLF, CR, LF};
 
     #[test]
     fn test_quote_email_address() {
@@ -122,8 +137,17 @@ mod test {
 
     #[test]
     fn test_escape_crlf() {
-        assert_eq!(super::escape_crlf(format!("{}", CRLF)), "<CRLF>".to_string());
-        assert_eq!(super::escape_crlf(format!("EHLO my_name{}", CRLF)), "EHLO my_name<CRLF>".to_string());
-        assert_eq!(super::escape_crlf(format!("EHLO my_name{}SIZE 42{}", CRLF, CRLF)), "EHLO my_name<CRLF>SIZE 42<CRLF>".to_string());
+        assert_eq!(super::escape_crlf(format!("{}", CRLF)), "<CR><LF>".to_string());
+        assert_eq!(super::escape_crlf(format!("EHLO my_name{}", CRLF)), "EHLO my_name<CR><LF>".to_string());
+        assert_eq!(super::escape_crlf(format!("EHLO my_name{}SIZE 42{}", CRLF, CRLF)), "EHLO my_name<CR><LF>SIZE 42<CR><LF>".to_string());
+    }
+
+    #[test]
+    fn test_escape_dot() {
+        assert_eq!(super::escape_dot(".test".to_string()), "..test".to_string());
+        assert_eq!(super::escape_dot(format!("{}.{}.{}", CR, LF, CRLF)), format!("{}..{}..{}", CR, LF, CRLF));
+        assert_eq!(super::escape_dot(format!("{}.{}.{}", CRLF, CRLF, CRLF)), format!("{}..{}..{}", CRLF, CRLF, CRLF));
+        assert_eq!(super::escape_dot(format!("test{}.test{}", CRLF, CRLF)), format!("test{}..test{}", CRLF, CRLF));
+        assert_eq!(super::escape_dot(format!("test{}.{}test", CRLF, CRLF)), format!("test{}..{}test", CRLF, CRLF));
     }
 }
