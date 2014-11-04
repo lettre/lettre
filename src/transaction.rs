@@ -9,6 +9,8 @@
 
 //! SMTP commands and ESMTP features library
 
+#![unstable]
+
 use std::fmt;
 use std::fmt::{Show, Formatter};
 use command;
@@ -47,7 +49,7 @@ impl Show for TransactionState {
 }
 
 impl TransactionState {
-    /// bla bla
+    /// TODO
     pub fn is_command_possible(&self, command: Command) -> bool {
         match (*self, command) {
             (Unconnected, command::Connect) => true,
@@ -73,7 +75,7 @@ impl TransactionState {
         }
     }
 
-    /// a method
+    /// TODO
     pub fn next_state(&mut self, command: Command) -> Option<TransactionState> {
         match (*self, command) {
             (Unconnected, command::Connect) => Some(Connected),

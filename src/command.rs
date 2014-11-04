@@ -7,9 +7,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![unstable]
-
 //! Represents a valid complete SMTP command, ready to be sent to a server
+
+#![unstable]
 
 use std::fmt::{Show, Formatter, Result};
 use common::SP;
