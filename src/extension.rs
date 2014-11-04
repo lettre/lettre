@@ -76,27 +76,26 @@ impl Extension {
 
 #[cfg(test)]
 mod test {
-    use extension;
-    use extension::Extension;
+    use super::Extension;
 
     #[test]
     fn test_same_extension_as() {
-        assert_eq!(extension::EightBitMime.same_extension_as(extension::EightBitMime), true);
-        assert_eq!(extension::Size(42).same_extension_as(extension::Size(42)), true);
-        assert_eq!(extension::Size(42).same_extension_as(extension::Size(43)), true);
-        assert_eq!(extension::Size(42).same_extension_as(extension::EightBitMime), false);
+        assert_eq!(super::EightBitMime.same_extension_as(super::EightBitMime), true);
+        assert_eq!(super::Size(42).same_extension_as(super::Size(42)), true);
+        assert_eq!(super::Size(42).same_extension_as(super::Size(43)), true);
+        assert_eq!(super::Size(42).same_extension_as(super::EightBitMime), false);
     }
 
     #[test]
     fn test_fmt() {
-        assert_eq!(format!("{}", extension::EightBitMime), "8BITMIME".to_string());
-        assert_eq!(format!("{}", extension::Size(42)), "SIZE=42".to_string());
+        assert_eq!(format!("{}", super::EightBitMime), "8BITMIME".to_string());
+        assert_eq!(format!("{}", super::Size(42)), "SIZE=42".to_string());
     }
 
     #[test]
     fn test_from_str() {
-        assert_eq!(from_str::<Extension>("8BITMIME"), Some(extension::EightBitMime));
-        assert_eq!(from_str::<Extension>("SIZE 42"), Some(extension::Size(42)));
+        assert_eq!(from_str::<Extension>("8BITMIME"), Some(super::EightBitMime));
+        assert_eq!(from_str::<Extension>("SIZE 42"), Some(super::Size(42)));
         assert_eq!(from_str::<Extension>("SIZ 42"), None);
         assert_eq!(from_str::<Extension>("SIZE 4a2"), None);
         // TODO: accept trailing spaces ?

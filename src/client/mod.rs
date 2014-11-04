@@ -15,11 +15,11 @@ use std::string::String;
 use std::io::net::ip::Port;
 
 use common::{get_first_word, unquote_email_address};
+use common::{CRLF, SMTP_PORT};
 use response::Response;
 use extension;
 use command;
 use command::Command;
-use common::{CRLF, SMTP_PORT};
 use transaction;
 use transaction::TransactionState;
 use client::connecter::Connecter;

@@ -87,7 +87,7 @@ impl Response {
 
 #[cfg(test)]
 mod test {
-    use response::Response;
+    use super::Response;
 
     #[test]
     fn test_fmt() {

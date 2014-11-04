@@ -89,9 +89,11 @@ impl Command {
             ExtendedHello(ref my_hostname) => my_hostname.is_ascii(),
             Hello(ref my_hostname) => my_hostname.is_ascii(),
             Mail(ref from_address, None) => from_address.is_ascii(),
-            Mail(ref from_address, Some(ref options)) => from_address.is_ascii() && options.concat().is_ascii(),
+            Mail(ref from_address, Some(ref options)) => from_address.is_ascii()
+                                                         && options.concat().is_ascii(),
             Recipient(ref to_address, None) => to_address.is_ascii(),
-            Recipient(ref to_address, Some(ref options)) => to_address.is_ascii() && options.concat().is_ascii(),
+            Recipient(ref to_address, Some(ref options)) => to_address.is_ascii()
+                                                            && options.concat().is_ascii(),
             Verify(ref address, None) => address.is_ascii(),
             Verify(ref address, Some(ref options)) => address.is_ascii() && options.concat().is_ascii(),
             Expand(ref address, None) => address.is_ascii(),
@@ -104,34 +106,37 @@ impl Command {
 
 #[cfg(test)]
 mod test {
-    use command;
-
     #[test]
     fn test_fmt() {
         assert_eq!(
-            format!("{}", command::Noop),
+            format!("{}", super::Noop),
             format!("NOOP")
         );
         assert_eq!(
-            format!("{}", command::ExtendedHello("my_name".to_string())),
+            format!("{}", super::ExtendedHello("my_name".to_string())),
             format!("EHLO my_name")
         );
         assert_eq!(
-            format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string())))),
+            format!("{}", super::Mail("test".to_string(), Some(vec!("option".to_string())))),
             format!("MAIL FROM:<test> option")
         );
         assert_eq!(
-            format!("{}", command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string())))),
+            format!("{}", super::Mail("test".to_string(),
+                          Some(vec!("option".to_string(), "option2".to_string())))),
             format!("MAIL FROM:<test> option option2")
         );
     }
 
     #[test]
     fn test_is_ascii() {
-        assert!(command::Help(None).is_ascii());
-        assert!(command::ExtendedHello("my_name".to_string()).is_ascii());
-        assert!(!command::ExtendedHello("my_namé".to_string()).is_ascii());
-        assert!(command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string()))).is_ascii());
-        assert!(!command::Mail("test".to_string(), Some(vec!("option".to_string(), "option2à".to_string()))).is_ascii());
+        assert!(super::Help(None).is_ascii());
+        assert!(super::ExtendedHello("my_name".to_string()).is_ascii());
+        assert!(!super::ExtendedHello("my_namé".to_string()).is_ascii());
+        assert!(
+            super::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string())))
+        .is_ascii());
+        assert!(
+            !super::Mail("test".to_string(), Some(vec!("option".to_string(), "option2à".to_string())))
+        .is_ascii());
     }
 }

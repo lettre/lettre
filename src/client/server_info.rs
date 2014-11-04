@@ -32,7 +32,7 @@ impl Show for ServerInfo {
                 self.name,
                 match self.esmtp_features.clone() {
                     Some(features) => features.to_string(),
-                    None => format!("no supported features")
+                    None => "no supported features".to_string()
                 }
             ).as_bytes()
         )

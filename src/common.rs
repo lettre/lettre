@@ -89,63 +89,69 @@ pub fn escape_dot(string: &str) -> String {
 
 #[cfg(test)]
 mod test {
+    use super::{quote_email_address, unquote_email_address,
+                remove_trailing_crlf, get_first_word, escape_crlf, escape_dot};
+
     #[test]
     fn test_quote_email_address() {
-        assert_eq!(super::quote_email_address("address").as_slice(), "<address>");
-        assert_eq!(super::quote_email_address("<address>").as_slice(), "<address>");
-        assert_eq!(super::quote_email_address("a").as_slice(), "<a>");
-        assert_eq!(super::quote_email_address("").as_slice(), "<>");
+        assert_eq!(quote_email_address("address").as_slice(), "<address>");
+        assert_eq!(quote_email_address("<address>").as_slice(), "<address>");
+        assert_eq!(quote_email_address("a").as_slice(), "<a>");
+        assert_eq!(quote_email_address("").as_slice(), "<>");
     }
 
     #[test]
     fn test_unquote_email_address() {
-        assert_eq!(super::unquote_email_address("<address>"), "address");
-        assert_eq!(super::unquote_email_address("address"), "address");
-        assert_eq!(super::unquote_email_address("<address"), "<address");
-        assert_eq!(super::unquote_email_address("<>"), "");
-        assert_eq!(super::unquote_email_address("a"), "a");
-        assert_eq!(super::unquote_email_address(""), "");
+        assert_eq!(unquote_email_address("<address>"), "address");
+        assert_eq!(unquote_email_address("address"), "address");
+        assert_eq!(unquote_email_address("<address"), "<address");
+        assert_eq!(unquote_email_address("<>"), "");
+        assert_eq!(unquote_email_address("a"), "a");
+        assert_eq!(unquote_email_address(""), "");
     }
 
     #[test]
     fn test_remove_trailing_crlf() {
-        assert_eq!(super::remove_trailing_crlf("word"), "word");
-        assert_eq!(super::remove_trailing_crlf("word\r\n"), "word");
-        assert_eq!(super::remove_trailing_crlf("word\r\n "), "word\r\n ");
-        assert_eq!(super::remove_trailing_crlf("word\r"), "word");
-        assert_eq!(super::remove_trailing_crlf("\r\n"), "");
-        assert_eq!(super::remove_trailing_crlf("\r"), "");
-        assert_eq!(super::remove_trailing_crlf("a"), "a");
-        assert_eq!(super::remove_trailing_crlf(""), "");
+        assert_eq!(remove_trailing_crlf("word"), "word");
+        assert_eq!(remove_trailing_crlf("word\r\n"), "word");
+        assert_eq!(remove_trailing_crlf("word\r\n "), "word\r\n ");
+        assert_eq!(remove_trailing_crlf("word\r"), "word");
+        assert_eq!(remove_trailing_crlf("\r\n"), "");
+        assert_eq!(remove_trailing_crlf("\r"), "");
+        assert_eq!(remove_trailing_crlf("a"), "a");
+        assert_eq!(remove_trailing_crlf(""), "");
     }
 
     #[test]
     fn test_get_first_word() {
-        assert_eq!(super::get_first_word("first word"), "first");
-        assert_eq!(super::get_first_word("first word\r\ntest"), "first");
-        assert_eq!(super::get_first_word("first"), "first");
-        assert_eq!(super::get_first_word(""), "");
-        assert_eq!(super::get_first_word("\r\n"), "");
-        assert_eq!(super::get_first_word("a\r\n"), "a");
+        assert_eq!(get_first_word("first word"), "first");
+        assert_eq!(get_first_word("first word\r\ntest"), "first");
+        assert_eq!(get_first_word("first"), "first");
+        assert_eq!(get_first_word(""), "");
+        assert_eq!(get_first_word("\r\n"), "");
+        assert_eq!(get_first_word("a\r\n"), "a");
         // Manage cases of empty line, spaces at the beginning
-        //assert_eq!(super::get_first_word(" a"), "a");
-        //assert_eq!(super::get_first_word("\r\n a"), "a");
-        assert_eq!(super::get_first_word(" \r\n"), "");
-        assert_eq!(super::get_first_word("\r\n "), "");
+        //assert_eq!(get_first_word(" a"), "a");
+        //assert_eq!(get_first_word("\r\n a"), "a");
+        assert_eq!(get_first_word(" \r\n"), "");
+        assert_eq!(get_first_word("\r\n "), "");
     }
 
     #[test]
     fn test_escape_crlf() {
-        assert_eq!(super::escape_crlf("\r\n").as_slice(), "<CR><LF>");
-        assert_eq!(super::escape_crlf("EHLO my_name\r\n").as_slice(), "EHLO my_name<CR><LF>");
-        assert_eq!(super::escape_crlf("EHLO my_name\r\nSIZE 42\r\n").as_slice(), "EHLO my_name<CR><LF>SIZE 42<CR><LF>");
+        assert_eq!(escape_crlf("\r\n").as_slice(), "<CR><LF>");
+        assert_eq!(escape_crlf("EHLO my_name\r\n").as_slice(), "EHLO my_name<CR><LF>");
+        assert_eq!(
+            escape_crlf("EHLO my_name\r\nSIZE 42\r\n").as_slice(),
+            "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
+        );
     }
 
     #[test]
     fn test_escape_dot() {
-        assert_eq!(super::escape_dot(".test").as_slice(), "..test");
-        assert_eq!(super::escape_dot("\r.\n.\r\n").as_slice(), "\r..\n..\r\n");
-        assert_eq!(super::escape_dot("test\r\n.test\r\n").as_slice(), "test\r\n..test\r\n");
-        assert_eq!(super::escape_dot("test\r\n.\r\ntest").as_slice(), "test\r\n..\r\ntest");
+        assert_eq!(escape_dot(".test").as_slice(), "..test");
+        assert_eq!(escape_dot("\r.\n.\r\n").as_slice(), "\r..\n..\r\n");
+        assert_eq!(escape_dot("test\r\n.test\r\n").as_slice(), "test\r\n..test\r\n");
+        assert_eq!(escape_dot("test\r\n.\r\ntest").as_slice(), "test\r\n..\r\ntest");
     }
 }
