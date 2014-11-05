@@ -20,6 +20,7 @@ pub struct ServerInfo {
     /// Server name
     pub name: String,
     /// ESMTP features supported by the server
+    /// The `None` value means the server does not support ESMTP
     pub esmtp_features: Option<Vec<Extension>>
 }
 

@@ -27,8 +27,8 @@ use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
 
+pub mod server_info;
 mod connecter;
-mod server_info;
 mod stream;
 
 /// Structure that implements the SMTP client
@@ -97,7 +97,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
         match self.connect() {
             Ok(_) => {},
-            Err(response) => panic!("Cannot connect to {:s}:{:u}. Server says: {}",
+            Err(response) => panic!("Cannot connect to {}:{}. Server says: {}",
                                     self.host,
                                     self.port, response
                              )
@@ -116,25 +116,6 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         }
 
         debug!("Server {}", self.server_info.clone().unwrap());
-
-        // Checks message encoding according to the server's capability
-        // TODO : Add an encoding check.
-        if ! self.server_info.clone().unwrap().supports_feature(extension::EightBitMime).is_some() {
-            if ! message.clone().is_ascii() {
-                self.smtp_fail::<S, &str>("Server does not accepts UTF-8 strings");
-            }
-        }
-
-        // Get maximum message size if defined
-        let max_size = match self.server_info.clone().unwrap().supports_feature(extension::Size(0)) {
-            Some(extension::Size(max)) => max,
-            _ => -1
-        };
-
-        // Check maximum message size
-        if max_size > 0 && message.len() > max_size {
-            self.smtp_fail::<S, &str>("Message is too big. The limit is {}");
-        }
 
         // Mail
         smtp_result = self.mail::<S>(from_address.clone(), None);
@@ -156,7 +137,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         self.smtp_fail_if_err::<S>(smtp_result);
 
         // Message content
-        let sent = self.message::<S>(message);
+        let sent = self.message::<S>(message.as_slice());
 
         if sent.clone().is_err() {
             self.smtp_fail::<S, Response>(sent.clone().err().unwrap())
@@ -173,6 +154,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Sends an SMTP command
     // TODO : ensure this is an ASCII string
     fn send_command(&mut self, command: Command) -> Response {
+        if !command.is_ascii() {
+            panic!("Non-ASCII string: {}", command);
+        }
         if !self.state.is_command_possible(command.clone()) {
             panic!("Bad command sequence");
         }
@@ -181,7 +165,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends the email content
-    fn send_message(&mut self, message: String) -> Response {
+    fn send_message(&mut self, message: &str) -> Response {
         self.stream.clone().unwrap().send_and_get_response(format!("{}", message).as_slice(),
                                                            format!("{}.{}", CRLF, CRLF).as_slice())
     }
@@ -314,7 +298,23 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends the message content
-    pub fn message<S>(&mut self, message_content: String) -> Result<Response, Response> {
+    pub fn message<S>(&mut self, message_content: &str) -> Result<Response, Response> {
+        let server_info = self.server_info.clone().expect("Bad command sequence");
+        // Get maximum message size if defined and compare to the message size
+        match server_info.supports_feature(extension::Size(0)) {
+            Some(extension::Size(max)) if message_content.len() > max =>
+                self.smtp_fail::<S, String>(format!("Message is too big. The limit is {}", max)),
+            _ => ()
+        };
+
+        // Checks message encoding according to the server's capability
+        // TODO : Add an encoding check.
+        if ! server_info.supports_feature(extension::EightBitMime).is_some() {
+            if ! message_content.clone().is_ascii() {
+                self.smtp_fail::<S, &str>("Server does not accepts UTF-8 strings");
+            }
+        }
+
         match self.send_message(message_content).with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::HelloSent;
