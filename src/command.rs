@@ -12,6 +12,7 @@
 #![unstable]
 
 use std::fmt::{Show, Formatter, Result};
+
 use common::SP;
 
 /// Supported SMTP commands
@@ -110,20 +111,20 @@ mod test {
     fn test_fmt() {
         assert_eq!(
             format!("{}", super::Noop),
-            format!("NOOP")
+            "NOOP".to_string()
         );
         assert_eq!(
             format!("{}", super::ExtendedHello("my_name".to_string())),
-            format!("EHLO my_name")
+            "EHLO my_name".to_string()
         );
         assert_eq!(
             format!("{}", super::Mail("test".to_string(), Some(vec!("option".to_string())))),
-            format!("MAIL FROM:<test> option")
+            "MAIL FROM:<test> option".to_string()
         );
         assert_eq!(
             format!("{}", super::Mail("test".to_string(),
                           Some(vec!("option".to_string(), "option2".to_string())))),
-            format!("MAIL FROM:<test> option option2")
+            "MAIL FROM:<test> option option2".to_string()
         );
     }
 

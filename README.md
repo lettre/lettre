@@ -11,11 +11,10 @@ This library is designed for Rust 0.13.0-nightly (master).
 Install
 -------
 
-If you're using `Cargo`, just add this to your `Cargo.toml`:
+If you're using the library in a program, just add this to your `Cargo.toml`:
 
 ```toml
 [dependencies.smtp]
-
 git = "https://github.com/amousset/rust-smtp.git"
 ```
 
@@ -33,12 +32,12 @@ INFO:smtp::client: from=<sender@localhost>, size=989, nrcpt=1
 INFO:smtp::client: to=<recipient@localhost>, status=sent (250 2.0.0 Ok: queued as 9D28F1C0A51)
 ```
 
-Run `./target/examples/client -h` to get a list of options.
+Run `./target/examples/client -h` to get a list of available options.
 
 Documentation
 -------------
 
-The documentation is available on [GitHub pages](http://amousset.github.io/rust-smtp/smtp/).
+You can build the documentation with `cargo doc`. It is also available on [GitHub pages](http://amousset.github.io/rust-smtp/smtp/).
 
 License
 -------

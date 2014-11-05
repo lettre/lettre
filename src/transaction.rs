@@ -13,6 +13,7 @@
 
 use std::fmt;
 use std::fmt::{Show, Formatter};
+
 use command;
 use command::Command;
 
