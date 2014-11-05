@@ -18,6 +18,7 @@ use common::{get_first_word, unquote_email_address};
 use common::{CRLF, SMTP_PORT};
 use response::Response;
 use extension;
+use extension::Extension;
 use command;
 use command::Command;
 use transaction;
@@ -255,8 +256,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
                 self.server_info = Some(
                     ServerInfo{
                         name: get_first_word(response.message.clone().unwrap().as_slice()).to_string(),
-                        esmtp_features: ServerInfo::parse_esmtp_response(
-                                            response.message.clone().unwrap()
+                        esmtp_features: Extension::parse_esmtp_response(
+                                            response.message.clone().unwrap().as_slice()
                                         )
                     }
                 );

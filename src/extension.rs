@@ -14,6 +14,9 @@
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 
+use common::{CRLF};
+use response::Response;
+
 /// Supported ESMTP keywords
 #[deriving(PartialEq,Eq,Clone)]
 pub enum Extension {
@@ -44,6 +47,7 @@ impl Show for Extension {
 }
 
 impl FromStr for Extension {
+    // TODO: check RFC
     fn from_str(s: &str) -> Option<Extension> {
         let splitted : Vec<&str> = s.splitn(1, ' ').collect();
         match splitted.len() {
@@ -72,19 +76,30 @@ impl Extension {
             _                  => false
         }
     }
+
+    /// Parses supported ESMTP features
+    ///
+    /// TODO: Improve parsing, check RFC
+    pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
+        let mut esmtp_features = Vec::new();
+        for line in message.split_str(CRLF) {
+            match from_str::<Response>(line) {
+                Some(Response{code: 250, message}) => {
+                    match from_str::<Extension>(message.unwrap().as_slice()) {
+                        Some(keyword) => esmtp_features.push(keyword),
+                        None          => ()
+                    }
+                },
+                _ => ()
+            }
+        }
+        Some(esmtp_features)
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::Extension;
-
-    #[test]
-    fn test_same_extension_as() {
-        assert_eq!(super::EightBitMime.same_extension_as(super::EightBitMime), true);
-        assert_eq!(super::Size(42).same_extension_as(super::Size(42)), true);
-        assert_eq!(super::Size(42).same_extension_as(super::Size(43)), true);
-        assert_eq!(super::Size(42).same_extension_as(super::EightBitMime), false);
-    }
 
     #[test]
     fn test_fmt() {
@@ -100,5 +115,27 @@ mod test {
         assert_eq!(from_str::<Extension>("SIZE 4a2"), None);
         // TODO: accept trailing spaces ?
         assert_eq!(from_str::<Extension>("SIZE 42 "), None);
+    }
+
+    #[test]
+    fn test_same_extension_as() {
+        assert_eq!(super::EightBitMime.same_extension_as(super::EightBitMime), true);
+        assert_eq!(super::Size(42).same_extension_as(super::Size(42)), true);
+        assert_eq!(super::Size(42).same_extension_as(super::Size(43)), true);
+        assert_eq!(super::Size(42).same_extension_as(super::EightBitMime), false);
+    }
+
+    #[test]
+    fn test_parse_esmtp_response() {
+        assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
+            Some(vec!(super::EightBitMime, super::Size(42))));
+        assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
+            Some(vec!(super::EightBitMime)));
+        assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
+            Some(vec!()));
+        assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
+            Some(vec!(super::Size(42), super::Size(43))));
+        assert_eq!(Extension::parse_esmtp_response(""),
+            Some(vec!()));
     }
 }

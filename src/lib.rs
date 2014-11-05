@@ -42,8 +42,7 @@
 //! );
 //! ```
 
-#![crate_type = "rlib"]
-#![crate_type = "dylib"]
+#![crate_type = "lib"]
 
 #![desc = "Rust SMTP library"]
 #![comment = "Simple SMTP client and library"]
