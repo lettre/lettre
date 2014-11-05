@@ -34,11 +34,11 @@
 //! use std::string::String;
 //!
 //! let mut email_client: SmtpClient<TcpStream> =
-//!     SmtpClient::new(String::from_str("localhost"), None, None);
+//!     SmtpClient::new("localhost".to_string(), None, None);
 //! email_client.send_mail::<TcpStream>(
-//!     String::from_str("user@example.com"),
-//!     vec!(String::from_str("user@example.org")),
-//!     String::from_str("Test email")
+//!     "user@example.com".to_string(),
+//!     vec!("user@example.org".to_string()),
+//!     "Test email".to_string()
 //! );
 //! ```
 

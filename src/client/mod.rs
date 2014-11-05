@@ -56,7 +56,7 @@ impl<S> Client<S> {
             stream: None,
             host: host,
             port: port.unwrap_or(SMTP_PORT),
-            my_hostname: my_hostname.unwrap_or(String::from_str("localhost")),
+            my_hostname: my_hostname.unwrap_or("localhost".to_string()),
             server_info: None,
             state: transaction::Unconnected
         }

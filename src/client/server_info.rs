@@ -62,15 +62,15 @@ mod test {
     #[test]
     fn test_fmt() {
         assert_eq!(format!("{}", ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::EightBitMime))
         }), "name with [8BITMIME]".to_string());
         assert_eq!(format!("{}", ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::EightBitMime, extension::Size(42)))
         }), "name with [8BITMIME, SIZE=42]".to_string());
         assert_eq!(format!("{}", ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: None
         }), "name with no supported features".to_string());
     }
@@ -78,19 +78,19 @@ mod test {
     #[test]
     fn test_supports_feature() {
         assert_eq!(ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::EightBitMime))
         }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
         assert_eq!(ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
         }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
         assert_eq!(ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::Size(42), extension::EightBitMime))
         }.supports_feature(extension::Size(0)), Some(extension::Size(42)));
         assert!(ServerInfo{
-            name: String::from_str("name"),
+            name: "name".to_string(),
             esmtp_features: Some(vec!(extension::EightBitMime))
         }.supports_feature(extension::Size(42)).is_none());
     }
