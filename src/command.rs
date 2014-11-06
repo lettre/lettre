@@ -24,6 +24,8 @@ use common::SP;
 pub enum Command {
     /// A fake command to represent the connection step
     Connect,
+    /// Start a TLS tunnel
+    StartTls,
     /// Extended Hello command
     ExtendedHello(String),
     /// Hello command
@@ -51,6 +53,7 @@ pub enum Command {
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write( match *self {
+            StartTls => "STARTTLS".to_string(),
             Connect => "CONNECT".to_string(),
             ExtendedHello(ref my_hostname) =>
                 format!("EHLO {}", my_hostname.clone()),

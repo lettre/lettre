@@ -28,6 +28,10 @@ pub enum Extension {
     ///
     /// RFC 6531 : https://tools.ietf.org/html/rfc6531
     SmtpUtfEight,
+    /// STARTTLS keyword
+    ///
+    /// RFC 2487 : http://tools.ietf.org/html/rfc2487
+    StartTls,
     /// SIZE keyword
     ///
     /// RFC 1427 : https://tools.ietf.org/html/rfc1427
@@ -40,6 +44,7 @@ impl Show for Extension {
             match self {
                 &EightBitMime   => "8BITMIME".to_string(),
                 &SmtpUtfEight   => "SMTPUTF8".to_string(),
+                &StartTls       => "STARTTLS".to_string(),
                 &Size(ref size) => format!("SIZE={}", size)
             }.as_bytes()
         )
@@ -54,6 +59,7 @@ impl FromStr for Extension {
             1 => match splitted[0] {
                      "8BITMIME" => Some(EightBitMime),
                      "SMTPUTF8" => Some(SmtpUtfEight),
+                     "STARTTLS" => Some(StartTls),
                      _          => None
                  },
             2 => match (splitted[0], from_str::<uint>(splitted[1])) {
