@@ -63,7 +63,6 @@ impl<S> Client<S> {
     }
 }
 
-// T : String ou String, selon le support
 impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// TODO

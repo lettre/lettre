@@ -29,7 +29,7 @@ pub trait Connecter {
 
 impl Connecter for TcpStream {
     fn connect(host: &str, port: u16) -> IoResult<TcpStream> {
-        TcpStream::connect(host, port)
+        TcpStream::connect((host, port))
     }
 
     fn peer_name(&mut self) -> IoResult<SocketAddr> {

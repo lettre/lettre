@@ -19,7 +19,7 @@ use common::SP;
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
 /// and must not be used by clients:
-/// SEND, SOML, SAML, TURN
+/// `SEND`, `SOML`, `SAML`, `TURN`
 #[deriving(PartialEq,Eq,Clone)]
 pub enum Command {
     /// A fake command to represent the connection step
@@ -53,8 +53,8 @@ pub enum Command {
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write( match *self {
-            StartTls => "STARTTLS".to_string(),
             Connect => "CONNECT".to_string(),
+            StartTls => "STARTTLS".to_string(),
             ExtendedHello(ref my_hostname) =>
                 format!("EHLO {}", my_hostname.clone()),
             Hello(ref my_hostname) =>
@@ -87,7 +87,7 @@ impl Show for Command {
 }
 
 impl Command {
-    /// Tests if the Command is ASCII-only
+    /// Tests if the `Command` is ASCII-only
     pub fn is_ascii(&self) -> bool {
         match *self {
             ExtendedHello(ref my_hostname) => my_hostname.is_ascii(),
