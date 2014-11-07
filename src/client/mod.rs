@@ -9,9 +9,9 @@
 
 //! SMTP client
 
-use std::fmt::Show;
 use std::string::String;
 use std::io::net::ip::Port;
+use std::error::FromError;
 
 use common::{get_first_word, unquote_email_address};
 use common::{CRLF, SMTP_PORT};
@@ -22,7 +22,7 @@ use command;
 use command::Command;
 use transaction;
 use transaction::TransactionState;
-use error::{SmtpResult, SmtpError, ErrorKind};
+use error::{SmtpResult, ErrorKind};
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
@@ -49,6 +49,18 @@ pub struct Client<S> {
     state: TransactionState
 }
 
+macro_rules! try_smtp (
+    ($expr:expr $sp: ident) => ({
+        match $expr {
+            Ok(val) => val,
+            Err(err) => {
+                $sp.smtp_fail::<S>();
+                return Err(::std::error::FromError::from_error(err))
+            }
+        }
+    })
+)
+
 impl<S> Client<S> {
     /// Creates a new SMTP client
     pub fn new(host: String, port: Option<Port>, my_hostname: Option<String>) -> Client<S> {
@@ -66,33 +78,30 @@ impl<S> Client<S> {
 impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// TODO
-    fn smtp_fail_if_err<S>(&mut self, response: SmtpResult<Response>) {
-        match response {
-            Err(response) => {
-                self.smtp_fail::<S, SmtpError>(response)
-            },
-            Ok(_) => {}
-        }
-    }
+    // fn try_smtp<S, T>(&mut self, result: SmtpResult<T>) -> T {
+    //     match result {
+    //         Ok(val) => val,
+    //         Err(err) => {
+    //             self.smtp_fail::<S>();
+    //             return Err(FromError::from_error(err));
+    //         }
+    //     }
+    // }
 
-    /// Closes the connection and fail with a given messgage
-    fn smtp_fail<S, T: Show>(&mut self, reason: T) {
-        let is_connected = self.is_connected::<S>();
-        if is_connected {
-            match self.quit::<S>() {
-                Ok(..) => {},
-                Err(response) => panic!("Failed: {}", response)
-            }
-        }
-        self.close();
-        panic!("Failed: {}", reason);
+    /// Closes the SMTP transaction if possible, and then closes the TCP session
+    fn smtp_fail<S>(&mut self) {
+        if self.is_connected::<S>() {
+            let _ = self.quit::<S>();
+            self.close();
+        } else {
+            self.close();
+        };
     }
 
     /// Sends an email
     pub fn send_mail<S>(&mut self, from_address: String,
                         to_addresses: Vec<String>, message: String) -> SmtpResult<Response> {
         let my_hostname = self.my_hostname.clone();
-        let mut smtp_result: SmtpResult<Response>;
 
         // Connect to the server
         try!(self.connect());
@@ -101,11 +110,12 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         match self.ehlo::<S>(my_hostname.clone().to_string()) {
             Err(error) => match error.kind {
                             ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                                smtp_result = self.helo::<S>(my_hostname.clone());
-                                self.smtp_fail_if_err::<S>(smtp_result);
+                                try_smtp!(self.helo::<S>(my_hostname.clone()) self);
+                                //self.smtp_fail_if_err::<S>(smtp_result);
                             },
                             _ => {
-                                self.smtp_fail::<S, SmtpError>(error)
+                                self.smtp_fail::<S>();
+                                return Err(FromError::from_error(error))
                             }
                           },
             _ => {}
@@ -114,8 +124,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         debug!("Server {}", self.server_info.clone().unwrap());
 
         // Mail
-        smtp_result = self.mail::<S>(from_address.clone(), None);
-        self.smtp_fail_if_err::<S>(smtp_result);
+        try_smtp!(self.mail::<S>(from_address.clone(), None) self);
+        //self.smtp_fail_if_err::<S>(smtp_result);
 
         // Log the mail command
         info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
@@ -124,27 +134,23 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         // TODO Return rejected addresses
         // TODO Manage the number of recipients
         for to_address in to_addresses.iter() {
-            smtp_result = self.rcpt::<S>(to_address.clone(), None);
-            self.smtp_fail_if_err::<S>(smtp_result);
+            try_smtp!(self.rcpt::<S>(to_address.clone(), None) self);
+            //self.smtp_fail_if_err::<S>(smtp_result);
         }
 
         // Data
-        smtp_result = self.data::<S>();
-        self.smtp_fail_if_err::<S>(smtp_result);
+        try_smtp!(self.data::<S>() self);
+        //self.smtp_fail_if_err::<S>(smtp_result);
 
         // Message content
-        let sent = self.message::<S>(message.as_slice());
-
-        if sent.clone().is_err() {
-            self.smtp_fail::<S, SmtpError>(sent.clone().err().unwrap())
-        }
+        let sent = try_smtp!(self.message::<S>(message.as_slice()) self);
 
         info!("to=<{}>, status=sent ({})",
-              to_addresses.clone().connect(">, to=<"), sent.clone().ok().unwrap());
+              to_addresses.clone().connect(">, to=<"), sent.clone());
 
         // Quit
-        smtp_result = self.quit::<S>();
-        self.smtp_fail_if_err::<S>(smtp_result);
+        try_smtp!(self.quit::<S>() self);
+        //self.smtp_fail_if_err::<S>(smtp_result);
         return Ok(Response{code:100, message:None});
     }
 
@@ -293,8 +299,10 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         let server_info = self.server_info.clone().expect("Bad command sequence");
         // Get maximum message size if defined and compare to the message size
         match server_info.supports_feature(extension::Size(0)) {
-            Some(extension::Size(max)) if message_content.len() > max =>
-                self.smtp_fail::<S, String>(format!("Message is too big. The limit is {}", max)),
+            Some(extension::Size(max)) if message_content.len() > max => {
+                self.smtp_fail::<S>();
+                return Err(FromError::from_error("Message is too big"))
+            }
             _ => ()
         };
 
@@ -302,7 +310,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         // TODO : Add an encoding check.
         if ! server_info.supports_feature(extension::EightBitMime).is_some() {
             if ! message_content.clone().is_ascii() {
-                self.smtp_fail::<S, &str>("Server does not accepts UTF-8 strings");
+                self.smtp_fail::<S>();
+                return Err(FromError::from_error("Server does not accepts UTF-8 strings"))
             }
         }
 
@@ -321,14 +330,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Sends a QUIT command
     pub fn quit<S>(&mut self) -> SmtpResult<Response> {
         let res = try!(self.send_command(command::Quit));
-        match res.with_code(vec!(221)) {
-            Ok(response) => {
-                Ok(response)
-            },
-            Err(response) => {
-                Err(response)
-            }
-        }
+        res.with_code(vec!(221))
     }
 
     /// Sends a RSET command

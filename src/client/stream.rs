@@ -71,6 +71,7 @@ impl ClientStream for TcpStream {
     /// Gets the SMTP response
     fn get_reply(&mut self) -> SmtpResult<Response> {
         let response = try!(self.read_into_string());
+        
         match from_str::<Response>(response.as_slice()) {
             Some(response) => Ok(response),
             None => Err(FromError::from_error("Could not parse response"))

@@ -22,12 +22,14 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
         Client::new(
             server,
             port,
-            my_hostname);
+            my_hostname
+        );
     let result = email_client.send_mail::<TcpStream>(
             source_address,
             recipient_addresses,
             message
     );
+    panic!(result)
 }
 
 fn print_usage(description: String, _opts: &[OptGroup]) {
