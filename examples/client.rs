@@ -22,13 +22,13 @@ use getopts::{optopt, optflag, getopts, OptGroup, usage};
 use smtp::client::Client;
 use smtp::error::SmtpResult;
 
-fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String,
-        server: String, port: Option<Port>, my_hostname: Option<String>) -> SmtpResult {
+fn sendmail(source_address: &str, recipient_addresses: Vec<&str>, message: &str,
+        server: &str, port: Option<Port>, my_hostname: &str) -> SmtpResult {
     let mut email_client: Client<TcpStream> =
         Client::new(
             server,
             port,
-            my_hostname
+            Some(my_hostname)
         );
     email_client.send_mail::<TcpStream>(
             source_address,
@@ -83,7 +83,7 @@ fn main() {
 
     let server = match matches.opt_str("s") {
         Some(server) => server,
-        None         => String::from_str("localhost")
+        None         => "localhost".to_string()
     };
 
     let my_hostname = match matches.opt_str("m") {
@@ -105,7 +105,7 @@ fn main() {
     };
     let mut recipients = Vec::new();
     for recipient in recipients_str.split(' ') {
-        recipients.push(String::from_str(recipient))
+        recipients.push(recipient)
     }
 
     let mut message = String::new();
@@ -113,7 +113,8 @@ fn main() {
         message.push_str(line.unwrap().as_slice());
     }
 
-    match sendmail(sender, recipients, message, server, port, my_hostname) {
+    match sendmail(sender.as_slice(), recipients, message.as_slice(),
+            server.as_slice(), port, my_hostname.unwrap_or("localhost".to_string()).as_slice()) {
         Ok(..) => info!("Email sent successfully"),
         Err(error) => error!("{}", error)
     }

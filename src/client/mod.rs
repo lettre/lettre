@@ -63,12 +63,12 @@ macro_rules! try_smtp (
 
 impl<S> Client<S> {
     /// Creates a new SMTP client
-    pub fn new(host: String, port: Option<Port>, my_hostname: Option<String>) -> Client<S> {
+    pub fn new(host: &str, port: Option<Port>, my_hostname: Option<&str>) -> Client<S> {
         Client{
             stream: None,
-            host: host,
+            host: host.to_string(),
             port: port.unwrap_or(SMTP_PORT),
-            my_hostname: my_hostname.unwrap_or("localhost".to_string()),
+            my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
             state: transaction::Unconnected
         }
@@ -87,18 +87,18 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends an email
-    pub fn send_mail<S>(&mut self, from_address: String,
-                        to_addresses: Vec<String>, message: String) -> SmtpResult {
+    pub fn send_mail<S>(&mut self, from_address: &str,
+                        to_addresses: Vec<&str>, message: &str) -> SmtpResult {
         let my_hostname = self.my_hostname.clone();
 
         // Connect to the server
         try!(self.connect());
 
         // Extended Hello or Hello
-        match self.ehlo::<S>(my_hostname.clone().to_string()) {
+        match self.ehlo::<S>(my_hostname.as_slice()) {
             Err(error) => match error.kind {
                             ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                                try_smtp!(self.helo::<S>(my_hostname.clone()) self);
+                                try_smtp!(self.helo::<S>(my_hostname.as_slice()) self);
                                 //self.smtp_fail_if_err::<S>(smtp_result);
                             },
                             _ => {
@@ -112,7 +112,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         debug!("Server {}", self.server_info.clone().unwrap());
 
         // Mail
-        try_smtp!(self.mail::<S>(from_address.clone()) self);
+        try_smtp!(self.mail::<S>(from_address) self);
 
         // Log the mail command
         info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
@@ -121,17 +121,17 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         // TODO Return rejected addresses
         // TODO Manage the number of recipients
         for to_address in to_addresses.iter() {
-            try_smtp!(self.rcpt::<S>(to_address.clone()) self);
+            try_smtp!(self.rcpt::<S>(*to_address) self);
         }
 
         // Data
         try_smtp!(self.data::<S>() self);
 
         // Message content
-        let sent = try_smtp!(self.message::<S>(message.as_slice()) self);
+        let sent = try_smtp!(self.message::<S>(message) self);
 
         info!("to=<{}>, status=sent ({})",
-              to_addresses.clone().connect(">, to=<"), sent.clone());
+              to_addresses.connect(">, to=<"), sent.clone());
 
         // Quit
         try_smtp!(self.quit::<S>() self);
@@ -221,8 +221,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Send a HELO command
-    pub fn helo<S>(&mut self, my_hostname: String) -> SmtpResult {
-        let res = try!(self.send_command(command::Hello(my_hostname.clone())));
+    pub fn helo<S>(&mut self, my_hostname: &str) -> SmtpResult {
+        let res = try!(self.send_command(command::Hello(my_hostname.to_string())));
         match res.with_code(vec![250]) {
             Ok(response) => {
                 self.server_info = Some(
@@ -239,8 +239,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a EHLO command
-    pub fn ehlo<S>(&mut self, my_hostname: String) -> SmtpResult {
-        let res = try!(self.send_command(command::ExtendedHello(my_hostname.clone())));
+    pub fn ehlo<S>(&mut self, my_hostname: &str) -> SmtpResult {
+        let res = try!(self.send_command(command::ExtendedHello(my_hostname.to_string())));
         match res.with_code(vec![250]) {
             Ok(response) => {
                 self.server_info = Some(
@@ -259,7 +259,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a MAIL command
-    pub fn mail<S>(&mut self, from_address: String) -> SmtpResult {
+    pub fn mail<S>(&mut self, from_address: &str) -> SmtpResult {
 
         let server_info = self.server_info.clone().expect("Bad command sequence");
 
@@ -271,14 +271,14 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         };
 
         self.send_command(
-            command::Mail(unquote_email_address(from_address.as_slice()).to_string(), options)
+            command::Mail(unquote_email_address(from_address).to_string(), options)
         )
     }
 
     /// Sends a RCPT command
-    pub fn rcpt<S>(&mut self, to_address: String) -> SmtpResult {
+    pub fn rcpt<S>(&mut self, to_address: &str) -> SmtpResult {
         self.send_command(
-            command::Recipient(unquote_email_address(to_address.as_slice()).to_string(), None)
+            command::Recipient(unquote_email_address(to_address).to_string(), None)
         )
     }
 
@@ -331,13 +331,13 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a VRFY command
-    pub fn vrfy<S, T>(&mut self, to_address: String) -> SmtpResult {
-        self.send_command(command::Verify(to_address))
+    pub fn vrfy<S, T>(&mut self, to_address: &str) -> SmtpResult {
+        self.send_command(command::Verify(to_address.to_string()))
     }
 
     /// Sends a EXPN command
-    pub fn expn<S, T>(&mut self, list: String) -> SmtpResult {
-        self.send_command(command::Expand(list))
+    pub fn expn<S, T>(&mut self, list: &str) -> SmtpResult {
+        self.send_command(command::Expand(list.to_string()))
     }
 
 }
