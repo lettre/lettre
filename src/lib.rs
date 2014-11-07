@@ -27,15 +27,13 @@
 //!
 //! ## Usage
 //!
-//! ```ignore
-//! extern crate smtp;
+//! ```rust,no_run
 //! use std::io::net::tcp::TcpStream;
-//! use smtp::smtpc::client::SmtpClient;
-//! use std::string::String;
+//! use smtp::client::Client;
 //!
-//! let mut email_client: SmtpClient<TcpStream> =
-//!     SmtpClient::new("localhost".to_string(), None, None);
-//! email_client.send_mail::<TcpStream>(
+//! let mut email_client: Client<TcpStream> =
+//!     Client::new("localhost".to_string(), None, None);
+//! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com".to_string(),
 //!     vec!("user@example.org".to_string()),
 //!     "Test email".to_string()
@@ -61,3 +59,4 @@ pub mod extension;
 pub mod response;
 pub mod transaction;
 pub mod common;
+pub mod error;

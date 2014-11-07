@@ -10,7 +10,6 @@
 //! SMTP client
 
 use std::fmt::Show;
-use std::result::Result;
 use std::string::String;
 use std::io::net::ip::Port;
 
@@ -23,6 +22,7 @@ use command;
 use command::Command;
 use transaction;
 use transaction::TransactionState;
+use error::{SmtpResult, SmtpError, ErrorKind};
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
@@ -66,10 +66,10 @@ impl<S> Client<S> {
 impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// TODO
-    fn smtp_fail_if_err<S>(&mut self, response: Result<Response, Response>) {
+    fn smtp_fail_if_err<S>(&mut self, response: SmtpResult<Response>) {
         match response {
             Err(response) => {
-                self.smtp_fail::<S, Response>(response)
+                self.smtp_fail::<S, SmtpError>(response)
             },
             Ok(_) => {}
         }
@@ -90,27 +90,24 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends an email
     pub fn send_mail<S>(&mut self, from_address: String,
-                        to_addresses: Vec<String>, message: String) {
+                        to_addresses: Vec<String>, message: String) -> SmtpResult<Response> {
         let my_hostname = self.my_hostname.clone();
-        let mut smtp_result: Result<Response, Response>;
+        let mut smtp_result: SmtpResult<Response>;
 
-        match self.connect() {
-            Ok(_) => {},
-            Err(response) => panic!("Cannot connect to {}:{}. Server says: {}",
-                                    self.host,
-                                    self.port, response
-                             )
-        }
+        // Connect to the server
+        try!(self.connect());
 
         // Extended Hello or Hello
         match self.ehlo::<S>(my_hostname.clone().to_string()) {
-            Err(Response{code: 550, message: _}) => {
-                smtp_result = self.helo::<S>(my_hostname.clone());
-                self.smtp_fail_if_err::<S>(smtp_result);
-            },
-            Err(response) => {
-                self.smtp_fail::<S, Response>(response)
-            }
+            Err(error) => match error.kind {
+                            ErrorKind::PermanentError(Response{code: 550, message: _}) => {
+                                smtp_result = self.helo::<S>(my_hostname.clone());
+                                self.smtp_fail_if_err::<S>(smtp_result);
+                            },
+                            _ => {
+                                self.smtp_fail::<S, SmtpError>(error)
+                            }
+                          },
             _ => {}
         }
 
@@ -139,7 +136,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         let sent = self.message::<S>(message.as_slice());
 
         if sent.clone().is_err() {
-            self.smtp_fail::<S, Response>(sent.clone().err().unwrap())
+            self.smtp_fail::<S, SmtpError>(sent.clone().err().unwrap())
         }
 
         info!("to=<{}>, status=sent ({})",
@@ -148,11 +145,12 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         // Quit
         smtp_result = self.quit::<S>();
         self.smtp_fail_if_err::<S>(smtp_result);
+        return Ok(Response{code:100, message:None});
     }
 
     /// Sends an SMTP command
     // TODO : ensure this is an ASCII string
-    fn send_command(&mut self, command: Command) -> Response {
+    fn send_command(&mut self, command: Command) -> SmtpResult<Response> {
         if !command.is_ascii() {
             panic!("Non-ASCII string: {}", command);
         }
@@ -164,40 +162,29 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends the email content
-    fn send_message(&mut self, message: &str) -> Response {
+    fn send_message(&mut self, message: &str) -> SmtpResult<Response> {
         self.stream.clone().unwrap().send_and_get_response(format!("{}", message).as_slice(),
                                                            format!("{}.{}", CRLF, CRLF).as_slice())
     }
 
     /// Connects to the configured server
-    pub fn connect(&mut self) -> Result<Response, Response> {
+    pub fn connect(&mut self) -> SmtpResult<Response> {
         // connect should not be called when the client is already connected
         if !self.stream.is_none() {
             panic!("The connection is already established");
         }
 
         // Try to connect
-        self.stream = match Connecter::connect(self.host.clone().as_slice(), self.port) {
-            Ok(stream) => Some(stream),
-            Err(..) => panic!("Cannot connect to the server")
-        };
+        self.stream = Some(try!(Connecter::connect(self.host.clone().as_slice(), self.port)));
 
         // Log the connection
         info!("Connection established to {}[{}]:{}",
               self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
 
-        match self.stream.clone().unwrap().get_reply() {
-            Some(response) => match response.with_code(vec!(220)) {
-                                  Ok(response)  => {
-                                      self.state = transaction::Connected;
-                                      Ok(response)
-                                  },
-                                  Err(response) => {
-                                      Err(response)
-                                  }
-                              },
-            None           => panic!("No banner on {}", self.host)
-        }
+        let response = try!(self.stream.clone().unwrap().get_reply());
+        let result = try!(response.with_code(vec!(220)));
+        self.state = transaction::Connected;
+        Ok(result)
     }
 
     /// Checks if the server is connected
@@ -216,8 +203,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Send a HELO command
-    pub fn helo<S>(&mut self, my_hostname: String) -> Result<Response, Response> {
-        match self.send_command(command::Hello(my_hostname.clone())).with_code(vec!(250)) {
+    pub fn helo<S>(&mut self, my_hostname: String) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Hello(my_hostname.clone())));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
                     ServerInfo{
@@ -233,8 +221,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a EHLO command
-    pub fn ehlo<S>(&mut self, my_hostname: String) -> Result<Response, Response> {
-        match self.send_command(command::ExtendedHello(my_hostname.clone())).with_code(vec!(250)) {
+    pub fn ehlo<S>(&mut self, my_hostname: String) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::ExtendedHello(my_hostname.clone())));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 self.server_info = Some(
                     ServerInfo{
@@ -253,10 +242,11 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends a MAIL command
     pub fn mail<S>(&mut self, from_address: String,
-                   options: Option<Vec<String>>) -> Result<Response, Response> {
-        match self.send_command(
+                   options: Option<Vec<String>>) -> SmtpResult<Response> {
+        let res = try!(self.send_command(
             command::Mail(unquote_email_address(from_address.as_slice()).to_string(), options)
-        ).with_code(vec!(250)) {
+        ));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::MailSent;
                 Ok(response)
@@ -269,10 +259,11 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends a RCPT command
     pub fn rcpt<S>(&mut self, to_address: String,
-                   options: Option<Vec<String>>) -> Result<Response, Response> {
-        match self.send_command(
+                   options: Option<Vec<String>>) -> SmtpResult<Response> {
+        let res = try!(self.send_command(
             command::Recipient(unquote_email_address(to_address.as_slice()).to_string(), options)
-        ).with_code(vec!(250)) {
+        ));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::RecipientSent;
                 Ok(response)
@@ -284,8 +275,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a DATA command
-    pub fn data<S>(&mut self) -> Result<Response, Response> {
-        match self.send_command(command::Data).with_code(vec!(354)) {
+    pub fn data<S>(&mut self) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Data));
+        match res.with_code(vec!(354)) {
             Ok(response) => {
                 self.state = transaction::DataSent;
                 Ok(response)
@@ -297,7 +289,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends the message content
-    pub fn message<S>(&mut self, message_content: &str) -> Result<Response, Response> {
+    pub fn message<S>(&mut self, message_content: &str) -> SmtpResult<Response> {
         let server_info = self.server_info.clone().expect("Bad command sequence");
         // Get maximum message size if defined and compare to the message size
         match server_info.supports_feature(extension::Size(0)) {
@@ -314,7 +306,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             }
         }
 
-        match self.send_message(message_content).with_code(vec!(250)) {
+        let res = try!(self.send_message(message_content));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 self.state = transaction::HelloSent;
                 Ok(response)
@@ -326,8 +319,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a QUIT command
-    pub fn quit<S>(&mut self) -> Result<Response, Response> {
-        match self.send_command(command::Quit).with_code(vec!(221)) {
+    pub fn quit<S>(&mut self) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Quit));
+        match res.with_code(vec!(221)) {
             Ok(response) => {
                 Ok(response)
             },
@@ -338,8 +332,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a RSET command
-    pub fn rset<S>(&mut self) -> Result<Response, Response> {
-        match self.send_command(command::Reset).with_code(vec!(250)) {
+    pub fn rset<S>(&mut self) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Reset));
+        match res.with_code(vec!(250)) {
             Ok(response) => {
                 if vec!(transaction::MailSent, transaction::RecipientSent,
                         transaction::DataSent).contains(&self.state) {
@@ -354,12 +349,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a NOOP commands
-    pub fn noop<S>(&mut self) -> Result<Response, Response> {
-        self.send_command(command::Noop).with_code(vec!(250))
+    pub fn noop<S>(&mut self) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Noop));
+        res.with_code(vec!(250))
     }
 
     /// Sends a VRFY command
-    pub fn vrfy<S, T>(&mut self, to_address: String) -> Result<Response, Response> {
-        self.send_command(command::Verify(to_address, None)).with_code(vec!(250))
+    pub fn vrfy<S, T>(&mut self, to_address: String) -> SmtpResult<Response> {
+        let res = try!(self.send_command(command::Verify(to_address, None)));
+        res.with_code(vec!(250))
     }
+
 }

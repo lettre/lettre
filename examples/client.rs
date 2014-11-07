@@ -23,7 +23,7 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
             server,
             port,
             my_hostname);
-    email_client.send_mail::<TcpStream>(
+    let result = email_client.send_mail::<TcpStream>(
             source_address,
             recipient_addresses,
             message

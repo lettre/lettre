@@ -7,15 +7,17 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! SMTP responses, contaiing a mandatory return code, and an optional text message
+//! SMTP responses, containing a mandatory return code, and an optional text message
 
 #![unstable]
 
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 use std::result;
+use std::error::FromError;
 
 use common::remove_trailing_crlf;
+use error::SmtpError;
 
 /// Contains an SMTP reply, with separed code and message
 ///
@@ -76,19 +78,24 @@ impl FromStr for Response {
 impl Response {
     /// Checks the presence of the response code in the array of expected codes.
     pub fn with_code(&self,
-                     expected_codes: Vec<u16>) -> result::Result<Response,Response> {
+                     expected_codes: Vec<u16>) -> result::Result<Response, SmtpError> {
         let response = self.clone();
         if expected_codes.contains(&self.code) {
             Ok(response)
         } else {
-            Err(response)
+            Err(FromError::from_error(response))
         }
     }
+
+    /// TODO
+    //pub fn error_kind(&self) -> Option(SmtpError) {}
+
 }
 
 #[cfg(test)]
 mod test {
     use super::Response;
+    use std::error::FromError;
 
     #[test]
     fn test_fmt() {
@@ -144,7 +151,7 @@ mod test {
         );
         assert_eq!(
             Response{code: 400, message: Some("message".to_string())}.with_code(vec!(200)),
-            Err(Response{code: 400, message: Some("message".to_string())})
+            Err(FromError::from_error(Response{code: 400, message: Some("message".to_string())}))
         );
         assert_eq!(
             Response{

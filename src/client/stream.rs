@@ -13,6 +13,8 @@ use std::io::net::tcp::TcpStream;
 use std::io::IoResult;
 use std::str::from_utf8;
 use std::vec::Vec;
+use error::SmtpResult;
+use std::error::FromError;
 
 use response::Response;
 use common::{escape_crlf, escape_dot};
@@ -22,25 +24,21 @@ static BUFFER_SIZE: uint = 1024;
 /// TODO
 pub trait ClientStream {
     /// TODO
-    fn send_and_get_response(&mut self, string: &str, end: &str) -> Response;
+    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult<Response>;
     /// TODO
-    fn get_reply(&mut self) -> Option<Response>;
+    fn get_reply(&mut self) -> SmtpResult<Response>;
     /// TODO
     fn read_into_string(&mut self) -> IoResult<String>;
 }
 
 impl ClientStream for TcpStream {
     /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: &str, end: &str) -> Response {
-        match self.write_str(format!("{}{}", escape_dot(string), end).as_slice()) {
-            Ok(..)  => debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice())),
-            Err(..) => panic!("Could not write to stream")
-        }
+    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult<Response> {
+        try!(self.write_str(format!("{}{}", escape_dot(string), end).as_slice()));
 
-        match self.get_reply() {
-            Some(response) => response,
-            None           => panic!("No answer")
-        }
+        debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice()));
+
+        self.get_reply()
     }
 
     /// Reads on the stream into a string
@@ -71,11 +69,11 @@ impl ClientStream for TcpStream {
     }
 
     /// Gets the SMTP response
-    fn get_reply(&mut self) -> Option<Response> {
-        let response = match self.read_into_string() {
-            Ok(string) => string,
-            Err(..)    => panic!("No answer")
-        };
-        from_str::<Response>(response.as_slice())
+    fn get_reply(&mut self) -> SmtpResult<Response> {
+        let response = try!(self.read_into_string());
+        match from_str::<Response>(response.as_slice()) {
+            Some(response) => Ok(response),
+            None => Err(FromError::from_error("Could not parse response"))
+        }
     }
 }
