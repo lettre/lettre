@@ -61,7 +61,7 @@ impl FromStr for Response {
         } else {
             match (
                 from_str::<u16>(s.slice_to(3)),
-                vec!(" ", "-").contains(&s.slice(3,4)),
+                vec![" ", "-"].contains(&s.slice(3,4)),
                 (remove_trailing_crlf(s.slice_from(4)))
             ) {
                 (Some(code), true, message) => Some(Response{
@@ -86,11 +86,9 @@ impl Response {
             Err(FromError::from_error(response))
         }
     }
-
-    /// TODO
-    //pub fn error_kind(&self) -> Option(SmtpError) {}
-
 }
+
+
 
 #[cfg(test)]
 mod test {
@@ -146,18 +144,18 @@ mod test {
     #[test]
     fn test_with_code() {
         assert_eq!(
-            Response{code: 200, message: Some("message".to_string())}.with_code(vec!(200)),
+            Response{code: 200, message: Some("message".to_string())}.with_code(vec![200]),
             Ok(Response{code: 200, message: Some("message".to_string())})
         );
         assert_eq!(
-            Response{code: 400, message: Some("message".to_string())}.with_code(vec!(200)),
+            Response{code: 400, message: Some("message".to_string())}.with_code(vec![200]),
             Err(FromError::from_error(Response{code: 400, message: Some("message".to_string())}))
         );
         assert_eq!(
             Response{
                 code: 200,
                 message: Some("message".to_string())
-            }.with_code(vec!(200, 300)),
+            }.with_code(vec![200, 300]),
             Ok(Response{code: 200, message: Some("message".to_string())})
         );
     }

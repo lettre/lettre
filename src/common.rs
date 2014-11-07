@@ -18,6 +18,12 @@ use std::str::replace;
 /// Default SMTP port
 pub static SMTP_PORT: Port = 25;
 
+/// Default SMTPS port
+pub static SMTPS_PORT: Port = 465;
+
+/// Default SUBMISSION port
+pub static SUBMISSION_PORT: Port = 587;
+
 // Maximum length of an SMTP command line
 //pub static MAX_SMTP_LINE_LENGTH: uint = 1034;
 
@@ -28,15 +34,16 @@ pub static SP: &'static str = " ";
 pub static CRLF: &'static str = "\r\n";
 pub static CR: &'static str = "\r";
 pub static LF: &'static str = "\n";
+pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 
 /// Adds quotes to emails if needed
 pub fn quote_email_address(address: &str) -> String {
     match address.len() {
-        0 ... 1 => format!("<{:s}>", address),
+        0 ... 1 => format!("<{}>", address),
         _   => match (address.slice_to(1),
                       address.slice_from(address.len() - 1)) {
                    ("<", ">") => address.to_string(),
-                   _          => format!("<{:s}>", address)
+                   _          => format!("<{}>", address)
                }
     }
 }

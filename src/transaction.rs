@@ -31,7 +31,7 @@ pub enum TransactionState {
     /// At least one RCPT command was sucessful
     RecipientSent,
     /// A DATA command was successful
-    DataSent
+    DataSent,
 }
 
 impl Show for TransactionState {
@@ -55,14 +55,15 @@ impl TransactionState {
         match (*self, command) {
             (Unconnected, command::Connect) => true,
             (Unconnected, _) => false,
-            // Only the message content can be sent in this state
+            // Only a message can follow the DATA command
+            (DataSent, command::Message) => true,
             (DataSent, _) => false,
             // Commands that can be issued everytime
             (_, command::ExtendedHello(_)) => true,
             (_, command::Hello(_)) => true,
             (_, command::Reset) => true,
-            (_, command::Verify(_, _)) => true,
-            (_, command::Expand(_, _)) => true,
+            (_, command::Verify(_)) => true,
+            (_, command::Expand(_)) => true,
             (_, command::Help(_)) => true,
             (_, command::Noop) => true,
             (_, command::Quit) => true,
@@ -81,14 +82,15 @@ impl TransactionState {
         match (*self, command) {
             (Unconnected, command::Connect) => Some(Connected),
             (Unconnected, _) => None,
+            (DataSent, command::Message) => Some(HelloSent),
             (DataSent, _) => None,
             // Commands that can be issued everytime
             (_, command::ExtendedHello(_)) => Some(HelloSent),
             (_, command::Hello(_)) => Some(HelloSent),
             (Connected, command::Reset) => Some(Connected),
             (_, command::Reset) => Some(HelloSent),
-            (state, command::Verify(_, _)) => Some(state),
-            (state, command::Expand(_, _)) => Some(state),
+            (state, command::Verify(_)) => Some(state),
+            (state, command::Expand(_)) => Some(state),
             (state, command::Help(_)) => Some(state),
             (state, command::Noop) => Some(state),
             (_, command::Quit) => Some(Unconnected),

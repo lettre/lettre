@@ -101,6 +101,14 @@ impl Extension {
         }
         Some(esmtp_features)
     }
+
+    /// Returns the string to add to the mail command
+    pub fn client_mail_option(&self) -> Option<&str> {
+        match *self {
+            EightBitMime => Some("BODY=8BITMIME"),
+            _ => None
+        }
+    }
 }
 
 #[cfg(test)]
@@ -134,14 +142,14 @@ mod test {
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            Some(vec!(super::EightBitMime, super::Size(42))));
+            Some(vec![super::EightBitMime, super::Size(42)]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
-            Some(vec!(super::EightBitMime)));
+            Some(vec![super::EightBitMime]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
-            Some(vec!()));
+            Some(vec![]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            Some(vec!(super::Size(42), super::Size(43))));
+            Some(vec![super::Size(42), super::Size(43)]));
         assert_eq!(Extension::parse_esmtp_response(""),
-            Some(vec!()));
+            Some(vec![]));
     }
 }

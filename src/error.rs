@@ -119,4 +119,4 @@ impl Error for SmtpError {
 }
 
 /// Library generic result type
-pub type SmtpResult<T> = Result<T, SmtpError>;
+pub type SmtpResult = Result<Response, SmtpError>;

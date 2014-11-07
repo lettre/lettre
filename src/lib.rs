@@ -35,7 +35,7 @@
 //!     Client::new("localhost".to_string(), None, None);
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com".to_string(),
-//!     vec!("user@example.org".to_string()),
+//!     vec!["user@example.org".to_string()],
 //!     "Test email".to_string()
 //! );
 //! ```

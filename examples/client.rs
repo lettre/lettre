@@ -11,20 +11,19 @@
 
 extern crate smtp;
 extern crate getopts;
+
 use std::io::stdin;
 use std::io::net::tcp::TcpStream;
 use std::string::String;
 use std::io::net::ip::Port;
 use std::os;
-use getopts::{optopt,optflag,getopts,OptGroup,usage};
+use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
 use smtp::client::Client;
 use smtp::error::SmtpResult;
-use smtp::response::Response;
-
 
 fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String,
-        server: String, port: Option<Port>, my_hostname: Option<String>) -> SmtpResult<Response> {
+        server: String, port: Option<Port>, my_hostname: Option<String>) -> SmtpResult {
     let mut email_client: Client<TcpStream> =
         Client::new(
             server,

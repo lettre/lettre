@@ -11,9 +11,12 @@
 
 #![unstable]
 
+use std::error::FromError;
 use std::fmt::{Show, Formatter, Result};
 
 use common::SP;
+use response::Response;
+use error::SmtpResult;
 
 /// Supported SMTP commands
 ///
@@ -36,12 +39,14 @@ pub enum Command {
     Recipient(String, Option<Vec<String>>),
     /// Data command
     Data,
+    /// A fake command to represent the message content
+    Message,
     /// Reset command
     Reset,
     /// Verify command, takes optionnal options
-    Verify(String, Option<Vec<String>>),
+    Verify(String),
     /// Expand command, takes optionnal options
-    Expand(String, Option<Vec<String>>),
+    Expand(String),
     /// Help command, takes optionnal options
     Help(Option<String>),
     /// Noop command
@@ -55,31 +60,21 @@ impl Show for Command {
         f.write( match *self {
             Connect => "CONNECT".to_string(),
             StartTls => "STARTTLS".to_string(),
-            ExtendedHello(ref my_hostname) =>
-                format!("EHLO {}", my_hostname.clone()),
-            Hello(ref my_hostname) =>
-                format!("HELO {}", my_hostname.clone()),
-            Mail(ref from_address, None) =>
-                format!("MAIL FROM:<{}>", from_address.clone()),
+            ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname.clone()),
+            Hello(ref my_hostname) => format!("HELO {}", my_hostname.clone()),
+            Mail(ref from_address, None) => format!("MAIL FROM:<{}>", from_address.clone()),
             Mail(ref from_address, Some(ref options)) =>
                 format!("MAIL FROM:<{}> {}", from_address.clone(), options.connect(SP)),
-            Recipient(ref to_address, None) =>
-                format!("RCPT TO:<{}>", to_address.clone()),
+            Recipient(ref to_address, None) => format!("RCPT TO:<{}>", to_address.clone()),
             Recipient(ref to_address, Some(ref options)) =>
                 format!("RCPT TO:<{}> {}", to_address.clone(), options.connect(SP)),
             Data => "DATA".to_string(),
+            Message => "MESSAGE".to_string(),
             Reset => "RSET".to_string(),
-            Verify(ref address, None) =>
-                format!("VRFY {}", address.clone()),
-            Verify(ref address, Some(ref options)) =>
-                format!("VRFY {} {}", address.clone(), options.connect(SP)),
-            Expand(ref address, None) =>
-                format!("EXPN {}", address.clone()),
-            Expand(ref address, Some(ref options)) =>
-                format!("EXPN {} {}", address.clone(), options.connect(SP)),
+            Verify(ref address) => format!("VRFY {}", address.clone()),
+            Expand(ref address) => format!("EXPN {}", address.clone()),
             Help(None) => "HELP".to_string(),
-            Help(Some(ref argument)) =>
-                format!("HELP {}", argument.clone()),
+            Help(Some(ref argument)) => format!("HELP {}", argument.clone()),
             Noop => "NOOP".to_string(),
             Quit => "QUIT".to_string(),
         }.as_bytes())
@@ -98,12 +93,35 @@ impl Command {
             Recipient(ref to_address, None) => to_address.is_ascii(),
             Recipient(ref to_address, Some(ref options)) => to_address.is_ascii()
                                                             && options.concat().is_ascii(),
-            Verify(ref address, None) => address.is_ascii(),
-            Verify(ref address, Some(ref options)) => address.is_ascii() && options.concat().is_ascii(),
-            Expand(ref address, None) => address.is_ascii(),
-            Expand(ref address, Some(ref options)) => address.is_ascii() && options.concat().is_ascii(),
+            Verify(ref address) => address.is_ascii(),
+            Expand(ref address) => address.is_ascii(),
             Help(Some(ref argument)) => argument.is_ascii(),
             _ => true
+        }
+    }
+
+    /// TODO
+    pub fn test_success(&self, response: Response) -> SmtpResult {
+        let success = match *self {
+            Connect => vec![220],
+            StartTls => vec![220],
+            ExtendedHello(..) => vec![250],
+            Hello(..) => vec![250],
+            Mail(..) => vec![250],
+            Recipient(..) => vec![250, 251],
+            Data => vec![354],
+            Message => vec![250],
+            Reset => vec![250],
+            Verify(..) => vec![250, 251, 252],
+            Expand(..) => vec![250, 252],
+            Help(..) => vec![211, 214],
+            Noop => vec![250],
+            Quit => vec![221],
+        }.contains(&response.code);
+        if success {
+            Ok(response)
+        } else {
+            Err(FromError::from_error(response))
         }
     }
 }
@@ -121,12 +139,12 @@ mod test {
             "EHLO my_name".to_string()
         );
         assert_eq!(
-            format!("{}", super::Mail("test".to_string(), Some(vec!("option".to_string())))),
+            format!("{}", super::Mail("test".to_string(), Some(vec!["option".to_string()]))),
             "MAIL FROM:<test> option".to_string()
         );
         assert_eq!(
             format!("{}", super::Mail("test".to_string(),
-                          Some(vec!("option".to_string(), "option2".to_string())))),
+                          Some(vec!["option".to_string(), "option2".to_string()]))),
             "MAIL FROM:<test> option option2".to_string()
         );
     }
@@ -137,10 +155,10 @@ mod test {
         assert!(super::ExtendedHello("my_name".to_string()).is_ascii());
         assert!(!super::ExtendedHello("my_namé".to_string()).is_ascii());
         assert!(
-            super::Mail("test".to_string(), Some(vec!("option".to_string(), "option2".to_string())))
+            super::Mail("test".to_string(), Some(vec!["option".to_string(), "option2".to_string()]))
         .is_ascii());
         assert!(
-            !super::Mail("test".to_string(), Some(vec!("option".to_string(), "option2à".to_string())))
+            !super::Mail("test".to_string(), Some(vec!["option".to_string(), "option2à".to_string()]))
         .is_ascii());
     }
 }

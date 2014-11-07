@@ -24,16 +24,16 @@ static BUFFER_SIZE: uint = 1024;
 /// TODO
 pub trait ClientStream {
     /// TODO
-    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult<Response>;
+    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult;
     /// TODO
-    fn get_reply(&mut self) -> SmtpResult<Response>;
+    fn get_reply(&mut self) -> SmtpResult;
     /// TODO
     fn read_into_string(&mut self) -> IoResult<String>;
 }
 
 impl ClientStream for TcpStream {
     /// Sends a complete message or a command to the server and get the response
-    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult<Response> {
+    fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult {
         try!(self.write_str(format!("{}{}", escape_dot(string), end).as_slice()));
 
         debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice()));
@@ -69,9 +69,9 @@ impl ClientStream for TcpStream {
     }
 
     /// Gets the SMTP response
-    fn get_reply(&mut self) -> SmtpResult<Response> {
+    fn get_reply(&mut self) -> SmtpResult {
         let response = try!(self.read_into_string());
-        
+
         match from_str::<Response>(response.as_slice()) {
             Some(response) => Ok(response),
             None => Err(FromError::from_error("Could not parse response"))
