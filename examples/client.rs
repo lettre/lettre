@@ -7,6 +7,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#![feature(phase)] #[phase(plugin, link)] extern crate log;
+
 extern crate smtp;
 extern crate getopts;
 use std::io::stdin;
@@ -14,22 +16,26 @@ use std::io::net::tcp::TcpStream;
 use std::string::String;
 use std::io::net::ip::Port;
 use std::os;
-use smtp::client::Client;
 use getopts::{optopt,optflag,getopts,OptGroup,usage};
 
-fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, server: String, port: Option<Port>, my_hostname: Option<String>) {
+use smtp::client::Client;
+use smtp::error::SmtpResult;
+use smtp::response::Response;
+
+
+fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String,
+        server: String, port: Option<Port>, my_hostname: Option<String>) -> SmtpResult<Response> {
     let mut email_client: Client<TcpStream> =
         Client::new(
             server,
             port,
             my_hostname
         );
-    let result = email_client.send_mail::<TcpStream>(
+    email_client.send_mail::<TcpStream>(
             source_address,
             recipient_addresses,
             message
-    );
-    panic!(result)
+    )
 }
 
 fn print_usage(description: String, _opts: &[OptGroup]) {
@@ -108,5 +114,8 @@ fn main() {
         message.push_str(line.unwrap().as_slice());
     }
 
-    sendmail(sender, recipients, message, server, port, my_hostname);
+    match sendmail(sender, recipients, message, server, port, my_hostname) {
+        Ok(..) => info!("Email sent successfully"),
+        Err(error) => error!("{}", error)
+    }
 }
