@@ -63,10 +63,12 @@ fn main() {
         optflag("h", "help", "print this help menu"),
         optflag("v", "verbose", "display the transaction details"),
     ];
+    
     let matches = match getopts(args_string.tail(), opts) {
         Ok(m) => { m }
         Err(f) => { panic!("{}", f) }
     };
+
     if matches.opt_present("h") {
         print_usage(description, opts);
         return;
@@ -94,7 +96,6 @@ fn main() {
     let port = match matches.opt_str("p") {
         Some(port) => from_str::<Port>(port.as_slice()),
         None       => None
-
     };
 
     let recipients_str: &str = if !matches.free.is_empty() {
@@ -103,9 +104,10 @@ fn main() {
         print_usage(description, opts);
         return;
     };
+
     let mut recipients = Vec::new();
     for recipient in recipients_str.split(' ') {
-        recipients.push(recipient)
+        recipients.push(recipient);
     }
 
     let mut message = String::new();

@@ -7,20 +7,24 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TODO
+//! Store the information about a server
 
 use std::fmt;
 use std::fmt::{Show, Formatter};
 
 use extension::Extension;
 
-/// Information about an SMTP server
+/// Contains information about an SMTP server
 #[deriving(Clone)]
 pub struct ServerInfo {
     /// Server name
+    ///
+    /// The name given in the server banner
     pub name: String,
     /// ESMTP features supported by the server
-    /// The `None` value means the server does not support ESMTP
+    ///
+    /// It contains the features supported by the server and known by the `Extension` module.
+    /// The `None` value means the server does not support ESMTP.
     pub esmtp_features: Option<Vec<Extension>>
 }
 

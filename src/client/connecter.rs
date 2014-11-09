@@ -16,10 +16,6 @@ use std::io::net::ip::SocketAddr;
 use std::io::net::tcp::TcpStream;
 
 /// A trait for the concept of opening a stream connected to a IP socket address.
-///
-/// Why is this here? So that we can implement things which must make
-/// connections in terms of *anything* that can make such a connection rather
-/// than in terms of `TcpStream` only. This is handy for testing and for SSL.
 pub trait Connecter {
     /// TODO
     fn connect(host: &str, port: u16) -> IoResult<Self>;

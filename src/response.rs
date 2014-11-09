@@ -7,17 +7,14 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! SMTP responses, containing a mandatory return code, and an optional text message
+//! SMTP response, containing a mandatory return code, and an optional text message
 
 #![unstable]
 
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
-use std::result;
-use std::error::FromError;
 
 use common::remove_trailing_crlf;
-use error::SmtpError;
 
 /// Contains an SMTP reply, with separed code and message
 ///
@@ -26,7 +23,7 @@ use error::SmtpError;
 pub struct Response {
     /// Server response code
     pub code: u16,
-    /// Server response string
+    /// Server response string (optionnal)
     pub message: Option<String>
 }
 
@@ -41,7 +38,6 @@ impl Show for Response {
     }
 }
 
-// FromStr ?
 impl FromStr for Response {
     fn from_str(s: &str) -> Option<Response> {
         // If the string is too short to be a response code
@@ -75,25 +71,9 @@ impl FromStr for Response {
     }
 }
 
-impl Response {
-    /// Checks the presence of the response code in the array of expected codes.
-    pub fn with_code(&self,
-                     expected_codes: Vec<u16>) -> result::Result<Response, SmtpError> {
-        let response = self.clone();
-        if expected_codes.contains(&self.code) {
-            Ok(response)
-        } else {
-            Err(FromError::from_error(response))
-        }
-    }
-}
-
-
-
 #[cfg(test)]
 mod test {
     use super::Response;
-    use std::error::FromError;
 
     #[test]
     fn test_fmt() {
@@ -139,24 +119,5 @@ mod test {
         assert_eq!(from_str::<Response>("20"), None);
         assert_eq!(from_str::<Response>("2"), None);
         assert_eq!(from_str::<Response>(""), None);
-    }
-
-    #[test]
-    fn test_with_code() {
-        assert_eq!(
-            Response{code: 200, message: Some("message".to_string())}.with_code(vec![200]),
-            Ok(Response{code: 200, message: Some("message".to_string())})
-        );
-        assert_eq!(
-            Response{code: 400, message: Some("message".to_string())}.with_code(vec![200]),
-            Err(FromError::from_error(Response{code: 400, message: Some("message".to_string())}))
-        );
-        assert_eq!(
-            Response{
-                code: 200,
-                message: Some("message".to_string())
-            }.with_code(vec![200, 300]),
-            Ok(Response{code: 200, message: Some("message".to_string())})
-        );
     }
 }

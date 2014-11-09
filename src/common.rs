@@ -15,13 +15,13 @@ use std::io::net::ip::Port;
 use std::string::String;
 use std::str::replace;
 
-/// Default SMTP port
+/// Default smtp port
 pub static SMTP_PORT: Port = 25;
 
-/// Default SMTPS port
+/// Default smtps port
 pub static SMTPS_PORT: Port = 465;
 
-/// Default SUBMISSION port
+/// Default submission port
 pub static SUBMISSION_PORT: Port = 587;
 
 // Maximum length of an SMTP command line
@@ -83,6 +83,7 @@ pub fn escape_crlf(string: &str) -> String {
 }
 
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
+///
 /// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
 #[inline]
 pub fn escape_dot(string: &str) -> String {

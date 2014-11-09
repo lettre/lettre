@@ -66,6 +66,8 @@ macro_rules! fail_with_err (
 
 impl<S> Client<S> {
     /// Creates a new SMTP client
+    ///
+    /// It does not connects to the server, but only create the `Client`
     pub fn new(host: &str, port: Option<Port>, my_hostname: Option<&str>) -> Client<S> {
         Client{
             stream: None,
@@ -79,7 +81,7 @@ impl<S> Client<S> {
 }
 
 impl<S: Connecter + ClientStream + Clone> Client<S> {
-    /// Closes the SMTP trclose_on_error if possible, and then closes the TCP session
+    /// Closes the SMTP transaction if possible, and then closes the TCP session
     fn close_on_error<S>(&mut self) {
         if self.is_connected::<S>() {
             let _ = self.quit::<S>();
@@ -139,7 +141,6 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends an SMTP command
-    // TODO : ensure this is an ASCII string
     fn send_command(&mut self, command: Command) -> SmtpResult {
         // for now we do not support SMTPUTF8
         if !command.is_ascii() {
@@ -153,7 +154,11 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         self.send_server(Command::Message, Some(message))
     }
 
-    /// TODO
+    /// Sends content to the server, after checking the command sequence, and then
+    /// updates the transaction state
+    ///
+    /// * If `message` is `None`, the given command will be formatted and sent to the server
+    /// * If `message` is `Some(str)`, the `str` string will be sent to the server
     fn send_server(&mut self, command: Command, message: Option<&str>) -> SmtpResult {
         if !self.state.is_command_possible(command.clone()) {
             fail_with_err!(Response{code: 503, message: Some("Bad sequence of commands".to_string())} self);
@@ -177,6 +182,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
+        let command = command::Connect;
+        
         // connect should not be called when the client is already connected
         if !self.stream.is_none() {
             fail_with_err!("The connection is already established" self);
@@ -189,13 +196,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         info!("Connection established to {}[{}]:{}",
               self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
 
-        let response = try!(self.stream.clone().unwrap().get_reply());
-        let result = try!(response.with_code(vec![220]));
-        self.state = self.state.next_state(Command::Connect).unwrap();
-        Ok(result)
+        let result = try!(self.stream.clone().unwrap().get_reply());
+
+        let checked_result = try!(command.test_success(result));
+
+        self.state = self.state.next_state(command).unwrap();
+        Ok(checked_result)
     }
 
-    /// Checks if the server is connected
+    /// Checks if the server is connected using the NOOP SMTP command
     pub fn is_connected<S>(&mut self) -> bool {
         self.noop::<S>().is_ok()
     }
@@ -210,7 +219,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         self.server_info = None;
     }
 
-    /// Send a HELO command
+    /// Send a HELO command and fills `server_info`
     pub fn helo<S>(&mut self, my_hostname: &str) -> SmtpResult {
         let result = try!(self.send_command(command::Hello(my_hostname.to_string())));
         self.server_info = Some(
@@ -222,7 +231,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         Ok(result)
     }
 
-    /// Sends a EHLO command
+    /// Sends a EHLO command and fills `server_info`
     pub fn ehlo<S>(&mut self, my_hostname: &str) -> SmtpResult {
         let result = try!(self.send_command(command::ExtendedHello(my_hostname.to_string())));
         self.server_info = Some(
@@ -273,8 +282,16 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends the message content
     pub fn message<S>(&mut self, message_content: &str) -> SmtpResult {
-        let server_info = self.server_info.clone().expect("Bad command sequence");
 
+        let server_info = match self.server_info.clone() {
+            Some(info) => info,
+            None       => fail_with_err!(Response{
+                                    code: 503,
+                                    message: Some("Bad sequence of commands".to_string())
+                          } self)
+        };
+
+        // Check message encoding
         if !server_info.supports_feature(extension::EightBitMime).is_some() {
             if !message_content.clone().is_ascii() {
                 fail_with_err!("Server does not accepts UTF-8 strings" self);

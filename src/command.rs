@@ -100,7 +100,10 @@ impl Command {
         }
     }
 
-    /// TODO
+    /// Tests if the command was successful
+    ///
+    /// Returns `Ok` if the given response is considered successful for the `Command`,
+    /// `Err` otherwise
     pub fn test_success(&self, response: Response) -> SmtpResult {
         let success = match *self {
             Connect => vec![220],
