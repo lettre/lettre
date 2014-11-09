@@ -32,11 +32,15 @@
 //! use smtp::client::Client;
 //!
 //! let mut email_client: Client<TcpStream> =
-//!     Client::new("localhost", None, None);
+//!     Client::new(
+//!         Some("localhost"), // server (default is localhost)
+//!         None,              // port (default is 25)
+//!         Some("myhost")     // my hostname (default is localhost)
+//! );
 //! let result = email_client.send_mail::<TcpStream>(
-//!     "user@example.com",
-//!     vec!["user@example.org"],
-//!     "Test email"
+//!     "user@example.com",       // sender (reverse-path)
+//!     vec!["user@example.org"], // recipient list
+//!     "Test email"              // email content
 //! );
 //! ```
 

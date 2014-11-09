@@ -68,10 +68,10 @@ impl<S> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only create the `Client`
-    pub fn new(host: &str, port: Option<Port>, my_hostname: Option<&str>) -> Client<S> {
+    pub fn new(host: Option<&str>, port: Option<Port>, my_hostname: Option<&str>) -> Client<S> {
         Client{
             stream: None,
-            host: host.to_string(),
+            host: host.unwrap_or("localhost").to_string(),
             port: port.unwrap_or(SMTP_PORT),
             my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
@@ -183,7 +183,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
         let command = command::Connect;
-        
+
         // connect should not be called when the client is already connected
         if !self.stream.is_none() {
             fail_with_err!("The connection is already established" self);

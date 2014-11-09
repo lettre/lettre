@@ -23,12 +23,12 @@ use smtp::client::Client;
 use smtp::error::SmtpResult;
 
 fn sendmail(source_address: &str, recipient_addresses: Vec<&str>, message: &str,
-        server: &str, port: Option<Port>, my_hostname: &str) -> SmtpResult {
+        server: Option<&str>, port: Option<Port>, my_hostname: Option<&str>) -> SmtpResult {
     let mut email_client: Client<TcpStream> =
         Client::new(
             server,
             port,
-            Some(my_hostname)
+            my_hostname
         );
     email_client.send_mail::<TcpStream>(
             source_address,
@@ -63,10 +63,10 @@ fn main() {
         optflag("h", "help", "print this help menu"),
         optflag("v", "verbose", "display the transaction details"),
     ];
-    
+
     let matches = match getopts(args_string.tail(), opts) {
-        Ok(m) => { m }
-        Err(f) => { panic!("{}", f) }
+        Ok(m) => m,
+        Err(f) => panic!("{}", f)
     };
 
     if matches.opt_present("h") {
@@ -74,29 +74,11 @@ fn main() {
         return;
     }
 
-    let sender = match matches.opt_str("r") {
-        Some(sender) => sender,
-        None         => {
-            println!("The sender option is required");
-            print_usage(program, opts);
-            return;
-        }
-    };
-
-    let server = match matches.opt_str("s") {
-        Some(server) => server,
-        None         => "localhost".to_string()
-    };
-
-    let my_hostname = match matches.opt_str("m") {
-        Some(my_hostname) => Some(my_hostname),
-        None         => None
-    };
-
-    let port = match matches.opt_str("p") {
-        Some(port) => from_str::<Port>(port.as_slice()),
-        None       => None
-    };
+    if !matches.opt_present("r") {
+        println!("The sender option is required");
+        print_usage(program, opts);
+        return;
+    }
 
     let recipients_str: &str = if !matches.free.is_empty() {
         matches.free[0].as_slice()
@@ -115,8 +97,30 @@ fn main() {
         message.push_str(line.unwrap().as_slice());
     }
 
-    match sendmail(sender.as_slice(), recipients, message.as_slice(),
-            server.as_slice(), port, my_hostname.unwrap_or("localhost".to_string()).as_slice()) {
+    match sendmail(
+        // sender
+        matches.opt_str("r").unwrap().as_slice(),
+        // recipients
+        recipients,
+        // message content
+        message.as_slice(),
+        // server
+        match matches.opt_str("s") {
+            Some(ref server) => Some(server.as_slice()),
+            None => None
+        },
+        // port
+        match matches.opt_str("p") {
+            Some(port) => from_str::<Port>(port.as_slice()),
+            None       => None
+        },
+        // my hostname
+        match matches.opt_str("m") {
+            Some(ref my_hostname) => Some(my_hostname.as_slice()),
+            None => None
+        }
+    )
+    {
         Ok(..) => info!("Email sent successfully"),
         Err(error) => error!("{}", error)
     }
