@@ -50,6 +50,10 @@ impl Show for TransactionState {
 }
 
 impl TransactionState {
+    /// Returns the initial state
+    pub fn new() -> TransactionState {
+        Unconnected
+    }
     /// TODO
     pub fn is_command_possible(&self, command: Command) -> bool {
         match (*self, command) {
