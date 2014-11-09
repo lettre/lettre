@@ -112,6 +112,12 @@ impl TransactionState {
 #[cfg(test)]
 mod test {
     use command;
+    use super::TransactionState;
+
+    #[test]
+    fn test_new() {
+        assert_eq!(TransactionState::new(), super::Unconnected);
+    }
 
     #[test]
     fn test_is_command_possible() {
