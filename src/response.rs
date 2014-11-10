@@ -47,10 +47,10 @@ impl FromStr for Response {
         } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
             match from_str::<u16>(s.slice_to(3)) {
                 Some(code) => Some(Response{
-                            code: code,
-                            message: None
-                        }),
-                None         => None
+                                code: code,
+                                message: None
+                              }),
+                None       => None
 
             }
         // If we have a code and a message

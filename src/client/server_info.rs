@@ -33,8 +33,8 @@ impl Show for ServerInfo {
         f.write(
             format!("{} with {}",
                 self.name,
-                match self.esmtp_features.clone() {
-                    Some(features) => features.to_string(),
+                match self.esmtp_features {
+                    Some(ref features) => features.to_string(),
                     None => "no supported features".to_string()
                 }
             ).as_bytes()
@@ -45,8 +45,8 @@ impl Show for ServerInfo {
 impl ServerInfo {
     /// Checks if the server supports an ESMTP feature
     pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
-        match self.esmtp_features.clone() {
-            Some(esmtp_features) => {
+        match self.esmtp_features {
+            Some(ref esmtp_features) => {
                 for feature in esmtp_features.iter() {
                     if keyword.same_extension_as(*feature) {
                         return Some(*feature);

@@ -49,18 +49,26 @@ pub struct Client<S> {
 }
 
 macro_rules! try_smtp (
-    ($expr:expr $sp: ident) => ({
-        match $expr {
+    ($err: expr $client: ident) => ({
+        match $err {
             Ok(val) => val,
-            Err(err) => fail_with_err!(err $sp)
+            Err(err) => fail_with_err!(err $client)
         }
     })
 )
 
 macro_rules! fail_with_err (
-    ($expr:expr $sp: ident) => ({
-        $sp.close_on_error::<S>();
-        return Err(FromError::from_error($expr))
+    ($err: expr $client: ident) => ({
+        $client.close_on_error::<S>();
+        return Err(FromError::from_error($err))
+    })
+)
+
+macro_rules! check_command_sequence (
+    ($command: ident $client: ident) => ({
+        if !$client.state.is_command_allowed(&$command) {
+            fail_with_err!(Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client);
+        }
     })
 )
 
@@ -110,7 +118,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             _ => {}
         }
 
-        debug!("Server {}", self.server_info.clone().unwrap());
+        debug!("Server {}", self.server_info.as_ref().unwrap());
 
         // Mail
         try_smtp!(self.mail::<S>(from_address) self);
@@ -132,7 +140,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         let sent = try_smtp!(self.message::<S>(message) self);
 
         info!("to=<{}>, status=sent ({})",
-              to_addresses.connect(">, to=<"), sent.clone());
+              to_addresses.connect(">, to=<"), sent);
 
         // Quit
         try_smtp!(self.quit::<S>() self);
@@ -160,47 +168,43 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// * If `message` is `None`, the given command will be formatted and sent to the server
     /// * If `message` is `Some(str)`, the `str` string will be sent to the server
     fn send_server(&mut self, command: Command, message: Option<&str>) -> SmtpResult {
-        if !self.state.is_command_allowed(command.clone()) {
-            fail_with_err!(Response{code: 503, message: Some("Bad sequence of commands".to_string())} self);
-        }
+        check_command_sequence!(command self);
 
         let result = try!(match message {
-            Some(message) => self.stream.clone().unwrap().send_and_get_response(
+            Some(message) => self.stream.as_mut().unwrap().send_and_get_response(
                                 message, MESSAGE_ENDING
                              ),
-            None          => self.stream.clone().unwrap().send_and_get_response(
+            None          => self.stream.as_mut().unwrap().send_and_get_response(
                                 command.to_string().as_slice(), CRLF
                              )
         });
 
-        let checked_result = try!(command.clone().test_success(result));
-
-        self.state = self.state.next_state(command.clone()).unwrap();
-
+        let checked_result = try!(command.test_success(result));
+        self.state = self.state.next_state(&command).unwrap();
         Ok(checked_result)
     }
 
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
         let command = command::Connect;
+        check_command_sequence!(command self);
 
-        // connect should not be called when the client is already connected
+        // Connect should not be called when the client is already connected
         if !self.stream.is_none() {
             fail_with_err!("The connection is already established" self);
         }
 
         // Try to connect
-        self.stream = Some(try!(Connecter::connect(self.host.clone().as_slice(), self.port)));
+        self.stream = Some(try!(Connecter::connect(self.host.as_slice(), self.port)));
 
         // Log the connection
         info!("Connection established to {}[{}]:{}",
-              self.host, self.stream.clone().unwrap().peer_name().unwrap().ip, self.port);
+              self.host, self.stream.as_mut().unwrap().peer_name().unwrap().ip, self.port);
 
-        let result = try!(self.stream.clone().unwrap().get_reply());
+        let result = try!(self.stream.as_mut().unwrap().get_reply());
 
         let checked_result = try!(command.test_success(result));
-
-        self.state = self.state.next_state(command).unwrap();
+        self.state = self.state.next_state(&command).unwrap();
         Ok(checked_result)
     }
 
@@ -212,7 +216,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Closes the TCP stream
     pub fn close(&mut self) {
         // Close the TCP connection
-        drop(self.stream.clone().unwrap());
+        drop(self.stream.as_mut().unwrap());
         // Reset client state
         self.stream = None;
         self.state = TransactionState::new();
@@ -224,7 +228,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         let result = try!(self.send_command(command::Hello(my_hostname.to_string())));
         self.server_info = Some(
             ServerInfo{
-                name: get_first_word(result.message.clone().unwrap().as_slice()).to_string(),
+                name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
                 esmtp_features: None
             }
         );
@@ -236,9 +240,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         let result = try!(self.send_command(command::ExtendedHello(my_hostname.to_string())));
         self.server_info = Some(
             ServerInfo{
-                name: get_first_word(result.message.clone().unwrap().as_slice()).to_string(),
+                name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
                 esmtp_features: Extension::parse_esmtp_response(
-                                    result.message.clone().unwrap().as_slice()
+                                    result.message.as_ref().unwrap().as_slice()
                                 )
             }
         );
@@ -293,7 +297,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
         // Check message encoding
         if !server_info.supports_feature(extension::EightBitMime).is_some() {
-            if !message_content.clone().is_ascii() {
+            if !message_content.is_ascii() {
                 fail_with_err!("Server does not accepts UTF-8 strings" self);
             }
         }

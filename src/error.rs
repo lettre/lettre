@@ -66,9 +66,9 @@ impl FromError<(ErrorKind, &'static str)> for SmtpError {
 impl FromError<Response> for SmtpError {
     fn from_error(response: Response) -> SmtpError {
         let kind = match response.code/100 {
-            4 => TransientError(response.clone()),
-            5 => PermanentError(response.clone()),
-            _ => UnknownError(response.clone().to_string()),
+            4 => TransientError(response),
+            5 => PermanentError(response),
+            _ => UnknownError(response.to_string()),
         };
         let desc = match kind {
             TransientError(_) => "a permanent error occured during the SMTP transaction",
