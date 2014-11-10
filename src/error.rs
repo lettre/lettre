@@ -18,27 +18,30 @@ use response::Response;
 /// An enum of all error kinds.
 #[deriving(PartialEq, Eq, Clone, Show)]
 pub enum ErrorKind {
-    /// TODO
+    /// Transient error
+    ///
+    /// 4xx reply code
     TransientError(Response),
-    /// TODO
+    /// permanent error
+    ///
+    /// 5xx reply code
     PermanentError(Response),
-    /// TODO
+    /// Unknown error
     UnknownError(String),
-    /// TODO
+    /// IO error
     InternalIoError(IoError),
 }
 
-/// TODO
+/// smtp error type
 #[deriving(PartialEq, Eq, Clone, Show)]
 pub struct SmtpError {
-    /// TODO
+    /// Error kind
     pub kind: ErrorKind,
-    /// TODO
+    /// Error description
     pub desc: &'static str,
-    /// TODO
+    /// Error cause
     pub detail: Option<String>,
 }
-
 
 impl FromError<IoError> for SmtpError {
     fn from_error(err: IoError) -> SmtpError {
@@ -94,10 +97,8 @@ impl FromError<&'static str> for SmtpError {
 impl Error for SmtpError {
     fn description(&self) -> &str {
         match self.kind {
-            TransientError(_) => "a permanent error occured during the SMTP transaction",
-            PermanentError(_) => "a permanent error occured during the SMTP transaction",
-            UnknownError(_) => "an unknown error occured during the SMTP transaction",
-            InternalIoError(_) => "an I/O error occurred",
+            InternalIoError(ref err) => err.desc,
+            _ => self.desc,
         }
     }
 
@@ -106,7 +107,7 @@ impl Error for SmtpError {
             TransientError(ref response) => Some(response.to_string()),
             PermanentError(ref response) => Some(response.to_string()),
             UnknownError(ref string) => Some(string.to_string()),
-            _ => None,
+            InternalIoError(ref err) => err.detail.clone(),
         }
     }
 
@@ -118,5 +119,5 @@ impl Error for SmtpError {
     }
 }
 
-/// Library generic result type
+/// smtp result type
 pub type SmtpResult = Result<Response, SmtpError>;

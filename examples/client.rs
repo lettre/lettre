@@ -61,7 +61,6 @@ fn main() {
         optopt("s", "server", "set the server to use, default is localhost", "SERVER"),
         optopt("m", "my-hostname", "set the hostname used by the client", "MY_HOSTNAME"),
         optflag("h", "help", "print this help menu"),
-        optflag("v", "verbose", "display the transaction details"),
     ];
 
     let matches = match getopts(args_string.tail(), opts) {

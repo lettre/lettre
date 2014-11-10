@@ -84,8 +84,6 @@ impl Extension {
     }
 
     /// Parses supported ESMTP features
-    ///
-    /// TODO: Improve parsing, check RFC
     pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
         let mut esmtp_features = Vec::new();
         for line in message.split_str(CRLF) {
