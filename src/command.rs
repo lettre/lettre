@@ -33,9 +33,9 @@ pub enum Command {
     ExtendedHello(String),
     /// Hello command
     Hello(String),
-    /// Mail command, takes optionnal options
+    /// Mail command, takes optional options
     Mail(String, Option<Vec<String>>),
-    /// Recipient command, takes optionnal options
+    /// Recipient command, takes optional options
     Recipient(String, Option<Vec<String>>),
     /// Data command
     Data,
@@ -43,11 +43,11 @@ pub enum Command {
     Message,
     /// Reset command
     Reset,
-    /// Verify command, takes optionnal options
+    /// Verify command, takes optional options
     Verify(String),
-    /// Expand command, takes optionnal options
+    /// Expand command, takes optional options
     Expand(String),
-    /// Help command, takes optionnal options
+    /// Help command, takes optional options
     Help(Option<String>),
     /// Noop command
     Noop,

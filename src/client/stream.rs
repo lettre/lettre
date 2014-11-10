@@ -32,7 +32,7 @@ pub trait ClientStream {
 }
 
 impl ClientStream for TcpStream {
-    /// Sends a string to the server and get the response
+    /// Sends a string to the server and gets the response
     fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult {
         try!(self.write_str(format!("{}{}", escape_dot(string), end).as_slice()));
 

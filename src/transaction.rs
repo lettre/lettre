@@ -54,8 +54,9 @@ impl TransactionState {
     pub fn new() -> TransactionState {
         Unconnected
     }
-    /// TODO
-    pub fn is_command_possible(&self, command: Command) -> bool {
+
+    /// Tests if the given command is allowed in the current state
+    pub fn is_command_allowed(&self, command: Command) -> bool {
         match (*self, command) {
             (Unconnected, command::Connect) => true,
             (Unconnected, _) => false,
@@ -81,7 +82,9 @@ impl TransactionState {
         }
     }
 
-    /// TODO
+    /// Returns the state resulting of the given command
+    ///
+    /// A `None` return value means the comand is not allowed.
     pub fn next_state(&mut self, command: Command) -> Option<TransactionState> {
         match (*self, command) {
             (Unconnected, command::Connect) => Some(Connected),
@@ -120,11 +123,11 @@ mod test {
     }
 
     #[test]
-    fn test_is_command_possible() {
-        assert!(!super::Unconnected.is_command_possible(command::Noop));
-        assert!(!super::DataSent.is_command_possible(command::Noop));
-        assert!(super::HelloSent.is_command_possible(command::Mail("".to_string(), None)));
-        assert!(!super::MailSent.is_command_possible(command::Mail("".to_string(), None)));
+    fn test_is_command_allowed() {
+        assert!(!super::Unconnected.is_command_allowed(command::Noop));
+        assert!(!super::DataSent.is_command_allowed(command::Noop));
+        assert!(super::HelloSent.is_command_allowed(command::Mail("".to_string(), None)));
+        assert!(!super::MailSent.is_command_allowed(command::Mail("".to_string(), None)));
     }
 
     #[test]

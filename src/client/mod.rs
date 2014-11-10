@@ -160,7 +160,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// * If `message` is `None`, the given command will be formatted and sent to the server
     /// * If `message` is `Some(str)`, the `str` string will be sent to the server
     fn send_server(&mut self, command: Command, message: Option<&str>) -> SmtpResult {
-        if !self.state.is_command_possible(command.clone()) {
+        if !self.state.is_command_allowed(command.clone()) {
             fail_with_err!(Response{code: 503, message: Some("Bad sequence of commands".to_string())} self);
         }
 

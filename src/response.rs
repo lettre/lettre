@@ -18,12 +18,12 @@ use common::remove_trailing_crlf;
 
 /// Contains an SMTP reply, with separed code and message
 ///
-/// We do accept messages containing only a code, to comply with RFC5321
+/// The text message is optional, only the code is mandatory
 #[deriving(PartialEq,Eq,Clone)]
 pub struct Response {
     /// Server response code
     pub code: u16,
-    /// Server response string (optionnal)
+    /// Server response string (optional)
     pub message: Option<String>
 }
 
