@@ -14,9 +14,9 @@
 use std::error::FromError;
 use std::fmt::{Show, Formatter, Result};
 
-use common::SP;
 use response::Response;
 use error::SmtpResult;
+use common::SP;
 
 /// Supported SMTP commands
 ///

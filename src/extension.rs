@@ -14,7 +14,7 @@
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 
-use common::{CRLF};
+use common::CRLF;
 use response::Response;
 
 /// Supported ESMTP keywords

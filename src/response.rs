@@ -14,7 +14,7 @@
 use std::from_str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 
-use common::remove_trailing_crlf;
+use tools::remove_trailing_crlf;
 
 /// Contains an SMTP reply, with separed code and message
 ///

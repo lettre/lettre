@@ -13,8 +13,8 @@ use std::string::String;
 use std::io::net::ip::Port;
 use std::error::FromError;
 
-use common::{get_first_word, unquote_email_address};
-use common::{CRLF, SMTP_PORT, MESSAGE_ENDING};
+use tools::{get_first_word, unquote_email_address};
+use common::{SMTP_PORT, CRLF, MESSAGE_ENDING};
 use response::Response;
 use extension;
 use extension::Extension;
@@ -149,7 +149,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends an SMTP command
-    fn send_command(&mut self, command: Command) -> SmtpResult {
+    pub fn send_command(&mut self, command: Command) -> SmtpResult {
         // for now we do not support SMTPUTF8
         if !command.is_ascii() {
             fail_with_err!("Non-ASCII string" self);

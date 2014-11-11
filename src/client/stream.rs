@@ -17,7 +17,7 @@ use error::SmtpResult;
 use std::error::FromError;
 
 use response::Response;
-use common::{escape_crlf, escape_dot};
+use tools::{escape_crlf, escape_dot};
 
 static BUFFER_SIZE: uint = 1024;
 
