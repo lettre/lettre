@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Represents a valid complete SMTP command, ready to be sent to a server
+//! SMTP command
 
 #![unstable]
 

@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Contains constants defined in SMTP RFCs
+//! Constants defined in SMTP RFCs
 
 use std::io::net::ip::Port;
 

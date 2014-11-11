@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Contains tools for common string manipulations
+//! Tools for common string manipulations
 
 use std::string::String;
 use std::str::replace;

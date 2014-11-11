@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! SMTP commands and ESMTP features library
+//! State of an SMTP transaction
 
 #![unstable]
 

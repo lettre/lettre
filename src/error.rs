@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TODO
+//! Error and result type for SMTP clients
 
 use std::error::Error;
 use std::io::IoError;

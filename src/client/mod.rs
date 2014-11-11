@@ -27,8 +27,8 @@ use client::server_info::ServerInfo;
 use client::stream::ClientStream;
 
 pub mod server_info;
-mod connecter;
-mod stream;
+pub mod connecter;
+pub mod stream;
 
 /// Structure that implements the SMTP client
 pub struct Client<S> {
