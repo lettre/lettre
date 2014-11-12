@@ -29,22 +29,46 @@
 //!
 //! ### Basic usage
 //!
-//! If you want to send an email :
+//! If you just want to send an email:
 //!
 //! ```rust,no_run
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
+//! use smtp::common::SMTP_PORT;
 //!
 //! let mut email_client: Client<TcpStream> =
 //!     Client::new(
-//!         "localhost:25", // server socker
-//!         Some("myhost")  // my hostname (default is localhost)
+//!         ("localhost", SMTP_PORT), // server socket
+//!         Some("myhost")            // my hostname (default is localhost)
 //! );
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com",       // sender (reverse-path)
 //!     vec!["user@example.org"], // recipient list
 //!     "Test email"              // email content
 //! );
+//! ```
+//!
+//! ### Lower level
+//!
+//! You can also send commands, here is a simple email transaction without error handling:
+//!
+//! ```rust,no_run
+//! use std::io::net::tcp::TcpStream;
+//! use smtp::client::Client;
+//! use smtp::common::SMTP_PORT;
+//!
+//! let mut email_client: Client<TcpStream> =
+//!     Client::new(
+//!         ("localhost", SMTP_PORT), // server socket
+//!         Some("myhost")            // my hostname (default is localhost)
+//! );
+//! let _ = email_client.connect();
+//! let _ = email_client.ehlo::<TcpStream>();
+//! let _ = email_client.rcpt::<TcpStream>("user@example.org");
+//! let _ = email_client.mail::<TcpStream>("user@example.com");
+//! let _ = email_client.data::<TcpStream>();
+//! let _ = email_client.message::<TcpStream>("Test email");
+//! let _ = email_client.quit::<TcpStream>();
 //! ```
 
 #![crate_type = "lib"]
