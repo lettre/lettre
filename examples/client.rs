@@ -23,12 +23,11 @@ use smtp::client::Client;
 use smtp::error::SmtpResult;
 
 fn sendmail(source_address: &str, recipient_addresses: Vec<&str>, message: &str,
-        server: Option<&str>, port: Option<Port>, my_hostname: Option<&str>) -> SmtpResult {
+        server: &str, port: Port, my_hostname: &str) -> SmtpResult {
     let mut email_client: Client<TcpStream> =
         Client::new(
-            server,
-            port,
-            my_hostname
+            (server, port),
+            Some(my_hostname)
         );
     email_client.send_mail::<TcpStream>(
             source_address,
@@ -105,18 +104,18 @@ fn main() {
         message.as_slice(),
         // server
         match matches.opt_str("s") {
-            Some(ref server) => Some(server.as_slice()),
-            None => None
+            Some(ref server) => server.as_slice(),
+            None => "localhost"
         },
         // port
         match matches.opt_str("p") {
-            Some(port) => from_str::<Port>(port.as_slice()),
-            None       => None
+            Some(port) => from_str::<Port>(port.as_slice()).unwrap(),
+            None       => 25
         },
         // my hostname
         match matches.opt_str("m") {
-            Some(ref my_hostname) => Some(my_hostname.as_slice()),
-            None => None
+            Some(ref my_hostname) => my_hostname.as_slice(),
+            None => "localhost"
         }
     )
     {

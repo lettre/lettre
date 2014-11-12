@@ -10,11 +10,12 @@
 //! SMTP client
 
 use std::string::String;
-use std::io::net::ip::Port;
 use std::error::FromError;
+use std::io::net::ip::SocketAddr;
+use std::io::net::ip::ToSocketAddr;
 
 use tools::{get_first_word, unquote_email_address};
-use common::{SMTP_PORT, CRLF, MESSAGE_ENDING};
+use common::{CRLF, MESSAGE_ENDING};
 use response::Response;
 use extension;
 use extension::Extension;
@@ -35,10 +36,8 @@ pub struct Client<S> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<S>,
-    /// Host we are connecting to
-    host: String,
-    /// Port we are connecting on
-    port: Port,
+    /// Socket we are connecting to
+    server_addr: SocketAddr,
     /// Our hostname for HELO/EHLO commands
     my_hostname: String,
     /// Information about the server
@@ -76,11 +75,10 @@ impl<S> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only create the `Client`
-    pub fn new(host: Option<&str>, port: Option<Port>, my_hostname: Option<&str>) -> Client<S> {
+    pub fn new<A: ToSocketAddr>(addr: A, my_hostname: Option<&str>) -> Client<S> {
         Client{
             stream: None,
-            host: host.unwrap_or("localhost").to_string(),
-            port: port.unwrap_or(SMTP_PORT),
+            server_addr: addr.to_socket_addr().unwrap(),
             my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
             state: TransactionState::new()
@@ -100,16 +98,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Sends an email
     pub fn send_mail<S>(&mut self, from_address: &str,
                         to_addresses: Vec<&str>, message: &str) -> SmtpResult {
-        let my_hostname = self.my_hostname.clone();
 
         // Connect to the server
         try!(self.connect());
 
         // Extended Hello or Hello
-        match self.ehlo::<S>(my_hostname.as_slice()) {
+        match self.ehlo::<S>() {
             Err(error) => match error.kind {
                             ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                                try_smtp!(self.helo::<S>(my_hostname.as_slice()) self);
+                                try_smtp!(self.helo::<S>() self);
                             },
                             _ => {
                                 try_smtp!(Err(error) self)
@@ -118,7 +115,8 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             _ => {}
         }
 
-        debug!("Server {}", self.server_info.as_ref().unwrap());
+        // Print server information
+        debug!("server {}", self.server_info.as_ref().unwrap());
 
         // Mail
         try_smtp!(self.mail::<S>(from_address) self);
@@ -139,6 +137,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         // Message content
         let sent = try_smtp!(self.message::<S>(message) self);
 
+        // Log the rcpt command
         info!("to=<{}>, status=sent ({})",
               to_addresses.connect(">, to=<"), sent);
 
@@ -146,6 +145,30 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         try_smtp!(self.quit::<S>() self);
 
         return Ok(sent);
+    }
+
+    /// Connects to the configured server
+    pub fn connect(&mut self) -> SmtpResult {
+        let command = command::Connect;
+        check_command_sequence!(command self);
+
+        // Connect should not be called when the client is already connected
+        if !self.stream.is_none() {
+            fail_with_err!("The connection is already established" self);
+        }
+
+        // Try to connect
+        self.stream = Some(try!(Connecter::connect(self.server_addr)));
+
+        // Log the connection
+        info!("connection established to {}",
+              self.stream.as_mut().unwrap().peer_name().unwrap());
+
+        let result = try!(self.stream.as_mut().unwrap().get_reply());
+
+        let checked_result = try!(command.test_success(result));
+        self.state = self.state.next_state(&command).unwrap();
+        Ok(checked_result)
     }
 
     /// Sends an SMTP command
@@ -184,30 +207,6 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         Ok(checked_result)
     }
 
-    /// Connects to the configured server
-    pub fn connect(&mut self) -> SmtpResult {
-        let command = command::Connect;
-        check_command_sequence!(command self);
-
-        // Connect should not be called when the client is already connected
-        if !self.stream.is_none() {
-            fail_with_err!("The connection is already established" self);
-        }
-
-        // Try to connect
-        self.stream = Some(try!(Connecter::connect(self.host.as_slice(), self.port)));
-
-        // Log the connection
-        info!("Connection established to {}[{}]:{}",
-              self.host, self.stream.as_mut().unwrap().peer_name().unwrap().ip, self.port);
-
-        let result = try!(self.stream.as_mut().unwrap().get_reply());
-
-        let checked_result = try!(command.test_success(result));
-        self.state = self.state.next_state(&command).unwrap();
-        Ok(checked_result)
-    }
-
     /// Checks if the server is connected using the NOOP SMTP command
     pub fn is_connected<S>(&mut self) -> bool {
         self.noop::<S>().is_ok()
@@ -224,8 +223,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Send a HELO command and fills `server_info`
-    pub fn helo<S>(&mut self, my_hostname: &str) -> SmtpResult {
-        let result = try!(self.send_command(command::Hello(my_hostname.to_string())));
+    pub fn helo<S>(&mut self) -> SmtpResult {
+        let hostname = self.my_hostname.clone();
+        let result = try!(self.send_command(command::Hello(hostname)));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
@@ -236,8 +236,9 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     }
 
     /// Sends a EHLO command and fills `server_info`
-    pub fn ehlo<S>(&mut self, my_hostname: &str) -> SmtpResult {
-        let result = try!(self.send_command(command::ExtendedHello(my_hostname.to_string())));
+    pub fn ehlo<S>(&mut self) -> SmtpResult {
+        let hostname = self.my_hostname.clone();
+        let result = try!(self.send_command(command::ExtendedHello(hostname)));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),

@@ -18,14 +18,14 @@ use std::io::net::tcp::TcpStream;
 /// A trait for the concept of opening a stream connected to a IP socket address.
 pub trait Connecter {
     /// TODO
-    fn connect(host: &str, port: u16) -> IoResult<Self>;
+    fn connect(addr: SocketAddr) -> IoResult<Self>;
     /// TODO
     fn peer_name(&mut self) -> IoResult<SocketAddr>;
 }
 
 impl Connecter for TcpStream {
-    fn connect(host: &str, port: u16) -> IoResult<TcpStream> {
-        TcpStream::connect((host, port))
+    fn connect(addr: SocketAddr) -> IoResult<TcpStream> {
+        TcpStream::connect(addr)
     }
 
     fn peer_name(&mut self) -> IoResult<SocketAddr> {

@@ -27,15 +27,18 @@
 //!
 //! ## Usage
 //!
+//! ### Basic usage
+//!
+//! If you want to send an email :
+//!
 //! ```rust,no_run
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
 //!
 //! let mut email_client: Client<TcpStream> =
 //!     Client::new(
-//!         Some("localhost"), // server (default is localhost)
-//!         None,              // port (default is 25)
-//!         Some("myhost")     // my hostname (default is localhost)
+//!         "localhost:25", // server socker
+//!         Some("myhost")  // my hostname (default is localhost)
 //! );
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com",       // sender (reverse-path)
