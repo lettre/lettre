@@ -40,10 +40,10 @@
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
 //!         Some("myhost")            // my hostname (default is localhost)
-//! );
+//!     );
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com",       // sender (reverse-path)
-//!     vec!["user@example.org"], // recipient list
+//!     ["user@example.org"], // recipient list
 //!     "Test email"              // email content
 //! );
 //! ```
@@ -61,7 +61,7 @@
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
 //!         Some("myhost")            // my hostname (default is localhost)
-//! );
+//!     );
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo::<TcpStream>();
 //! let _ = email_client.rcpt::<TcpStream>("user@example.org");

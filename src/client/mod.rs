@@ -97,7 +97,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends an email
     pub fn send_mail<S>(&mut self, from_address: &str,
-                        to_addresses: Vec<&str>, message: &str) -> SmtpResult {
+                        to_addresses: &[&str], message: &str) -> SmtpResult {
 
         // Connect to the server
         try!(self.connect());

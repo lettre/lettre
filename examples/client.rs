@@ -22,7 +22,7 @@ use getopts::{optopt, optflag, getopts, OptGroup, usage};
 use smtp::client::Client;
 use smtp::error::SmtpResult;
 
-fn sendmail(source_address: &str, recipient_addresses: Vec<&str>, message: &str,
+fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
     let mut email_client: Client<TcpStream> =
         Client::new(
@@ -99,7 +99,7 @@ fn main() {
         // sender
         matches.opt_str("r").unwrap().as_slice(),
         // recipients
-        recipients,
+        recipients.as_slice(),
         // message content
         message.as_slice(),
         // server
