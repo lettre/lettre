@@ -9,21 +9,15 @@
 
 //! # Rust SMTP library
 //!
-//! The client does its best to follow RFC 5321 (https://tools.ietf.org/html/rfc5321).
+//! The client does its best to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
+//! a work in progress.
 //!
-//! It also implements the following extensions :
+//! It will eventually implement the following extensions :
 //!
-//! * 8BITMIME (RFC 6152 : https://tools.ietf.org/html/rfc6152)
-//! * SIZE (RFC 1427 : https://tools.ietf.org/html/rfc1427)
-//!
-//! ## What this client is NOT made for
-//!
-//! Send emails to public email servers. It is not designed to smartly handle servers responses,
-//! to rate-limit emails, to make retries, and all that complicated stuff needed to politely
-//! talk to public servers.
-//!
-//! What this client does is basically try once to send the email, and say if it worked.
-//! It should only be used to transfer emails to a relay server.
+//! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
+//! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
+//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954))
 //!
 //! ## Usage
 //!
@@ -39,12 +33,12 @@
 //! let mut email_client: Client<TcpStream> =
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
-//!         Some("myhost")            // my hostname (default is localhost)
+//!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com",       // sender (reverse-path)
 //!     ["user@example.org"], // recipient list
-//!     "Test email"              // email content
+//!     "Test email",             // email content
 //! );
 //! ```
 //!
@@ -60,7 +54,7 @@
 //! let mut email_client: Client<TcpStream> =
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
-//!         Some("myhost")            // my hostname (default is localhost)
+//!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo::<TcpStream>();

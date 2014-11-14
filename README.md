@@ -24,15 +24,20 @@ Example
 -------
 
 There is an example command-line program included:
-```
+```sh
 $ cargo test
 $ env RUST_LOG=info ./target/examples/client -r sender@localhost recipient@localhost < email.txt
-INFO:smtp::client: Connection established to localhost[127.0.0.1]:25
+INFO:smtp::client: connection established to 127.0.0.1:25
 INFO:smtp::client: from=<sender@localhost>, size=989, nrcpt=1
 INFO:smtp::client: to=<recipient@localhost>, status=sent (250 2.0.0 Ok: queued as 9D28F1C0A51)
 ```
 
 Run `./target/examples/client -h` to get a list of available options.
+
+Tests
+-----
+
+You can build and run the tests with `cargo test`. The client does not have tests for now.
 
 Documentation
 -------------

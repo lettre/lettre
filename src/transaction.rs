@@ -38,12 +38,12 @@ impl Show for TransactionState {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write(
             match *self {
-                Unconnected   => "Unconnected",
-                Connected     => "Connected",
-                HelloSent     => "HelloSent",
-                MailSent      => "MailSent",
+                Unconnected => "Unconnected",
+                Connected => "Connected",
+                HelloSent => "HelloSent",
+                MailSent => "MailSent",
                 RecipientSent => "RecipientSent",
-                DataSent      => "DataSent"
+                DataSent => "DataSent",
             }.as_bytes()
         )
     }
@@ -78,7 +78,7 @@ impl TransactionState {
             (RecipientSent, &command::Recipient(_, _)) => true,
             (RecipientSent, &command::Data) => true,
             // Everything else
-            (_, _) => false
+            (_, _) => false,
         }
     }
 
@@ -107,7 +107,7 @@ impl TransactionState {
             (RecipientSent, &command::Recipient(_, _)) => Some(RecipientSent),
             (RecipientSent, &command::Data) => Some(DataSent),
             // Everything else
-            (_, _) => None
+            (_, _) => None,
         }
     }
 }

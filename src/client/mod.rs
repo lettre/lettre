@@ -44,14 +44,14 @@ pub struct Client<S> {
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
     /// Transaction state, to check the sequence of commands
-    state: TransactionState
+    state: TransactionState,
 }
 
 macro_rules! try_smtp (
     ($err: expr $client: ident) => ({
         match $err {
             Ok(val) => val,
-            Err(err) => fail_with_err!(err $client)
+            Err(err) => fail_with_err!(err $client),
         }
     })
 )
@@ -81,7 +81,7 @@ impl<S> Client<S> {
             server_addr: addr.to_socket_addr().unwrap(),
             my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
-            state: TransactionState::new()
+            state: TransactionState::new(),
         }
     }
 }
@@ -112,7 +112,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
                                 try_smtp!(Err(error) self)
                             },
                           },
-            _ => {}
+            _ => {},
         }
 
         // Print server information
@@ -229,7 +229,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
-                esmtp_features: None
+                esmtp_features: None,
             }
         );
         Ok(result)
@@ -258,14 +258,14 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             None       => fail_with_err!(Response{
                                     code: 503,
                                     message: Some("Bad sequence of commands".to_string())
-                          } self)
+                          } self),
         };
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
         let options = match server_info.supports_feature(extension::EightBitMime) {
             Some(extension) => Some(vec![extension.client_mail_option().unwrap().to_string()]),
-            None => None
+            None => None,
         };
 
         self.send_command(

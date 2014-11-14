@@ -21,8 +21,7 @@ use common::SP;
 /// Supported SMTP commands
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
-/// and must not be used by clients:
-/// `SEND`, `SOML`, `SAML`, `TURN`
+/// and must not be used by clients: `SEND`, `SOML`, `SAML`, `TURN`.
 #[deriving(PartialEq,Eq,Clone)]
 pub enum Command {
     /// A fake command to represent the connection step
@@ -96,7 +95,7 @@ impl Command {
             Verify(ref address) => address.is_ascii(),
             Expand(ref address) => address.is_ascii(),
             Help(Some(ref argument)) => argument.is_ascii(),
-            _ => true
+            _ => true,
         }
     }
 

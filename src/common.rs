@@ -9,6 +9,8 @@
 
 //! Constants defined in SMTP RFCs
 
+#![unstable]
+
 use std::io::net::ip::Port;
 
 /// Default smtp port
@@ -26,9 +28,13 @@ pub static SUBMISSION_PORT: Port = 587;
 /// The word separator for SMTP transactions
 pub static SP: &'static str = " ";
 
-/// The line ending for SMTP transactions
+/// The line ending for SMTP transactions (carriage return + line feed)
 pub static CRLF: &'static str = "\r\n";
+
+/// Carriage return
 pub static CR: &'static str = "\r";
+
+/// Line feed
 pub static LF: &'static str = "\n";
 
 /// The ending of message content

@@ -9,6 +9,8 @@
 
 //! Error and result type for SMTP clients
 
+#![unstable]
+
 use std::error::Error;
 use std::io::IoError;
 use std::error::FromError;
@@ -48,7 +50,7 @@ impl FromError<IoError> for SmtpError {
         SmtpError {
             kind: InternalIoError(err),
             desc: "An internal IO error ocurred.",
-            detail: None
+            detail: None,
         }
     }
 }
@@ -79,7 +81,7 @@ impl FromError<Response> for SmtpError {
         SmtpError {
             kind: kind,
             desc: desc,
-            detail: None
+            detail: None,
         }
     }
 }
@@ -89,7 +91,7 @@ impl FromError<&'static str> for SmtpError {
         SmtpError {
             kind: UnknownError(string.to_string()),
             desc: "an unknown error occured during the SMTP transaction",
-            detail: None
+            detail: None,
         }
     }
 }
@@ -119,5 +121,5 @@ impl Error for SmtpError {
     }
 }
 
-/// smtp result type
+/// SMTP result type
 pub type SmtpResult = Result<Response, SmtpError>;

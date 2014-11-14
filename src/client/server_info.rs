@@ -25,7 +25,7 @@ pub struct ServerInfo {
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
     /// The `None` value means the server does not support ESMTP.
-    pub esmtp_features: Option<Vec<Extension>>
+    pub esmtp_features: Option<Vec<Extension>>,
 }
 
 impl Show for ServerInfo {
@@ -35,7 +35,7 @@ impl Show for ServerInfo {
                 self.name,
                 match self.esmtp_features {
                     Some(ref features) => features.to_string(),
-                    None => "no supported features".to_string()
+                    None => "no supported features".to_string(),
                 }
             ).as_bytes()
         )
@@ -54,7 +54,7 @@ impl ServerInfo {
                 }
                 None
             },
-            None => None
+            None => None,
         }
     }
 }

@@ -32,7 +32,7 @@ impl Show for Response {
         f.write(
             match self.clone().message {
                 Some(message) => format!("{} {}", self.code, message),
-                None          => format!("{}", self.code)
+                None => format!("{}", self.code),
             }.as_bytes()
         )
     }
@@ -50,8 +50,7 @@ impl FromStr for Response {
                                 code: code,
                                 message: None
                               }),
-                None       => None
-
+                None => None,
             }
         // If we have a code and a message
         } else {
@@ -64,8 +63,7 @@ impl FromStr for Response {
                             code: code,
                             message: Some(message.to_string())
                         }),
-                _                           => None
-
+                _ => None,
             }
         }
     }

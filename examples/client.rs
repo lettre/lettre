@@ -27,12 +27,12 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str,
     let mut email_client: Client<TcpStream> =
         Client::new(
             (server, port),
-            Some(my_hostname)
+            Some(my_hostname),
         );
     email_client.send_mail::<TcpStream>(
             source_address,
             recipient_addresses,
-            message
+            message,
     )
 }
 
@@ -64,7 +64,7 @@ fn main() {
 
     let matches = match getopts(args_string.tail(), opts) {
         Ok(m) => m,
-        Err(f) => panic!("{}", f)
+        Err(f) => panic!("{}", f),
     };
 
     if matches.opt_present("h") {
@@ -110,16 +110,16 @@ fn main() {
         // port
         match matches.opt_str("p") {
             Some(port) => from_str::<Port>(port.as_slice()).unwrap(),
-            None       => 25
+            None => 25
         },
         // my hostname
         match matches.opt_str("m") {
             Some(ref my_hostname) => my_hostname.as_slice(),
             None => "localhost"
-        }
+        },
     )
     {
         Ok(..) => info!("Email sent successfully"),
-        Err(error) => error!("{}", error)
+        Err(error) => error!("{}", error),
     }
 }

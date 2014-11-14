@@ -22,7 +22,7 @@ pub fn quote_email_address(address: &str) -> String {
         _   => match (address.slice_to(1),
                       address.slice_from(address.len() - 1)) {
                    ("<", ">") => address.to_string(),
-                   _          => format!("<{}>", address)
+                   _ => format!("<{}>", address),
                }
     }
 }
@@ -35,7 +35,7 @@ pub fn unquote_email_address(address: &str) -> &str {
         _    => match (address.slice_to(1),
                        address.slice_from(address.len() - 1)) {
                     ("<", ">") => address.slice(1, address.len() - 1),
-                    _          => address
+                    _ => address,
                 }
     }
 }
@@ -58,7 +58,7 @@ pub fn get_first_word(string: &str) -> &str {
     string.split_str(CRLF).next().unwrap().splitn(1, ' ').next().unwrap()
 }
 
-/// Returns the string replacing all the CRLF with "<CRLF>"
+/// Returns the string replacing all the CRLF with "\<CRLF\>"
 #[inline]
 pub fn escape_crlf(string: &str) -> String {
     replace(string, CRLF, "<CR><LF>")

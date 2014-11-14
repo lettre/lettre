@@ -35,16 +35,16 @@ pub enum Extension {
     /// SIZE keyword
     ///
     /// RFC 1427 : https://tools.ietf.org/html/rfc1427
-    Size(uint)
+    Size(uint),
 }
 
 impl Show for Extension {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write(
             match self {
-                &EightBitMime   => "8BITMIME".to_string(),
-                &SmtpUtfEight   => "SMTPUTF8".to_string(),
-                &StartTls       => "STARTTLS".to_string(),
+                &EightBitMime => "8BITMIME".to_string(),
+                &SmtpUtfEight => "SMTPUTF8".to_string(),
+                &StartTls => "STARTTLS".to_string(),
                 &Size(ref size) => format!("SIZE={}", size)
             }.as_bytes()
         )
@@ -60,13 +60,13 @@ impl FromStr for Extension {
                      "8BITMIME" => Some(EightBitMime),
                      "SMTPUTF8" => Some(SmtpUtfEight),
                      "STARTTLS" => Some(StartTls),
-                     _          => None
+                     _ => None,
                  },
             2 => match (splitted[0], from_str::<uint>(splitted[1])) {
                      ("SIZE", Some(size)) => Some(Size(size)),
-                     _                    => None
+                     _ => None,
                  },
-            _          => None
+            _ => None,
         }
     }
 }
@@ -79,7 +79,7 @@ impl Extension {
         }
         match (*self, other) {
             (Size(_), Size(_)) => true,
-            _                  => false
+            _ => false,
         }
     }
 
@@ -91,10 +91,10 @@ impl Extension {
                 Some(Response{code: 250, message}) => {
                     match from_str::<Extension>(message.unwrap().as_slice()) {
                         Some(keyword) => esmtp_features.push(keyword),
-                        None          => ()
+                        None => (),
                     }
                 },
-                _ => ()
+                _ => (),
             }
         }
         Some(esmtp_features)
@@ -104,7 +104,7 @@ impl Extension {
     pub fn client_mail_option(&self) -> Option<&str> {
         match *self {
             EightBitMime => Some("BODY=8BITMIME"),
-            _ => None
+            _ => None,
         }
     }
 }
