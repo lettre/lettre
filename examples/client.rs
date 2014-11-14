@@ -50,9 +50,10 @@ fn main() {
 
     let program = args[0].clone();
     let description = format!("Usage: {0} [options...] recipients\n\n\
-                               This program reads a message on standard input until it reaches EOF,\
-                               then tries to send it using the given paramters.\n\n\
-                               Example: {0} -r user@example.org user@example.com < message.txt", program);
+                               This program reads a message on standard input until it reaches\
+                               EOF, then tries to send it using the given paramters.\n\n\
+                               Example: {0} -r user@example.org user@example.com < message.txt",
+                              program);
 
     let opts = [
         optopt("r", "reverse-path", "set the sender address", "FROM_ADDRESS"),

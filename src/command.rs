@@ -157,10 +157,13 @@ mod test {
         assert!(super::ExtendedHello("my_name".to_string()).is_ascii());
         assert!(!super::ExtendedHello("my_namé".to_string()).is_ascii());
         assert!(
-            super::Mail("test".to_string(), Some(vec!["option".to_string(), "option2".to_string()]))
+            super::Mail("test".to_string(), Some(vec!["test".to_string(), "test".to_string()]))
         .is_ascii());
         assert!(
-            !super::Mail("test".to_string(), Some(vec!["option".to_string(), "option2à".to_string()]))
+            !super::Mail("test".to_string(), Some(vec!["est".to_string(), "testà".to_string()]))
+        .is_ascii());
+        assert!(
+            !super::Mail("testé".to_string(), Some(vec!["est".to_string(), "test".to_string()]))
         .is_ascii());
     }
 }

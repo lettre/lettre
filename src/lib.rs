@@ -9,10 +9,10 @@
 
 //! # Rust SMTP library
 //!
-//! The client does its best to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
+//! The client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
 //! a work in progress.
 //!
-//! It will eventually implement the following extensions :
+//! It may eventually implement the following extensions :
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
@@ -36,9 +36,9 @@
 //!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let result = email_client.send_mail::<TcpStream>(
-//!     "user@example.com",       // sender (reverse-path)
+//!     "user@example.com",   // sender (reverse-path)
 //!     ["user@example.org"], // recipient list
-//!     "Test email",             // email content
+//!     "Test email",         // email content
 //! );
 //! ```
 //!

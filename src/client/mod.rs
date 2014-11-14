@@ -66,7 +66,9 @@ macro_rules! fail_with_err (
 macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
         if !$client.state.is_command_allowed(&$command) {
-            fail_with_err!(Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client);
+            fail_with_err!(
+                Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client
+            );
         }
     })
 )
@@ -98,7 +100,6 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Sends an email
     pub fn send_mail<S>(&mut self, from_address: &str,
                         to_addresses: &[&str], message: &str) -> SmtpResult {
-
         // Connect to the server
         try!(self.connect());
 
@@ -199,7 +200,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
                              ),
             None          => self.stream.as_mut().unwrap().send_and_get_response(
                                 command.to_string().as_slice(), CRLF
-                             )
+                             ),
         });
 
         let checked_result = try!(command.test_success(result));
@@ -244,7 +245,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
                 esmtp_features: Extension::parse_esmtp_response(
                                     result.message.as_ref().unwrap().as_slice()
-                                )
+                                ),
             }
         );
         Ok(result)
@@ -257,7 +258,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             Some(info) => info,
             None       => fail_with_err!(Response{
                                     code: 503,
-                                    message: Some("Bad sequence of commands".to_string())
+                                    message: Some("Bad sequence of commands".to_string()),
                           } self),
         };
 
@@ -292,7 +293,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             Some(info) => info,
             None       => fail_with_err!(Response{
                                     code: 503,
-                                    message: Some("Bad sequence of commands".to_string())
+                                    message: Some("Bad sequence of commands".to_string()),
                           } self)
         };
 
@@ -308,7 +309,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
             Some(extension::Size(max)) if message_content.len() > max =>
                 fail_with_err!(Response{
                     code: 552,
-                    message: Some("Message exceeds fixed maximum message size".to_string())
+                    message: Some("Message exceeds fixed maximum message size".to_string()),
                 } self),
             _ => ()
         };
