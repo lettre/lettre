@@ -11,7 +11,7 @@
 
 #![unstable]
 
-use std::from_str::FromStr;
+use std::str::FromStr;
 use std::fmt::{Show, Formatter, Result};
 
 use tools::remove_trailing_crlf;
