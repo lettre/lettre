@@ -16,6 +16,7 @@ use std::fmt::{Show, Formatter, Result};
 
 use common::CRLF;
 use response::Response;
+use self::Extension::{EightBitMime, SmtpUtfEight, StartTls, Size};
 
 /// Supported ESMTP keywords
 #[deriving(PartialEq,Eq,Clone)]

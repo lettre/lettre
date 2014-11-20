@@ -16,6 +16,7 @@ use std::io::IoError;
 use std::error::FromError;
 
 use response::Response;
+use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
 
 /// An enum of all error kinds.
 #[deriving(PartialEq, Eq, Clone, Show)]

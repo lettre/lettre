@@ -17,6 +17,8 @@ use std::fmt::{Show, Formatter, Result};
 use response::Response;
 use error::SmtpResult;
 use common::SP;
+use self::Command::{Connect, StartTls, ExtendedHello, Hello, Mail, Recipient, Data, Message, Reset,
+                    Verify, Expand, Help, Quit};
 
 /// Supported SMTP commands
 ///

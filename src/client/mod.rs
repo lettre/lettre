@@ -19,7 +19,7 @@ use common::{CRLF, MESSAGE_ENDING};
 use response::Response;
 use extension;
 use extension::Extension;
-use command;
+//use command;
 use command::Command;
 use transaction::TransactionState;
 use error::{SmtpResult, ErrorKind};
@@ -150,7 +150,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
-        let command = command::Connect;
+        let command = Command::Connect;
         check_command_sequence!(command self);
 
         // Connect should not be called when the client is already connected
@@ -226,7 +226,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Send a HELO command and fills `server_info`
     pub fn helo<S>(&mut self) -> SmtpResult {
         let hostname = self.my_hostname.clone();
-        let result = try!(self.send_command(command::Hello(hostname)));
+        let result = try!(self.send_command(Command::Hello(hostname)));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
@@ -239,7 +239,7 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
     /// Sends a EHLO command and fills `server_info`
     pub fn ehlo<S>(&mut self) -> SmtpResult {
         let hostname = self.my_hostname.clone();
-        let result = try!(self.send_command(command::ExtendedHello(hostname)));
+        let result = try!(self.send_command(Command::ExtendedHello(hostname)));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
@@ -264,26 +264,26 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
         // Checks message encoding according to the server's capability
         // TODO : Add an encoding check.
-        let options = match server_info.supports_feature(extension::EightBitMime) {
+        let options = match server_info.supports_feature(Extension::EightBitMime) {
             Some(extension) => Some(vec![extension.client_mail_option().unwrap().to_string()]),
             None => None,
         };
 
         self.send_command(
-            command::Mail(unquote_email_address(from_address).to_string(), options)
+            Command::Mail(unquote_email_address(from_address).to_string(), options)
         )
     }
 
     /// Sends a RCPT command
     pub fn rcpt<S>(&mut self, to_address: &str) -> SmtpResult {
         self.send_command(
-            command::Recipient(unquote_email_address(to_address).to_string(), None)
+            Command::Recipient(unquote_email_address(to_address).to_string(), None)
         )
     }
 
     /// Sends a DATA command
     pub fn data<S>(&mut self) -> SmtpResult {
-        self.send_command(command::Data)
+        self.send_command(Command::Data)
     }
 
     /// Sends the message content
@@ -298,15 +298,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         };
 
         // Check message encoding
-        if !server_info.supports_feature(extension::EightBitMime).is_some() {
+        if !server_info.supports_feature(Extension::EightBitMime).is_some() {
             if !message_content.is_ascii() {
                 fail_with_err!("Server does not accepts UTF-8 strings" self);
             }
         }
 
         // Get maximum message size if defined and compare to the message size
-        match server_info.supports_feature(extension::Size(0)) {
-            Some(extension::Size(max)) if message_content.len() > max =>
+        match server_info.supports_feature(Extension::Size(0)) {
+            Some(Extension::Size(max)) if message_content.len() > max =>
                 fail_with_err!(Response{
                     code: 552,
                     message: Some("Message exceeds fixed maximum message size".to_string()),
@@ -319,27 +319,27 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
 
     /// Sends a QUIT command
     pub fn quit<S>(&mut self) -> SmtpResult {
-        self.send_command(command::Quit)
+        self.send_command(Command::Quit)
     }
 
     /// Sends a RSET command
     pub fn rset<S>(&mut self) -> SmtpResult {
-        self.send_command(command::Reset)
+        self.send_command(Command::Reset)
     }
 
     /// Sends a NOOP command
     pub fn noop<S>(&mut self) -> SmtpResult {
-        self.send_command(command::Noop)
+        self.send_command(Command::Noop)
     }
 
     /// Sends a VRFY command
     pub fn vrfy<S>(&mut self, to_address: &str) -> SmtpResult {
-        self.send_command(command::Verify(to_address.to_string()))
+        self.send_command(Command::Verify(to_address.to_string()))
     }
 
     /// Sends a EXPN command
     pub fn expn<S>(&mut self, list: &str) -> SmtpResult {
-        self.send_command(command::Expand(list.to_string()))
+        self.send_command(Command::Expand(list.to_string()))
     }
 
 }

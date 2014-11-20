@@ -14,8 +14,8 @@
 use std::fmt;
 use std::fmt::{Show, Formatter};
 
-use command;
 use command::Command;
+use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent};
 
 /// Contains the state of the current transaction
 #[deriving(PartialEq,Eq,Clone)]
@@ -58,25 +58,25 @@ impl TransactionState {
     /// Tests if the given command is allowed in the current state
     pub fn is_command_allowed(&self, command: &Command) -> bool {
         match (*self, command) {
-            (Unconnected, &command::Connect) => true,
+            (Unconnected, &Command::Connect) => true,
             (Unconnected, _) => false,
             // Only a message can follow the DATA command
-            (DataSent, &command::Message) => true,
+            (DataSent, &Command::Message) => true,
             (DataSent, _) => false,
             // Commands that can be issued everytime
-            (_, &command::ExtendedHello(_)) => true,
-            (_, &command::Hello(_)) => true,
-            (_, &command::Reset) => true,
-            (_, &command::Verify(_)) => true,
-            (_, &command::Expand(_)) => true,
-            (_, &command::Help(_)) => true,
-            (_, &command::Noop) => true,
-            (_, &command::Quit) => true,
+            (_, &Command::ExtendedHello(_)) => true,
+            (_, &Command::Hello(_)) => true,
+            (_, &Command::Reset) => true,
+            (_, &Command::Verify(_)) => true,
+            (_, &Command::Expand(_)) => true,
+            (_, &Command::Help(_)) => true,
+            (_, &Command::Noop) => true,
+            (_, &Command::Quit) => true,
             // Commands that require a particular state
-            (HelloSent, &command::Mail(_, _)) => true,
-            (MailSent, &command::Recipient(_, _)) => true,
-            (RecipientSent, &command::Recipient(_, _)) => true,
-            (RecipientSent, &command::Data) => true,
+            (HelloSent, &Command::Mail(_, _)) => true,
+            (MailSent, &Command::Recipient(_, _)) => true,
+            (RecipientSent, &Command::Recipient(_, _)) => true,
+            (RecipientSent, &Command::Data) => true,
             // Everything else
             (_, _) => false,
         }
@@ -87,25 +87,25 @@ impl TransactionState {
     /// A `None` return value means the comand is not allowed.
     pub fn next_state(&mut self, command: &Command) -> Option<TransactionState> {
         match (*self, command) {
-            (Unconnected, &command::Connect) => Some(Connected),
+            (Unconnected, &Command::Connect) => Some(Connected),
             (Unconnected, _) => None,
-            (DataSent, &command::Message) => Some(HelloSent),
+            (DataSent, &Command::Message) => Some(HelloSent),
             (DataSent, _) => None,
             // Commands that can be issued everytime
-            (_, &command::ExtendedHello(_)) => Some(HelloSent),
-            (_, &command::Hello(_)) => Some(HelloSent),
-            (Connected, &command::Reset) => Some(Connected),
-            (_, &command::Reset) => Some(HelloSent),
-            (state, &command::Verify(_)) => Some(state),
-            (state, &command::Expand(_)) => Some(state),
-            (state, &command::Help(_)) => Some(state),
-            (state, &command::Noop) => Some(state),
-            (_, &command::Quit) => Some(Unconnected),
+            (_, &Command::ExtendedHello(_)) => Some(HelloSent),
+            (_, &Command::Hello(_)) => Some(HelloSent),
+            (Connected, &Command::Reset) => Some(Connected),
+            (_, &Command::Reset) => Some(HelloSent),
+            (state, &Command::Verify(_)) => Some(state),
+            (state, &Command::Expand(_)) => Some(state),
+            (state, &Command::Help(_)) => Some(state),
+            (state, &Command::Noop) => Some(state),
+            (_, &Command::Quit) => Some(Unconnected),
             // Commands that require a particular state
-            (HelloSent, &command::Mail(_, _)) => Some(MailSent),
-            (MailSent, &command::Recipient(_, _)) => Some(RecipientSent),
-            (RecipientSent, &command::Recipient(_, _)) => Some(RecipientSent),
-            (RecipientSent, &command::Data) => Some(DataSent),
+            (HelloSent, &Command::Mail(_, _)) => Some(MailSent),
+            (MailSent, &Command::Recipient(_, _)) => Some(RecipientSent),
+            (RecipientSent, &Command::Recipient(_, _)) => Some(RecipientSent),
+            (RecipientSent, &Command::Data) => Some(DataSent),
             // Everything else
             (_, _) => None,
         }
@@ -124,17 +124,17 @@ mod test {
 
     #[test]
     fn test_is_command_allowed() {
-        assert!(!super::Unconnected.is_command_allowed(&command::Noop));
-        assert!(!super::DataSent.is_command_allowed(&command::Noop));
-        assert!(super::HelloSent.is_command_allowed(&command::Mail("".to_string(), None)));
-        assert!(!super::MailSent.is_command_allowed(&command::Mail("".to_string(), None)));
+        assert!(!super::Unconnected.is_command_allowed(&Command::Noop));
+        assert!(!super::DataSent.is_command_allowed(&Command::Noop));
+        assert!(super::HelloSent.is_command_allowed(&Command::Mail("".to_string(), None)));
+        assert!(!super::MailSent.is_command_allowed(&Command::Mail("".to_string(), None)));
     }
 
     #[test]
     fn test_next_state() {
-        assert_eq!(super::MailSent.next_state(&command::Noop), Some(super::MailSent));
-        assert_eq!(super::HelloSent.next_state(&command::Mail("".to_string(), None)),
+        assert_eq!(super::MailSent.next_state(&Command::Noop), Some(super::MailSent));
+        assert_eq!(super::HelloSent.next_state(&Command::Mail("".to_string(), None)),
                    Some(super::MailSent));
-        assert_eq!(super::MailSent.next_state(&command::Mail("".to_string(), None)), None);
+        assert_eq!(super::MailSent.next_state(&Command::Mail("".to_string(), None)), None);
     }
 }
