@@ -63,26 +63,26 @@ fn main() {
         optflag("h", "help", "print this help menu"),
     ];
 
-    let matches = match getopts(args_string.tail(), opts) {
+    let matches = match getopts(args_string.tail(), &opts) {
         Ok(m) => m,
         Err(f) => panic!("{}", f),
     };
 
     if matches.opt_present("h") {
-        print_usage(description, opts);
+        print_usage(description, &opts);
         return;
     }
 
     if !matches.opt_present("r") {
         println!("The sender option is required");
-        print_usage(program, opts);
+        print_usage(program, &opts);
         return;
     }
 
     let recipients_str: &str = if !matches.free.is_empty() {
         matches.free[0].as_slice()
     } else {
-        print_usage(description, opts);
+        print_usage(description, &opts);
         return;
     };
 

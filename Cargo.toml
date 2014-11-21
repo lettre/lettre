@@ -1,5 +1,5 @@
 [package]
 
 name = "smtp"
-version = "0.0.1-pre"
+version = "0.0.1"
 authors = ["Alexis Mousset <contact@amousset.eu>"]

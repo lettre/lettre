@@ -114,27 +114,27 @@ impl TransactionState {
 
 #[cfg(test)]
 mod test {
-    use command;
+    use command::Command;
     use super::TransactionState;
 
     #[test]
     fn test_new() {
-        assert_eq!(TransactionState::new(), super::Unconnected);
+        assert_eq!(TransactionState::new(), TransactionState::Unconnected);
     }
 
     #[test]
     fn test_is_command_allowed() {
-        assert!(!super::Unconnected.is_command_allowed(&Command::Noop));
-        assert!(!super::DataSent.is_command_allowed(&Command::Noop));
-        assert!(super::HelloSent.is_command_allowed(&Command::Mail("".to_string(), None)));
-        assert!(!super::MailSent.is_command_allowed(&Command::Mail("".to_string(), None)));
+        assert!(!TransactionState::Unconnected.is_command_allowed(&Command::Noop));
+        assert!(!TransactionState::DataSent.is_command_allowed(&Command::Noop));
+        assert!(TransactionState::HelloSent.is_command_allowed(&Command::Mail("".to_string(), None)));
+        assert!(!TransactionState::MailSent.is_command_allowed(&Command::Mail("".to_string(), None)));
     }
 
     #[test]
     fn test_next_state() {
-        assert_eq!(super::MailSent.next_state(&Command::Noop), Some(super::MailSent));
-        assert_eq!(super::HelloSent.next_state(&Command::Mail("".to_string(), None)),
-                   Some(super::MailSent));
-        assert_eq!(super::MailSent.next_state(&Command::Mail("".to_string(), None)), None);
+        assert_eq!(TransactionState::MailSent.next_state(&Command::Noop), Some(TransactionState::MailSent));
+        assert_eq!(TransactionState::HelloSent.next_state(&Command::Mail("".to_string(), None)),
+                   Some(TransactionState::MailSent));
+        assert_eq!(TransactionState::MailSent.next_state(&Command::Mail("".to_string(), None)), None);
     }
 }

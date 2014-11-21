@@ -37,7 +37,7 @@
 //!     );
 //! let result = email_client.send_mail::<TcpStream>(
 //!     "user@example.com",   // sender (reverse-path)
-//!     ["user@example.org"], // recipient list
+//!     &["user@example.org"], // recipient list
 //!     "Test email",         // email content
 //! );
 //! ```

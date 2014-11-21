@@ -116,14 +116,14 @@ mod test {
 
     #[test]
     fn test_fmt() {
-        assert_eq!(format!("{}", super::EightBitMime), "8BITMIME".to_string());
-        assert_eq!(format!("{}", super::Size(42)), "SIZE=42".to_string());
+        assert_eq!(format!("{}", Extension::EightBitMime), "8BITMIME".to_string());
+        assert_eq!(format!("{}", Extension::Size(42)), "SIZE=42".to_string());
     }
 
     #[test]
     fn test_from_str() {
-        assert_eq!(from_str::<Extension>("8BITMIME"), Some(super::EightBitMime));
-        assert_eq!(from_str::<Extension>("SIZE 42"), Some(super::Size(42)));
+        assert_eq!(from_str::<Extension>("8BITMIME"), Some(Extension::EightBitMime));
+        assert_eq!(from_str::<Extension>("SIZE 42"), Some(Extension::Size(42)));
         assert_eq!(from_str::<Extension>("SIZ 42"), None);
         assert_eq!(from_str::<Extension>("SIZE 4a2"), None);
         // TODO: accept trailing spaces ?
@@ -132,22 +132,22 @@ mod test {
 
     #[test]
     fn test_same_extension_as() {
-        assert_eq!(super::EightBitMime.same_extension_as(super::EightBitMime), true);
-        assert_eq!(super::Size(42).same_extension_as(super::Size(42)), true);
-        assert_eq!(super::Size(42).same_extension_as(super::Size(43)), true);
-        assert_eq!(super::Size(42).same_extension_as(super::EightBitMime), false);
+        assert_eq!(Extension::EightBitMime.same_extension_as(Extension::EightBitMime), true);
+        assert_eq!(Extension::Size(42).same_extension_as(Extension::Size(42)), true);
+        assert_eq!(Extension::Size(42).same_extension_as(Extension::Size(43)), true);
+        assert_eq!(Extension::Size(42).same_extension_as(Extension::EightBitMime), false);
     }
 
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            Some(vec![super::EightBitMime, super::Size(42)]));
+            Some(vec![Extension::EightBitMime, Extension::Size(42)]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
-            Some(vec![super::EightBitMime]));
+            Some(vec![Extension::EightBitMime]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             Some(vec![]));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            Some(vec![super::Size(42), super::Size(43)]));
+            Some(vec![Extension::Size(42), Extension::Size(43)]));
         assert_eq!(Extension::parse_esmtp_response(""),
             Some(vec![]));
     }

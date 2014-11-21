@@ -62,17 +62,17 @@ impl ServerInfo {
 #[cfg(test)]
 mod test {
     use super::ServerInfo;
-    use extension;
+    use extension::Extension;
 
     #[test]
     fn test_fmt() {
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::EightBitMime])
+            esmtp_features: Some(vec![Extension::EightBitMime])
         }), "name with [8BITMIME]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::EightBitMime, extension::Size(42)])
+            esmtp_features: Some(vec![Extension::EightBitMime, Extension::Size(42)])
         }), "name with [8BITMIME, SIZE=42]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
@@ -84,19 +84,19 @@ mod test {
     fn test_supports_feature() {
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::EightBitMime])
-        }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
+            esmtp_features: Some(vec![Extension::EightBitMime])
+        }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::Size(42), extension::EightBitMime])
-        }.supports_feature(extension::EightBitMime), Some(extension::EightBitMime));
+            esmtp_features: Some(vec![Extension::Size(42), Extension::EightBitMime])
+        }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::Size(42), extension::EightBitMime])
-        }.supports_feature(extension::Size(0)), Some(extension::Size(42)));
+            esmtp_features: Some(vec![Extension::Size(42), Extension::EightBitMime])
+        }.supports_feature(Extension::Size(0)), Some(Extension::Size(42)));
         assert!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![extension::EightBitMime])
-        }.supports_feature(extension::Size(42)).is_none());
+            esmtp_features: Some(vec![Extension::EightBitMime])
+        }.supports_feature(Extension::Size(42)).is_none());
     }
 }

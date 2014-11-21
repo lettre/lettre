@@ -17,8 +17,6 @@ use std::fmt::{Show, Formatter, Result};
 use response::Response;
 use error::SmtpResult;
 use common::SP;
-use self::Command::{Connect, StartTls, ExtendedHello, Hello, Mail, Recipient, Data, Message, Reset,
-                    Verify, Expand, Help, Quit};
 
 /// Supported SMTP commands
 ///
@@ -59,25 +57,25 @@ pub enum Command {
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
         f.write( match *self {
-            Connect => "CONNECT".to_string(),
-            StartTls => "STARTTLS".to_string(),
-            ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname),
-            Hello(ref my_hostname) => format!("HELO {}", my_hostname),
-            Mail(ref from_address, None) => format!("MAIL FROM:<{}>", from_address),
-            Mail(ref from_address, Some(ref options)) =>
+            Command::Connect => "CONNECT".to_string(),
+            Command::StartTls => "STARTTLS".to_string(),
+            Command::ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname),
+            Command::Hello(ref my_hostname) => format!("HELO {}", my_hostname),
+            Command::Mail(ref from_address, None) => format!("MAIL FROM:<{}>", from_address),
+            Command::Mail(ref from_address, Some(ref options)) =>
                 format!("MAIL FROM:<{}> {}", from_address, options.connect(SP)),
-            Recipient(ref to_address, None) => format!("RCPT TO:<{}>", to_address),
-            Recipient(ref to_address, Some(ref options)) =>
+            Command::Recipient(ref to_address, None) => format!("RCPT TO:<{}>", to_address),
+            Command::Recipient(ref to_address, Some(ref options)) =>
                 format!("RCPT TO:<{}> {}", to_address, options.connect(SP)),
-            Data => "DATA".to_string(),
-            Message => "MESSAGE".to_string(),
-            Reset => "RSET".to_string(),
-            Verify(ref address) => format!("VRFY {}", address),
-            Expand(ref address) => format!("EXPN {}", address),
-            Help(None) => "HELP".to_string(),
-            Help(Some(ref argument)) => format!("HELP {}", argument),
-            Noop => "NOOP".to_string(),
-            Quit => "QUIT".to_string(),
+            Command::Data => "DATA".to_string(),
+            Command::Message => "MESSAGE".to_string(),
+            Command::Reset => "RSET".to_string(),
+            Command::Verify(ref address) => format!("VRFY {}", address),
+            Command::Expand(ref address) => format!("EXPN {}", address),
+            Command::Help(None) => "HELP".to_string(),
+            Command::Help(Some(ref argument)) => format!("HELP {}", argument),
+            Command::Noop => "NOOP".to_string(),
+            Command::Quit => "QUIT".to_string(),
         }.as_bytes())
     }
 }
@@ -86,17 +84,17 @@ impl Command {
     /// Tests if the `Command` is ASCII-only
     pub fn is_ascii(&self) -> bool {
         match *self {
-            ExtendedHello(ref my_hostname) => my_hostname.is_ascii(),
-            Hello(ref my_hostname) => my_hostname.is_ascii(),
-            Mail(ref from_address, None) => from_address.is_ascii(),
-            Mail(ref from_address, Some(ref options)) => from_address.is_ascii()
+            Command::ExtendedHello(ref my_hostname) => my_hostname.is_ascii(),
+            Command::Hello(ref my_hostname) => my_hostname.is_ascii(),
+            Command::Mail(ref from_address, None) => from_address.is_ascii(),
+            Command::Mail(ref from_address, Some(ref options)) => from_address.is_ascii()
                                                          && options.concat().is_ascii(),
-            Recipient(ref to_address, None) => to_address.is_ascii(),
-            Recipient(ref to_address, Some(ref options)) => to_address.is_ascii()
+            Command::Recipient(ref to_address, None) => to_address.is_ascii(),
+            Command::Recipient(ref to_address, Some(ref options)) => to_address.is_ascii()
                                                             && options.concat().is_ascii(),
-            Verify(ref address) => address.is_ascii(),
-            Expand(ref address) => address.is_ascii(),
-            Help(Some(ref argument)) => argument.is_ascii(),
+            Command::Verify(ref address) => address.is_ascii(),
+            Command::Expand(ref address) => address.is_ascii(),
+            Command::Help(Some(ref argument)) => argument.is_ascii(),
             _ => true,
         }
     }
@@ -107,20 +105,20 @@ impl Command {
     /// `Err` otherwise
     pub fn test_success(&self, response: Response) -> SmtpResult {
         let success = match *self {
-            Connect => vec![220],
-            StartTls => vec![220],
-            ExtendedHello(..) => vec![250],
-            Hello(..) => vec![250],
-            Mail(..) => vec![250],
-            Recipient(..) => vec![250, 251],
-            Data => vec![354],
-            Message => vec![250],
-            Reset => vec![250],
-            Verify(..) => vec![250, 251, 252],
-            Expand(..) => vec![250, 252],
-            Help(..) => vec![211, 214],
-            Noop => vec![250],
-            Quit => vec![221],
+            Command::Connect => vec![220],
+            Command::StartTls => vec![220],
+            Command::ExtendedHello(..) => vec![250],
+            Command::Hello(..) => vec![250],
+            Command::Mail(..) => vec![250],
+            Command::Recipient(..) => vec![250, 251],
+            Command::Data => vec![354],
+            Command::Message => vec![250],
+            Command::Reset => vec![250],
+            Command::Verify(..) => vec![250, 251, 252],
+            Command::Expand(..) => vec![250, 252],
+            Command::Help(..) => vec![211, 214],
+            Command::Noop => vec![250],
+            Command::Quit => vec![221],
         }.contains(&response.code);
         if success {
             Ok(response)
@@ -132,22 +130,24 @@ impl Command {
 
 #[cfg(test)]
 mod test {
+    use super::Command;
+
     #[test]
     fn test_fmt() {
         assert_eq!(
-            format!("{}", super::Noop),
+            format!("{}", Command::Noop),
             "NOOP".to_string()
         );
         assert_eq!(
-            format!("{}", super::ExtendedHello("my_name".to_string())),
+            format!("{}", Command::ExtendedHello("my_name".to_string())),
             "EHLO my_name".to_string()
         );
         assert_eq!(
-            format!("{}", super::Mail("test".to_string(), Some(vec!["option".to_string()]))),
+            format!("{}", Command::Mail("test".to_string(), Some(vec!["option".to_string()]))),
             "MAIL FROM:<test> option".to_string()
         );
         assert_eq!(
-            format!("{}", super::Mail("test".to_string(),
+            format!("{}", Command::Mail("test".to_string(),
                           Some(vec!["option".to_string(), "option2".to_string()]))),
             "MAIL FROM:<test> option option2".to_string()
         );
@@ -155,17 +155,17 @@ mod test {
 
     #[test]
     fn test_is_ascii() {
-        assert!(super::Help(None).is_ascii());
-        assert!(super::ExtendedHello("my_name".to_string()).is_ascii());
-        assert!(!super::ExtendedHello("my_namé".to_string()).is_ascii());
+        assert!(Command::Help(None).is_ascii());
+        assert!(Command::ExtendedHello("my_name".to_string()).is_ascii());
+        assert!(!Command::ExtendedHello("my_namé".to_string()).is_ascii());
         assert!(
-            super::Mail("test".to_string(), Some(vec!["test".to_string(), "test".to_string()]))
+            Command::Mail("test".to_string(), Some(vec!["test".to_string(), "test".to_string()]))
         .is_ascii());
         assert!(
-            !super::Mail("test".to_string(), Some(vec!["est".to_string(), "testà".to_string()]))
+            !Command::Mail("test".to_string(), Some(vec!["est".to_string(), "testà".to_string()]))
         .is_ascii());
         assert!(
-            !super::Mail("testé".to_string(), Some(vec!["est".to_string(), "test".to_string()]))
+            !Command::Mail("testé".to_string(), Some(vec!["est".to_string(), "test".to_string()]))
         .is_ascii());
     }
 }
