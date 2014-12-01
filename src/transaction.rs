@@ -56,36 +56,14 @@ impl TransactionState {
     }
 
     /// Tests if the given command is allowed in the current state
-    pub fn is_command_allowed(&self, command: &Command) -> bool {
-        match (*self, command) {
-            (Unconnected, &Command::Connect) => true,
-            (Unconnected, _) => false,
-            // Only a message can follow the DATA command
-            (DataSent, &Command::Message) => true,
-            (DataSent, _) => false,
-            // Commands that can be issued everytime
-            (_, &Command::ExtendedHello(_)) => true,
-            (_, &Command::Hello(_)) => true,
-            (_, &Command::Reset) => true,
-            (_, &Command::Verify(_)) => true,
-            (_, &Command::Expand(_)) => true,
-            (_, &Command::Help(_)) => true,
-            (_, &Command::Noop) => true,
-            (_, &Command::Quit) => true,
-            // Commands that require a particular state
-            (HelloSent, &Command::Mail(_, _)) => true,
-            (MailSent, &Command::Recipient(_, _)) => true,
-            (RecipientSent, &Command::Recipient(_, _)) => true,
-            (RecipientSent, &Command::Data) => true,
-            // Everything else
-            (_, _) => false,
-        }
+    pub fn is_allowed(&self, command: &Command) -> bool {
+        (*self).next_state(command).is_some()
     }
 
     /// Returns the state resulting of the given command
     ///
     /// A `None` return value means the comand is not allowed.
-    pub fn next_state(&mut self, command: &Command) -> Option<TransactionState> {
+    pub fn next_state(&self, command: &Command) -> Option<TransactionState> {
         match (*self, command) {
             (Unconnected, &Command::Connect) => Some(Connected),
             (Unconnected, _) => None,
@@ -123,11 +101,11 @@ mod test {
     }
 
     #[test]
-    fn test_is_command_allowed() {
-        assert!(!TransactionState::Unconnected.is_command_allowed(&Command::Noop));
-        assert!(!TransactionState::DataSent.is_command_allowed(&Command::Noop));
-        assert!(TransactionState::HelloSent.is_command_allowed(&Command::Mail("".to_string(), None)));
-        assert!(!TransactionState::MailSent.is_command_allowed(&Command::Mail("".to_string(), None)));
+    fn test_is_allowed() {
+        assert!(!TransactionState::Unconnected.is_allowed(&Command::Noop));
+        assert!(!TransactionState::DataSent.is_allowed(&Command::Noop));
+        assert!(TransactionState::HelloSent.is_allowed(&Command::Mail("".to_string(), None)));
+        assert!(!TransactionState::MailSent.is_allowed(&Command::Mail("".to_string(), None)));
     }
 
     #[test]

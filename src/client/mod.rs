@@ -63,7 +63,7 @@ macro_rules! fail_with_err (
 
 macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
-        if !$client.state.is_command_allowed(&$command) {
+        if !$client.state.is_allowed(&$command) {
             fail_with_err!(
                 Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client
             );
