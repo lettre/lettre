@@ -58,8 +58,8 @@
 //!     );
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo::<TcpStream>();
-//! let _ = email_client.rcpt::<TcpStream>("user@example.org");
 //! let _ = email_client.mail::<TcpStream>("user@example.com");
+//! let _ = email_client.rcpt::<TcpStream>("user@example.org");
 //! let _ = email_client.data::<TcpStream>();
 //! let _ = email_client.message::<TcpStream>("Test email");
 //! let _ = email_client.quit::<TcpStream>();
