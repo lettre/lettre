@@ -102,16 +102,15 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         try!(self.connect());
 
         // Extended Hello or Hello
-        match self.ehlo::<S>() {
-            Err(error) => match error.kind {
-                            ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                                try_smtp!(self.helo::<S>() self);
-                            },
-                            _ => {
-                                try_smtp!(Err(error) self)
-                            },
-                          },
-            _ => {},
+        if let Err(error) = self.ehlo::<S>() {
+            match error.kind {
+                ErrorKind::PermanentError(Response{code: 550, message: _}) => {
+                    try_smtp!(self.helo::<S>() self);
+                },
+                _ => {
+                    try_smtp!(Err(error) self)
+                },
+            };
         }
 
         // Print server information
@@ -303,14 +302,14 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         }
 
         // Get maximum message size if defined and compare to the message size
-        match server_info.supports_feature(Extension::Size(0)) {
-            Some(Extension::Size(max)) if message_content.len() > max =>
+        if let Some(Extension::Size(max)) = server_info.supports_feature(Extension::Size(0)) {
+            if message_content.len() > max {
                 fail_with_err!(Response{
                     code: 552,
                     message: Some("Message exceeds fixed maximum message size".to_string()),
-                } self),
-            _ => ()
-        };
+                } self);
+            }
+        }
 
         self.send_message(message_content)
     }

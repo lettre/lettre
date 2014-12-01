@@ -88,14 +88,10 @@ impl Extension {
     pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
         let mut esmtp_features = Vec::new();
         for line in message.split_str(CRLF) {
-            match from_str::<Response>(line) {
-                Some(Response{code: 250, message}) => {
-                    match from_str::<Extension>(message.unwrap().as_slice()) {
-                        Some(keyword) => esmtp_features.push(keyword),
-                        None => (),
-                    }
-                },
-                _ => (),
+            if let Some(Response{code: 250, message}) = from_str::<Response>(line) {
+                if let Some(keyword) = from_str::<Extension>(message.unwrap().as_slice()) {
+                    esmtp_features.push(keyword);
+                };
             }
         }
         Some(esmtp_features)

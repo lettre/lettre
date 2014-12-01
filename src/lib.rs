@@ -73,7 +73,7 @@
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 #![experimental]
 
-#![feature(phase, macro_rules)]
+#![feature(phase, macro_rules, if_let)]
 #![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
