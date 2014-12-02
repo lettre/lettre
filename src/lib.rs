@@ -36,9 +36,9 @@
 //!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let result = email_client.send_mail::<TcpStream>(
-//!     "user@example.com",   // sender (reverse-path)
+//!     "user@example.com",    // sender (reverse-path)
 //!     &["user@example.org"], // recipient list
-//!     "Test email",         // email content
+//!     "Test email",          // email content
 //! );
 //! ```
 //!
@@ -67,9 +67,6 @@
 
 #![crate_type = "lib"]
 
-#![desc = "Rust SMTP library"]
-#![comment = "Simple SMTP client and library"]
-#![license = "MIT/ASL2"]
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 #![experimental]
 
