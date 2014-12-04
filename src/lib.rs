@@ -26,11 +26,12 @@
 //! If you just want to send an email:
 //!
 //! ```rust,no_run
+//! #![feature(default_type_params)]
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
-//! let mut email_client: Client<TcpStream> =
+//! let mut email_client =
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
 //!         Some("myhost"),           // my hostname (default is localhost)
@@ -47,11 +48,12 @@
 //! You can also send commands, here is a simple email transaction without error handling:
 //!
 //! ```rust,no_run
+//! #![feature(default_type_params)]
 //! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
-//! let mut email_client: Client<TcpStream> =
+//! let mut email_client =
 //!     Client::new(
 //!         ("localhost", SMTP_PORT), // server socket
 //!         Some("myhost"),           // my hostname (default is localhost)
@@ -70,10 +72,12 @@
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 #![experimental]
 
-#![feature(phase, macro_rules, if_let)]
+#![feature(phase, macro_rules, if_let, default_type_params)]
 #![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
+
+extern crate time;
 
 pub mod client;
 pub mod command;
@@ -83,3 +87,4 @@ pub mod transaction;
 pub mod common;
 pub mod error;
 pub mod tools;
+pub mod email;

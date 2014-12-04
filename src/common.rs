@@ -37,5 +37,8 @@ pub static CR: &'static str = "\r";
 /// Line feed
 pub static LF: &'static str = "\n";
 
+/// Colon
+pub static COLON: &'static str = ":";
+
 /// The ending of message content
 pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";

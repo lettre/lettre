@@ -11,10 +11,10 @@
 
 use std::string::String;
 use std::error::FromError;
-use std::io::net::ip::SocketAddr;
-use std::io::net::ip::ToSocketAddr;
+use std::io::net::tcp::TcpStream;
+use std::io::net::ip::{SocketAddr, ToSocketAddr};
 
-use tools::{get_first_word, unquote_email_address};
+use tools::get_first_word;
 use common::{CRLF, MESSAGE_ENDING};
 use response::Response;
 use extension::Extension;
@@ -30,7 +30,7 @@ pub mod connecter;
 pub mod stream;
 
 /// Structure that implements the SMTP client
-pub struct Client<S> {
+pub struct Client<S = TcpStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<S>,
@@ -71,7 +71,7 @@ macro_rules! check_command_sequence (
     })
 )
 
-impl<S> Client<S> {
+impl<S = TcpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only create the `Client`
@@ -86,7 +86,7 @@ impl<S> Client<S> {
     }
 }
 
-impl<S: Connecter + ClientStream + Clone> Client<S> {
+impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Closes the SMTP transaction if possible, and then closes the TCP session
     fn close_on_error<S>(&mut self) {
         if self.is_connected::<S>() {
@@ -267,14 +267,14 @@ impl<S: Connecter + ClientStream + Clone> Client<S> {
         };
 
         self.send_command(
-            Command::Mail(unquote_email_address(from_address).to_string(), options)
+            Command::Mail(from_address.to_string(), options)
         )
     }
 
     /// Sends a RCPT command
     pub fn rcpt<S>(&mut self, to_address: &str) -> SmtpResult {
         self.send_command(
-            Command::Recipient(unquote_email_address(to_address).to_string(), None)
+            Command::Recipient(to_address.to_string(), None)
         )
     }
 

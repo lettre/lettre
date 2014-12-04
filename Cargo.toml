@@ -12,3 +12,6 @@ license = "MIT/Apache-2.0"
 readme = "README.md"
 
 keywords = ["email", "smtp"]
+
+[dependencies]
+time = "*"

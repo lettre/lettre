@@ -14,32 +14,6 @@ use std::str::replace;
 
 use common::{CR, LF, CRLF};
 
-/// Adds quotes to emails if needed
-#[inline]
-pub fn quote_email_address(address: &str) -> String {
-    match address.len() {
-        0 ... 1 => format!("<{}>", address),
-        _   => match (address.slice_to(1),
-                      address.slice_from(address.len() - 1)) {
-                   ("<", ">") => address.to_string(),
-                   _ => format!("<{}>", address),
-               }
-    }
-}
-
-/// Removes quotes from emails if needed
-#[inline]
-pub fn unquote_email_address(address: &str) -> &str {
-    match address.len() {
-        0 ... 1 => address,
-        _    => match (address.slice_to(1),
-                       address.slice_from(address.len() - 1)) {
-                    ("<", ">") => address.slice(1, address.len() - 1),
-                    _ => address,
-                }
-    }
-}
-
 /// Removes the trailing line return at the end of a string
 #[inline]
 pub fn remove_trailing_crlf(string: &str) -> &str {
@@ -79,26 +53,7 @@ pub fn escape_dot(string: &str) -> String {
 
 #[cfg(test)]
 mod test {
-    use super::{quote_email_address, unquote_email_address,
-                remove_trailing_crlf, get_first_word, escape_crlf, escape_dot};
-
-    #[test]
-    fn test_quote_email_address() {
-        assert_eq!(quote_email_address("address").as_slice(), "<address>");
-        assert_eq!(quote_email_address("<address>").as_slice(), "<address>");
-        assert_eq!(quote_email_address("a").as_slice(), "<a>");
-        assert_eq!(quote_email_address("").as_slice(), "<>");
-    }
-
-    #[test]
-    fn test_unquote_email_address() {
-        assert_eq!(unquote_email_address("<address>"), "address");
-        assert_eq!(unquote_email_address("address"), "address");
-        assert_eq!(unquote_email_address("<address"), "<address");
-        assert_eq!(unquote_email_address("<>"), "");
-        assert_eq!(unquote_email_address("a"), "a");
-        assert_eq!(unquote_email_address(""), "");
-    }
+    use super::{remove_trailing_crlf, get_first_word, escape_crlf, escape_dot};
 
     #[test]
     fn test_remove_trailing_crlf() {

@@ -7,32 +7,35 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
+#![feature(default_type_params)]
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
+
 
 extern crate smtp;
 extern crate getopts;
 
 use std::io::stdin;
-use std::io::net::tcp::TcpStream;
 use std::string::String;
 use std::io::net::ip::Port;
 use std::os;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
+use std::io::net::tcp::TcpStream;
 
 use smtp::client::Client;
 use smtp::error::SmtpResult;
+//use smtp::email::Email;
 
 fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
-    let mut email_client: Client<TcpStream> =
+    let mut email_client =
         Client::new(
             (server, port),
             Some(my_hostname),
         );
     email_client.send_mail::<TcpStream>(
-            source_address,
-            recipient_addresses,
-            message,
+        source_address,
+        recipient_addresses,
+        message,
     )
 }
 
