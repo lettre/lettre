@@ -19,7 +19,6 @@ use std::string::String;
 use std::io::net::ip::Port;
 use std::os;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
-use std::io::net::tcp::TcpStream;
 
 use smtp::client::Client;
 use smtp::error::SmtpResult;
@@ -32,7 +31,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str,
             (server, port),
             Some(my_hostname),
         );
-    email_client.send_mail::<TcpStream>(
+    email_client.send_mail(
         source_address,
         recipient_addresses,
         message,

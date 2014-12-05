@@ -56,7 +56,7 @@ macro_rules! try_smtp (
 
 macro_rules! fail_with_err (
     ($err: expr $client: ident) => ({
-        $client.close_on_error::<S>();
+        $client.close_on_error();
         return Err(FromError::from_error($err))
     })
 )
@@ -88,24 +88,24 @@ impl<S = TcpStream> Client<S> {
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Closes the SMTP transaction if possible, and then closes the TCP session
-    fn close_on_error<S>(&mut self) {
-        if self.is_connected::<S>() {
-            let _ = self.quit::<S>();
+    fn close_on_error(&mut self) {
+        if self.is_connected() {
+            let _ = self.quit();
         }
         self.close();
     }
 
     /// Sends an email
-    pub fn send_mail<S>(&mut self, from_address: &str,
+    pub fn send_mail(&mut self, from_address: &str,
                         to_addresses: &[&str], message: &str) -> SmtpResult {
         // Connect to the server
         try!(self.connect());
 
         // Extended Hello or Hello
-        if let Err(error) = self.ehlo::<S>() {
+        if let Err(error) = self.ehlo() {
             match error.kind {
                 ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                    try_smtp!(self.helo::<S>() self);
+                    try_smtp!(self.helo() self);
                 },
                 _ => {
                     try_smtp!(Err(error) self)
@@ -117,7 +117,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         debug!("server {}", self.server_info.as_ref().unwrap());
 
         // Mail
-        try_smtp!(self.mail::<S>(from_address) self);
+        try_smtp!(self.mail(from_address) self);
 
         // Log the mail command
         info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
@@ -126,21 +126,21 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         // TODO Return rejected addresses
         // TODO Manage the number of recipients
         for to_address in to_addresses.iter() {
-            try_smtp!(self.rcpt::<S>(*to_address) self);
+            try_smtp!(self.rcpt(*to_address) self);
         }
 
         // Data
-        try_smtp!(self.data::<S>() self);
+        try_smtp!(self.data() self);
 
         // Message content
-        let sent = try_smtp!(self.message::<S>(message) self);
+        let sent = try_smtp!(self.message(message) self);
 
         // Log the rcpt command
         info!("to=<{}>, status=sent ({})",
               to_addresses.connect(">, to=<"), sent);
 
         // Quit
-        try_smtp!(self.quit::<S>() self);
+        try_smtp!(self.quit() self);
 
         return Ok(sent);
     }
@@ -206,8 +206,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
-    pub fn is_connected<S>(&mut self) -> bool {
-        self.noop::<S>().is_ok()
+    pub fn is_connected(&mut self) -> bool {
+        self.noop().is_ok()
     }
 
     /// Closes the TCP stream
@@ -221,7 +221,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Send a HELO command and fills `server_info`
-    pub fn helo<S>(&mut self) -> SmtpResult {
+    pub fn helo(&mut self) -> SmtpResult {
         let hostname = self.my_hostname.clone();
         let result = try!(self.send_command(Command::Hello(hostname)));
         self.server_info = Some(
@@ -234,7 +234,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a EHLO command and fills `server_info`
-    pub fn ehlo<S>(&mut self) -> SmtpResult {
+    pub fn ehlo(&mut self) -> SmtpResult {
         let hostname = self.my_hostname.clone();
         let result = try!(self.send_command(Command::ExtendedHello(hostname)));
         self.server_info = Some(
@@ -249,7 +249,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a MAIL command
-    pub fn mail<S>(&mut self, from_address: &str) -> SmtpResult {
+    pub fn mail(&mut self, from_address: &str) -> SmtpResult {
 
         let server_info = match self.server_info.clone() {
             Some(info) => info,
@@ -272,19 +272,19 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a RCPT command
-    pub fn rcpt<S>(&mut self, to_address: &str) -> SmtpResult {
+    pub fn rcpt(&mut self, to_address: &str) -> SmtpResult {
         self.send_command(
             Command::Recipient(to_address.to_string(), None)
         )
     }
 
     /// Sends a DATA command
-    pub fn data<S>(&mut self) -> SmtpResult {
+    pub fn data(&mut self) -> SmtpResult {
         self.send_command(Command::Data)
     }
 
     /// Sends the message content
-    pub fn message<S>(&mut self, message_content: &str) -> SmtpResult {
+    pub fn message(&mut self, message_content: &str) -> SmtpResult {
 
         let server_info = match self.server_info.clone() {
             Some(info) => info,
@@ -315,27 +315,27 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a QUIT command
-    pub fn quit<S>(&mut self) -> SmtpResult {
+    pub fn quit(&mut self) -> SmtpResult {
         self.send_command(Command::Quit)
     }
 
     /// Sends a RSET command
-    pub fn rset<S>(&mut self) -> SmtpResult {
+    pub fn rset(&mut self) -> SmtpResult {
         self.send_command(Command::Reset)
     }
 
     /// Sends a NOOP command
-    pub fn noop<S>(&mut self) -> SmtpResult {
+    pub fn noop(&mut self) -> SmtpResult {
         self.send_command(Command::Noop)
     }
 
     /// Sends a VRFY command
-    pub fn vrfy<S>(&mut self, to_address: &str) -> SmtpResult {
+    pub fn vrfy(&mut self, to_address: &str) -> SmtpResult {
         self.send_command(Command::Verify(to_address.to_string()))
     }
 
     /// Sends a EXPN command
-    pub fn expn<S>(&mut self, list: &str) -> SmtpResult {
+    pub fn expn(&mut self, list: &str) -> SmtpResult {
         self.send_command(Command::Expand(list.to_string()))
     }
 

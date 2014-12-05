@@ -16,8 +16,8 @@ use time::{now, Tm};
 use email::header::Header;
 use email::address::ToAddress;
 use common::CRLF;
-//use client::Client;
-//use error::SmtpResult;
+use client::Client;
+use error::SmtpResult;
 
 pub mod header;
 pub mod address;
@@ -42,15 +42,14 @@ impl Show for Email {
 
 impl Email {
     /// TODO
-    // pub fn send(&self, client: Client) -> SmtpResult {
-    //     let test: Vec<&str> = self.to.iter().map(|s| s.as_slice()).collect();
-    //     //let to_vec: &[&str] = self.to.iter().map(|s| s.as_slice()).collect().as_slice();
-    //     client.send_mail(
-    //         self.from.unwrap().as_slice(),
-    //         test.as_slice(),
-    //         self.to_string().as_slice(),
-    //     )
-    // }
+    pub fn send(&self, mut client: Client) -> SmtpResult {
+        let to_vec: Vec<&str> = self.to.iter().map(|s| s.as_slice()).collect();
+        client.send_mail(
+            self.from.clone().unwrap().as_slice(),
+            to_vec.as_slice(),
+            self.to_string().as_slice(),
+        )
+    }
 
     /// TODO
     pub fn new() -> Email {

@@ -27,7 +27,6 @@
 //!
 //! ```rust,no_run
 //! #![feature(default_type_params)]
-//! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
@@ -36,7 +35,7 @@
 //!         ("localhost", SMTP_PORT), // server socket
 //!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
-//! let result = email_client.send_mail::<TcpStream>(
+//! let result = email_client.send_mail(
 //!     "user@example.com",    // sender (reverse-path)
 //!     &["user@example.org"], // recipient list
 //!     "Test email",          // email content
@@ -49,7 +48,6 @@
 //!
 //! ```rust,no_run
 //! #![feature(default_type_params)]
-//! use std::io::net::tcp::TcpStream;
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
@@ -59,12 +57,12 @@
 //!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let _ = email_client.connect();
-//! let _ = email_client.ehlo::<TcpStream>();
-//! let _ = email_client.mail::<TcpStream>("user@example.com");
-//! let _ = email_client.rcpt::<TcpStream>("user@example.org");
-//! let _ = email_client.data::<TcpStream>();
-//! let _ = email_client.message::<TcpStream>("Test email");
-//! let _ = email_client.quit::<TcpStream>();
+//! let _ = email_client.ehlo();
+//! let _ = email_client.mail("user@example.com");
+//! let _ = email_client.rcpt("user@example.org");
+//! let _ = email_client.data();
+//! let _ = email_client.message("Test email");
+//! let _ = email_client.quit();
 //! ```
 
 #![crate_type = "lib"]
