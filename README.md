@@ -26,7 +26,7 @@ Example
 There is an example command-line program included:
 ```sh
 $ cargo test
-$ env RUST_LOG=info ./target/examples/client -r sender@localhost recipient@localhost < email.txt
+$ env RUST_LOG=info ./target/examples/client -s "My subject" -r sender@localhost recipient@localhost < email.txt
 INFO:smtp::client: connection established to 127.0.0.1:25
 INFO:smtp::client: from=<sender@localhost>, size=989, nrcpt=1
 INFO:smtp::client: to=<recipient@localhost>, status=sent (250 2.0.0 Ok: queued as 9D28F1C0A51)
