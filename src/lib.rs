@@ -35,10 +35,7 @@
 //! email.body("Hi, Hello world.");
 //! email.date();
 //!
-//! let mut client = Client::new(
-//!     "localhost", // local server (default port is 25)
-//!     None,        // my hostname (default is localhost)
-//! );
+//! let mut client = Client::localhost();
 //! let result = client.send_email(email);
 //! assert!(result.is_ok());
 //! ```
@@ -61,10 +58,8 @@
 //! email.date();
 //!
 //! let mut client = Client::new(
-//!     // remote server and custom port
-//!     ("server.tld", 10025),
-//!     // my hostname
-//!     Some("my.hostname.tld"),
+//!     ("server.tld", 10025),   // remote server and custom port
+//!     Some("my.hostname.tld"), // my hostname
 //! );
 //! let result = client.send_email(email);
 //! assert!(result.is_ok());
@@ -83,9 +78,9 @@
 //!     Some("my.hostname.tld"), // my hostname (default is localhost)
 //! );
 //! let result = email_client.send_mail(
-//!     "user@example.com".to_string(),      // sender (reverse-path)
+//!     "user@example.com".to_string(),       // sender (reverse-path)
 //!     vec!("user@example.org".to_string()), // recipient list
-//!     "Test email",          // email content
+//!     "Test email",                         // email content
 //! );
 //! assert!(result.is_ok());
 //! ```

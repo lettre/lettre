@@ -85,6 +85,13 @@ impl<S = TcpStream> Client<S> {
             state: TransactionState::new(),
         }
     }
+
+    /// Creates a new local SMTP client to port 25
+    ///
+    /// It does not connects to the server, but only create the `Client`
+    pub fn localhost() -> Client<S> {
+        Client::new("localhost", Some("localhost"))
+    }
 }
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
