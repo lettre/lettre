@@ -88,7 +88,7 @@ impl<S = TcpStream> Client<S> {
 }
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
-    /// TODO
+    /// Sends an email retrieving the enveloppe parameters from the `Email` structure
     pub fn send_email(&mut self, email: Email) -> SmtpResult {
         self.send_mail(
             email.get_from(),

@@ -29,10 +29,10 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     for destination in recipient_addresses.iter() {
         email.to(*destination);
     }
-    email.date();
     email.from(source_address);
     email.body(message);
     email.subject(subject);
+    email.date();
 
     let mut email_client =
         Client::new(
