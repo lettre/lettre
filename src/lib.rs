@@ -51,10 +51,13 @@
 //! use smtp::email::Email;
 //!
 //! let mut email = Email::new();
-//! email.to(("user@example.org", "Firstname Lastname"));
-//! email.from("user@example.com");
+//! email.to(("user@example.org", "Alias name"));
+//! email.cc(("user@example.net", "Alias name"));
+//! email.from("no-reply@example.com");
 //! email.subject("Hello world");
 //! email.body("Hi, Hello world.");
+//! email.reply_to("contact@example.com");
+//! email.add_header(("X-Custom-Header", "my header"));
 //! email.date();
 //!
 //! let mut client = Client::new(

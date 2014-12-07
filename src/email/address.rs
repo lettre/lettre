@@ -7,15 +7,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Simple SMTP "address"
+//! Simple SMTP "address" (very incomplete)
 
 use std::fmt::{Show, Formatter, Result};
 
 use common::SP;
 
-/// TODO
+/// Converts an adress or an address with an alias to an `Address`
 pub trait ToAddress {
-    /// TODO
+    /// Converts to an `Address` struct
     fn to_address(&self) -> Address;
 }
 
@@ -38,13 +38,12 @@ impl<'a> ToAddress for (&'a str, &'a str) {
     }
 }
 
-
-/// TODO
+/// Contains an address with an optionnal alias
 #[deriving(PartialEq,Eq,Clone)]
 pub struct Address {
-    /// TODO
+    /// The address
     address: String,
-    /// TODO
+    /// The alias
     alias: Option<String>,
 }
 
@@ -58,18 +57,18 @@ impl Show for Address {
 }
 
 impl Address {
-    /// TODO
+    /// Creates an address
     pub fn new(address: &str, alias: Option<&str>) -> Address {
-        Address{
+        Address {
             address: address.to_string(),
             alias: match alias {
-                    Some(ref alias_string) => Some(alias_string.to_string()),
-                    None => None,
-                }
+                Some(ref alias_string) => Some(alias_string.to_string()),
+                None => None,
+            }
         }
     }
 
-    /// TODO
+    /// Return only the address
     pub fn get_address(&self) -> String {
         self.address.clone()
     }

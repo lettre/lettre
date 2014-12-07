@@ -7,28 +7,28 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Simple email
+//! Simple email (very incomplete)
 
 use std::fmt::{Show, Formatter, Result};
 
 use time::{now, Tm};
 
-use email::header::Header;
+use email::header::{ToHeader, Header};
 use email::address::ToAddress;
 use common::CRLF;
 
 pub mod header;
 pub mod address;
 
-/// TODO
+/// Simple email representation
 pub struct Email {
     /// Array of headers
     headers: Vec<Header>,
     /// Message body
     body: String,
-    /// TODO cc bcc to
+    /// The enveloppe recipients addresses
     to: Vec<String>,
-    /// TODO
+    /// The enveloppe sender address
     from: Option<String>,
 }
 
@@ -44,12 +44,12 @@ impl Show for Email {
 }
 
 impl Email {
-    /// TODO
+    /// Creates a new empty email
     pub fn new() -> Email {
         Email{headers: vec!(), body: "".to_string(), to: vec!(), from: None}
     }
 
-    /// TODO
+    /// Clear the email content
     pub fn clear(&mut self) {
         self.headers.clear();
         self.body = "".to_string();
@@ -57,7 +57,7 @@ impl Email {
         self.from = None;
     }
 
-    /// TODO
+    /// Return the to addresses, and fails if it is not set
     pub fn get_to<'a>(&'a self) -> Vec<String> {
         if self.to.is_empty() {
             panic!("The To field is empty")
@@ -65,7 +65,7 @@ impl Email {
         self.to.clone()
     }
 
-    /// TODO
+    /// Return the from address, and fails if it is not set
     pub fn get_from(&self) -> String {
         match self.from {
             Some(ref from_address) => from_address.clone(),
@@ -73,19 +73,17 @@ impl Email {
         }
     }
 
-    // TODO : standard headers method
-
-    /// TODO
+    /// Sets the email body
     pub fn body(&mut self, body: &str) {
         self.body = body.to_string();
     }
 
-    /// TODO
-    pub fn add_header(&mut self, header: Header) {
-        self.headers.push(header);
+    /// Add a generic header
+    pub fn add_header<A: ToHeader>(&mut self, header: A) {
+        self.headers.push(header.to_header());
     }
 
-    /// TODO
+    /// Adds a From header and store the sender address
     pub fn from<A: ToAddress>(&mut self, address: A) {
         self.from = Some(address.to_address().get_address());
         self.headers.push(
@@ -93,7 +91,7 @@ impl Email {
         );
     }
 
-    /// TODO
+    /// Adds a To header and store the recipient address
     pub fn to<A: ToAddress>(&mut self, address: A) {
         self.to.push(address.to_address().get_address());
         self.headers.push(
@@ -101,21 +99,29 @@ impl Email {
         );
     }
 
-    /// TODO
+    /// Adds a Cc header and store the recipient address
+    pub fn cc<A: ToAddress>(&mut self, address: A) {
+        self.to.push(address.to_address().get_address());
+        self.headers.push(
+            Header::new("Cc", address.to_address().to_string().as_slice())
+        );
+    }
+
+    /// Adds a Reply-To header
     pub fn reply_to<A: ToAddress>(&mut self, address: A) {
         self.headers.push(
             Header::new("Return-Path", address.to_address().to_string().as_slice())
         );
     }
 
-    /// TODO
+    /// Adds a Subject header
     pub fn subject(&mut self, subject: &str) {
         self.headers.push(
             Header::new("Subject", subject)
         );
     }
 
-    /// TODO
+    /// Adds a Date header with the current time
     pub fn date(&mut self) {
         self.headers.push(
             Header::new("Date", Tm::rfc822(&now()).to_string().as_slice())

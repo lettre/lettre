@@ -13,12 +13,31 @@ use std::fmt::{Show, Formatter, Result};
 
 use common::{SP, COLON};
 
-/// TODO
+/// Converts to an `Header`
+pub trait ToHeader {
+    /// Converts to an `Header` struct
+    fn to_header(&self) -> Header;
+}
+
+impl ToHeader for Header {
+    fn to_header(&self) -> Header {
+        (*self).clone()
+    }
+}
+
+impl<'a> ToHeader for (&'a str, &'a str) {
+    fn to_header(&self) -> Header {
+        let (name, value) = *self;
+        Header::new(name, value)
+    }
+}
+
+/// Contains a header
 #[deriving(PartialEq,Eq,Clone)]
 pub struct Header {
-    /// TODO
+    /// Name of the header
     name: String,
-    /// TODO
+    /// Value of the header
     value: String,
 }
 
@@ -29,7 +48,7 @@ impl Show for Header {
 }
 
 impl Header {
-    /// TODO
+    /// Creates ah `Header`
     pub fn new(name: &str, value: &str) -> Header {
         Header{name: name.to_string(), value: value.to_string()}
     }
