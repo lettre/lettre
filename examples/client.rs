@@ -21,19 +21,26 @@ use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
 use smtp::client::Client;
 use smtp::error::SmtpResult;
-//use smtp::email::Email;
+use smtp::email::Email;
 
-fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: &str,
+fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, subject: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
+    let mut email = Email::new();
+    for destination in recipient_addresses.iter() {
+        email.to(*destination);
+    }
+    email.date();
+    email.from(source_address);
+    email.body(message);
+    email.subject(subject);
+
     let mut email_client =
         Client::new(
             (server, port),
             Some(my_hostname),
         );
-    email_client.send_mail(
-        source_address,
-        recipient_addresses,
-        message,
+    email_client.send_email(
+        email
     )
 }
 
@@ -57,9 +64,10 @@ fn main() {
                               program);
 
     let opts = [
+        optopt("s", "subject", "set the email subject", "SUBJECT"),
         optopt("r", "reverse-path", "set the sender address", "FROM_ADDRESS"),
         optopt("p", "port", "set the port to use, default is 25", "PORT"),
-        optopt("s", "server", "set the server to use, default is localhost", "SERVER"),
+        optopt("a", "server", "set the server to use, default is localhost", "SERVER"),
         optopt("m", "my-hostname", "set the hostname used by the client", "MY_HOSTNAME"),
         optflag("h", "help", "print this help menu"),
     ];
@@ -89,7 +97,7 @@ fn main() {
 
     let mut recipients = Vec::new();
     for recipient in recipients_str.split(' ') {
-        recipients.push(recipient.to_string());
+        recipients.push(recipient);
     }
 
     let mut message = String::new();
@@ -102,13 +110,18 @@ fn main() {
 
     match sendmail(
         // sender
-        matches.opt_str("r").unwrap(),
+        matches.opt_str("r").unwrap().as_slice(),
         // recipients
-        recipients,
+        recipients.as_slice(),
         // message content
         message.as_slice(),
-        // server
+        // subject
         match matches.opt_str("s") {
+            Some(ref subject) => subject.as_slice(),
+            None => "(empty subject)"
+        },
+        // server
+        match matches.opt_str("a") {
             Some(ref server) => server.as_slice(),
             None => "localhost"
         },

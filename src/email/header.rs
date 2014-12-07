@@ -35,12 +35,6 @@ impl Header {
     }
 }
 
-// impl Str for Header {
-//     fn as_slice<'a>(&'a self) -> &'a str {
-//         self.clone().to_string().clone().as_slice()
-//     }
-// }
-
 #[cfg(test)]
 mod test {
     use super::Header;

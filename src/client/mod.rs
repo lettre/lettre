@@ -89,8 +89,7 @@ impl<S = TcpStream> Client<S> {
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// TODO
-    pub fn send_email(&mut self, email: &Email) -> SmtpResult {
-        //let tt: Vec<&str> = email.getTo().iter().map(|s| s.as_slice()).collect();
+    pub fn send_email(&mut self, email: Email) -> SmtpResult {
         self.send_mail(
             email.get_from(),
             email.get_to(),

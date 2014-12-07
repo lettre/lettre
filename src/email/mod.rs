@@ -34,7 +34,12 @@ pub struct Email {
 
 impl Show for Email {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(format!("{}{}{}", self.headers, CRLF, self.body).as_bytes())
+        let mut formatted_headers = String::new();
+        for header in self.headers.iter() {
+            formatted_headers.push_str(header.to_string().as_slice());
+            formatted_headers.push_str(CRLF);
+        }
+        f.write(format!("{}{}{}", formatted_headers, CRLF, self.body).as_bytes())
     }
 }
 
@@ -57,14 +62,6 @@ impl Email {
         if self.to.is_empty() {
             panic!("The To field is empty")
         }
-        //let mut recipients: Vec<&'a str> = Vec::new();
-        //for recipient in self.to.iter() {
-        //    recipients.push(recipient.as_slice());
-        //}
-        //let to_clone = self.to.clone();
-        //let rec: Vec<&'a str> = self.to.iter().map(|s| s.as_slice()).collect();
-        //let plop: &'a[&'a str] = recipients.as_slice();
-        //plop
         self.to.clone()
     }
 
