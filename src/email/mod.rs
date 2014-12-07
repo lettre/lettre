@@ -21,6 +21,7 @@ pub mod header;
 pub mod address;
 
 /// Simple email representation
+#[deriving(PartialEq,Eq,Clone)]
 pub struct Email {
     /// Array of headers
     headers: Vec<Header>,
@@ -126,5 +127,55 @@ impl Email {
         self.headers.push(
             Header::new("Date", Tm::rfc822(&now()).to_string().as_slice())
         );
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Email;
+    use email::header::Header;
+
+    #[test]
+    fn test_new() {
+        assert_eq!(
+            Email::new(),
+            Email{headers: vec!(), body: "".to_string(), to: vec!(), from: None}
+        )
+    }
+
+    #[test]
+    fn test_body() {
+        let mut email = Email::new();
+        email.body("test message");
+        assert_eq!(
+            email,
+            Email{headers: vec!(), body: "test message".to_string(), to: vec!(), from: None}
+        )
+    }
+
+    #[test]
+    fn test_add_header() {
+        let mut email = Email::new();
+        email.add_header(("X-My-Header", "value"));
+        assert_eq!(
+            email,
+            Email{
+                headers: vec!(Header::new("X-My-Header", "value")),
+                body: "".to_string(),
+                to: vec!(),
+                from: None
+            }
+        )
+        email.add_header(("X-My-Header-2", "value-2"));
+        assert_eq!(
+            email,
+            Email{
+                headers: vec!(Header::new("X-My-Header", "value"),
+                Header::new("X-My-Header-2", "value-2")),
+                body: "".to_string(),
+                to: vec!(),
+                from: None
+            }
+        )
     }
 }
