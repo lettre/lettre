@@ -17,7 +17,6 @@ use common::SP;
 pub trait ToAddress {
     /// TODO
     fn to_address(&self) -> Address;
-
 }
 
 impl ToAddress for Address {

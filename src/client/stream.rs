@@ -13,9 +13,9 @@ use std::io::net::tcp::TcpStream;
 use std::io::IoResult;
 use std::str::from_utf8;
 use std::vec::Vec;
-use error::SmtpResult;
 use std::error::FromError;
 
+use error::SmtpResult;
 use response::Response;
 use tools::{escape_crlf, escape_dot};
 

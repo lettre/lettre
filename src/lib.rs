@@ -36,8 +36,8 @@
 //!         Some("myhost"),           // my hostname (default is localhost)
 //!     );
 //! let result = email_client.send_mail(
-//!     "user@example.com",    // sender (reverse-path)
-//!     &["user@example.org"], // recipient list
+//!     "user@example.com".to_string(),      // sender (reverse-path)
+//!     vec!("user@example.org".to_string()), // recipient list
 //!     "Test email",          // email content
 //! );
 //! ```
@@ -70,7 +70,7 @@
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 #![experimental]
 
-#![feature(phase, macro_rules, if_let, default_type_params)]
+#![feature(phase, macro_rules, default_type_params)]
 #![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;

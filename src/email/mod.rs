@@ -16,8 +16,6 @@ use time::{now, Tm};
 use email::header::Header;
 use email::address::ToAddress;
 use common::CRLF;
-use client::Client;
-use error::SmtpResult;
 
 pub mod header;
 pub mod address;
@@ -27,7 +25,7 @@ pub struct Email {
     /// Array of headers
     headers: Vec<Header>,
     /// Message body
-    body: Option<String>,
+    body: String,
     /// TODO cc bcc to
     to: Vec<String>,
     /// TODO
@@ -42,25 +40,47 @@ impl Show for Email {
 
 impl Email {
     /// TODO
-    pub fn send(&self, mut client: Client) -> SmtpResult {
-        let to_vec: Vec<&str> = self.to.iter().map(|s| s.as_slice()).collect();
-        client.send_mail(
-            self.from.clone().unwrap().as_slice(),
-            to_vec.as_slice(),
-            self.to_string().as_slice(),
-        )
+    pub fn new() -> Email {
+        Email{headers: vec!(), body: "".to_string(), to: vec!(), from: None}
     }
 
     /// TODO
-    pub fn new() -> Email {
-        Email{headers: vec!(), body: None, to: vec!(), from: None}
+    pub fn clear(&mut self) {
+        self.headers.clear();
+        self.body = "".to_string();
+        self.to.clear();
+        self.from = None;
+    }
+
+    /// TODO
+    pub fn get_to<'a>(&'a self) -> Vec<String> {
+        if self.to.is_empty() {
+            panic!("The To field is empty")
+        }
+        //let mut recipients: Vec<&'a str> = Vec::new();
+        //for recipient in self.to.iter() {
+        //    recipients.push(recipient.as_slice());
+        //}
+        //let to_clone = self.to.clone();
+        //let rec: Vec<&'a str> = self.to.iter().map(|s| s.as_slice()).collect();
+        //let plop: &'a[&'a str] = recipients.as_slice();
+        //plop
+        self.to.clone()
+    }
+
+    /// TODO
+    pub fn get_from(&self) -> String {
+        match self.from {
+            Some(ref from_address) => from_address.clone(),
+            None => panic!("The From field is empty"),
+        }
     }
 
     // TODO : standard headers method
 
     /// TODO
     pub fn body(&mut self, body: &str) {
-        self.body = Some(body.to_string());
+        self.body = body.to_string();
     }
 
     /// TODO

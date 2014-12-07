@@ -10,7 +10,6 @@
 #![feature(default_type_params)]
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
-
 extern crate smtp;
 extern crate getopts;
 
@@ -24,7 +23,7 @@ use smtp::client::Client;
 use smtp::error::SmtpResult;
 //use smtp::email::Email;
 
-fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str,
+fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
     let mut email_client =
         Client::new(
@@ -90,19 +89,22 @@ fn main() {
 
     let mut recipients = Vec::new();
     for recipient in recipients_str.split(' ') {
-        recipients.push(recipient);
+        recipients.push(recipient.to_string());
     }
 
     let mut message = String::new();
-    for line in stdin().lines() {
+
+    let mut line = stdin().read_line();
+    while line.is_ok() {
         message.push_str(line.unwrap().as_slice());
+        line = stdin().read_line();
     }
 
     match sendmail(
         // sender
-        matches.opt_str("r").unwrap().as_slice(),
+        matches.opt_str("r").unwrap(),
         // recipients
-        recipients.as_slice(),
+        recipients,
         // message content
         message.as_slice(),
         // server
