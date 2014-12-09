@@ -84,7 +84,7 @@ impl Email {
         self.headers.push(header.to_header());
     }
 
-    /// Adds a From header and store the sender address
+    /// Adds a `From` header and store the sender address
     pub fn from<A: ToAddress>(&mut self, address: A) {
         self.from = Some(address.to_address().get_address());
         self.headers.push(
@@ -92,7 +92,7 @@ impl Email {
         );
     }
 
-    /// Adds a To header and store the recipient address
+    /// Adds a `To` header and store the recipient address
     pub fn to<A: ToAddress>(&mut self, address: A) {
         self.to.push(address.to_address().get_address());
         self.headers.push(
@@ -100,7 +100,7 @@ impl Email {
         );
     }
 
-    /// Adds a Cc header and store the recipient address
+    /// Adds a `Cc` header and store the recipient address
     pub fn cc<A: ToAddress>(&mut self, address: A) {
         self.to.push(address.to_address().get_address());
         self.headers.push(
@@ -108,21 +108,21 @@ impl Email {
         );
     }
 
-    /// Adds a Reply-To header
+    /// Adds a `Reply-To` header
     pub fn reply_to<A: ToAddress>(&mut self, address: A) {
         self.headers.push(
             Header::new("Return-Path", address.to_address().to_string().as_slice())
         );
     }
 
-    /// Adds a Subject header
+    /// Adds a `Subject` header
     pub fn subject(&mut self, subject: &str) {
         self.headers.push(
             Header::new("Subject", subject)
         );
     }
 
-    /// Adds a Date header with the current time
+    /// Adds a `Date` header with the current time
     pub fn date(&mut self) {
         self.headers.push(
             Header::new("Date", Tm::rfc822(&now()).to_string().as_slice())
