@@ -9,10 +9,12 @@
 
 //! SMTP sendable email
 
-/// Converts to an `Header`
+/// Email sendable by an SMTP client
 pub trait SendableEmail {
-    /// Converts to an `Header` struct
+    /// From address
     fn from_address(&self) -> String;
+    /// To addresses
     fn to_addresses(&self) -> Vec<String>;
+    /// Message content
     fn message(&self) -> String;
 }

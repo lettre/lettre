@@ -113,7 +113,7 @@
 #![experimental]
 
 #![feature(phase, macro_rules, default_type_params)]
-//#![deny(missing_docs, warnings)]
+#![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
