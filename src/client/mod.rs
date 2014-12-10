@@ -24,7 +24,7 @@ use error::{SmtpResult, ErrorKind};
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
-use email::Email;
+use sendable_email::SendableEmail;
 
 pub mod server_info;
 pub mod connecter;
@@ -95,15 +95,6 @@ impl<S = TcpStream> Client<S> {
 }
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
-    /// Sends an email retrieving the enveloppe parameters from the `Email` structure
-    pub fn send_email(&mut self, email: Email) -> SmtpResult {
-        self.send_mail(
-            email.get_from(),
-            email.get_to(),
-            email.to_string().as_slice(),
-        )
-    }
-
     /// Closes the SMTP transaction if possible, and then closes the TCP session
     fn close_on_error(&mut self) {
         if self.is_connected() {
@@ -113,8 +104,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends an email
-    pub fn send_mail(&mut self, from_address: String,
-                        to_addresses: Vec<String>, message: &str) -> SmtpResult {
+    pub fn send_email(&mut self, email: SendableEmail) -> SmtpResult {
         // Connect to the server
         try!(self.connect());
 
@@ -134,15 +124,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         debug!("server {}", self.server_info.as_ref().unwrap());
 
         // Mail
-        try_smtp!(self.mail(from_address.as_slice()) self);
+        try_smtp!(self.mail(email.from_address.as_slice()) self);
 
         // Log the mail command
-        info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
+        info!("from=<{}>, size={}, nrcpt={}", email.from_address, email.message.len(), email.to_addresses.len());
 
         // Recipient
         // TODO Return rejected addresses
         // TODO Manage the number of recipients
-        for to_address in to_addresses.iter() {
+        for to_address in email.to_addresses.iter() {
             try_smtp!(self.rcpt(to_address.as_slice()) self);
         }
 
@@ -150,11 +140,11 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         try_smtp!(self.data() self);
 
         // Message content
-        let sent = try_smtp!(self.message(message) self);
+        let sent = try_smtp!(self.message(email.message.as_slice()) self);
 
         // Log the rcpt command
         info!("to=<{}>, status=sent ({})",
-              to_addresses.connect(">, to=<"), sent);
+              email.to_addresses.connect(">, to=<"), sent);
 
         // Quit
         try_smtp!(self.quit() self);

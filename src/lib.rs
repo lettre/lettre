@@ -26,7 +26,7 @@
 //! ```rust,no_run
 //! #![feature(default_type_params)]
 //! use smtp::client::Client;
-//! use smtp::email::Email;
+//! use smtp::mailer::Email;
 //!
 //! let mut email = Email::new();
 //! email.to(("user@example.org", "Firstname Lastname"));
@@ -36,7 +36,7 @@
 //! email.date();
 //!
 //! let mut client = Client::localhost();
-//! let result = client.send_email(email);
+//! let result = client.send_email(email.get_sendable_email());
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -45,7 +45,7 @@
 //! ```rust,no_run
 //! #![feature(default_type_params)]
 //! use smtp::client::Client;
-//! use smtp::email::Email;
+//! use smtp::mailer::Email;
 //!
 //! let mut email = Email::new();
 //! email.to(("user@example.org", "Alias name"));
@@ -61,7 +61,7 @@
 //!     ("server.tld", 10025),   // remote server and custom port
 //!     Some("my.hostname.tld"), // my hostname
 //! );
-//! let result = client.send_email(email);
+//! let result = client.send_email(email.get_sendable_email());
 //! assert!(result.is_ok());
 //! ```
 
@@ -70,19 +70,19 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! #![feature(default_type_params)]
-//! use smtp::client::Client;
+//! //#![feature(default_type_params)]
+//! //use smtp::client::Client;
 //!
-//! let mut email_client = Client::new(
-//!     "localhost",             // server socket
-//!     Some("my.hostname.tld"), // my hostname (default is localhost)
-//! );
-//! let result = email_client.send_mail(
-//!     "user@example.com".to_string(),       // sender (reverse-path)
-//!     vec!("user@example.org".to_string()), // recipient list
-//!     "Test email",                         // email content
-//! );
-//! assert!(result.is_ok());
+//! //let mut email_client = Client::new(
+//! //    "localhost",             // server socket
+//! //    Some("my.hostname.tld"), // my hostname (default is localhost)
+//! //);
+//! //let result = email_client.send_mail(
+//! //    "user@example.com".to_string(),       // sender (reverse-path)
+//! //    vec!("user@example.org".to_string()), // recipient list
+//! //    "Test email",                         // email content
+//! //);
+//! //assert!(result.is_ok());
 //! ```
 //!
 //! ### Lower level
@@ -113,7 +113,7 @@
 #![experimental]
 
 #![feature(phase, macro_rules, default_type_params)]
-#![deny(missing_docs, warnings)]
+//#![deny(missing_docs, warnings)]
 
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
@@ -127,4 +127,5 @@ pub mod transaction;
 pub mod common;
 pub mod error;
 pub mod tools;
-pub mod email;
+pub mod sendable_email;
+pub mod mailer;

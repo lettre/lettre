@@ -21,7 +21,7 @@ use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
 use smtp::client::Client;
 use smtp::error::SmtpResult;
-use smtp::email::Email;
+use smtp::mailer::Email;
 
 fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, subject: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
@@ -40,7 +40,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
             Some(my_hostname),
         );
     email_client.send_email(
-        email
+        email.get_sendable_email()
     )
 }
 
