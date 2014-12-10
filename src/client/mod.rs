@@ -104,9 +104,16 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends an email
-    pub fn send_email(&mut self, email: SendableEmail) -> SmtpResult {
+    pub fn send_email<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
+
+        let from_address = email.from_address();
+        let to_addresses = email.to_addresses();
+        let message = email.message();
+
         // Connect to the server
-        try!(self.connect());
+        if !self.is_connected() {
+            try!(self.connect());
+        }
 
         // Extended Hello or Hello
         if let Err(error) = self.ehlo() {
@@ -124,15 +131,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         debug!("server {}", self.server_info.as_ref().unwrap());
 
         // Mail
-        try_smtp!(self.mail(email.from_address.as_slice()) self);
+        try_smtp!(self.mail(from_address.as_slice()) self);
 
         // Log the mail command
-        info!("from=<{}>, size={}, nrcpt={}", email.from_address, email.message.len(), email.to_addresses.len());
+        info!("from=<{}>, size={}, nrcpt={}", from_address, message.len(), to_addresses.len());
 
         // Recipient
         // TODO Return rejected addresses
         // TODO Manage the number of recipients
-        for to_address in email.to_addresses.iter() {
+        for to_address in to_addresses.iter() {
             try_smtp!(self.rcpt(to_address.as_slice()) self);
         }
 
@@ -140,14 +147,14 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         try_smtp!(self.data() self);
 
         // Message content
-        let sent = try_smtp!(self.message(email.message.as_slice()) self);
+        let sent = try_smtp!(self.message(message.as_slice()) self);
 
         // Log the rcpt command
         info!("to=<{}>, status=sent ({})",
-              email.to_addresses.connect(">, to=<"), sent);
+            to_addresses.connect(">, to=<"), sent);
 
         // Quit
-        try_smtp!(self.quit() self);
+        //try_smtp!(self.quit() self);
 
         return Ok(sent);
     }

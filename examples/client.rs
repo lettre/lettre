@@ -32,7 +32,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     email.from(source_address);
     email.body(message);
     email.subject(subject);
-    email.date();
+    email.date_now();
 
     let mut email_client =
         Client::new(
@@ -40,7 +40,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
             Some(my_hostname),
         );
     email_client.send_email(
-        email.get_sendable_email()
+        email
     )
 }
 

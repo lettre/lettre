@@ -9,9 +9,10 @@
 
 //! SMTP sendable email
 
-#[deriving(Clone)]
-pub struct SendableEmail {
-    pub from_address: String,
-    pub to_addresses: Vec<String>,
-    pub message: String,
+/// Converts to an `Header`
+pub trait SendableEmail {
+    /// Converts to an `Header` struct
+    fn from_address(&self) -> String;
+    fn to_addresses(&self) -> Vec<String>;
+    fn message(&self) -> String;
 }

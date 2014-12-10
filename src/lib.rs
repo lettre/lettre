@@ -33,10 +33,10 @@
 //! email.from("user@example.com");
 //! email.subject("Hello world");
 //! email.body("Hi, Hello world.");
-//! email.date();
+//! email.date_now();
 //!
 //! let mut client = Client::localhost();
-//! let result = client.send_email(email.get_sendable_email());
+//! let result = client.send_email(email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -55,13 +55,13 @@
 //! email.body("Hi, Hello world.");
 //! email.reply_to("contact@example.com");
 //! email.add_header(("X-Custom-Header", "my header"));
-//! email.date();
+//! email.date_now();
 //!
 //! let mut client = Client::new(
 //!     ("server.tld", 10025),   // remote server and custom port
 //!     Some("my.hostname.tld"), // my hostname
 //! );
-//! let result = client.send_email(email.get_sendable_email());
+//! let result = client.send_email(email);
 //! assert!(result.is_ok());
 //! ```
 
