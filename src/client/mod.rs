@@ -15,7 +15,7 @@ use std::io::net::tcp::TcpStream;
 use std::io::net::ip::{SocketAddr, ToSocketAddr};
 
 use tools::get_first_word;
-use common::{CRLF, MESSAGE_ENDING};
+use common::{CRLF, MESSAGE_ENDING, SMTP_PORT};
 use response::Response;
 use extension::Extension;
 use command::Command;
@@ -57,7 +57,7 @@ macro_rules! try_smtp (
 
 macro_rules! fail_with_err (
     ($err: expr $client: ident) => ({
-        $client.close_on_error();
+        $client.close();
         return Err(FromError::from_error($err))
     })
 )
@@ -90,20 +90,30 @@ impl<S = TcpStream> Client<S> {
     ///
     /// It does not connects to the server, but only create the `Client`
     pub fn localhost() -> Client<S> {
-        Client::new("localhost", Some("localhost"))
+        Client::new(("localhost", SMTP_PORT), Some("localhost"))
     }
 }
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
-    /// Closes the SMTP transaction if possible, and then closes the TCP session
-    fn close_on_error(&mut self) {
-        if self.is_connected() {
-            let _ = self.quit();
+    /// Closes the TCP stream
+    pub fn close(&mut self) {
+        if self.stream.is_some() {
+            if self.is_connected() {
+                let _ = self.quit();
+            }
+            // Close the TCP connection
+            drop(self.stream.as_mut().unwrap());
         }
-        self.close();
+
+        // Reset client state
+        self.stream = None;
+        self.state = TransactionState::new();
+        self.server_info = None;
     }
 
     /// Sends an email
+    ///
+    /// This methods logs all steps of the message sending.
     pub fn send_email<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
 
         let from_address = email.from_address();
@@ -111,7 +121,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         let message = email.message();
 
         // Connect to the server
-        if !self.is_connected() {
+        if self.noop().is_err() {
             try!(self.connect());
         }
 
@@ -153,15 +163,13 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         info!("to=<{}>, status=sent ({})",
             to_addresses.connect(">, to=<"), sent);
 
-        // Quit
-        //try_smtp!(self.quit() self);
-
         return Ok(sent);
     }
 
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
         let command = Command::Connect;
+
         check_command_sequence!(command self);
 
         // Connect should not be called when the client is already connected
@@ -189,6 +197,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         if !command.is_ascii() {
             fail_with_err!("Non-ASCII string" self);
         }
+
         self.send_server(command, None)
     }
 
@@ -222,16 +231,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Checks if the server is connected using the NOOP SMTP command
     pub fn is_connected(&mut self) -> bool {
         self.noop().is_ok()
-    }
-
-    /// Closes the TCP stream
-    pub fn close(&mut self) {
-        // Close the TCP connection
-        drop(self.stream.as_mut().unwrap());
-        // Reset client state
-        self.stream = None;
-        self.state = TransactionState::new();
-        self.server_info = None;
     }
 
     /// Send a HELO command and fills `server_info`
