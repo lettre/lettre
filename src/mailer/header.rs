@@ -64,10 +64,8 @@ pub enum Header {
 
 impl Show for Header {
     fn fmt(&self, f: &mut Formatter) -> Result {
-
         f.write(format!("{}{}{}{}",
         match *self {
-
             Header::To(_) => "To",
             Header::From(_) => "From",
             Header::Cc(_) => "Cc",
@@ -93,8 +91,7 @@ impl Show for Header {
             Header::ContentType(ref string) => string.clone(),
             Header::MessageId(ref string) => string.clone(),
             Header::Other(_, ref value) => value.clone(),
-        }
-        ).as_bytes())
+        }).as_bytes())
     }
 }
 

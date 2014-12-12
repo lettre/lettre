@@ -114,14 +114,14 @@ impl Email {
         );
     }
 
-    /// Adds a `Date` header with the current time
+    /// Adds a `Date` header with the current date
     pub fn date_now(&mut self) {
         self.headers.push(
             Header::Date(now())
         );
     }
 
-    /// Adds a `Date` header with the current time
+    /// Adds a `Date` header with the given date
     pub fn date(&mut self, date: Tm) {
         self.headers.push(
             Header::Date(date)
