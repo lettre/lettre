@@ -19,7 +19,7 @@ use response::Response;
 use self::Extension::{EightBitMime, SmtpUtfEight, StartTls, Size};
 
 /// Supported ESMTP keywords
-#[deriving(PartialEq,Eq,Clone)]
+#[deriving(PartialEq,Eq,Copy,Clone)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -74,12 +74,12 @@ impl FromStr for Extension {
 
 impl Extension {
     /// Checks if the ESMTP keyword is the same
-    pub fn same_extension_as(&self, other: Extension) -> bool {
-        if *self == other {
+    pub fn same_extension_as(&self, other: &Extension) -> bool {
+        if self == other {
             return true;
         }
-        match (*self, other) {
-            (Size(_), Size(_)) => true,
+        match (self, other) {
+            (&Size(_), &Size(_)) => true,
             _ => false,
         }
     }
@@ -128,10 +128,11 @@ mod test {
 
     #[test]
     fn test_same_extension_as() {
-        assert_eq!(Extension::EightBitMime.same_extension_as(Extension::EightBitMime), true);
-        assert_eq!(Extension::Size(42).same_extension_as(Extension::Size(42)), true);
-        assert_eq!(Extension::Size(42).same_extension_as(Extension::Size(43)), true);
-        assert_eq!(Extension::Size(42).same_extension_as(Extension::EightBitMime), false);
+        assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::EightBitMime), true);
+        assert_eq!(Extension::Size(42).same_extension_as(&Extension::Size(42)), true);
+        assert_eq!(Extension::Size(42).same_extension_as(&Extension::Size(43)), true);
+        assert_eq!(Extension::Size(42).same_extension_as(&Extension::EightBitMime), false);
+        assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::SmtpUtfEight), false);
     }
 
     #[test]

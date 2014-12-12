@@ -48,7 +48,7 @@ impl ServerInfo {
         match self.esmtp_features {
             Some(ref esmtp_features) => {
                 for feature in esmtp_features.iter() {
-                    if keyword.same_extension_as(*feature) {
+                    if keyword.same_extension_as(feature) {
                         return Some(*feature);
                     }
                 }

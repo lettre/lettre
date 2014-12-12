@@ -18,7 +18,7 @@ use command::Command;
 use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent};
 
 /// Contains the state of the current transaction
-#[deriving(PartialEq,Eq,Clone)]
+#[deriving(PartialEq,Eq,Copy)]
 pub enum TransactionState {
     /// No connection was established
     Unconnected,
