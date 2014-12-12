@@ -53,7 +53,7 @@ pub enum Header {
     /// `Subject`
     Subject(String),
     /// `MIME-Version`
-    MimeVersion(String),
+    MimeVersion,
     /// `Content-Type`
     ContentType(String),
     /// `Message-Id`
@@ -75,7 +75,7 @@ impl Show for Header {
             Header::Sender(_) => "Sender",
             Header::Date(_) => "Date",
             Header::Subject(_) => "Subject",
-            Header::MimeVersion(_) => "MIME-Version",
+            Header::MimeVersion => "MIME-Version",
             Header::ContentType(_) => "Content-Type",
             Header::MessageId(_) => "Message-Id",
             Header::Other(ref name, _) => name.as_slice(),
@@ -89,7 +89,7 @@ impl Show for Header {
             Header::Sender(ref address) => address.to_string(),
             Header::Date(ref date) => Tm::rfc822(date).to_string(),
             Header::Subject(ref subject) => subject.clone(),
-            Header::MimeVersion(ref string) => string.clone(),
+            Header::MimeVersion => "1.0".to_string(),
             Header::ContentType(ref string) => string.clone(),
             Header::MessageId(ref string) => string.clone(),
             Header::Other(_, ref value) => value.clone(),
