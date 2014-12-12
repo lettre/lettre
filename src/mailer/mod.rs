@@ -100,6 +100,13 @@ impl Email {
         );
     }
 
+    /// Adds a `Sender` header
+    pub fn sender<A: ToAddress>(&mut self, address: A) {
+        self.headers.push(
+            Header::Sender(address.to_address())
+        );
+    }
+
     /// Adds a `Subject` header
     pub fn subject(&mut self, subject: &str) {
         self.headers.push(

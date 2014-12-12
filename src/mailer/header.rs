@@ -47,7 +47,7 @@ pub enum Header {
     /// `Reply-To`
     ReplyTo(Address),
     /// `Sender`
-    Sender(String),
+    Sender(Address),
     /// `Date`
     Date(Tm),
     /// `Subject`
@@ -108,6 +108,9 @@ impl Header {
 #[cfg(test)]
 mod test {
     use super::Header;
+    use mailer::address::Address;
+
+    use time::{at_utc, Timespec};
 
     #[test]
     fn test_new() {
@@ -122,6 +125,19 @@ mod test {
         assert_eq!(
             format!("{}", Header::new("From", "me")),
             "From: me".to_string()
+        );
+        assert_eq!(
+            format!("{}", Header::To(Address::new("me@example.com", Some("My Name")))),
+            "To: My Name <me@example.com>".to_string()
+        );
+        assert_eq!(
+            format!("{}", Header::Subject("Test subject".to_string())),
+            "Subject: Test subject".to_string()
+        );
+        let time = at_utc(Timespec::new(1234567890, 54321));
+        assert_eq!(
+            format!("{}", Header::Date(time)),
+            "Date: Fri, 13 Feb 2009 23:31:30 GMT".to_string()
         );
     }
 }
