@@ -39,7 +39,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
             (server, port),
             Some(my_hostname),
         );
-    email_client.send_email(
+    email_client.send(
         email
     )
 }

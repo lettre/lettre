@@ -36,7 +36,7 @@
 //! email.date_now();
 //!
 //! let mut client = Client::localhost();
-//! let result = client.send_email(email);
+//! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -61,7 +61,7 @@
 //!     ("server.tld", 10025),   // remote server and custom port
 //!     Some("my.hostname.tld"), // my hostname
 //! );
-//! let result = client.send_email(email);
+//! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
 
@@ -85,7 +85,7 @@
 //!     "localhost",             // server socket
 //!     Some("my.hostname.tld"), // my hostname (default is localhost)
 //! );
-//! let result = client.send_email(email);
+//! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
 //!

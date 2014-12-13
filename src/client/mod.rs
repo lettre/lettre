@@ -114,7 +114,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends an email
     ///
     /// This methods logs all steps of the message sending.
-    pub fn send_email<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
+    pub fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
 
         let from_address = email.from_address();
         let to_addresses = email.to_addresses();
