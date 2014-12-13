@@ -70,19 +70,23 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! //#![feature(default_type_params)]
-//! //use smtp::client::Client;
+//! #![feature(default_type_params)]
+//! use smtp::client::Client;
+//! use smtp::sendable_email::SimpleSendableEmail;
 //!
-//! //let mut email_client = Client::new(
-//! //    "localhost",             // server socket
-//! //    Some("my.hostname.tld"), // my hostname (default is localhost)
-//! //);
-//! //let result = email_client.send_mail(
-//! //    "user@example.com".to_string(),       // sender (reverse-path)
-//! //    vec!("user@example.org".to_string()), // recipient list
-//! //    "Test email",                         // email content
-//! //);
-//! //assert!(result.is_ok());
+//! // Create a minimal email
+//! let email = SimpleSendableEmail::new(
+//!     "test@example.com",
+//!     "test@example.org",
+//!     "Hello world !"
+//! );
+//!
+//! let mut client = Client::new(
+//!     "localhost",             // server socket
+//!     Some("my.hostname.tld"), // my hostname (default is localhost)
+//! );
+//! let result = client.send_email(email);
+//! assert!(result.is_ok());
 //! ```
 //!
 //! ### Lower level
