@@ -174,12 +174,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends an email
     pub fn send<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
 
-        let max_reuse_reached = self.connection_reuse_count == self.configuration.connection_reuse_count_limit;
+        // If there is a usable connection, test if the server answers and hello has been sent
+        if self.connection_reuse_count > 0 {
+            if self.noop().is_err() {
+                self.reset();
+            }
+        }
 
         // Connect to the server if needed
-        if max_reuse_reached || self.noop().is_err() {
-            self.reset();
-
+        if self.stream.is_none() || self.server_info.is_none() {
             try!(self.connect());
 
             // Extended Hello or Hello if needed
@@ -220,13 +223,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         try_smtp!(self.data() self);
 
         // Message content
-        let result = self.message(message.as_slice());
-
-        if !self.configuration.enable_connection_reuse {
-            self.close();
-        }
-
-        result
+        self.message(message.as_slice())
     }
 
     /// Connects to the configured server
@@ -417,6 +414,12 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         self.current_message = None;
+
+        // Test if we can reuse the existing connection
+        if (!self.configuration.enable_connection_reuse) ||
+            (self.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
+            self.reset();
+        }
 
         result
     }
