@@ -22,9 +22,6 @@ pub static SMTPS_PORT: Port = 465;
 /// Default submission port
 pub static SUBMISSION_PORT: Port = 587;
 
-// Maximum length of an SMTP command line
-//pub static MAX_SMTP_LINE_LENGTH: uint = 1034;
-
 /// The word separator for SMTP transactions
 pub static SP: &'static str = " ";
 

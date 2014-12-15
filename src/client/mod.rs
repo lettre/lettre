@@ -32,6 +32,23 @@ pub mod server_info;
 pub mod connecter;
 pub mod stream;
 
+/// Represents the configuration of a client
+#[deriving(Clone)]
+pub struct Configuration {
+    /// Maximum connection reuse
+    ///
+    /// Zero means no limitation
+    pub connection_reuse_count_limit: uint,
+    /// Enable connection reuse
+    pub enable_connection_reuse: bool,
+    /// Maximum recipients
+    pub destination_recipient_limit: uint,
+    /// Maximum line length
+    pub line_length_limit: uint,
+    /// Name sent during HELO or EHLO
+    pub hello_name: String,
+}
+
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
     /// TCP stream between client and server
@@ -39,8 +56,6 @@ pub struct Client<S = TcpStream> {
     stream: Option<S>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
-    /// Our hostname for HELO/EHLO commands
-    my_hostname: String,
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
@@ -49,9 +64,11 @@ pub struct Client<S = TcpStream> {
     /// Panic state
     panic: bool,
     /// Connection reuse counter
-    connection_reuse: uint,
+    connection_reuse_count: uint,
     /// Current message id
     current_message: Option<Uuid>,
+    /// Configuration of the client
+    configuration: Configuration,
 }
 
 macro_rules! try_smtp (
@@ -87,16 +104,22 @@ impl<S = TcpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only create the `Client`
-    pub fn new<A: ToSocketAddr>(addr: A, my_hostname: Option<&str>) -> Client<S> {
+    pub fn new<A: ToSocketAddr>(addr: A) -> Client<S> {
         Client{
             stream: None,
             server_addr: addr.to_socket_addr().unwrap(),
-            my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
             state: TransactionState::new(),
             panic: false,
-            connection_reuse: 0,
+            connection_reuse_count: 0,
             current_message: None,
+            configuration: Configuration {
+                connection_reuse_count_limit: 100,
+                enable_connection_reuse: false,
+                line_length_limit: 998,
+                destination_recipient_limit: 100,
+                hello_name: "localhost".to_string(),
+            }
         }
     }
 
@@ -104,7 +127,27 @@ impl<S = TcpStream> Client<S> {
     ///
     /// It does not connects to the server, but only create the `Client`
     pub fn localhost() -> Client<S> {
-        Client::new(("localhost", SMTP_PORT), Some("localhost"))
+        Client::new(("localhost", SMTP_PORT))
+    }
+
+    /// Set the name used during HELO or EHLO
+    pub fn set_hello_name(&mut self, name: &str) {
+        self.configuration.hello_name = name.to_string()
+    }
+
+    /// Set the maximum number of emails sent using one connection
+    pub fn set_enable_connection_reuse(&mut self, enable: bool) {
+        self.configuration.enable_connection_reuse = enable
+    }
+
+    /// Set the maximum number of emails sent using one connection
+    pub fn set_connection_reuse_count_limit(&mut self, count: uint) {
+        self.configuration.connection_reuse_count_limit = count
+    }
+
+    /// Set the client configuration
+    pub fn set_configuration(&mut self, configuration: Configuration) {
+        self.configuration = configuration
     }
 }
 
@@ -124,26 +167,17 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.state = TransactionState::new();
         self.server_info = None;
         self.panic = false;
-        self.connection_reuse = 0;
+        self.connection_reuse_count = 0;
         self.current_message = None;
     }
 
     /// Sends an email
-    ///
-    /// This method sends a message and closes the SMTP transaction
-    pub fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
-        let result = self.send_only(email);
-        self.close();
-        result
-    }
+    pub fn send<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
 
-    /// Sends an email
-    ///
-    /// This method sends a message and lets the connection opened. It has to be closed with the
-    /// `close` method after.
-    pub fn send_only<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
+        let max_reuse_reached = self.connection_reuse_count == self.configuration.connection_reuse_count_limit;
+
         // Connect to the server if needed
-        if self.noop().is_err() {
+        if max_reuse_reached || self.noop().is_err() {
             self.reset();
 
             try!(self.connect());
@@ -165,7 +199,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         self.current_message = Some(Uuid::new_v4());
-        email.set_message_id(format!("<{}@{}>", self.current_message.as_ref().unwrap(), self.my_hostname));
+        email.set_message_id(format!("<{}@{}>", self.current_message.as_ref().unwrap(),
+            self.configuration.hello_name.clone()));
 
         let from_address = email.from_address();
         let to_addresses = email.to_addresses();
@@ -185,7 +220,13 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         try_smtp!(self.data() self);
 
         // Message content
-        self.message(message.as_slice())
+        let result = self.message(message.as_slice());
+
+        if !self.configuration.enable_connection_reuse {
+            self.close();
+        }
+
+        result
     }
 
     /// Connects to the configured server
@@ -257,7 +298,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Send a HELO command and fills `server_info`
     pub fn helo(&mut self) -> SmtpResult {
-        let hostname = self.my_hostname.clone();
+        let hostname = self.configuration.hello_name.clone();
         let result = try!(self.command(Command::Hello(hostname)));
         self.server_info = Some(
             ServerInfo{
@@ -270,7 +311,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends a EHLO command and fills `server_info`
     pub fn ehlo(&mut self) -> SmtpResult {
-        let hostname = self.my_hostname.clone();
+        let hostname = self.configuration.hello_name.clone();
         let result = try!(self.command(Command::ExtendedHello(hostname)));
         self.server_info = Some(
             ServerInfo{
@@ -369,10 +410,10 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Increment the connection reuse counter
-            self.connection_reuse = self.connection_reuse + 1;
+            self.connection_reuse_count = self.connection_reuse_count + 1;
             // Log the message
             info!("{}: conn_use={}, status=sent ({})", self.current_message.as_ref().unwrap(),
-                self.connection_reuse, result.as_ref().ok().unwrap());
+                self.connection_reuse_count, result.as_ref().ok().unwrap());
         }
 
         self.current_message = None;

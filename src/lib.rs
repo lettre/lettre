@@ -44,7 +44,6 @@
 //! let mut client = Client::localhost();
 //! // Send the email
 //! let result = client.send(email);
-//! client.close();
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -73,15 +72,19 @@
 //!
 //! let mut client = Client::new(
 //!     ("server.tld", 10025),   // remote server and custom port
-//!     Some("my.hostname.tld"), // my hostname
 //! );
+//! // Set the name sent during EHLO/HELO, default is `localhost`
+//! client.set_hello_name("my.hostname.tld");
+//! // Enable connection reuse
+//! client.set_enable_connection_reuse(true);
 //!
-//! let result_1 = client.send_only(email.clone());
+//! let result_1 = client.send(email.clone());
 //! assert!(result_1.is_ok());
-//! let result_2 = client.send_only(email);
+//! let result_2 = client.send(email);
 //! assert!(result_2.is_ok());
-//! // Explicitely close the SMTP transaction
-//! client.close()
+//!
+//! // Explicitely close the SMTP transaction as we enabled connection reuse
+//! client.close();
 //! ```
 //!
 //! ### Using the client directly
@@ -102,7 +105,6 @@
 //!
 //! let mut client = Client::new(
 //!     "localhost",             // server socket
-//!     Some("my.hostname.tld"), // my hostname (default is localhost)
 //! );
 //! let result = client.send(email);
 //! assert!(result.is_ok());
@@ -119,7 +121,6 @@
 //!
 //! let mut email_client = Client::new(
 //!     ("localhost", SMTP_PORT), // server socket
-//!     Some("my.hostname.tld"),  // my hostname (default is localhost)
 //! );
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo();

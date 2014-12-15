@@ -35,11 +35,8 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     email.subject(subject);
     email.date_now();
 
-    let mut client =
-        Client::new(
-            (server, port),
-            Some(my_hostname),
-        );
+    let mut client = Client::new((server, port));
+    client.set_hello_name(my_hostname);
     client.send(email)
 }
 
