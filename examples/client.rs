@@ -25,6 +25,7 @@ use smtp::mailer::Email;
 
 fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, subject: &str,
         server: &str, port: Port, my_hostname: &str) -> SmtpResult {
+
     let mut email = Email::new();
     for destination in recipient_addresses.iter() {
         email.to(*destination);
@@ -34,14 +35,12 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     email.subject(subject);
     email.date_now();
 
-    let mut email_client =
+    let mut client =
         Client::new(
             (server, port),
             Some(my_hostname),
         );
-    email_client.send(
-        email
-    )
+    client.send(email)
 }
 
 fn print_usage(description: String, _opts: &[OptGroup]) {

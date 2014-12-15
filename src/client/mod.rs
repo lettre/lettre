@@ -44,20 +44,25 @@ pub struct Client<S = TcpStream> {
     server_info: Option<ServerInfo>,
     /// Transaction state, to check the sequence of commands
     state: TransactionState,
+    /// Panic state
+    panic : bool,
 }
 
 macro_rules! try_smtp (
     ($err: expr $client: ident) => ({
         match $err {
             Ok(val) => val,
-            Err(err) => fail_with_err!(err $client),
+            Err(err) => close_and_return_err!(err $client),
         }
     })
 )
 
-macro_rules! fail_with_err (
+macro_rules! close_and_return_err (
     ($err: expr $client: ident) => ({
-        $client.close();
+        if !$client.panic {
+            $client.panic = true;
+            $client.close();
+        }
         return Err(FromError::from_error($err))
     })
 )
@@ -65,7 +70,7 @@ macro_rules! fail_with_err (
 macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
         if !$client.state.is_allowed(&$command) {
-            fail_with_err!(
+            close_and_return_err!(
                 Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client
             );
         }
@@ -83,6 +88,7 @@ impl<S = TcpStream> Client<S> {
             my_hostname: my_hostname.unwrap_or("localhost").to_string(),
             server_info: None,
             state: TransactionState::new(),
+            panic: false,
         }
     }
 
@@ -95,20 +101,20 @@ impl<S = TcpStream> Client<S> {
 }
 
 impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
-    /// Closes the TCP stream
+    /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
-        if self.stream.is_some() {
-            if self.is_connected() {
-                let _ = self.quit();
-            }
-            // Close the TCP connection
-            drop(self.stream.as_mut().unwrap());
-        }
+        let _ = self.quit();
+    }
 
-        // Reset client state
+    /// Reset the client state
+    pub fn reset(&mut self) {
+        // Close the SMTP transaction if needed
+        self.close();
+
         self.stream = None;
         self.state = TransactionState::new();
         self.server_info = None;
+        self.panic = false;
     }
 
     /// Sends an email
@@ -120,25 +126,27 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         let to_addresses = email.to_addresses();
         let message = email.message();
 
-        // Connect to the server
+        // Connect to the server if needed
         if self.noop().is_err() {
+            self.reset();
+
             try!(self.connect());
-        }
 
-        // Extended Hello or Hello
-        if let Err(error) = self.ehlo() {
-            match error.kind {
-                ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                    try_smtp!(self.helo() self);
-                },
-                _ => {
-                    try_smtp!(Err(error) self)
-                },
-            };
-        }
+            // Extended Hello or Hello if needed
+            if let Err(error) = self.ehlo() {
+                match error.kind {
+                    ErrorKind::PermanentError(Response{code: 550, message: _}) => {
+                        try_smtp!(self.helo() self);
+                    },
+                    _ => {
+                        try_smtp!(Err(error) self)
+                    },
+                };
+            }
 
-        // Print server information
-        debug!("server {}", self.server_info.as_ref().unwrap());
+            // Print server information
+            debug!("server {}", self.server_info.as_ref().unwrap());
+        }
 
         // Mail
         try_smtp!(self.mail(from_address.as_slice()) self);
@@ -148,7 +156,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Recipient
         // TODO Return rejected addresses
-        // TODO Manage the number of recipients
+        // TODO Limit the number of recipients
         for to_address in to_addresses.iter() {
             try_smtp!(self.rcpt(to_address.as_slice()) self);
         }
@@ -173,8 +181,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         check_command_sequence!(command self);
 
         // Connect should not be called when the client is already connected
-        if !self.stream.is_none() {
-            fail_with_err!("The connection is already established" self);
+        if self.stream.is_some() {
+            close_and_return_err!("The connection is already established" self);
         }
 
         // Try to connect
@@ -195,7 +203,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     pub fn send_command(&mut self, command: Command) -> SmtpResult {
         // for now we do not support SMTPUTF8
         if !command.is_ascii() {
-            fail_with_err!("Non-ASCII string" self);
+            close_and_return_err!("Non-ASCII string" self);
         }
 
         self.send_server(command, None)
@@ -266,7 +274,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         let server_info = match self.server_info.clone() {
             Some(info) => info,
-            None       => fail_with_err!(Response{
+            None       => close_and_return_err!(Response{
                                     code: 503,
                                     message: Some("Bad sequence of commands".to_string()),
                           } self),
@@ -301,7 +309,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         let server_info = match self.server_info.clone() {
             Some(info) => info,
-            None       => fail_with_err!(Response{
+            None       => close_and_return_err!(Response{
                                     code: 503,
                                     message: Some("Bad sequence of commands".to_string()),
                           } self)
@@ -310,14 +318,14 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         // Check message encoding
         if !server_info.supports_feature(Extension::EightBitMime).is_some() {
             if !message_content.is_ascii() {
-                fail_with_err!("Server does not accepts UTF-8 strings" self);
+                close_and_return_err!("Server does not accepts UTF-8 strings" self);
             }
         }
 
         // Get maximum message size if defined and compare to the message size
         if let Some(Extension::Size(max)) = server_info.supports_feature(Extension::Size(0)) {
             if message_content.len() > max {
-                fail_with_err!(Response{
+                close_and_return_err!(Response{
                     code: 552,
                     message: Some("Message exceeds fixed maximum message size".to_string()),
                 } self);

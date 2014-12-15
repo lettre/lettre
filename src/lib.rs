@@ -21,24 +21,35 @@
 //!
 //! ## Usage
 //!
-//! ### Simple usage
+//! ### Simple example
+//!
+//! This is the most basic example of usage:
 //!
 //! ```rust,no_run
 //! #![feature(default_type_params)]
 //! use smtp::client::Client;
 //! use smtp::mailer::Email;
 //!
+//! // Create an email
 //! let mut email = Email::new();
+//! // Addresses can be specified by the couple (email, alias)
 //! email.to(("user@example.org", "Firstname Lastname"));
+//! // ... or by an address only
 //! email.from("user@example.com");
 //! email.subject("Hello world");
 //! email.body("Hi, Hello world.");
 //! email.date_now();
 //!
+//! // Open a local connection on port 25
 //! let mut client = Client::localhost();
+//! // Send the email
 //! let result = client.send(email);
+//!
 //! assert!(result.is_ok());
 //! ```
+//!
+//! You can send multiple emails using the same connection by using `send` several times on the
+//! same client. If the connection was closed, it will be re-opened.
 //!
 //! ### Complete example
 //!
@@ -51,6 +62,8 @@
 //! email.to(("user@example.org", "Alias name"));
 //! email.cc(("user@example.net", "Alias name"));
 //! email.from("no-reply@example.com");
+//! email.from("no-reply@example.eu");
+//! email.sender("no-reply@example.com");
 //! email.subject("Hello world");
 //! email.body("Hi, Hello world.");
 //! email.reply_to("contact@example.com");
@@ -64,7 +77,7 @@
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
-
+//!
 //! ### Using the client directly
 //!
 //! If you just want to send an email without using `Email` to provide headers:
