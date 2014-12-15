@@ -149,6 +149,13 @@ impl SendableEmail for Email {
     fn message(&self) -> String {
         self.to_string()
     }
+
+    /// Adds a `Message-ID` header
+    fn set_message_id(&mut self, string: String) {
+        self.headers.push(
+            Header::MessageId(string)
+        );
+    }
 }
 
 #[cfg(test)]

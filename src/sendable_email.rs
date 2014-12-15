@@ -17,6 +17,8 @@ pub trait SendableEmail {
     fn to_addresses(&self) -> Vec<String>;
     /// Message content
     fn message(&self) -> String;
+    /// Set message-ID header
+    fn set_message_id(&mut self, id: String);
 }
 
 /// Minimal email structure
@@ -51,5 +53,9 @@ impl SendableEmail for SimpleSendableEmail {
 
     fn message(&self) -> String {
         self.message.clone()
+    }
+
+    fn set_message_id(&mut self, id: String) {
+        let _ = id;
     }
 }

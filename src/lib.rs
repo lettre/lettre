@@ -44,6 +44,7 @@
 //! let mut client = Client::localhost();
 //! // Send the email
 //! let result = client.send(email);
+//! client.close();
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -74,8 +75,13 @@
 //!     ("server.tld", 10025),   // remote server and custom port
 //!     Some("my.hostname.tld"), // my hostname
 //! );
-//! let result = client.send(email);
-//! assert!(result.is_ok());
+//!
+//! let result_1 = client.send_only(email.clone());
+//! assert!(result_1.is_ok());
+//! let result_2 = client.send_only(email);
+//! assert!(result_2.is_ok());
+//! // Explicitely close the SMTP transaction
+//! client.close()
 //! ```
 //!
 //! ### Using the client directly
@@ -135,6 +141,7 @@
 #![feature(phase)] #[phase(plugin, link)] extern crate log;
 
 extern crate time;
+extern crate uuid;
 
 pub mod client;
 pub mod command;
