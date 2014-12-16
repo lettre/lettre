@@ -48,9 +48,6 @@
 //! assert!(result.is_ok());
 //! ```
 //!
-//! You can send multiple emails using the same connection by using `send` several times on the
-//! same client. If the connection was closed, it will be re-opened.
-//!
 //! ### Complete example
 //!
 //! ```rust,no_run
@@ -79,6 +76,7 @@
 //!
 //! let result_1 = client.send(email.clone());
 //! assert!(result_1.is_ok());
+//! // The second email will use the same connection
 //! let result_2 = client.send(email);
 //! assert!(result_2.is_ok());
 //!

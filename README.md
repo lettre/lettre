@@ -1,7 +1,8 @@
 rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp)
 =========
 
-This library implements an SMTP library and a simple SMTP client. See the [documentation](http://amousset.github.io/rust-smtp/smtp/) for more information.
+This library implements an SMTP library and a simple SMTP client.
+See the [documentation](http://amousset.github.io/rust-smtp/smtp/) for more information.
 
 Rust versions
 -------------
@@ -18,7 +19,7 @@ If you're using the library in a program, just add these lines to your `Cargo.to
 git = "https://github.com/amousset/rust-smtp.git"
 ```
 
-Otherwise, you can clone this repo and run `cargo build`.
+Otherwise, you can clone this repository and run `cargo build`.
 
 Example
 -------
@@ -28,11 +29,13 @@ There is an example command-line program included:
 $ cargo test
 $ env RUST_LOG=info cargo run --example client -- -s "My subject" -r sender@localhost recipient@localhost < email.txt
 INFO:smtp::client: connection established to 127.0.0.1:25
-INFO:smtp::client: from=<sender@localhost>, size=989, nrcpt=1
-INFO:smtp::client: to=<recipient@localhost>, status=sent (250 2.0.0 Ok: queued as 9D28F1C0A51)
+INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: from=<sender@localhost>
+INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: to=<recipient@localhost>
+INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: conn_use=1, size=1889, status=sent (250 2.0.0 Ok: queued as BAA9C1C0055)
+INFO:client: Email sent successfully
 ```
 
-Run `./target/examples/client -h` to get a list of available options.
+Run `cargo run --example client -- -h` to get a list of available options.
 
 Tests
 -----

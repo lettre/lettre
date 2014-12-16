@@ -409,8 +409,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             // Increment the connection reuse counter
             self.connection_reuse_count = self.connection_reuse_count + 1;
             // Log the message
-            info!("{}: conn_use={}, status=sent ({})", self.current_message.as_ref().unwrap(),
-                self.connection_reuse_count, result.as_ref().ok().unwrap());
+            info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
+                self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
         }
 
         self.current_message = None;
