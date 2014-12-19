@@ -78,7 +78,7 @@ macro_rules! try_smtp (
             Err(err) => close_and_return_err!(err $client),
         }
     })
-)
+);
 
 macro_rules! close_and_return_err (
     ($err: expr $client: ident) => ({
@@ -88,7 +88,7 @@ macro_rules! close_and_return_err (
         }
         return Err(FromError::from_error($err))
     })
-)
+);
 
 macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
@@ -98,7 +98,7 @@ macro_rules! check_command_sequence (
             );
         }
     })
-)
+);
 
 impl<S = TcpStream> Client<S> {
     /// Creates a new SMTP client

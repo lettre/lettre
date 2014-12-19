@@ -193,7 +193,7 @@ mod test {
                 to: vec!(),
                 from: None
             }
-        )
+        );
         email.add_header(("X-My-Header-2", "value-2"));
         assert_eq!(
             email,
@@ -204,6 +204,6 @@ mod test {
                 to: vec!(),
                 from: None
             }
-        )
+        );
     }
 }
