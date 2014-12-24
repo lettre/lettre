@@ -10,7 +10,6 @@
 //! Tools for common string manipulations
 
 use std::string::String;
-use std::str::replace;
 
 use common::{CR, LF, CRLF};
 
@@ -35,7 +34,7 @@ pub fn get_first_word(string: &str) -> &str {
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
 #[inline]
 pub fn escape_crlf(string: &str) -> String {
-    replace(string, CRLF, "<CR><LF>")
+    string.replace(CRLF, "<CR><LF>")
 }
 
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
