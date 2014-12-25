@@ -81,41 +81,41 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        assert_eq!(from_str::<Response>("200 response message"),
+        assert_eq!("200 response message".parse::<Response>(),
             Some(Response{
                 code: 200,
                 message: Some("response message".to_string())
             })
         );
-        assert_eq!(from_str::<Response>("200-response message"),
+        assert_eq!("200-response message".parse::<Response>(),
             Some(Response{
                 code: 200,
                 message: Some("response message".to_string())
             })
         );
-        assert_eq!(from_str::<Response>("200"),
+        assert_eq!("200".parse::<Response>(),
             Some(Response{
                 code: 200,
                 message: None
             })
         );
-        assert_eq!(from_str::<Response>("200 "),
+        assert_eq!("200 ".parse::<Response>(),
             Some(Response{
                 code: 200,
                 message: None
             })
         );
-        assert_eq!(from_str::<Response>("200-response\r\nmessage"),
+        assert_eq!("200-response\r\nmessage".parse::<Response>(),
             Some(Response{
                 code: 200,
                 message: Some("response\r\nmessage".to_string())
             })
         );
-        assert_eq!(from_str::<Response>("2000response message"), None);
-        assert_eq!(from_str::<Response>("20a response message"), None);
-        assert_eq!(from_str::<Response>("20 "), None);
-        assert_eq!(from_str::<Response>("20"), None);
-        assert_eq!(from_str::<Response>("2"), None);
-        assert_eq!(from_str::<Response>(""), None);
+        assert_eq!("2000response message".parse::<Response>(), None);
+        assert_eq!("20a response message".parse::<Response>(), None);
+        assert_eq!("20 ".parse::<Response>(), None);
+        assert_eq!("20".parse::<Response>(), None);
+        assert_eq!("2".parse::<Response>(), None);
+        assert_eq!("".parse::<Response>(), None);
     }
 }

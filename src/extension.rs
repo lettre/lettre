@@ -118,12 +118,12 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        assert_eq!(from_str::<Extension>("8BITMIME"), Some(Extension::EightBitMime));
-        assert_eq!(from_str::<Extension>("SIZE 42"), Some(Extension::Size(42)));
-        assert_eq!(from_str::<Extension>("SIZ 42"), None);
-        assert_eq!(from_str::<Extension>("SIZE 4a2"), None);
+        assert_eq!("8BITMIME".parse::<Extension>(), Some(Extension::EightBitMime));
+        assert_eq!("SIZE 42".parse::<Extension>(), Some(Extension::Size(42)));
+        assert_eq!("SIZ 42".parse::<Extension>(), None);
+        assert_eq!("SIZE 4a2".parse::<Extension>(), None);
         // TODO: accept trailing spaces ?
-        assert_eq!(from_str::<Extension>("SIZE 42 "), None);
+        assert_eq!("SIZE 42 ".parse::<Extension>(), None);
     }
 
     #[test]

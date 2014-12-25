@@ -123,7 +123,7 @@ fn main() {
         },
         // port
         match matches.opt_str("p") {
-            Some(port) => from_str::<Port>(port.as_slice()).unwrap(),
+            Some(port) => port.as_slice().parse::<Port>().unwrap(),
             None => 25
         },
         // my hostname
