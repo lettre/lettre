@@ -63,7 +63,7 @@ impl FromStr for Extension {
                      "STARTTLS" => Some(StartTls),
                      _ => None,
                  },
-            2 => match (splitted[0], from_str::<uint>(splitted[1])) {
+            2 => match (splitted[0], splitted[1].parse::<uint>()) {
                      ("SIZE", Some(size)) => Some(Size(size)),
                      _ => None,
                  },
@@ -88,8 +88,8 @@ impl Extension {
     pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
         let mut esmtp_features = Vec::new();
         for line in message.split_str(CRLF) {
-            if let Some(Response{code: 250, message}) = from_str::<Response>(line) {
-                if let Some(keyword) = from_str::<Extension>(message.unwrap().as_slice()) {
+            if let Some(Response{code: 250, message}) = line.parse::<Response>() {
+                if let Some(keyword) = message.unwrap().as_slice().parse::<Extension>() {
                     esmtp_features.push(keyword);
                 };
             }

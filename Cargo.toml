@@ -16,3 +16,4 @@ keywords = ["email", "smtp"]
 [dependencies]
 time = "*"
 uuid = "*"
+log = "*"

@@ -45,7 +45,7 @@ impl FromStr for Response {
             None
         // If we have only a code, with or without a trailing space
         } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
-            match from_str::<u16>(s.slice_to(3)) {
+            match s.slice_to(3).parse::<u16>() {
                 Some(code) => Some(Response{
                                 code: code,
                                 message: None
@@ -55,7 +55,7 @@ impl FromStr for Response {
         // If we have a code and a message
         } else {
             match (
-                from_str::<u16>(s.slice_to(3)),
+                s.slice_to(3).parse::<u16>(),
                 vec![" ", "-"].contains(&s.slice(3,4)),
                 (remove_trailing_crlf(s.slice_from(4)))
             ) {
