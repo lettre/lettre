@@ -9,6 +9,7 @@
 
 //! SMTP client
 
+use std::ascii::AsciiExt;
 use std::string::String;
 use std::error::FromError;
 use std::io::net::tcp::TcpStream;
@@ -33,18 +34,18 @@ pub mod connecter;
 pub mod stream;
 
 /// Represents the configuration of a client
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct Configuration {
     /// Maximum connection reuse
     ///
     /// Zero means no limitation
-    pub connection_reuse_count_limit: uint,
+    pub connection_reuse_count_limit: usize,
     /// Enable connection reuse
     pub enable_connection_reuse: bool,
     /// Maximum recipients
-    pub destination_recipient_limit: uint,
+    pub destination_recipient_limit: usize,
     /// Maximum line length
-    pub line_length_limit: uint,
+    pub line_length_limit: usize,
     /// Name sent during HELO or EHLO
     pub hello_name: String,
 }
@@ -64,7 +65,7 @@ pub struct Client<S = TcpStream> {
     /// Panic state
     panic: bool,
     /// Connection reuse counter
-    connection_reuse_count: uint,
+    connection_reuse_count: usize,
     /// Current message id
     current_message: Option<Uuid>,
     /// Configuration of the client
@@ -72,16 +73,16 @@ pub struct Client<S = TcpStream> {
 }
 
 macro_rules! try_smtp (
-    ($err: expr $client: ident) => ({
+    ($err: expr, $client: ident) => ({
         match $err {
             Ok(val) => val,
-            Err(err) => close_and_return_err!(err $client),
+            Err(err) => close_and_return_err!(err, $client),
         }
     })
 );
 
 macro_rules! close_and_return_err (
-    ($err: expr $client: ident) => ({
+    ($err: expr, $client: ident) => ({
         if !$client.panic {
             $client.panic = true;
             $client.close();
@@ -94,7 +95,7 @@ macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
         if !$client.state.is_allowed(&$command) {
             close_and_return_err!(
-                Response{code: 503, message: Some("Bad sequence of commands".to_string())} $client
+                Response{code: 503, message: Some("Bad sequence of commands".to_string())}, $client
             );
         }
     })
@@ -141,7 +142,7 @@ impl<S = TcpStream> Client<S> {
     }
 
     /// Set the maximum number of emails sent using one connection
-    pub fn set_connection_reuse_count_limit(&mut self, count: uint) {
+    pub fn set_connection_reuse_count_limit(&mut self, count: usize) {
         self.configuration.connection_reuse_count_limit = count
     }
 
@@ -189,16 +190,16 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             if let Err(error) = self.ehlo() {
                 match error.kind {
                     ErrorKind::PermanentError(Response{code: 550, message: _}) => {
-                        try_smtp!(self.helo() self);
+                        try_smtp!(self.helo(), self);
                     },
                     _ => {
-                        try_smtp!(Err(error) self)
+                        try_smtp!(Err(error), self)
                     },
                 };
             }
 
             // Print server information
-            debug!("server {}", self.server_info.as_ref().unwrap());
+            //debug!("server {}", self.server_info.as_ref().unwrap());
         }
 
         self.current_message = Some(Uuid::new_v4());
@@ -210,17 +211,17 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         let message = email.message();
 
         // Mail
-        try_smtp!(self.mail(from_address.as_slice()) self);
+        try_smtp!(self.mail(from_address.as_slice()), self);
 
         // Recipient
         // TODO Return rejected addresses
         // TODO Limit the number of recipients
         for to_address in to_addresses.iter() {
-            try_smtp!(self.rcpt(to_address.as_slice()) self);
+            try_smtp!(self.rcpt(to_address.as_slice()), self);
         }
 
         // Data
-        try_smtp!(self.data() self);
+        try_smtp!(self.data(), self);
 
         // Message content
         self.message(message.as_slice())
@@ -234,15 +235,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
-            close_and_return_err!("The connection is already established" self);
+            close_and_return_err!("The connection is already established", self);
         }
 
         // Try to connect
         self.stream = Some(try!(Connecter::connect(self.server_addr)));
 
         // Log the connection
-        info!("connection established to {}",
-              self.stream.as_mut().unwrap().peer_name().unwrap());
+        //info!("connection established to {}",
+        //      self.stream.as_mut().unwrap().peer_name().unwrap());
 
         let result = try!(self.stream.as_mut().unwrap().get_reply());
 
@@ -255,7 +256,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     fn command(&mut self, command: Command) -> SmtpResult {
         // for now we do not support SMTPUTF8
         if !command.is_ascii() {
-            close_and_return_err!("Non-ASCII string" self);
+            close_and_return_err!("Non-ASCII string", self);
         }
 
         self.send_server(command, None)
@@ -279,7 +280,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
                                 message, MESSAGE_ENDING
                              ),
             None          => self.stream.as_mut().unwrap().send_and_get_response(
-                                command.to_string().as_slice(), CRLF
+                                format! ("{:?}", command) .as_slice(), CRLF
                              ),
         });
 
@@ -334,7 +335,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             None       => close_and_return_err!(Response{
                                     code: 503,
                                     message: Some("Bad sequence of commands".to_string()),
-                          } self),
+                          }, self),
         };
 
         // Checks message encoding according to the server's capability
@@ -350,7 +351,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the mail command
-            info!("{}: from=<{}>", self.current_message.as_ref().unwrap(), from_address);
+            //info!("{}: from=<{}>", self.current_message.as_ref().unwrap(), from_address);
         }
 
         result
@@ -364,7 +365,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the rcpt command
-            info!("{}: to=<{}>", self.current_message.as_ref().unwrap(), to_address);
+            //info!("{}: to=<{}>", self.current_message.as_ref().unwrap(), to_address);
         }
 
         result
@@ -383,13 +384,13 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             None       => close_and_return_err!(Response{
                                     code: 503,
                                     message: Some("Bad sequence of commands".to_string()),
-                          } self)
+                          }, self)
         };
 
         // Check message encoding
         if !server_info.supports_feature(Extension::EightBitMime).is_some() {
-            if !message_content.is_ascii() {
-                close_and_return_err!("Server does not accepts UTF-8 strings" self);
+            if !message_content.as_bytes().is_ascii() {
+                close_and_return_err!("Server does not accepts UTF-8 strings", self);
             }
         }
 
@@ -399,7 +400,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
                 close_and_return_err!(Response{
                     code: 552,
                     message: Some("Message exceeds fixed maximum message size".to_string()),
-                } self);
+                }, self);
             }
         }
 
@@ -409,8 +410,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             // Increment the connection reuse counter
             self.connection_reuse_count = self.connection_reuse_count + 1;
             // Log the message
-            info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
-                self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
+            //info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
+            //    self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
         }
 
         self.current_message = None;

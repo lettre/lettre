@@ -19,7 +19,7 @@ use response::Response;
 use self::Extension::{EightBitMime, SmtpUtfEight, StartTls, Size};
 
 /// Supported ESMTP keywords
-#[deriving(PartialEq,Eq,Copy,Clone)]
+#[derive(PartialEq,Eq,Copy,Clone)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -36,18 +36,18 @@ pub enum Extension {
     /// SIZE keyword
     ///
     /// RFC 1427 : https://tools.ietf.org/html/rfc1427
-    Size(uint),
+    Size(usize),
 }
 
 impl Show for Extension {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(
+        write! (f, "{}",
             match self {
                 &EightBitMime => "8BITMIME".to_string(),
                 &SmtpUtfEight => "SMTPUTF8".to_string(),
                 &StartTls => "STARTTLS".to_string(),
                 &Size(ref size) => format!("SIZE={}", size)
-            }.as_bytes()
+            }
         )
     }
 }
@@ -63,7 +63,7 @@ impl FromStr for Extension {
                      "STARTTLS" => Some(StartTls),
                      _ => None,
                  },
-            2 => match (splitted[0], splitted[1].parse::<uint>()) {
+            2 => match (splitted[0], splitted[1].parse::<usize>()) {
                      ("SIZE", Some(size)) => Some(Size(size)),
                      _ => None,
                  },

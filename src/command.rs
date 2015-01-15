@@ -11,6 +11,7 @@
 
 #![unstable]
 
+use std::ascii::AsciiExt;
 use std::error::FromError;
 use std::fmt::{Show, Formatter, Result};
 
@@ -56,7 +57,7 @@ pub enum Command {
 
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write( match *self {
+        write! (f, "{}", match *self {
             Command::Connect => "CONNECT".to_string(),
             Command::StartTls => "STARTTLS".to_string(),
             Command::ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname),
@@ -76,7 +77,7 @@ impl Show for Command {
             Command::Help(Some(ref argument)) => format!("HELP {}", argument),
             Command::Noop => "NOOP".to_string(),
             Command::Quit => "QUIT".to_string(),
-        }.as_bytes())
+        })
     }
 }
 

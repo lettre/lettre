@@ -19,7 +19,7 @@ use tools::remove_trailing_crlf;
 /// Contains an SMTP reply, with separed code and message
 ///
 /// The text message is optional, only the code is mandatory
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub struct Response {
     /// Server response code
     pub code: u16,
@@ -29,11 +29,11 @@ pub struct Response {
 
 impl Show for Response {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(
+        write! (f, "{}",
             match self.clone().message {
                 Some(message) => format!("{} {}", self.code, message),
                 None => format!("{}", self.code),
-            }.as_bytes()
+            }
         )
     }
 }

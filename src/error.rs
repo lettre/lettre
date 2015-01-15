@@ -71,7 +71,7 @@ impl FromError<Response> for SmtpError {
         let kind = match response.code/100 {
             4 => TransientError(response),
             5 => PermanentError(response),
-            _ => UnknownError(response.to_string()),
+            _ => UnknownError(format! ("{:?}", response)),
         };
         let desc = match kind {
             TransientError(_) => "a permanent error occured during the SMTP transaction",
@@ -107,8 +107,8 @@ impl Error for SmtpError {
 
     fn detail(&self) -> Option<String> {
         match self.kind {
-            TransientError(ref response) => Some(response.to_string()),
-            PermanentError(ref response) => Some(response.to_string()),
+            TransientError(ref response) => Some(format! ("{:?}", response)),
+            PermanentError(ref response) => Some(format! ("{:?}", response)),
             UnknownError(ref string) => Some(string.to_string()),
             InternalIoError(ref err) => err.detail.clone(),
         }
