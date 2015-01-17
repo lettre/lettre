@@ -19,7 +19,7 @@ use response::Response;
 use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
 
 /// An enum of all error kinds.
-#[deriving(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Show)]
 pub enum ErrorKind {
     /// Transient error
     ///
@@ -36,7 +36,7 @@ pub enum ErrorKind {
 }
 
 /// smtp error type
-#[deriving(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Show)]
 pub struct SmtpError {
     /// Error kind
     pub kind: ErrorKind,
