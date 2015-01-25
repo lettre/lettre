@@ -14,6 +14,8 @@
 use std::error::Error;
 use std::io::IoError;
 use std::error::FromError;
+use std::fmt::{Display, Formatter};
+use std::fmt::Error as FmtError;
 
 use response::Response;
 use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
@@ -97,20 +99,22 @@ impl FromError<&'static str> for SmtpError {
     }
 }
 
+impl Display for SmtpError {
+    fn fmt (&self, fmt: &mut Formatter) -> Result<(), FmtError> {
+        match self.kind {
+            TransientError(ref response) => write! (fmt, "{:?}", response),
+            PermanentError(ref response) => write! (fmt, "{:?}", response),
+            UnknownError(ref string) => write! (fmt, "{}", string),
+            InternalIoError(ref err) => write! (fmt, "{:?}", err.detail),
+        }
+    }
+}
+
 impl Error for SmtpError {
     fn description(&self) -> &str {
         match self.kind {
             InternalIoError(ref err) => err.desc,
             _ => self.desc,
-        }
-    }
-
-    fn detail(&self) -> Option<String> {
-        match self.kind {
-            TransientError(ref response) => Some(format! ("{:?}", response)),
-            PermanentError(ref response) => Some(format! ("{:?}", response)),
-            UnknownError(ref string) => Some(string.to_string()),
-            InternalIoError(ref err) => err.detail.clone(),
         }
     }
 
