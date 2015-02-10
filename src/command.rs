@@ -11,6 +11,7 @@
 
 #![unstable]
 
+use std::ascii::AsciiExt;
 use std::error::FromError;
 use std::fmt::{Show, Formatter, Result};
 
@@ -22,7 +23,7 @@ use common::SP;
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
 /// and must not be used by clients: `SEND`, `SOML`, `SAML`, `TURN`.
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub enum Command {
     /// A fake command to represent the connection step
     Connect,
@@ -56,7 +57,7 @@ pub enum Command {
 
 impl Show for Command {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write( match *self {
+        write! (f, "{}", match *self {
             Command::Connect => "CONNECT".to_string(),
             Command::StartTls => "STARTTLS".to_string(),
             Command::ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname),
@@ -76,7 +77,7 @@ impl Show for Command {
             Command::Help(Some(ref argument)) => format!("HELP {}", argument),
             Command::Noop => "NOOP".to_string(),
             Command::Quit => "QUIT".to_string(),
-        }.as_bytes())
+        })
     }
 }
 

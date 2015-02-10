@@ -39,7 +39,7 @@ impl<'a> ToAddress for (&'a str, &'a str) {
 }
 
 /// Contains an address with an optionnal alias
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub struct Address {
     /// The address
     address: String,
@@ -49,10 +49,10 @@ pub struct Address {
 
 impl Show for Address {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(match self.alias {
+        write! (f, "{}", match self.alias {
             Some(ref alias_string) => format!("{}{}<{}>", alias_string, SP, self.address.as_slice()),
             None => self.address.clone(),
-        }.as_bytes())
+        })
     }
 }
 

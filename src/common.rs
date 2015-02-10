@@ -11,7 +11,7 @@
 
 #![unstable]
 
-use std::io::net::ip::Port;
+use std::old_io::net::ip::Port;
 
 /// Default smtp port
 pub static SMTP_PORT: Port = 25;

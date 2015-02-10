@@ -15,7 +15,7 @@ use std::fmt::{Show, Formatter};
 use extension::Extension;
 
 /// Contains information about an SMTP server
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ServerInfo {
     /// Server name
     ///
@@ -30,14 +30,12 @@ pub struct ServerInfo {
 
 impl Show for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write(
-            format!("{} with {}",
+        write!(f, "{} with {}",
                 self.name,
                 match self.esmtp_features {
-                    Some(ref features) => features.to_string(),
+                    Some(ref features) => format! ("{:?}", features),
                     None => "no supported features".to_string(),
                 }
-            ).as_bytes()
         )
     }
 }

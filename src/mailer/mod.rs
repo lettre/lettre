@@ -22,7 +22,7 @@ pub mod header;
 pub mod address;
 
 /// Simple email representation
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub struct Email {
     /// Array of headers
     headers: Vec<Header>,
@@ -38,10 +38,10 @@ impl Show for Email {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let mut formatted_headers = String::new();
         for header in self.headers.iter() {
-            formatted_headers.push_str(header.to_string().as_slice());
+            formatted_headers.push_str(format! ("{:?}", header) .as_slice());
             formatted_headers.push_str(CRLF);
         }
-        f.write(format!("{}{}{}", formatted_headers, CRLF, self.body).as_bytes())
+        write! (f, "{}{}{}", formatted_headers, CRLF, self.body)
     }
 }
 
@@ -147,7 +147,7 @@ impl SendableEmail for Email {
     }
 
     fn message(&self) -> String {
-        self.to_string()
+        format! ("{:?}", self)
     }
 
     /// Adds a `Message-ID` header

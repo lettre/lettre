@@ -129,10 +129,11 @@
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 #![experimental]
 
-#![feature(phase, macro_rules, default_type_params)]
-#![deny(missing_docs, warnings)]
+#![allow(unstable)]
+#![deny(missing_docs)]
 
-#![feature(phase)] #[phase(plugin, link)] extern crate log;
+#![feature(plugin)]
+#[plugin] extern crate log;
 
 extern crate time;
 extern crate uuid;
