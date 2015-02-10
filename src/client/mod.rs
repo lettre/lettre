@@ -12,8 +12,8 @@
 use std::ascii::AsciiExt;
 use std::string::String;
 use std::error::FromError;
-use std::io::net::tcp::TcpStream;
-use std::io::net::ip::{SocketAddr, ToSocketAddr};
+use std::old_io::net::tcp::TcpStream;
+use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
 use uuid::Uuid;
 

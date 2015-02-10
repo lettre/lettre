@@ -9,8 +9,8 @@
 
 //! TODO
 
-use std::io::net::tcp::TcpStream;
-use std::io::IoResult;
+use std::old_io::net::tcp::TcpStream;
+use std::old_io::IoResult;
 use std::str::from_utf8;
 use std::vec::Vec;
 use std::error::FromError;
@@ -73,8 +73,8 @@ impl ClientStream for TcpStream {
         let response = try!(self.read_into_string());
 
         match response.as_slice().parse::<Response>() {
-            Some(response) => Ok(response),
-            None => Err(FromError::from_error("Could not parse response"))
+            Ok(response) => Ok(response),
+            Err(_) => Err(FromError::from_error("Could not parse response"))
         }
     }
 }

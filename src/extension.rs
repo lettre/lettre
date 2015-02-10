@@ -12,7 +12,8 @@
 #![unstable]
 
 use std::str::FromStr;
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::{Debug, Formatter, Result};
+use std::result::Result as RResult;
 
 use common::CRLF;
 use response::Response;
@@ -39,7 +40,7 @@ pub enum Extension {
     Size(usize),
 }
 
-impl Show for Extension {
+impl Debug for Extension {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write! (f, "{}",
             match self {
@@ -54,20 +55,21 @@ impl Show for Extension {
 
 impl FromStr for Extension {
     // TODO: check RFC
-    fn from_str(s: &str) -> Option<Extension> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> RResult<Extension, &'static str> {
         let splitted : Vec<&str> = s.splitn(1, ' ').collect();
         match splitted.len() {
             1 => match splitted[0] {
-                     "8BITMIME" => Some(EightBitMime),
-                     "SMTPUTF8" => Some(SmtpUtfEight),
-                     "STARTTLS" => Some(StartTls),
-                     _ => None,
+                     "8BITMIME" => Ok(EightBitMime),
+                     "SMTPUTF8" => Ok(SmtpUtfEight),
+                     "STARTTLS" => Ok(StartTls),
+                     _ => Err("Unknown extension"),
                  },
             2 => match (splitted[0], splitted[1].parse::<usize>()) {
-                     ("SIZE", Some(size)) => Some(Size(size)),
-                     _ => None,
+                     ("SIZE", Ok(size)) => Ok(Size(size)),
+                     _ => Err("Can't parse size"),
                  },
-            _ => None,
+            _ => Err("Empty extension?"),
         }
     }
 }
@@ -88,8 +90,8 @@ impl Extension {
     pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
         let mut esmtp_features = Vec::new();
         for line in message.split_str(CRLF) {
-            if let Some(Response{code: 250, message}) = line.parse::<Response>() {
-                if let Some(keyword) = message.unwrap().as_slice().parse::<Extension>() {
+            if let Ok(Response{code: 250, message}) = line.parse::<Response>() {
+                if let Ok(keyword) = message.unwrap().as_slice().parse::<Extension>() {
                     esmtp_features.push(keyword);
                 };
             }

@@ -22,7 +22,7 @@ pub mod header;
 pub mod address;
 
 /// Simple email representation
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub struct Email {
     /// Array of headers
     headers: Vec<Header>,

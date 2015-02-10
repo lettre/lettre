@@ -23,7 +23,7 @@ use common::SP;
 ///
 /// We do not implement the following SMTP commands, as they were deprecated in RFC 5321
 /// and must not be used by clients: `SEND`, `SOML`, `SAML`, `TURN`.
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone)]
 pub enum Command {
     /// A fake command to represent the connection step
     Connect,

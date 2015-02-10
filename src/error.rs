@@ -12,7 +12,7 @@
 #![unstable]
 
 use std::error::Error;
-use std::io::IoError;
+use std::old_io::IoError;
 use std::error::FromError;
 use std::fmt::{Display, Formatter};
 use std::fmt::Error as FmtError;
@@ -21,7 +21,7 @@ use response::Response;
 use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
 
 /// An enum of all error kinds.
-#[derive(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ErrorKind {
     /// Transient error
     ///
@@ -38,7 +38,7 @@ pub enum ErrorKind {
 }
 
 /// smtp error type
-#[derive(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct SmtpError {
     /// Error kind
     pub kind: ErrorKind,

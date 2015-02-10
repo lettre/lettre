@@ -12,7 +12,8 @@
 #![unstable]
 
 use std::str::FromStr;
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::{Debug, Formatter, Result};
+use std::result::Result as RResult;
 
 use tools::remove_trailing_crlf;
 
@@ -27,7 +28,7 @@ pub struct Response {
     pub message: Option<String>
 }
 
-impl Show for Response {
+impl Debug for Response {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write! (f, "{}",
             match self.clone().message {
@@ -39,18 +40,19 @@ impl Show for Response {
 }
 
 impl FromStr for Response {
-    fn from_str(s: &str) -> Option<Response> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> RResult<Response, &'static str> {
         // If the string is too short to be a response code
         if s.len() < 3 {
-            None
+            Err("len < 3")
         // If we have only a code, with or without a trailing space
         } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
             match s.slice_to(3).parse::<u16>() {
-                Some(code) => Some(Response{
+                Ok(code) => Ok(Response{
                                 code: code,
                                 message: None
                               }),
-                None => None,
+                Err(_) => Err("Can't parse the code"),
             }
         // If we have a code and a message
         } else {
@@ -59,11 +61,11 @@ impl FromStr for Response {
                 vec![" ", "-"].contains(&s.slice(3,4)),
                 (remove_trailing_crlf(s.slice_from(4)))
             ) {
-                (Some(code), true, message) => Some(Response{
+                (Ok(code), true, message) => Ok(Response{
                             code: code,
                             message: Some(message.to_string())
                         }),
-                _ => None,
+                _ => Err("Error parsing a code with a message"),
             }
         }
     }
