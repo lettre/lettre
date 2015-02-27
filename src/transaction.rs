@@ -12,13 +12,13 @@
 #![unstable]
 
 use std::fmt;
-use std::fmt::{Show, Formatter};
+use std::fmt::{Display, Formatter};
 
 use command::Command;
 use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent};
 
 /// Contains the state of the current transaction
-#[deriving(PartialEq,Eq,Copy)]
+#[derive(PartialEq,Eq,Copy,Debug)]
 pub enum TransactionState {
     /// No connection was established
     Unconnected,
@@ -34,9 +34,9 @@ pub enum TransactionState {
     DataSent,
 }
 
-impl Show for TransactionState {
+impl Display for TransactionState {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write(
+        write! (f, "{}",
             match *self {
                 Unconnected => "Unconnected",
                 Connected => "Connected",
@@ -44,7 +44,7 @@ impl Show for TransactionState {
                 MailSent => "MailSent",
                 RecipientSent => "RecipientSent",
                 DataSent => "DataSent",
-            }.as_bytes()
+            }
         )
     }
 }

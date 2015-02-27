@@ -17,9 +17,9 @@ use common::{CR, LF, CRLF};
 #[inline]
 pub fn remove_trailing_crlf(string: &str) -> &str {
     if string.ends_with(CRLF) {
-        string.slice_to(string.len() - 2)
+        &string[.. string.len() - 2]
     } else if string.ends_with(CR) {
-        string.slice_to(string.len() - 1)
+        &string[.. string.len() - 1]
     } else {
         string
     }
@@ -28,7 +28,7 @@ pub fn remove_trailing_crlf(string: &str) -> &str {
 /// Returns the first word of a string, or the string if it contains no space
 #[inline]
 pub fn get_first_word(string: &str) -> &str {
-    string.split_str(CRLF).next().unwrap().splitn(1, ' ').next().unwrap()
+    string.split(CRLF).next().unwrap().splitn(1, ' ').next().unwrap()
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
