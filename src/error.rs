@@ -27,7 +27,7 @@ pub enum ErrorKind {
     ///
     /// 4xx reply code
     TransientError(Response),
-    /// permanent error
+    /// Permanent error
     ///
     /// 5xx reply code
     PermanentError(Response),

@@ -124,6 +124,8 @@
 
 #![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
 
+#![experimental]
+
 #![deny(missing_docs)]
 
 #![feature(plugin,core,old_io,io)]
