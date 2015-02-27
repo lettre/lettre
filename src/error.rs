@@ -12,14 +12,16 @@
 #![unstable]
 
 use std::error::Error;
-use std::io::IoError;
+use std::old_io::IoError;
 use std::error::FromError;
+use std::fmt::{Display, Formatter};
+use std::fmt::Error as FmtError;
 
 use response::Response;
 use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
 
 /// An enum of all error kinds.
-#[deriving(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ErrorKind {
     /// Transient error
     ///
@@ -36,7 +38,7 @@ pub enum ErrorKind {
 }
 
 /// smtp error type
-#[deriving(PartialEq, Eq, Clone, Show)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct SmtpError {
     /// Error kind
     pub kind: ErrorKind,
@@ -71,7 +73,7 @@ impl FromError<Response> for SmtpError {
         let kind = match response.code/100 {
             4 => TransientError(response),
             5 => PermanentError(response),
-            _ => UnknownError(response.to_string()),
+            _ => UnknownError(format! ("{:?}", response)),
         };
         let desc = match kind {
             TransientError(_) => "a permanent error occured during the SMTP transaction",
@@ -97,20 +99,22 @@ impl FromError<&'static str> for SmtpError {
     }
 }
 
+impl Display for SmtpError {
+    fn fmt (&self, fmt: &mut Formatter) -> Result<(), FmtError> {
+        match self.kind {
+            TransientError(ref response) => write! (fmt, "{:?}", response),
+            PermanentError(ref response) => write! (fmt, "{:?}", response),
+            UnknownError(ref string) => write! (fmt, "{}", string),
+            InternalIoError(ref err) => write! (fmt, "{:?}", err.detail),
+        }
+    }
+}
+
 impl Error for SmtpError {
     fn description(&self) -> &str {
         match self.kind {
             InternalIoError(ref err) => err.desc,
             _ => self.desc,
-        }
-    }
-
-    fn detail(&self) -> Option<String> {
-        match self.kind {
-            TransientError(ref response) => Some(response.to_string()),
-            PermanentError(ref response) => Some(response.to_string()),
-            UnknownError(ref string) => Some(string.to_string()),
-            InternalIoError(ref err) => err.detail.clone(),
         }
     }
 

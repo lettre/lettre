@@ -12,14 +12,15 @@
 #![unstable]
 
 use std::str::FromStr;
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
+use std::result::Result as RResult;
 
 use tools::remove_trailing_crlf;
 
 /// Contains an SMTP reply, with separed code and message
 ///
 /// The text message is optional, only the code is mandatory
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone,Debug)]
 pub struct Response {
     /// Server response code
     pub code: u16,
@@ -27,43 +28,44 @@ pub struct Response {
     pub message: Option<String>
 }
 
-impl Show for Response {
+impl Display for Response {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(
+        write! (f, "{}",
             match self.clone().message {
                 Some(message) => format!("{} {}", self.code, message),
                 None => format!("{}", self.code),
-            }.as_bytes()
+            }
         )
     }
 }
 
 impl FromStr for Response {
-    fn from_str(s: &str) -> Option<Response> {
+    type Err = &'static str;
+    fn from_str(s: &str) -> RResult<Response, &'static str> {
         // If the string is too short to be a response code
         if s.len() < 3 {
-            None
+            Err("len < 3")
         // If we have only a code, with or without a trailing space
-        } else if s.len() == 3 || (s.len() == 4 && s.slice(3,4) == " ") {
-            match s.slice_to(3).parse::<u16>() {
-                Some(code) => Some(Response{
+        } else if s.len() == 3 || (s.len() == 4 && &s[3..4] == " ") {
+            match s[..3].parse::<u16>() {
+                Ok(code) => Ok(Response{
                                 code: code,
                                 message: None
                               }),
-                None => None,
+                Err(_) => Err("Can't parse the code"),
             }
         // If we have a code and a message
         } else {
             match (
-                s.slice_to(3).parse::<u16>(),
-                vec![" ", "-"].contains(&s.slice(3,4)),
-                (remove_trailing_crlf(s.slice_from(4)))
+                s[..3].parse::<u16>(),
+                vec![" ", "-"].contains(&&s[3..4]),
+                (remove_trailing_crlf(&s[4..]))
             ) {
-                (Some(code), true, message) => Some(Response{
+                (Ok(code), true, message) => Ok(Response{
                             code: code,
                             message: Some(message.to_string())
                         }),
-                _ => None,
+                _ => Err("Error parsing a code with a message"),
             }
         }
     }

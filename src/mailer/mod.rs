@@ -9,7 +9,7 @@
 
 //! Simple email (very incomplete)
 
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
 
 use time::{now, Tm};
 
@@ -22,7 +22,7 @@ pub mod header;
 pub mod address;
 
 /// Simple email representation
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone,Debug)]
 pub struct Email {
     /// Array of headers
     headers: Vec<Header>,
@@ -34,14 +34,14 @@ pub struct Email {
     from: Option<String>,
 }
 
-impl Show for Email {
+impl Display for Email {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let mut formatted_headers = String::new();
         for header in self.headers.iter() {
-            formatted_headers.push_str(header.to_string().as_slice());
+            formatted_headers.push_str(format! ("{}", header) .as_slice());
             formatted_headers.push_str(CRLF);
         }
-        f.write(format!("{}{}{}", formatted_headers, CRLF, self.body).as_bytes())
+        write! (f, "{}{}{}", formatted_headers, CRLF, self.body)
     }
 }
 
@@ -147,7 +147,7 @@ impl SendableEmail for Email {
     }
 
     fn message(&self) -> String {
-        self.to_string()
+        format! ("{}", self)
     }
 
     /// Adds a `Message-ID` header

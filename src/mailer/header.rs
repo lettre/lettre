@@ -11,7 +11,7 @@
 
 use time::Tm;
 
-use std::fmt::{Show, Formatter, Result};
+use std::fmt::{Display, Formatter, Result};
 
 use common::{SP, COLON};
 use mailer::address::Address;
@@ -36,7 +36,7 @@ impl<'a> ToHeader for (&'a str, &'a str) {
 }
 
 /// Contains a header
-#[deriving(PartialEq,Eq,Clone)]
+#[derive(PartialEq,Eq,Clone,Debug)]
 pub enum Header {
     /// `To`
     To(Address),
@@ -62,9 +62,9 @@ pub enum Header {
     Other(String, String),
 }
 
-impl Show for Header {
+impl Display for Header {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        f.write(format!("{}{}{}{}",
+        write! (f, "{}{}{}{}",
         match *self {
             Header::To(_) => "To",
             Header::From(_) => "From",
@@ -80,18 +80,18 @@ impl Show for Header {
         },
         COLON, SP,
         match *self {
-            Header::To(ref address) => address.to_string(),
-            Header::From(ref address) => address.to_string(),
-            Header::Cc(ref address) => address.to_string(),
-            Header::ReplyTo(ref address) => address.to_string(),
-            Header::Sender(ref address) => address.to_string(),
+            Header::To(ref address) => format! ("{}", address),
+            Header::From(ref address) => format! ("{}", address),
+            Header::Cc(ref address) => format! ("{}", address),
+            Header::ReplyTo(ref address) => format! ("{}", address),
+            Header::Sender(ref address) => format! ("{}", address),
             Header::Date(ref date) => Tm::rfc822(date).to_string(),
             Header::Subject(ref subject) => subject.clone(),
             Header::MimeVersion => "1.0".to_string(),
             Header::ContentType(ref string) => string.clone(),
             Header::MessageId(ref string) => string.clone(),
             Header::Other(_, ref value) => value.clone(),
-        }).as_bytes())
+        })
     }
 }
 

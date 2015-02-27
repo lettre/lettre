@@ -10,12 +10,12 @@
 //! Information about a server
 
 use std::fmt;
-use std::fmt::{Show, Formatter};
+use std::fmt::{Display, Formatter};
 
 use extension::Extension;
 
 /// Contains information about an SMTP server
-#[deriving(Clone)]
+#[derive(Clone,Debug)]
 pub struct ServerInfo {
     /// Server name
     ///
@@ -28,16 +28,14 @@ pub struct ServerInfo {
     pub esmtp_features: Option<Vec<Extension>>,
 }
 
-impl Show for ServerInfo {
+impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write(
-            format!("{} with {}",
+        write!(f, "{} with {}",
                 self.name,
                 match self.esmtp_features {
-                    Some(ref features) => features.to_string(),
+                    Some(ref features) => format! ("{:?}", features),
                     None => "no supported features".to_string(),
                 }
-            ).as_bytes()
         )
     }
 }
