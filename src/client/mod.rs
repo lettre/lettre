@@ -199,7 +199,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             }
 
             // Print server information
-            //debug!("server {}", self.server_info.as_ref().unwrap());
+            debug!("server {}", self.server_info.as_ref().unwrap());
         }
 
         self.current_message = Some(Uuid::new_v4());
@@ -242,8 +242,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.stream = Some(try!(Connecter::connect(self.server_addr)));
 
         // Log the connection
-        //info!("connection established to {}",
-        //      self.stream.as_mut().unwrap().peer_name().unwrap());
+        info!("connection established to {}",
+            self.stream.as_mut().unwrap().peer_name().unwrap());
 
         let result = try!(self.stream.as_mut().unwrap().get_reply());
 
@@ -351,7 +351,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the mail command
-            //info!("{}: from=<{}>", self.current_message.as_ref().unwrap(), from_address);
+            info!("{}: from=<{}>", self.current_message.as_ref().unwrap(), from_address);
         }
 
         result
@@ -365,7 +365,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the rcpt command
-            //info!("{}: to=<{}>", self.current_message.as_ref().unwrap(), to_address);
+            info!("{}: to=<{}>", self.current_message.as_ref().unwrap(), to_address);
         }
 
         result
@@ -410,8 +410,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             // Increment the connection reuse counter
             self.connection_reuse_count = self.connection_reuse_count + 1;
             // Log the message
-            //info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
-            //    self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
+            info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
+                self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
         }
 
         self.current_message = None;

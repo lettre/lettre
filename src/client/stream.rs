@@ -17,7 +17,7 @@ use std::error::FromError;
 
 use error::SmtpResult;
 use response::Response;
-use tools::{escape_dot};
+use tools::{escape_dot, escape_crlf};
 
 static BUFFER_SIZE: usize = 1024;
 
@@ -36,7 +36,7 @@ impl ClientStream for TcpStream {
     fn send_and_get_response(&mut self, string: &str, end: &str) -> SmtpResult {
         try!(self.write_str(format!("{}{}", escape_dot(string), end).as_slice()));
 
-        //debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice()));
+        debug!("Wrote: {}", escape_crlf(escape_dot(string).as_slice()));
 
         self.get_reply()
     }
@@ -64,7 +64,7 @@ impl ClientStream for TcpStream {
             };
             result.push_str(response);
         }
-        //debug!("Read: {}", escape_crlf(result.as_slice()));
+        debug!("Read: {}", escape_crlf(result.as_slice()));
         return Ok(result);
     }
 

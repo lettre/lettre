@@ -127,9 +127,8 @@
 #![deny(missing_docs)]
 
 #![feature(plugin,core,old_io,io)]
-#![plugin(log)]
-extern crate log;
 
+#[macro_use] extern crate log;
 extern crate time;
 extern crate uuid;
 
