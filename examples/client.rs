@@ -7,15 +7,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(default_type_params)]
+#![feature(core, old_io, rustc_private, os, collections)]
 #[macro_use] extern crate log;
 
 extern crate smtp;
 extern crate getopts;
 
 use std::old_io::stdin;
-use std::string::String;
 use std::old_io::net::ip::Port;
+use std::string::String;
 use std::os;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
