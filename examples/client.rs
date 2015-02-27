@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(core, old_io, rustc_private, os, collections)]
+#![feature(core, old_io, rustc_private, env, collections)]
 #[macro_use] extern crate log;
 
 extern crate smtp;
@@ -16,7 +16,7 @@ extern crate getopts;
 use std::old_io::stdin;
 use std::old_io::net::ip::Port;
 use std::string::String;
-use std::os;
+use std::env;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
 use smtp::client::Client;
@@ -45,14 +45,14 @@ fn print_usage(description: String, _opts: &[OptGroup]) {
 }
 
 fn main() {
-    let args = os::args();
+    let args = env::args();
 
     let mut args_string = Vec::new();
-    for arg in args.iter() {
+    for arg in args {
         args_string.push(arg.clone());
     };
 
-    let program = args[0].clone();
+    let program = args_string[0].clone();
     let description = format!("Usage: {0} [options...] recipients\n\n\
                                This program reads a message on standard input until it reaches\
                                EOF, then tries to send it using the given paramters.\n\n\
