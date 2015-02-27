@@ -67,11 +67,11 @@ mod test {
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
             esmtp_features: Some(vec![Extension::EightBitMime])
-        }), "name with [8BITMIME]".to_string());
+        }), "name with [EightBitMime]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
             esmtp_features: Some(vec![Extension::EightBitMime, Extension::Size(42)])
-        }), "name with [8BITMIME, SIZE=42]".to_string());
+        }), "name with [EightBitMime, Size(42)]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
             esmtp_features: None

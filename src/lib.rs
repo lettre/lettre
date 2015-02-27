@@ -41,7 +41,7 @@
 //! email.date_now();
 //!
 //! // Open a local connection on port 25
-//! let mut client = Client::localhost();
+//! let mut client: Client = Client::localhost();
 //! // Send the email
 //! let result = client.send(email);
 //!
@@ -68,7 +68,7 @@
 //! email.date_now();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut client = Client::new(("server.tld", 10025));
+//! let mut client: Client = Client::new(("server.tld", 10025));
 //! // Set the name sent during EHLO/HELO, default is `localhost`
 //! client.set_hello_name("my.hostname.tld");
 //! // Enable connection reuse
@@ -100,7 +100,7 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut client = Client::localhost();
+//! let mut client: Client = Client::localhost();
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -114,7 +114,7 @@
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
-//! let mut email_client = Client::new(("localhost", SMTP_PORT));
+//! let mut email_client: Client = Client::new(("localhost", SMTP_PORT));
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo();
 //! let _ = email_client.mail("user@example.com");

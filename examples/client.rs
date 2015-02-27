@@ -8,14 +8,14 @@
 // except according to those terms.
 
 #![feature(default_type_params)]
-#![feature(phase)] #[phase(plugin, link)] extern crate log;
+#[macro_use] extern crate log;
 
 extern crate smtp;
 extern crate getopts;
 
-use std::io::stdin;
+use std::old_io::stdin;
 use std::string::String;
-use std::io::net::ip::Port;
+use std::old_io::net::ip::Port;
 use std::os;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
@@ -35,7 +35,7 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     email.subject(subject);
     email.date_now();
 
-    let mut client = Client::new((server, port));
+    let mut client: Client = Client::new((server, port));
     client.set_hello_name(my_hostname);
     client.send(email)
 }

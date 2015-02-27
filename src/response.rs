@@ -84,40 +84,40 @@ mod test {
     #[test]
     fn test_from_str() {
         assert_eq!("200 response message".parse::<Response>(),
-            Some(Response{
+            Ok(Response{
                 code: 200,
                 message: Some("response message".to_string())
             })
         );
         assert_eq!("200-response message".parse::<Response>(),
-            Some(Response{
+            Ok(Response{
                 code: 200,
                 message: Some("response message".to_string())
             })
         );
         assert_eq!("200".parse::<Response>(),
-            Some(Response{
+            Ok(Response{
                 code: 200,
                 message: None
             })
         );
         assert_eq!("200 ".parse::<Response>(),
-            Some(Response{
+            Ok(Response{
                 code: 200,
                 message: None
             })
         );
         assert_eq!("200-response\r\nmessage".parse::<Response>(),
-            Some(Response{
+            Ok(Response{
                 code: 200,
                 message: Some("response\r\nmessage".to_string())
             })
         );
-        assert_eq!("2000response message".parse::<Response>(), None);
-        assert_eq!("20a response message".parse::<Response>(), None);
-        assert_eq!("20 ".parse::<Response>(), None);
-        assert_eq!("20".parse::<Response>(), None);
-        assert_eq!("2".parse::<Response>(), None);
-        assert_eq!("".parse::<Response>(), None);
+        assert!("2000response message".parse::<Response>().is_err());
+        assert!("20a response message".parse::<Response>().is_err());
+        assert!("20 ".parse::<Response>().is_err());
+        assert!("20".parse::<Response>().is_err());
+        assert!("2".parse::<Response>().is_err());
+        assert!("".parse::<Response>().is_err());
     }
 }
