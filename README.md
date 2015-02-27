@@ -7,7 +7,7 @@ See the [documentation](http://amousset.github.io/rust-smtp/smtp/) for more info
 Rust versions
 -------------
 
-This library is designed for Rust 0.13.0-nightly (master).
+This library is designed for Rust 1.0.0-nightly (master).
 
 Install
 -------
@@ -15,8 +15,8 @@ Install
 If you're using the library in a program, just add these lines to your `Cargo.toml`:
 
 ```toml
-[dependencies.smtp]
-git = "https://github.com/amousset/rust-smtp.git"
+[dependencies]
+smtp = "*"
 ```
 
 Otherwise, you can clone this repository and run `cargo build`.
