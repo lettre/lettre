@@ -9,8 +9,6 @@
 
 //! Error and result type for SMTP clients
 
-#![unstable]
-
 use std::error::Error;
 use std::old_io::IoError;
 use std::error::FromError;

@@ -9,8 +9,6 @@
 
 //! SMTP response, containing a mandatory return code, and an optional text message
 
-#![unstable]
-
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};
 use std::result::Result as RResult;

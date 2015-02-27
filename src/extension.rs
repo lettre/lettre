@@ -9,8 +9,6 @@
 
 //! ESMTP features
 
-#![unstable]
-
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};
 use std::result::Result as RResult;

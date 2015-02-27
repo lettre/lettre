@@ -9,8 +9,6 @@
 
 //! Constants defined in SMTP RFCs
 
-#![unstable]
-
 use std::old_io::net::ip::Port;
 
 /// Default smtp port

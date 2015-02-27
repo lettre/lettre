@@ -9,8 +9,6 @@
 
 //! SMTP command
 
-#![unstable]
-
 use std::ascii::AsciiExt;
 use std::error::FromError;
 use std::fmt::{Display, Formatter, Result};

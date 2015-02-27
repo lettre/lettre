@@ -9,8 +9,6 @@
 
 //! State of an SMTP transaction
 
-#![unstable]
-
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
