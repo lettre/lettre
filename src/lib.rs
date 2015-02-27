@@ -26,7 +26,6 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! #![feature(default_type_params)]
 //! use smtp::client::Client;
 //! use smtp::mailer::Email;
 //!
@@ -51,7 +50,6 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! #![feature(default_type_params)]
 //! use smtp::client::Client;
 //! use smtp::mailer::Email;
 //!
@@ -89,7 +87,6 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! #![feature(default_type_params)]
 //! use smtp::client::Client;
 //! use smtp::sendable_email::SimpleSendableEmail;
 //!
@@ -110,7 +107,6 @@
 //! You can also send commands, here is a simple email transaction without error handling:
 //!
 //! ```rust,no_run
-//! #![feature(default_type_params)]
 //! use smtp::client::Client;
 //! use smtp::common::SMTP_PORT;
 //!
