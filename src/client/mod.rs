@@ -34,21 +34,33 @@ pub mod connecter;
 pub mod stream;
 
 /// Represents the configuration of a client
-#[derive(Clone,Debug)]
+#[derive(Debug)]
 pub struct Configuration {
     /// Maximum connection reuse
     ///
     /// Zero means no limitation
-    pub connection_reuse_count_limit: usize,
+    pub connection_reuse_count_limit: u16,
     /// Enable connection reuse
     pub enable_connection_reuse: bool,
-    /// Maximum recipients
-    pub destination_recipient_limit: usize,
     /// Maximum line length
-    pub line_length_limit: usize,
+    pub line_length_limit: u16,
     /// Name sent during HELO or EHLO
     pub hello_name: String,
 }
+
+/// Represents the state of a client
+#[derive(Debug)]
+pub struct State {
+    /// Transaction state, to check the sequence of commands
+    pub transaction_state: TransactionState,
+    /// Panic state
+    pub panic: bool,
+    /// Connection reuse counter
+    pub connection_reuse_count: u16,
+    /// Current message id
+    pub current_message: Option<Uuid>,
+}
+
 
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
@@ -60,14 +72,8 @@ pub struct Client<S = TcpStream> {
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
-    /// Transaction state, to check the sequence of commands
-    state: TransactionState,
-    /// Panic state
-    panic: bool,
-    /// Connection reuse counter
-    connection_reuse_count: usize,
-    /// Current message id
-    current_message: Option<Uuid>,
+    /// Client variable states
+    state: State,
     /// Configuration of the client
     configuration: Configuration,
 }
@@ -83,8 +89,8 @@ macro_rules! try_smtp (
 
 macro_rules! close_and_return_err (
     ($err: expr, $client: ident) => ({
-        if !$client.panic {
-            $client.panic = true;
+        if !$client.state.panic {
+            $client.state.panic = true;
             $client.close();
         }
         return Err(FromError::from_error($err))
@@ -93,7 +99,7 @@ macro_rules! close_and_return_err (
 
 macro_rules! check_command_sequence (
     ($command: ident $client: ident) => ({
-        if !$client.state.is_allowed(&$command) {
+        if !$client.state.transaction_state.is_allowed(&$command) {
             close_and_return_err!(
                 Response{code: 503, message: Some("Bad sequence of commands".to_string())}, $client
             );
@@ -110,17 +116,18 @@ impl<S = TcpStream> Client<S> {
             stream: None,
             server_addr: addr.to_socket_addr().unwrap(),
             server_info: None,
-            state: TransactionState::new(),
-            panic: false,
-            connection_reuse_count: 0,
-            current_message: None,
             configuration: Configuration {
                 connection_reuse_count_limit: 100,
                 enable_connection_reuse: false,
                 line_length_limit: 998,
-                destination_recipient_limit: 100,
                 hello_name: "localhost".to_string(),
-            }
+            },
+            state: State {
+                transaction_state: TransactionState::new(),
+                panic: false,
+                connection_reuse_count: 0,
+                current_message: None,
+            },
         }
     }
 
@@ -142,13 +149,8 @@ impl<S = TcpStream> Client<S> {
     }
 
     /// Set the maximum number of emails sent using one connection
-    pub fn set_connection_reuse_count_limit(&mut self, count: usize) {
+    pub fn set_connection_reuse_count_limit(&mut self, count: u16) {
         self.configuration.connection_reuse_count_limit = count
-    }
-
-    /// Set the client configuration
-    pub fn set_configuration(&mut self, configuration: Configuration) {
-        self.configuration = configuration
     }
 }
 
@@ -165,18 +167,18 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Reset the client state
         self.stream = None;
-        self.state = TransactionState::new();
+        self.state.transaction_state = TransactionState::new();
         self.server_info = None;
-        self.panic = false;
-        self.connection_reuse_count = 0;
-        self.current_message = None;
+        self.state.panic = false;
+        self.state.connection_reuse_count = 0;
+        self.state.current_message = None;
     }
 
     /// Sends an email
     pub fn send<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
 
         // If there is a usable connection, test if the server answers and hello has been sent
-        if self.connection_reuse_count > 0 {
+        if self.state.connection_reuse_count > 0 {
             if self.noop().is_err() {
                 self.reset();
             }
@@ -202,8 +204,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             debug!("server {}", self.server_info.as_ref().unwrap());
         }
 
-        self.current_message = Some(Uuid::new_v4());
-        email.set_message_id(format!("<{}@{}>", self.current_message.as_ref().unwrap(),
+        self.state.current_message = Some(Uuid::new_v4());
+        email.set_message_id(format!("<{}@{}>", self.state.current_message.as_ref().unwrap(),
             self.configuration.hello_name.clone()));
 
         let from_address = email.from_address();
@@ -248,7 +250,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         let result = try!(self.stream.as_mut().unwrap().get_reply());
 
         let checked_result = try!(command.test_success(result));
-        self.state = self.state.next_state(&command).unwrap();
+        self.state.transaction_state = self.state.transaction_state.next_state(&command).unwrap();
         Ok(checked_result)
     }
 
@@ -285,7 +287,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         });
 
         let checked_result = try!(command.test_success(result));
-        self.state = self.state.next_state(&command).unwrap();
+        self.state.transaction_state = self.state.transaction_state.next_state(&command).unwrap();
         Ok(checked_result)
     }
 
@@ -326,8 +328,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     pub fn mail(&mut self, from_address: &str) -> SmtpResult {
 
         // Generate an ID for the logs if None was provided
-        if self.current_message.is_none() {
-            self.current_message = Some(Uuid::new_v4());
+        if self.state.current_message.is_none() {
+            self.state.current_message = Some(Uuid::new_v4());
         }
 
         let server_info = match self.server_info.clone() {
@@ -350,7 +352,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the mail command
-            info!("{}: from=<{}>", self.current_message.as_ref().unwrap(), from_address);
+            info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), from_address);
         }
 
         result
@@ -364,7 +366,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the rcpt command
-            info!("{}: to=<{}>", self.current_message.as_ref().unwrap(), to_address);
+            info!("{}: to=<{}>", self.state.current_message.as_ref().unwrap(), to_address);
         }
 
         result
@@ -397,17 +399,17 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Increment the connection reuse counter
-            self.connection_reuse_count = self.connection_reuse_count + 1;
+            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
             // Log the message
-            info!("{}: conn_use={}, size={}, status=sent ({})", self.current_message.as_ref().unwrap(),
-                self.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
+            info!("{}: conn_use={}, size={}, status=sent ({})", self.state.current_message.as_ref().unwrap(),
+                self.state.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
         }
 
-        self.current_message = None;
+        self.state.current_message = None;
 
         // Test if we can reuse the existing connection
         if (!self.configuration.enable_connection_reuse) ||
-            (self.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
+            (self.state.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
             self.reset();
         }
 
