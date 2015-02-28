@@ -24,17 +24,16 @@ pub struct ServerInfo {
     /// ESMTP features supported by the server
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
-    /// The `None` value means the server does not support ESMTP.
-    pub esmtp_features: Option<Vec<Extension>>,
+    pub esmtp_features: Vec<Extension>,
 }
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} with {}",
                 self.name,
-                match self.esmtp_features {
-                    Some(ref features) => format! ("{:?}", features),
-                    None => "no supported features".to_string(),
+                match self.esmtp_features.is_empty() {
+                    true => "no supported features".to_string(),
+                    false => format! ("{:?}", self.esmtp_features),
                 }
         )
     }
@@ -43,17 +42,12 @@ impl Display for ServerInfo {
 impl ServerInfo {
     /// Checks if the server supports an ESMTP feature
     pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
-        match self.esmtp_features {
-            Some(ref esmtp_features) => {
-                for feature in esmtp_features.iter() {
-                    if keyword.same_extension_as(feature) {
-                        return Some(*feature);
-                    }
-                }
-                None
-            },
-            None => None,
+        for feature in self.esmtp_features.iter() {
+            if keyword.same_extension_as(feature) {
+                return Some(*feature);
+            }
         }
+        None
     }
 }
 
@@ -66,15 +60,15 @@ mod test {
     fn test_fmt() {
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::EightBitMime])
+            esmtp_features: vec![Extension::EightBitMime]
         }), "name with [EightBitMime]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::EightBitMime, Extension::Size(42)])
+            esmtp_features: vec![Extension::EightBitMime, Extension::Size(42)]
         }), "name with [EightBitMime, Size(42)]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: None
+            esmtp_features: vec!()
         }), "name with no supported features".to_string());
     }
 
@@ -82,19 +76,19 @@ mod test {
     fn test_supports_feature() {
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::EightBitMime])
+            esmtp_features: vec![Extension::EightBitMime]
         }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::Size(42), Extension::EightBitMime])
+            esmtp_features: vec![Extension::Size(42), Extension::EightBitMime]
         }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::Size(42), Extension::EightBitMime])
+            esmtp_features: vec![Extension::Size(42), Extension::EightBitMime]
         }.supports_feature(Extension::Size(0)), Some(Extension::Size(42)));
         assert!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: Some(vec![Extension::EightBitMime])
+            esmtp_features: vec![Extension::EightBitMime]
         }.supports_feature(Extension::Size(42)).is_none());
     }
 }

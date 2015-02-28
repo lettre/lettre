@@ -301,7 +301,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
-                esmtp_features: None,
+                esmtp_features: vec!(),
             }
         );
         Ok(result)
@@ -339,7 +339,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         };
 
         // Checks message encoding according to the server's capability
-        // TODO : Add an encoding check.
         let options = match server_info.supports_feature(Extension::EightBitMime) {
             Some(extension) => Some(vec![extension.client_mail_option().unwrap().to_string()]),
             None => None,
@@ -391,16 +390,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         if !server_info.supports_feature(Extension::EightBitMime).is_some() {
             if !message_content.as_bytes().is_ascii() {
                 close_and_return_err!("Server does not accepts UTF-8 strings", self);
-            }
-        }
-
-        // Get maximum message size if defined and compare to the message size
-        if let Some(Extension::Size(max)) = server_info.supports_feature(Extension::Size(0)) {
-            if message_content.len() > max {
-                close_and_return_err!(Response{
-                    code: 552,
-                    message: Some("Message exceeds fixed maximum message size".to_string()),
-                }, self);
             }
         }
 
