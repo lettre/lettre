@@ -45,7 +45,7 @@ impl Display for Extension {
                 &EightBitMime => "8BITMIME".to_string(),
                 &SmtpUtfEight => "SMTPUTF8".to_string(),
                 &StartTls => "STARTTLS".to_string(),
-                &Size(ref size) => format!("SIZE={}", size)
+                &Size(ref size) => format!("SIZE={}", size),
             }
         )
     }
@@ -85,7 +85,7 @@ impl Extension {
     }
 
     /// Parses supported ESMTP features
-    pub fn parse_esmtp_response(message: &str) -> Option<Vec<Extension>> {
+    pub fn parse_esmtp_response(message: &str) -> Vec<Extension> {
         let mut esmtp_features = Vec::new();
         for line in message.split(CRLF) {
             if let Ok(Response{code: 250, message}) = line.parse::<Response>() {
@@ -94,7 +94,7 @@ impl Extension {
                 };
             }
         }
-        Some(esmtp_features)
+        esmtp_features
     }
 
     /// Returns the string to add to the mail command
@@ -138,14 +138,14 @@ mod test {
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            Some(vec![Extension::EightBitMime, Extension::Size(42)]));
+            vec!(Extension::EightBitMime, Extension::Size(42)));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
-            Some(vec![Extension::EightBitMime]));
+            vec!(Extension::EightBitMime));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
-            Some(vec![]));
+            vec!());
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            Some(vec![Extension::Size(42), Extension::Size(43)]));
+            vec!(Extension::Size(42), Extension::Size(43)));
         assert_eq!(Extension::parse_esmtp_response(""),
-            Some(vec![]));
+            vec!());
     }
 }
