@@ -12,6 +12,7 @@
 use std::ascii::AsciiExt;
 use std::string::String;
 use std::error::FromError;
+use std::default::Default;
 use std::old_io::net::tcp::TcpStream;
 use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
@@ -123,7 +124,7 @@ impl<S = TcpStream> Client<S> {
                 hello_name: "localhost".to_string(),
             },
             state: State {
-                transaction_state: TransactionState::new(),
+                transaction_state: Default::default(),
                 panic: false,
                 connection_reuse_count: 0,
                 current_message: None,
@@ -167,7 +168,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Reset the client state
         self.stream = None;
-        self.state.transaction_state = TransactionState::new();
+        self.state.transaction_state = Default::default();
         self.server_info = None;
         self.state.panic = false;
         self.state.connection_reuse_count = 0;

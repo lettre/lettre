@@ -9,6 +9,8 @@
 
 //! State of an SMTP transaction
 
+use std::default::Default;
+
 use command::Command;
 use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent, AuthenticateSent};
 
@@ -31,12 +33,13 @@ pub enum TransactionState {
     AuthenticateSent,
 }
 
-impl TransactionState {
-    /// Returns the initial state
-    pub fn new() -> TransactionState {
+impl Default for TransactionState {
+    fn default() -> TransactionState {
         Unconnected
     }
+}
 
+impl TransactionState {
     /// Tests if the given command is allowed in the current state
     pub fn is_allowed(&self, command: &Command) -> bool {
         (*self).next_state(command).is_some()
@@ -79,12 +82,15 @@ impl TransactionState {
 
 #[cfg(test)]
 mod test {
+    use std::default::Default;
+
     use command::Command;
     use super::TransactionState;
 
     #[test]
     fn test_new() {
-        assert_eq!(TransactionState::new(), TransactionState::Unconnected);
+        let default: TransactionState = Default::default();
+        assert_eq!(default, TransactionState::Unconnected);
     }
 
     #[test]
