@@ -8,8 +8,10 @@
 // except according to those terms.
 
 #![feature(core, old_io, rustc_private, env, collections)]
-#[macro_use] extern crate log;
 
+#[macro_use]
+extern crate log;
+extern crate env_logger;
 extern crate smtp;
 extern crate getopts;
 
@@ -24,7 +26,7 @@ use smtp::error::SmtpResult;
 use smtp::mailer::Email;
 
 fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, subject: &str,
-        server: &str, port: Port, my_hostname: &str) -> SmtpResult {
+        server: &str, port: Port, my_hostname: &str, number: u16) -> SmtpResult {
 
     let mut email = Email::new();
     for destination in recipient_addresses.iter() {
@@ -37,6 +39,11 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
 
     let mut client: Client = Client::new((server, port));
     client.set_hello_name(my_hostname);
+    client.set_enable_connection_reuse(true);
+
+    for _ in range(1, number-1) {
+        let _ = client.send(email.clone());
+    }
     client.send(email)
 }
 
@@ -45,6 +52,8 @@ fn print_usage(description: String, _opts: &[OptGroup]) {
 }
 
 fn main() {
+    env_logger::init().unwrap();
+    
     let args = env::args();
 
     let mut args_string = Vec::new();
@@ -60,6 +69,7 @@ fn main() {
                               program);
 
     let opts = [
+        optopt("n", "number", "set the number of emails to send", "NUMBER"),
         optopt("s", "subject", "set the email subject", "SUBJECT"),
         optopt("r", "reverse-path", "set the sender address", "FROM_ADDRESS"),
         optopt("p", "port", "set the port to use, default is 25", "PORT"),
@@ -130,6 +140,11 @@ fn main() {
         match matches.opt_str("m") {
             Some(ref my_hostname) => my_hostname.as_slice(),
             None => "localhost"
+        },
+        // subject
+        match matches.opt_str("n") {
+            Some(ref n) => n.as_slice().parse::<u16>().unwrap(),
+            None => 1,
         },
     )
     {

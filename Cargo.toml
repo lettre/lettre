@@ -17,3 +17,4 @@ keywords = ["email", "smtp"]
 time = "*"
 uuid = "*"
 log = "*"
+env_logger = "*"
