@@ -27,6 +27,10 @@ pub enum Command {
     Connect,
     /// Start a TLS tunnel
     StartTls,
+    /// Authentication command
+    Authenticate(String, Option<String>),
+    /// Authentication response
+    AuthenticationResponse(String),
     /// Extended Hello command
     ExtendedHello(String),
     /// Hello command
@@ -58,6 +62,9 @@ impl Display for Command {
         write! (f, "{}", match *self {
             Command::Connect => "CONNECT".to_string(),
             Command::StartTls => "STARTTLS".to_string(),
+            Command::Authenticate(ref mecanism, None) => format!("AUTH {}", mecanism),
+            Command::Authenticate(ref mecanism, Some(ref response)) => format!("AUTH {} {}", mecanism, response),
+            Command::AuthenticationResponse(ref response) => format!("{}", response),
             Command::ExtendedHello(ref my_hostname) => format!("EHLO {}", my_hostname),
             Command::Hello(ref my_hostname) => format!("HELO {}", my_hostname),
             Command::Mail(ref from_address, None) => format!("MAIL FROM:<{}>", from_address),
@@ -106,6 +113,8 @@ impl Command {
         let success = match *self {
             Command::Connect => vec![220],
             Command::StartTls => vec![220],
+            Command::Authenticate(..) => vec![334, 235],
+            Command::AuthenticationResponse(..) => vec![235],
             Command::ExtendedHello(..) => vec![250],
             Command::Hello(..) => vec![250],
             Command::Mail(..) => vec![250],

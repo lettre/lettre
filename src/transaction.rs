@@ -9,11 +9,8 @@
 
 //! State of an SMTP transaction
 
-use std::fmt;
-use std::fmt::{Display, Formatter};
-
 use command::Command;
-use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent};
+use self::TransactionState::{Unconnected, Connected, HelloSent, MailSent, RecipientSent, DataSent, AuthenticateSent};
 
 /// Contains the state of the current transaction
 #[derive(PartialEq,Eq,Copy,Debug)]
@@ -30,21 +27,8 @@ pub enum TransactionState {
     RecipientSent,
     /// A DATA command was successful
     DataSent,
-}
-
-impl Display for TransactionState {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write! (f, "{}",
-            match *self {
-                Unconnected => "Unconnected",
-                Connected => "Connected",
-                HelloSent => "HelloSent",
-                MailSent => "MailSent",
-                RecipientSent => "RecipientSent",
-                DataSent => "DataSent",
-            }
-        )
-    }
+    /// An authenticate without initial response was successful
+    AuthenticateSent,
 }
 
 impl TransactionState {
@@ -67,6 +51,11 @@ impl TransactionState {
             (Unconnected, _) => None,
             (DataSent, &Command::Message) => Some(HelloSent),
             (DataSent, _) => None,
+            // Authentication
+            (AuthenticateSent, &Command::AuthenticationResponse(_)) => Some(HelloSent),
+            (AuthenticateSent, _) => None,
+            (HelloSent, &Command::Authenticate(_, None)) => Some(AuthenticateSent),
+            (HelloSent, &Command::Authenticate(_, Some(_))) => Some(HelloSent),
             // Commands that can be issued everytime
             (_, &Command::ExtendedHello(_)) => Some(HelloSent),
             (_, &Command::Hello(_)) => Some(HelloSent),
@@ -77,10 +66,10 @@ impl TransactionState {
             (state, &Command::Help(_)) => Some(state),
             (state, &Command::Noop) => Some(state),
             (_, &Command::Quit) => Some(Unconnected),
-            // Commands that require a particular state
-            (HelloSent, &Command::Mail(_, _)) => Some(MailSent),
-            (MailSent, &Command::Recipient(_, _)) => Some(RecipientSent),
-            (RecipientSent, &Command::Recipient(_, _)) => Some(RecipientSent),
+            // Email transaction
+            (HelloSent, &Command::Mail(..)) => Some(MailSent),
+            (MailSent, &Command::Recipient(..)) => Some(RecipientSent),
+            (RecipientSent, &Command::Recipient(..)) => Some(RecipientSent),
             (RecipientSent, &Command::Data) => Some(DataSent),
             // Everything else
             (_, _) => None,
