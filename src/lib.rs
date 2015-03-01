@@ -126,7 +126,7 @@
 
 #![unstable]
 
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 
 #![feature(plugin,core,old_io,io,collections)]
 

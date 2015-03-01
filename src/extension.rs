@@ -21,19 +21,23 @@ use self::Extension::{PlainAuthentication, CramMd5Authentication, EightBitMime, 
 pub enum Extension {
     /// 8BITMIME keyword
     ///
-    /// RFC 6152 : https://tools.ietf.org/html/rfc6152
+    /// RFC 6152: https://tools.ietf.org/html/rfc6152
     EightBitMime,
     /// SMTPUTF8 keyword
     ///
-    /// RFC 6531 : https://tools.ietf.org/html/rfc6531
+    /// RFC 6531: https://tools.ietf.org/html/rfc6531
     SmtpUtfEight,
     /// STARTTLS keyword
     ///
-    /// RFC 2487 : http://tools.ietf.org/html/rfc2487
+    /// RFC 2487: http://tools.ietf.org/html/rfc2487
     StartTls,
-    /// AUTH PLAIN
+    /// AUTH PLAIN mecanism
+    ///
+    /// RFC 4616: http://tools.ietf.org/html/rfc4616
     PlainAuthentication,
-    /// AUTH CRAM-MD5
+    /// AUTH CRAM-MD5 mecanism
+    ///
+    /// RFC 2195: http://tools.ietf.org/html/rfc2195
     CramMd5Authentication,
 }
 

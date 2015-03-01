@@ -260,9 +260,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends content to the server, after checking the command sequence, and then
     /// updates the transaction state
-    ///
-    /// * If `message` is `None`, the given command will be formatted and sent to the server
-    /// * If `message` is `Some(str)`, the `str` string will be sent to the server
     fn send_server(&mut self, content: &str, end: &str, expected_codes: Iter<u16>) -> SmtpResult {
         let result = self.stream.as_mut().unwrap().send_and_get_response(content, end);
         with_code!(result, expected_codes)
@@ -335,7 +332,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends a RCPT command
     pub fn rcpt(&mut self, address: &str) -> SmtpResult {
         let result = self.command(
-            format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter());
+            format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter()
+        );
 
         if result.is_ok() {
             // Log the rcpt command
@@ -377,13 +375,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends the message content and close
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
-        // Check message encoding
-        if !self.server_info.clone().unwrap().supports_feature(Extension::EightBitMime).is_some() {
-            if !message_content.as_bytes().is_ascii() {
-                close_and_return_err!("Server does not accepts UTF-8 strings", self);
-            }
-        }
-
         let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter()); //250
 
         if result.is_ok() {
