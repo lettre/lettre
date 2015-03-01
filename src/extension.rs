@@ -29,15 +29,15 @@ pub enum Extension {
     SmtpUtfEight,
     /// STARTTLS keyword
     ///
-    /// RFC 2487: http://tools.ietf.org/html/rfc2487
+    /// RFC 2487: https://tools.ietf.org/html/rfc2487
     StartTls,
     /// AUTH PLAIN mecanism
     ///
-    /// RFC 4616: http://tools.ietf.org/html/rfc4616
+    /// RFC 4616: https://tools.ietf.org/html/rfc4616
     PlainAuthentication,
     /// AUTH CRAM-MD5 mecanism
     ///
-    /// RFC 2195: http://tools.ietf.org/html/rfc2195
+    /// RFC 2195: https://tools.ietf.org/html/rfc2195
     CramMd5Authentication,
 }
 

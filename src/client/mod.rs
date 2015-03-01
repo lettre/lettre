@@ -24,10 +24,10 @@ use common::{CRLF, MESSAGE_ENDING, SMTP_PORT};
 use response::Response;
 use extension::Extension;
 use error::{SmtpResult, ErrorKind};
+use sendable_email::SendableEmail;
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
-use sendable_email::SendableEmail;
 
 pub mod server_info;
 pub mod connecter;
