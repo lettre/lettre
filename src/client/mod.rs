@@ -10,7 +10,6 @@
 //! SMTP client
 
 use std::slice::Iter;
-use std::ascii::AsciiExt;
 use std::string::String;
 use std::error::FromError;
 use std::old_io::net::tcp::TcpStream;
@@ -18,9 +17,10 @@ use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
 use log::LogLevel::Info;
 use uuid::Uuid;
+use serialize::base64::{self, ToBase64};
 
 use tools::get_first_word;
-use common::{CRLF, MESSAGE_ENDING, SMTP_PORT};
+use common::{NUL, CRLF, MESSAGE_ENDING, SMTP_PORT};
 use response::Response;
 use extension::Extension;
 use error::{SmtpResult, ErrorKind};
@@ -32,7 +32,6 @@ use client::stream::ClientStream;
 pub mod server_info;
 pub mod connecter;
 pub mod stream;
-pub mod authentication;
 
 /// Represents the configuration of a client
 #[derive(Debug)]
@@ -60,6 +59,14 @@ pub struct State {
     pub current_message: Option<Uuid>,
 }
 
+/// Represents the credentials
+#[derive(Debug, Clone)]
+pub struct Credentials {
+    /// Username
+    pub username: String,
+    /// Password
+    pub password: String,
+}
 
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
@@ -75,6 +82,8 @@ pub struct Client<S = TcpStream> {
     state: State,
     /// Configuration of the client
     configuration: Configuration,
+    /// Client credentials
+    credentials: Option<Credentials>,
 }
 
 macro_rules! try_smtp (
@@ -132,6 +141,7 @@ impl<S = TcpStream> Client<S> {
                 connection_reuse_count: 0,
                 current_message: None,
             },
+            credentials: None,
         }
     }
 
@@ -155,6 +165,14 @@ impl<S = TcpStream> Client<S> {
     /// Set the maximum number of emails sent using one connection
     pub fn set_connection_reuse_count_limit(&mut self, count: u16) {
         self.configuration.connection_reuse_count_limit = count
+    }
+
+    /// Set the client credentials
+    pub fn set_credentials(&mut self, username: &str, password: &str) {
+        self.credentials = Some(Credentials {
+            username: username.to_string(),
+            password: password.to_string(),
+        })
     }
 }
 
@@ -205,6 +223,18 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
             // Print server information
             debug!("server {}", self.server_info.as_ref().unwrap());
+        }
+
+        // Use PLAIN AUTH if possible
+        if self.credentials.is_some() {
+            if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication).is_some() {
+                let credentials = self.credentials.clone().unwrap();
+                let result = self.auth_plain(credentials.username.as_slice(),
+                                             credentials.password.as_slice());
+                try_smtp!(result, self);
+            } else {
+                debug!("No supported authentication mecanisms available");
+            }
         }
 
         self.state.current_message = Some(Uuid::new_v4());
@@ -371,6 +401,12 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends a EXPN command
     pub fn expn(&mut self, list: &str) -> SmtpResult {
         self.command(format!("EXPN {}", list).as_slice(), [250, 252].iter())
+    }
+
+    /// Sends an AUTH command with PLAIN mecanism
+    pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
+        let auth_string = format!("{}{}{}{}{}", "", NUL, username, NUL, password);
+        self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
     }
 
     /// Sends the message content and close

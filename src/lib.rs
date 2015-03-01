@@ -128,9 +128,10 @@
 
 #![deny(missing_docs)]
 
-#![feature(plugin,core,old_io,io,collections)]
+#![feature(plugin, core, old_io, io, collections)]
 
 #[macro_use] extern crate log;
+extern crate "rustc-serialize" as serialize;
 extern crate time;
 extern crate uuid;
 
