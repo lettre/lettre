@@ -126,7 +126,7 @@
 
 #![unstable]
 
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 #![feature(plugin,core,old_io,io,collections)]
 
@@ -135,10 +135,8 @@ extern crate time;
 extern crate uuid;
 
 pub mod client;
-pub mod command;
 pub mod extension;
 pub mod response;
-pub mod transaction;
 pub mod common;
 pub mod error;
 pub mod tools;

@@ -9,10 +9,10 @@
 
 //! SMTP client
 
+use std::slice::Iter;
 use std::ascii::AsciiExt;
 use std::string::String;
 use std::error::FromError;
-use std::default::Default;
 use std::old_io::net::tcp::TcpStream;
 use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
@@ -22,8 +22,6 @@ use tools::get_first_word;
 use common::{CRLF, MESSAGE_ENDING, SMTP_PORT};
 use response::Response;
 use extension::Extension;
-use command::Command;
-use transaction::TransactionState;
 use error::{SmtpResult, ErrorKind};
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
@@ -53,8 +51,6 @@ pub struct Configuration {
 /// Represents the state of a client
 #[derive(Debug)]
 pub struct State {
-    /// Transaction state, to check the sequence of commands
-    pub transaction_state: TransactionState,
     /// Panic state
     pub panic: bool,
     /// Connection reuse counter
@@ -99,12 +95,18 @@ macro_rules! close_and_return_err (
     })
 );
 
-macro_rules! check_command_sequence (
-    ($command: ident $client: ident) => ({
-        if !$client.state.transaction_state.is_allowed(&$command) {
-            close_and_return_err!(
-                Response{code: 503, message: Some("Bad sequence of commands".to_string())}, $client
-            );
+macro_rules! with_code (
+    ($result: ident, $codes: expr) => ({
+        match $result {
+            Ok(response) => {
+                for code in $codes {
+                    if *code == response.code {
+                        return Ok(response);
+                    }
+                }
+                Err(FromError::from_error(response))
+            },
+            Err(_) => $result,
         }
     })
 );
@@ -125,7 +127,6 @@ impl<S = TcpStream> Client<S> {
                 hello_name: "localhost".to_string(),
             },
             state: State {
-                transaction_state: Default::default(),
                 panic: false,
                 connection_reuse_count: 0,
                 current_message: None,
@@ -169,7 +170,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Reset the client state
         self.stream = None;
-        self.state.transaction_state = Default::default();
         self.server_info = None;
         self.state.panic = false;
         self.state.connection_reuse_count = 0;
@@ -233,10 +233,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Connects to the configured server
     pub fn connect(&mut self) -> SmtpResult {
-        let command = Command::Connect;
-
-        check_command_sequence!(command self);
-
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             close_and_return_err!("The connection is already established", self);
@@ -249,26 +245,12 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         info!("connection established to {}",
             self.stream.as_mut().unwrap().peer_name().unwrap());
 
-        let result = try!(self.stream.as_mut().unwrap().get_reply());
-
-        let checked_result = try!(command.test_success(result));
-        self.state.transaction_state = self.state.transaction_state.next_state(&command).unwrap();
-        Ok(checked_result)
+        self.stream.as_mut().unwrap().get_reply()//with_code([220].iter());
     }
 
     /// Sends an SMTP command
-    fn command(&mut self, command: Command) -> SmtpResult {
-        // for now we do not support SMTPUTF8
-        if !command.is_ascii() {
-            close_and_return_err!("Non-ASCII string", self);
-        }
-
-        self.send_server(command, None)
-    }
-
-    /// Sends the email content
-    fn send_message(&mut self, message: &str) -> SmtpResult {
-        self.send_server(Command::Message, Some(message))
+    fn command(&mut self, command: &str, expected_codes: Iter<u16>) -> SmtpResult {
+        self.send_server(command, CRLF, expected_codes)
     }
 
     /// Sends content to the server, after checking the command sequence, and then
@@ -276,21 +258,9 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     ///
     /// * If `message` is `None`, the given command will be formatted and sent to the server
     /// * If `message` is `Some(str)`, the `str` string will be sent to the server
-    fn send_server(&mut self, command: Command, message: Option<&str>) -> SmtpResult {
-        check_command_sequence!(command self);
-
-        let result = try!(match message {
-            Some(message) => self.stream.as_mut().unwrap().send_and_get_response(
-                                message, MESSAGE_ENDING
-                             ),
-            None          => self.stream.as_mut().unwrap().send_and_get_response(
-                                format! ("{}", command) .as_slice(), CRLF
-                             ),
-        });
-
-        let checked_result = try!(command.test_success(result));
-        self.state.transaction_state = self.state.transaction_state.next_state(&command).unwrap();
-        Ok(checked_result)
+    fn send_server(&mut self, content: &str, end: &str, expected_codes: Iter<u16>) -> SmtpResult {
+        let result = self.stream.as_mut().unwrap().send_and_get_response(content, end);
+        with_code!(result, expected_codes)
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
@@ -301,7 +271,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Send a HELO command and fills `server_info`
     pub fn helo(&mut self) -> SmtpResult {
         let hostname = self.configuration.hello_name.clone();
-        let result = try!(self.command(Command::Hello(hostname)));
+        let result = try!(self.command(format!("HELO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
@@ -314,7 +284,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends a EHLO command and fills `server_info`
     pub fn ehlo(&mut self) -> SmtpResult {
         let hostname = self.configuration.hello_name.clone();
-        let result = try!(self.command(Command::ExtendedHello(hostname)));
+        let result = try!(self.command(format!("EHLO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
@@ -327,48 +297,39 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a MAIL command
-    pub fn mail(&mut self, from_address: &str) -> SmtpResult {
+    pub fn mail(&mut self, address: &str) -> SmtpResult {
 
         // Generate an ID for the logs if None was provided
         if self.state.current_message.is_none() {
             self.state.current_message = Some(Uuid::new_v4());
         }
 
-        let server_info = match self.server_info.clone() {
-            Some(info) => info,
-            None       => close_and_return_err!(Response{
-                                    code: 503,
-                                    message: Some("Bad sequence of commands".to_string()),
-                          }, self),
-        };
-
         // Checks message encoding according to the server's capability
-        let options = match server_info.supports_feature(Extension::EightBitMime) {
-            Some(extension) => Some(vec![extension.client_mail_option().unwrap().to_string()]),
-            None => None,
+        let options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
+            Some(_) => "BODY=8BITMIME",
+            None => "",
         };
 
         let result = self.command(
-            Command::Mail(from_address.to_string(), options)
+            format!("MAIL FROM:<{}> {}", address, options).as_slice(), [250].iter()
         );
 
         if result.is_ok() {
             // Log the mail command
-            info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), from_address);
+            info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), address);
         }
 
         result
     }
 
     /// Sends a RCPT command
-    pub fn rcpt(&mut self, to_address: &str) -> SmtpResult {
+    pub fn rcpt(&mut self, address: &str) -> SmtpResult {
         let result = self.command(
-            Command::Recipient(to_address.to_string(), None)
-        );
+            format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter());
 
         if result.is_ok() {
             // Log the rcpt command
-            info!("{}: to=<{}>", self.state.current_message.as_ref().unwrap(), to_address);
+            info!("{}: to=<{}>", self.state.current_message.as_ref().unwrap(), address);
         }
 
         result
@@ -376,28 +337,19 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends a DATA command
     pub fn data(&mut self) -> SmtpResult {
-        self.command(Command::Data)
+        self.command("DATA", [354].iter())
     }
 
     /// Sends the message content
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
-
-        let server_info = match self.server_info.clone() {
-            Some(info) => info,
-            None       => close_and_return_err!(Response{
-                                    code: 503,
-                                    message: Some("Bad sequence of commands".to_string()),
-                          }, self)
-        };
-
         // Check message encoding
-        if !server_info.supports_feature(Extension::EightBitMime).is_some() {
+        if !self.server_info.clone().unwrap().supports_feature(Extension::EightBitMime).is_some() {
             if !message_content.as_bytes().is_ascii() {
                 close_and_return_err!("Server does not accepts UTF-8 strings", self);
             }
         }
 
-        let result = self.send_message(message_content);
+        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter()); //250
 
         if result.is_ok() {
             // Increment the connection reuse counter
@@ -420,27 +372,26 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends a QUIT command
     pub fn quit(&mut self) -> SmtpResult {
-        self.command(Command::Quit)
+        self.command("QUIT", [221].iter())
     }
 
     /// Sends a RSET command
     pub fn rset(&mut self) -> SmtpResult {
-        self.command(Command::Reset)
+        self.command("RSET", [250].iter())
     }
 
     /// Sends a NOOP command
     pub fn noop(&mut self) -> SmtpResult {
-        self.command(Command::Noop)
+        self.command("NOOP", [250].iter())
     }
 
     /// Sends a VRFY command
-    pub fn vrfy(&mut self, to_address: &str) -> SmtpResult {
-        self.command(Command::Verify(to_address.to_string()))
+    pub fn vrfy(&mut self, address: &str) -> SmtpResult {
+        self.command(format!("VRFY {}", address).as_slice(), [250, 251, 252].iter())
     }
 
     /// Sends a EXPN command
     pub fn expn(&mut self, list: &str) -> SmtpResult {
-        self.command(Command::Expand(list.to_string()))
+        self.command(format!("EXPN {}", list).as_slice(), [250, 252].iter())
     }
-
 }

@@ -90,14 +90,6 @@ impl Extension {
         }
         esmtp_features
     }
-
-    /// Returns the string to add to the mail command
-    pub fn client_mail_option(&self) -> Option<&str> {
-        match *self {
-            EightBitMime => Some("BODY=8BITMIME"),
-            _ => None,
-        }
-    }
 }
 
 #[cfg(test)]
