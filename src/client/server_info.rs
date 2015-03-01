@@ -30,11 +30,11 @@ pub struct ServerInfo {
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} with {}",
-                self.name,
-                match self.esmtp_features.is_empty() {
-                    true => "no supported features".to_string(),
-                    false => format! ("{:?}", self.esmtp_features),
-                }
+            self.name,
+            match self.esmtp_features.is_empty() {
+                true => "no supported features".to_string(),
+                false => format! ("{:?}", self.esmtp_features),
+            }
         )
     }
 }
@@ -42,7 +42,7 @@ impl Display for ServerInfo {
 impl ServerInfo {
     /// Checks if the server supports an ESMTP feature
     pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
-        for feature in self.esmtp_features.iter() {
+        for feature in self.esmtp_features {
             if keyword.same_extension_as(feature) {
                 return Some(*feature);
             }
