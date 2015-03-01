@@ -10,12 +10,11 @@
 //! ESMTP features
 
 use std::str::FromStr;
-use std::fmt::{Display, Formatter, Result};
-use std::result::Result as RResult;
+use std::result::Result;
 
 use common::CRLF;
 use response::Response;
-use self::Extension::{EightBitMime, SmtpUtfEight, StartTls, Size};
+use self::Extension::{PlainAuthentication, CramMd5Authentication, EightBitMime, SmtpUtfEight, StartTls, Size};
 
 /// Supported ESMTP keywords
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -36,25 +35,16 @@ pub enum Extension {
     ///
     /// RFC 1427 : https://tools.ietf.org/html/rfc1427
     Size(usize),
-}
-
-impl Display for Extension {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        write! (f, "{}",
-            match self {
-                &EightBitMime => "8BITMIME".to_string(),
-                &SmtpUtfEight => "SMTPUTF8".to_string(),
-                &StartTls => "STARTTLS".to_string(),
-                &Size(ref size) => format!("SIZE={}", size),
-            }
-        )
-    }
+    /// AUTH PLAIN
+    PlainAuthentication,
+    /// AUTH CRAM-MD5
+    CramMd5Authentication,
 }
 
 impl FromStr for Extension {
     // TODO: check RFC
     type Err = &'static str;
-    fn from_str(s: &str) -> RResult<Extension, &'static str> {
+    fn from_str(s: &str) -> Result<Extension, &'static str> {
         let splitted : Vec<&str> = s.splitn(1, ' ').collect();
         match splitted.len() {
             1 => match splitted[0] {
@@ -109,12 +99,6 @@ impl Extension {
 #[cfg(test)]
 mod test {
     use super::Extension;
-
-    #[test]
-    fn test_fmt() {
-        assert_eq!(format!("{}", Extension::EightBitMime), "8BITMIME".to_string());
-        assert_eq!(format!("{}", Extension::Size(42)), "SIZE=42".to_string());
-    }
 
     #[test]
     fn test_from_str() {
