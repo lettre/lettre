@@ -64,8 +64,8 @@ mod test {
         }), "name with [EightBitMime]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: vec![Extension::EightBitMime, Extension::Size(42)]
-        }), "name with [EightBitMime, Size(42)]".to_string());
+            esmtp_features: vec![Extension::EightBitMime]
+        }), "name with [EightBitMime]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
             esmtp_features: vec!()
@@ -80,15 +80,11 @@ mod test {
         }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert_eq!(ServerInfo{
             name: "name".to_string(),
-            esmtp_features: vec![Extension::Size(42), Extension::EightBitMime]
+            esmtp_features: vec![Extension::PlainAuthentication, Extension::EightBitMime]
         }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
-        assert_eq!(ServerInfo{
-            name: "name".to_string(),
-            esmtp_features: vec![Extension::Size(42), Extension::EightBitMime]
-        }.supports_feature(Extension::Size(0)), Some(Extension::Size(42)));
         assert!(ServerInfo{
             name: "name".to_string(),
             esmtp_features: vec![Extension::EightBitMime]
-        }.supports_feature(Extension::Size(42)).is_none());
+        }.supports_feature(Extension::PlainAuthentication).is_none());
     }
 }

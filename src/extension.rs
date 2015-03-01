@@ -14,7 +14,7 @@ use std::result::Result;
 
 use common::CRLF;
 use response::Response;
-use self::Extension::{PlainAuthentication, CramMd5Authentication, EightBitMime, SmtpUtfEight, StartTls, Size};
+use self::Extension::{PlainAuthentication, CramMd5Authentication, EightBitMime, SmtpUtfEight, StartTls};
 
 /// Supported ESMTP keywords
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -31,10 +31,6 @@ pub enum Extension {
     ///
     /// RFC 2487 : http://tools.ietf.org/html/rfc2487
     StartTls,
-    /// SIZE keyword
-    ///
-    /// RFC 1427 : https://tools.ietf.org/html/rfc1427
-    Size(usize),
     /// AUTH PLAIN
     PlainAuthentication,
     /// AUTH CRAM-MD5
@@ -49,10 +45,6 @@ impl Extension {
             ("8BITMIME", 1) => Ok(vec!(EightBitMime)),
             ("SMTPUTF8", 1) => Ok(vec!(SmtpUtfEight)),
             ("STARTTLS", 1) => Ok(vec!(StartTls)),
-            ("SIZE", 2) => match splitted[1].parse::<usize>() {
-                               Ok(size) => Ok(vec!(Size(size))),
-                               _ => Err("Can't parse size"),
-                           },
             ("AUTH", _) => {
                 let mut mecanisms: Vec<Extension> = vec!();
                 for &mecanism in &splitted[1..] {
@@ -69,13 +61,7 @@ impl Extension {
 
     /// Checks if the ESMTP keyword is the same
     pub fn same_extension_as(&self, other: &Extension) -> bool {
-        if self == other {
-            return true;
-        }
-        match (self, other) {
-            (&Size(_), &Size(_)) => true,
-            _ => false,
-        }
+        self == other
     }
 
     /// Parses supported ESMTP features
@@ -99,36 +85,28 @@ mod test {
     #[test]
     fn test_from_str() {
         assert_eq!(Extension::from_str("8BITMIME"), Ok(vec!(Extension::EightBitMime)));
-        assert_eq!(Extension::from_str("SIZE 42"), Ok(vec!(Extension::Size(42))));
         assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
         assert_eq!(Extension::from_str("AUTH PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
         assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
         assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
-        assert!(Extension::from_str("SIZ 42").is_err());
-        assert!(Extension::from_str("SIZE 4a2").is_err());
-        // TODO: accept trailing spaces ?
-        assert!(Extension::from_str("SIZE 42 ").is_err());
     }
 
     #[test]
     fn test_same_extension_as() {
         assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::EightBitMime), true);
-        assert_eq!(Extension::Size(42).same_extension_as(&Extension::Size(42)), true);
-        assert_eq!(Extension::Size(42).same_extension_as(&Extension::Size(43)), true);
-        assert_eq!(Extension::Size(42).same_extension_as(&Extension::EightBitMime), false);
         assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::SmtpUtfEight), false);
     }
 
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            vec!(Extension::EightBitMime, Extension::Size(42)));
-        assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 UNKNON 42"),
             vec!(Extension::EightBitMime));
+        assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 AUTH PLAIN CRAM-MD5\r\n250 UNKNON 42"),
+            vec!(Extension::EightBitMime, Extension::PlainAuthentication));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             vec!());
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            vec!(Extension::Size(42), Extension::Size(43)));
+            vec!());
         assert_eq!(Extension::parse_esmtp_response(""),
             vec!());
     }
