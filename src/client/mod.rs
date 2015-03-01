@@ -115,7 +115,7 @@ macro_rules! with_code (
 impl<S = TcpStream> Client<S> {
     /// Creates a new SMTP client
     ///
-    /// It does not connects to the server, but only create the `Client`
+    /// It does not connects to the server, but only creates the `Client`
     pub fn new<A: ToSocketAddr>(addr: A) -> Client<S> {
         Client{
             stream: None,
@@ -137,7 +137,7 @@ impl<S = TcpStream> Client<S> {
 
     /// Creates a new local SMTP client to port 25
     ///
-    /// It does not connects to the server, but only create the `Client`
+    /// It does not connects to the server, but only creates the `Client`
     pub fn localhost() -> Client<S> {
         Client::new(("localhost", SMTP_PORT))
     }
@@ -229,7 +229,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         try_smtp!(self.data(), self);
 
         // Message content
-        self.message(message.as_slice())
+        let result = self.message(message.as_slice());
+
+        // Test if we can reuse the existing connection
+        if (!self.configuration.enable_connection_reuse) ||
+            (self.state.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
+            self.reset();
+        }
+
+        result
     }
 
     /// Connects to the configured server
@@ -246,12 +254,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         info!("connection established to {}",
             self.stream.as_mut().unwrap().peer_name().unwrap());
 
-        self.stream.as_mut().unwrap().get_reply()//with_code([220].iter());
-    }
-
-    /// Sends an SMTP command
-    fn command(&mut self, command: &str, expected_codes: Iter<u16>) -> SmtpResult {
-        self.send_server(command, CRLF, expected_codes)
+        let result = self.stream.as_mut().unwrap().get_reply();
+        with_code!(result, [220].iter())
     }
 
     /// Sends content to the server, after checking the command sequence, and then
@@ -267,6 +271,11 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Checks if the server is connected using the NOOP SMTP command
     pub fn is_connected(&mut self) -> bool {
         self.noop().is_ok()
+    }
+
+    /// Sends an SMTP command
+    fn command(&mut self, command: &str, expected_codes: Iter<u16>) -> SmtpResult {
+        self.send_server(command, CRLF, expected_codes)
     }
 
     /// Send a HELO command and fills `server_info`
@@ -341,36 +350,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.command("DATA", [354].iter())
     }
 
-    /// Sends the message content
-    pub fn message(&mut self, message_content: &str) -> SmtpResult {
-        // Check message encoding
-        if !self.server_info.clone().unwrap().supports_feature(Extension::EightBitMime).is_some() {
-            if !message_content.as_bytes().is_ascii() {
-                close_and_return_err!("Server does not accepts UTF-8 strings", self);
-            }
-        }
-
-        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter()); //250
-
-        if result.is_ok() {
-            // Increment the connection reuse counter
-            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
-            // Log the message
-            info!("{}: conn_use={}, size={}, status=sent ({})", self.state.current_message.as_ref().unwrap(),
-                self.state.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
-        }
-
-        self.state.current_message = None;
-
-        // Test if we can reuse the existing connection
-        if (!self.configuration.enable_connection_reuse) ||
-            (self.state.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
-            self.reset();
-        }
-
-        result
-    }
-
     /// Sends a QUIT command
     pub fn quit(&mut self) -> SmtpResult {
         self.command("QUIT", [221].iter())
@@ -394,5 +373,29 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     /// Sends a EXPN command
     pub fn expn(&mut self, list: &str) -> SmtpResult {
         self.command(format!("EXPN {}", list).as_slice(), [250, 252].iter())
+    }
+
+    /// Sends the message content and close
+    pub fn message(&mut self, message_content: &str) -> SmtpResult {
+        // Check message encoding
+        if !self.server_info.clone().unwrap().supports_feature(Extension::EightBitMime).is_some() {
+            if !message_content.as_bytes().is_ascii() {
+                close_and_return_err!("Server does not accepts UTF-8 strings", self);
+            }
+        }
+
+        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter()); //250
+
+        if result.is_ok() {
+            // Increment the connection reuse counter
+            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
+            // Log the message
+            info!("{}: conn_use={}, size={}, status=sent ({})", self.state.current_message.as_ref().unwrap(),
+                self.state.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
+        }
+
+        self.state.current_message = None;
+
+        result
     }
 }

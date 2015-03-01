@@ -41,10 +41,13 @@ fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, s
     client.set_hello_name(my_hostname);
     client.set_enable_connection_reuse(true);
 
-    for _ in range(1, number-1) {
+    for _ in range(1, number) {
         let _ = client.send(email.clone());
     }
-    client.send(email)
+    let result = client.send(email);
+    client.close();
+
+    result
 }
 
 fn print_usage(description: String, _opts: &[OptGroup]) {
@@ -53,7 +56,7 @@ fn print_usage(description: String, _opts: &[OptGroup]) {
 
 fn main() {
     env_logger::init().unwrap();
-    
+
     let args = env::args();
 
     let mut args_string = Vec::new();
