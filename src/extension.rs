@@ -41,28 +41,32 @@ pub enum Extension {
     CramMd5Authentication,
 }
 
-impl FromStr for Extension {
+impl Extension {
     // TODO: check RFC
-    type Err = &'static str;
-    fn from_str(s: &str) -> Result<Extension, &'static str> {
-        let splitted : Vec<&str> = s.splitn(1, ' ').collect();
-        match splitted.len() {
-            1 => match splitted[0] {
-                     "8BITMIME" => Ok(EightBitMime),
-                     "SMTPUTF8" => Ok(SmtpUtfEight),
-                     "STARTTLS" => Ok(StartTls),
-                     _ => Err("Unknown extension"),
-                 },
-            2 => match (splitted[0], splitted[1].parse::<usize>()) {
-                     ("SIZE", Ok(size)) => Ok(Size(size)),
-                     _ => Err("Can't parse size"),
-                 },
-            _ => Err("Empty extension?"),
+    fn from_str(s: &str) -> Result<Vec<Extension>, &'static str> {
+        let splitted : Vec<&str> = s.split(' ').collect();
+        match (splitted[0], splitted.len()) {
+            ("8BITMIME", 1) => Ok(vec!(EightBitMime)),
+            ("SMTPUTF8", 1) => Ok(vec!(SmtpUtfEight)),
+            ("STARTTLS", 1) => Ok(vec!(StartTls)),
+            ("SIZE", 2) => match splitted[1].parse::<usize>() {
+                               Ok(size) => Ok(vec!(Size(size))),
+                               _ => Err("Can't parse size"),
+                           },
+            ("AUTH", _) => {
+                let mut mecanisms: Vec<Extension> = vec!();
+                for &mecanism in &splitted[1..] {
+                    match mecanism {
+                        "PLAIN" => mecanisms.push(PlainAuthentication),
+                        _ => (),
+                    }
+                }
+                Ok(mecanisms)
+            },
+            _ => Err("Unknown extension"),
         }
     }
-}
 
-impl Extension {
     /// Checks if the ESMTP keyword is the same
     pub fn same_extension_as(&self, other: &Extension) -> bool {
         if self == other {
@@ -76,11 +80,11 @@ impl Extension {
 
     /// Parses supported ESMTP features
     pub fn parse_esmtp_response(message: &str) -> Vec<Extension> {
-        let mut esmtp_features = Vec::new();
+        let mut esmtp_features: Vec<Extension> = Vec::new();
         for line in message.split(CRLF) {
             if let Ok(Response{code: 250, message}) = line.parse::<Response>() {
-                if let Ok(keyword) = message.unwrap().as_slice().parse::<Extension>() {
-                    esmtp_features.push(keyword);
+                if let Ok(keywords) = Extension::from_str(message.unwrap().as_slice()) {
+                    esmtp_features.push_all(&keywords);
                 };
             }
         }
@@ -102,12 +106,16 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        assert_eq!("8BITMIME".parse::<Extension>(), Ok(Extension::EightBitMime));
-        assert_eq!("SIZE 42".parse::<Extension>(), Ok(Extension::Size(42)));
-        assert!("SIZ 42".parse::<Extension>().is_err());
-        assert!("SIZE 4a2".parse::<Extension>().is_err());
+        assert_eq!(Extension::from_str("8BITMIME"), Ok(vec!(Extension::EightBitMime)));
+        assert_eq!(Extension::from_str("SIZE 42"), Ok(vec!(Extension::Size(42))));
+        assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
+        assert_eq!(Extension::from_str("AUTH PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
+        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
+        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
+        assert!(Extension::from_str("SIZ 42").is_err());
+        assert!(Extension::from_str("SIZE 4a2").is_err());
         // TODO: accept trailing spaces ?
-        assert!("SIZE 42 ".parse::<Extension>().is_err());
+        assert!(Extension::from_str("SIZE 42 ").is_err());
     }
 
     #[test]

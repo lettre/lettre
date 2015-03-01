@@ -33,6 +33,7 @@ use sendable_email::SendableEmail;
 pub mod server_info;
 pub mod connecter;
 pub mod stream;
+pub mod authentication;
 
 /// Represents the configuration of a client
 #[derive(Debug)]
