@@ -42,7 +42,7 @@ impl Display for ServerInfo {
 impl ServerInfo {
     /// Checks if the server supports an ESMTP feature
     pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
-        for feature in self.esmtp_features {
+        for feature in self.esmtp_features.iter() {
             if keyword.same_extension_as(feature) {
                 return Some(*feature);
             }
