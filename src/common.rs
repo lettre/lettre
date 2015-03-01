@@ -37,3 +37,6 @@ pub static COLON: &'static str = ":";
 
 /// The ending of message content
 pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
+
+/// NUL unicode character
+pub static NUL: &'static str = "\0";
