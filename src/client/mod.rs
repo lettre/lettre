@@ -16,6 +16,7 @@ use std::error::FromError;
 use std::old_io::net::tcp::TcpStream;
 use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
+use log::LogLevel::Info;
 use uuid::Uuid;
 
 use tools::get_first_word;
@@ -298,12 +299,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends a MAIL command
     pub fn mail(&mut self, address: &str) -> SmtpResult {
-
-        // Generate an ID for the logs if None was provided
-        if self.state.current_message.is_none() {
-            self.state.current_message = Some(Uuid::new_v4());
-        }
-
         // Checks message encoding according to the server's capability
         let options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
             Some(_) => "BODY=8BITMIME",
@@ -316,7 +311,13 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         if result.is_ok() {
             // Log the mail command
-            info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), address);
+            if log_enabled!(Info) {
+                // Generate an ID for the logs if None was provided
+                if self.state.current_message.is_none() {
+                    self.state.current_message = Some(Uuid::new_v4());
+                }
+                info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), address);
+            }
         }
 
         result
