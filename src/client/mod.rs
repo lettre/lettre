@@ -33,13 +33,13 @@ use client::connecter::Connecter;
 use client::server_info::ServerInfo;
 use client::stream::ClientStream;
 
-pub mod server_info;
-pub mod connecter;
-pub mod stream;
+mod server_info;
+mod connecter;
+mod stream;
 
 /// Represents the configuration of a client
 #[derive(Debug)]
-pub struct Configuration {
+struct Configuration {
     /// Maximum connection reuse
     ///
     /// Zero means no limitation
@@ -54,7 +54,7 @@ pub struct Configuration {
 
 /// Represents the state of a client
 #[derive(Debug)]
-pub struct State {
+struct State {
     /// Panic state
     pub panic: bool,
     /// Connection reuse counter
@@ -63,7 +63,7 @@ pub struct State {
 
 /// Represents the credentials
 #[derive(Debug, Clone)]
-pub struct Credentials {
+struct Credentials {
     /// Username
     pub username: String,
     /// Password
