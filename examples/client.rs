@@ -21,25 +21,24 @@ use std::string::String;
 use std::env;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
-use smtp::client::Client;
+use smtp::client::ClientBuilder;
 use smtp::error::SmtpResult;
 use smtp::mailer::Email;
 
-fn sendmail(source_address: &str, recipient_addresses: &[&str], message: &str, subject: &str,
-        server: &str, port: Port, my_hostname: &str, number: u16) -> SmtpResult {
+fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, subject: String,
+        server: String, port: Port, my_hostname: String, number: u16) -> SmtpResult {
 
     let mut email = Email::new();
     for destination in recipient_addresses.iter() {
-        email.to(*destination);
+        email.to(destination.as_slice());
     }
-    email.from(source_address);
-    email.body(message);
-    email.subject(subject);
+    email.from(source_address.as_slice());
+    email.body(message.as_slice());
+    email.subject(subject.as_slice());
     email.date_now();
 
-    let mut client: Client = Client::new((server, port));
-    client.set_hello_name(my_hostname);
-    client.set_enable_connection_reuse(true);
+    let mut client = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname)
+        .enable_connection_reuse(true).build();
 
     for _ in range(1, number) {
         let _ = client.send(email.clone());
@@ -106,7 +105,7 @@ fn main() {
 
     let mut recipients = Vec::new();
     for recipient in recipients_str.split(' ') {
-        recipients.push(recipient);
+        recipients.push(recipient.to_string());
     }
 
     let mut message = String::new();
@@ -119,32 +118,32 @@ fn main() {
 
     match sendmail(
         // sender
-        matches.opt_str("r").unwrap().as_slice(),
+        matches.opt_str("r").unwrap().clone(),
         // recipients
-        recipients.as_slice(),
+        recipients,
         // message content
-        message.as_slice(),
+        message,
         // subject
         match matches.opt_str("s") {
-            Some(ref subject) => subject.as_slice(),
-            None => "(empty subject)"
+            Some(ref subject) => subject.clone(),
+            None => "(empty subject)".to_string(),
         },
         // server
         match matches.opt_str("a") {
-            Some(ref server) => server.as_slice(),
-            None => "localhost"
+            Some(ref server) => server.clone(),
+            None => "localhost".to_string(),
         },
         // port
         match matches.opt_str("p") {
             Some(port) => port.as_slice().parse::<Port>().unwrap(),
-            None => 25
+            None => 25,
         },
         // my hostname
         match matches.opt_str("m") {
-            Some(ref my_hostname) => my_hostname.as_slice(),
-            None => "localhost"
+            Some(ref my_hostname) => my_hostname.clone(),
+            None => "localhost".to_string(),
         },
-        // subject
+        // number of copies
         match matches.opt_str("n") {
             Some(ref n) => n.as_slice().parse::<u16>().unwrap(),
             None => 1,

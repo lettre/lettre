@@ -26,7 +26,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use smtp::client::Client;
+//! use smtp::client::ClientBuilder;
 //! use smtp::mailer::Email;
 //!
 //! // Create an email
@@ -40,7 +40,7 @@
 //! email.date_now();
 //!
 //! // Open a local connection on port 25
-//! let mut client: Client = Client::localhost();
+//! let mut client = ClientBuilder::localhost().build();
 //! // Send the email
 //! let result = client.send(email);
 //!
@@ -50,7 +50,7 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! use smtp::client::Client;
+//! use smtp::client::ClientBuilder;
 //! use smtp::mailer::Email;
 //!
 //! let mut email = Email::new();
@@ -66,12 +66,11 @@
 //! email.date_now();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut client: Client = Client::new(("server.tld", 10025));
-//! // Set the name sent during EHLO/HELO, default is `localhost`
-//! client.set_hello_name("my.hostname.tld");
-//! // Enable connection reuse
-//! client.set_enable_connection_reuse(true);
-//!
+//! let mut client = ClientBuilder::new(("server.tld", 10025))
+//!                  // Set the name sent during EHLO/HELO, default is `localhost`
+//!                  .hello_name("my.hostname.tld".to_string())
+//!                  // Enable connection reuse
+//!                  .enable_connection_reuse(true).build();
 //! let result_1 = client.send(email.clone());
 //! assert!(result_1.is_ok());
 //! // The second email will use the same connection
@@ -87,7 +86,7 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! use smtp::client::Client;
+//! use smtp::client::ClientBuilder;
 //! use smtp::sendable_email::SimpleSendableEmail;
 //!
 //! // Create a minimal email
@@ -97,7 +96,7 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut client: Client = Client::localhost();
+//! let mut client = ClientBuilder::localhost().build();
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -120,6 +119,9 @@ pub mod sendable_email;
 pub mod mailer;
 
 use std::old_io::net::ip::Port;
+
+// Registrated port numbers:
+// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 
 /// Default smtp port
 pub static SMTP_PORT: Port = 25;

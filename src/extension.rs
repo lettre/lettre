@@ -63,11 +63,6 @@ impl Extension {
         }
     }
 
-    /// Checks if the ESMTP keyword is the same
-    pub fn same_extension_as(&self, other: &Extension) -> bool {
-        self == other
-    }
-
     /// Parses supported ESMTP features
     pub fn parse_esmtp_response(message: &str) -> Vec<Extension> {
         let mut esmtp_features: Vec<Extension> = Vec::new();
@@ -93,12 +88,6 @@ mod test {
         assert_eq!(Extension::from_str("AUTH PLAIN LOGIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
         assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::CramMd5Authentication, Extension::PlainAuthentication)));
         assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
-    }
-
-    #[test]
-    fn test_same_extension_as() {
-        assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::EightBitMime), true);
-        assert_eq!(Extension::EightBitMime.same_extension_as(&Extension::SmtpUtfEight), false);
     }
 
     #[test]

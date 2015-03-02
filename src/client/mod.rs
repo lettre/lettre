@@ -37,19 +37,70 @@ mod server_info;
 mod connecter;
 mod stream;
 
-/// Represents the configuration of a client
-#[derive(Debug)]
-struct Configuration {
+/// Contains client configuration
+pub struct ClientBuilder {
     /// Maximum connection reuse
     ///
     /// Zero means no limitation
-    pub connection_reuse_count_limit: u16,
+    connection_reuse_count_limit: u16,
     /// Enable connection reuse
-    pub enable_connection_reuse: bool,
-    /// Maximum line length
-    pub line_length_limit: u16,
+    enable_connection_reuse: bool,
     /// Name sent during HELO or EHLO
-    pub hello_name: String,
+    hello_name: String,
+    /// Credentials
+    credentials: Option<(String, String)>,
+    /// Socket we are connecting to
+    server_addr: SocketAddr,
+}
+
+/// Builder for the SMTP Client
+impl ClientBuilder {
+    /// Creates a new local SMTP client
+    pub fn new<A: ToSocketAddr>(addr: A) -> ClientBuilder {
+        ClientBuilder {
+            server_addr: addr.to_socket_addr().ok().expect("could not parse server address"),
+            credentials: None,
+            connection_reuse_count_limit: 100,
+            enable_connection_reuse: false,
+            hello_name: "localhost".to_string(),
+        }
+    }
+
+    /// Creates a new local SMTP client to port 25
+    pub fn localhost() -> ClientBuilder {
+        ClientBuilder::new(("localhost", SMTP_PORT))
+    }
+
+    /// Set the name used during HELO or EHLO
+    pub fn hello_name(mut self, name: String) -> ClientBuilder {
+        self.hello_name = name;
+        self
+    }
+
+    /// Enable connection reuse
+    pub fn enable_connection_reuse(mut self, enable: bool) -> ClientBuilder {
+        self.enable_connection_reuse = enable;
+        self
+    }
+
+    /// Set the maximum number of emails sent using one connection
+    pub fn connection_reuse_count_limit(mut self, limit: u16) -> ClientBuilder {
+        self.connection_reuse_count_limit = limit;
+        self
+    }
+
+    /// Set the client credentials
+    pub fn credentials(mut self, username: String, password: String) -> ClientBuilder {
+        self.credentials = Some((username, password));
+        self
+    }
+
+    /// Build the SMTP client
+    ///
+    /// It does not connects to the server, but only creates the `Client`
+    pub fn build(self) -> Client {
+        Client::new(self)
+    }
 }
 
 /// Represents the state of a client
@@ -61,31 +112,18 @@ struct State {
     pub connection_reuse_count: u16,
 }
 
-/// Represents the credentials
-#[derive(Debug, Clone)]
-struct Credentials {
-    /// Username
-    pub username: String,
-    /// Password
-    pub password: String,
-}
-
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<S>,
-    /// Socket we are connecting to
-    server_addr: SocketAddr,
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
     /// Client variable states
     state: State,
-    /// Configuration of the client
-    configuration: Configuration,
-    /// Client credentials
-    credentials: Option<Credentials>,
+    /// Information about the client
+    client_info: ClientBuilder,
 }
 
 macro_rules! try_smtp (
@@ -127,53 +165,16 @@ impl<S = TcpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn new<A: ToSocketAddr>(addr: A) -> Client<S> {
+    pub fn new(builder: ClientBuilder) -> Client<S> {
         Client{
             stream: None,
-            server_addr: addr.to_socket_addr().ok().expect("could not parse server address"),
             server_info: None,
-            configuration: Configuration {
-                connection_reuse_count_limit: 100,
-                enable_connection_reuse: false,
-                line_length_limit: 998,
-                hello_name: "localhost".to_string(),
-            },
+            client_info: builder,
             state: State {
                 panic: false,
                 connection_reuse_count: 0,
             },
-            credentials: None,
         }
-    }
-
-    /// Creates a new local SMTP client to port 25
-    ///
-    /// It does not connects to the server, but only creates the `Client`
-    pub fn localhost() -> Client<S> {
-        Client::new(("localhost", SMTP_PORT))
-    }
-
-    /// Set the name used during HELO or EHLO
-    pub fn set_hello_name(&mut self, name: &str) {
-        self.configuration.hello_name = name.to_string()
-    }
-
-    /// Set the maximum number of emails sent using one connection
-    pub fn set_enable_connection_reuse(&mut self, enable: bool) {
-        self.configuration.enable_connection_reuse = enable
-    }
-
-    /// Set the maximum number of emails sent using one connection
-    pub fn set_connection_reuse_count_limit(&mut self, count: u16) {
-        self.configuration.connection_reuse_count_limit = count
-    }
-
-    /// Set the client credentials
-    pub fn set_credentials(&mut self, username: &str, password: &str) {
-        self.credentials = Some(Credentials {
-            username: username.to_string(),
-            password: password.to_string(),
-        })
     }
 }
 
@@ -230,15 +231,17 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // TODO: Use PLAIN AUTH in encrypted connections, CRAM-MD5 otherwise
-        if self.credentials.is_some() && self.state.connection_reuse_count == 0 {
-            let credentials = self.credentials.clone().unwrap();
-            if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication).is_some() {
-                let result = self.auth_cram_md5(credentials.username.as_slice(),
-                                                credentials.password.as_slice());
+        if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
+
+            let (username, password) = self.client_info.credentials.clone().unwrap();
+
+            if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication) {
+                let result = self.auth_cram_md5(username.as_slice(),
+                                                password.as_slice());
                 try_smtp!(result, self);
-            } else if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication).is_some() {
-                let result = self.auth_plain(credentials.username.as_slice(),
-                                             credentials.password.as_slice());
+            } else if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication) {
+                let result = self.auth_plain(username.as_slice(),
+                                             password.as_slice());
                 try_smtp!(result, self);
             } else {
                 debug!("No supported authentication mecanisms available");
@@ -247,7 +250,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         let current_message = Uuid::new_v4();
         email.set_message_id(format!("<{}@{}>", current_message,
-            self.configuration.hello_name.clone()));
+            self.client_info.hello_name.clone()));
 
         let from_address = email.from_address();
         let to_addresses = email.to_addresses();
@@ -282,8 +285,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // Test if we can reuse the existing connection
-        if (!self.configuration.enable_connection_reuse) ||
-            (self.state.connection_reuse_count >= self.configuration.connection_reuse_count_limit) {
+        if (!self.client_info.enable_connection_reuse) ||
+            (self.state.connection_reuse_count >= self.client_info.connection_reuse_count_limit) {
             self.reset();
         }
 
@@ -298,7 +301,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // Try to connect
-        self.stream = Some(try!(Connecter::connect(self.server_addr)));
+        self.stream = Some(try!(Connecter::connect(self.client_info.server_addr)));
 
         let result = self.stream.as_mut().unwrap().get_reply();
         with_code!(result, [220].iter())
@@ -322,7 +325,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Send a HELO command and fills `server_info`
     fn helo(&mut self) -> SmtpResult {
-        let hostname = self.configuration.hello_name.clone();
+        let hostname = self.client_info.hello_name.clone();
         let result = try!(self.command(format!("HELO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
             ServerInfo{
@@ -335,7 +338,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends a EHLO command and fills `server_info`
     fn ehlo(&mut self) -> SmtpResult {
-        let hostname = self.configuration.hello_name.clone();
+        let hostname = self.client_info.hello_name.clone();
         let result = try!(self.command(format!("EHLO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
             ServerInfo{
@@ -352,8 +355,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     fn mail(&mut self, address: &str) -> SmtpResult {
         // Checks message encoding according to the server's capability
         let options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
-            Some(_) => "BODY=8BITMIME",
-            None => "",
+            true => "BODY=8BITMIME",
+            false => "",
         };
 
         self.command(format!("MAIL FROM:<{}> {}", address, options).as_slice(), [250].iter())

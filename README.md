@@ -1,7 +1,7 @@
 rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/amousset/rust-smtp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 =========
 
-This library implements an SMTP library and a simple SMTP client.
+This library implements a simple SMTP client.
 See the [documentation](http://amousset.github.io/rust-smtp/smtp/) for more information.
 
 Rust versions
@@ -12,7 +12,7 @@ This library is designed for Rust 1.0.0-nightly (master).
 Install
 -------
 
-If you're using the library in a program, just add these lines to your `Cargo.toml`:
+To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
@@ -40,7 +40,7 @@ Run `cargo run --example client -- -h` to get a list of available options.
 Tests
 -----
 
-You can build and run the tests with `cargo test`. The client does not have tests for now.
+You can build and run the tests with `cargo test`.
 
 Documentation
 -------------

@@ -41,13 +41,8 @@ impl Display for ServerInfo {
 
 impl ServerInfo {
     /// Checks if the server supports an ESMTP feature
-    pub fn supports_feature(&self, keyword: Extension) -> Option<Extension> {
-        for feature in self.esmtp_features.iter() {
-            if keyword.same_extension_as(feature) {
-                return Some(*feature);
-            }
-        }
-        None
+    pub fn supports_feature(&self, keyword: Extension) -> bool {
+        self.esmtp_features.contains(&keyword)
     }
 }
 
@@ -74,17 +69,17 @@ mod test {
 
     #[test]
     fn test_supports_feature() {
-        assert_eq!(ServerInfo{
-            name: "name".to_string(),
-            esmtp_features: vec![Extension::EightBitMime]
-        }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
-        assert_eq!(ServerInfo{
-            name: "name".to_string(),
-            esmtp_features: vec![Extension::PlainAuthentication, Extension::EightBitMime]
-        }.supports_feature(Extension::EightBitMime), Some(Extension::EightBitMime));
         assert!(ServerInfo{
             name: "name".to_string(),
             esmtp_features: vec![Extension::EightBitMime]
-        }.supports_feature(Extension::PlainAuthentication).is_none());
+        }.supports_feature(Extension::EightBitMime));
+        assert!(ServerInfo{
+            name: "name".to_string(),
+            esmtp_features: vec![Extension::PlainAuthentication, Extension::EightBitMime]
+        }.supports_feature(Extension::EightBitMime));
+        assert_eq!(ServerInfo{
+            name: "name".to_string(),
+            esmtp_features: vec![Extension::EightBitMime]
+        }.supports_feature(Extension::PlainAuthentication), false);
     }
 }
