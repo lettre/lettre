@@ -210,7 +210,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // Connect to the server if needed
-        if self.stream.is_none() || self.server_info.is_none() {
+        if self.stream.is_none() {
             try!(self.connect());
 
             // Extended Hello or Hello if needed
@@ -230,7 +230,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // TODO: Use PLAIN AUTH in encrypted connections, CRAM-MD5 otherwise
-        if self.credentials.is_some() {
+        if self.credentials.is_some() && self.state.connection_reuse_count == 0 {
             let credentials = self.credentials.clone().unwrap();
             if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication).is_some() {
 
@@ -269,6 +269,11 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Message content
         let result = self.message(message.as_slice());
+
+        if result.is_ok() {
+            // Increment the connection reuse counter
+            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
+        }
 
         // Test if we can reuse the existing connection
         if (!self.configuration.enable_connection_reuse) ||
@@ -434,11 +439,9 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends the message content and close
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
-        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter()); //250
+        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter());
 
         if result.is_ok() {
-            // Increment the connection reuse counter
-            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})", self.state.current_message.as_ref().unwrap(),
                 self.state.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
