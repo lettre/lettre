@@ -183,7 +183,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Reset the client state
-    pub fn reset(&mut self) {
+    fn reset(&mut self) {
         // Close the SMTP transaction if needed
         self.close();
 
@@ -199,7 +199,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // If there is a usable connection, test if the server answers and hello has been sent
         if self.state.connection_reuse_count > 0 {
-            if self.noop().is_err() {
+            if !self.is_connected() {
                 self.reset();
             }
         }
@@ -290,7 +290,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect(&mut self) -> SmtpResult {
+    fn connect(&mut self) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             close_and_return_err!("The connection is already established", self);
@@ -310,7 +310,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
-    pub fn is_connected(&mut self) -> bool {
+    fn is_connected(&mut self) -> bool {
         self.noop().is_ok()
     }
 
@@ -320,7 +320,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Send a HELO command and fills `server_info`
-    pub fn helo(&mut self) -> SmtpResult {
+    fn helo(&mut self) -> SmtpResult {
         let hostname = self.configuration.hello_name.clone();
         let result = try!(self.command(format!("HELO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
@@ -333,7 +333,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a EHLO command and fills `server_info`
-    pub fn ehlo(&mut self) -> SmtpResult {
+    fn ehlo(&mut self) -> SmtpResult {
         let hostname = self.configuration.hello_name.clone();
         let result = try!(self.command(format!("EHLO {}", hostname).as_slice(), [250].iter()));
         self.server_info = Some(
@@ -348,7 +348,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a MAIL command
-    pub fn mail(&mut self, address: &str) -> SmtpResult {
+    fn mail(&mut self, address: &str) -> SmtpResult {
         // Checks message encoding according to the server's capability
         let options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
             Some(_) => "BODY=8BITMIME",
@@ -359,48 +359,33 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a RCPT command
-    pub fn rcpt(&mut self, address: &str) -> SmtpResult {
+    fn rcpt(&mut self, address: &str) -> SmtpResult {
         self.command(format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter())
     }
 
     /// Sends a DATA command
-    pub fn data(&mut self) -> SmtpResult {
+    fn data(&mut self) -> SmtpResult {
         self.command("DATA", [354].iter())
     }
 
     /// Sends a QUIT command
-    pub fn quit(&mut self) -> SmtpResult {
+    fn quit(&mut self) -> SmtpResult {
         self.command("QUIT", [221].iter())
     }
 
-    /// Sends a RSET command
-    pub fn rset(&mut self) -> SmtpResult {
-        self.command("RSET", [250].iter())
-    }
-
     /// Sends a NOOP command
-    pub fn noop(&mut self) -> SmtpResult {
+    fn noop(&mut self) -> SmtpResult {
         self.command("NOOP", [250].iter())
     }
 
-    /// Sends a VRFY command
-    pub fn vrfy(&mut self, address: &str) -> SmtpResult {
-        self.command(format!("VRFY {}", address).as_slice(), [250, 251, 252].iter())
-    }
-
-    /// Sends a EXPN command
-    pub fn expn(&mut self, list: &str) -> SmtpResult {
-        self.command(format!("EXPN {}", list).as_slice(), [250, 252].iter())
-    }
-
     /// Sends an AUTH command with PLAIN mecanism
-    pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
+    fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
         let auth_string = format!("{}{}{}{}{}", "", NUL, username, NUL, password);
         self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
     }
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
-    pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
+    fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
         let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5", [334].iter()), self).message.unwrap();
         // TODO manage errors
         let challenge = encoded_challenge.from_base64().unwrap();
@@ -414,7 +399,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends the message content and close
-    pub fn message(&mut self, message_content: &str) -> SmtpResult {
+    fn message(&mut self, message_content: &str) -> SmtpResult {
         self.send_server(message_content, MESSAGE_ENDING, [250].iter())
     }
 }

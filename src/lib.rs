@@ -101,24 +101,6 @@
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
-//!
-//! ### Lower level
-//!
-//! You can also send commands, here is a simple email transaction without error handling:
-//!
-//! ```rust,no_run
-//! use smtp::client::Client;
-//! use smtp::common::SMTP_PORT;
-//!
-//! let mut email_client: Client = Client::new(("localhost", SMTP_PORT));
-//! let _ = email_client.connect();
-//! let _ = email_client.ehlo();
-//! let _ = email_client.mail("user@example.com");
-//! let _ = email_client.rcpt("user@example.org");
-//! let _ = email_client.data();
-//! let _ = email_client.message("Test email");
-//! let _ = email_client.quit();
-//! ```
 
 #![feature(plugin, core, old_io, io, collections)]
 #![deny(missing_docs)]
