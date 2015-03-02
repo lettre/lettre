@@ -54,6 +54,7 @@ impl Extension {
                 for &mecanism in &splitted[1..] {
                     match mecanism {
                         "PLAIN" => mecanisms.push(PlainAuthentication),
+                        "CRAM-MD5" => mecanisms.push(CramMd5Authentication),
                         _ => (),
                     }
                 }
@@ -90,9 +91,9 @@ mod test {
     fn test_from_str() {
         assert_eq!(Extension::from_str("8BITMIME"), Ok(vec!(Extension::EightBitMime)));
         assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
-        assert_eq!(Extension::from_str("AUTH PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
-        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
-        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication)));
+        assert_eq!(Extension::from_str("AUTH PLAIN LOGIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
+        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::CramMd5Authentication, Extension::PlainAuthentication)));
+        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
     }
 
     #[test]
@@ -106,7 +107,7 @@ mod test {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
             vec!(Extension::EightBitMime));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 AUTH PLAIN CRAM-MD5\r\n250 UNKNON 42"),
-            vec!(Extension::EightBitMime, Extension::PlainAuthentication));
+            vec!(Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication));
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
             vec!());
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),

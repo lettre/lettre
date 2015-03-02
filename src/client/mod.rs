@@ -17,7 +17,11 @@ use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
 use log::LogLevel::Info;
 use uuid::Uuid;
-use serialize::base64::{self, ToBase64};
+use serialize::base64::{self, ToBase64, FromBase64};
+use serialize::hex::ToHex;
+use crypto::hmac::Hmac;
+use crypto::md5::Md5;
+use crypto::mac::Mac;
 
 use tools::get_first_word;
 use common::{NUL, CRLF, MESSAGE_ENDING, SMTP_PORT};
@@ -225,10 +229,15 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             debug!("server {}", self.server_info.as_ref().unwrap());
         }
 
-        // Use PLAIN AUTH if possible
+        // TODO: Use PLAIN AUTH in encrypted connections, CRAM-MD5 otherwise
         if self.credentials.is_some() {
-            if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication).is_some() {
-                let credentials = self.credentials.clone().unwrap();
+            let credentials = self.credentials.clone().unwrap();
+            if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication).is_some() {
+
+                let result = self.auth_cram_md5(credentials.username.as_slice(),
+                                                credentials.password.as_slice());
+                try_smtp!(result, self);
+            } else if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication).is_some() {
                 let result = self.auth_plain(credentials.username.as_slice(),
                                              credentials.password.as_slice());
                 try_smtp!(result, self);
@@ -407,6 +416,20 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
         let auth_string = format!("{}{}{}{}{}", "", NUL, username, NUL, password);
         self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
+    }
+
+    /// Sends an AUTH command with CRAM-MD5 mecanism
+    pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
+        let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5", [334].iter()), self).message.unwrap();
+        // TODO manage errors
+        let challenge = encoded_challenge.from_base64().unwrap();
+
+        let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
+        hmac.input(challenge.as_slice());
+
+        let auth_string = format!("{} {}", username, hmac.result().code().to_hex());
+
+        self.command(format!("AUTH CRAM-MD5 {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
     }
 
     /// Sends the message content and close
