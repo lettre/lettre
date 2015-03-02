@@ -111,11 +111,21 @@ extern crate crypto;
 extern crate time;
 extern crate uuid;
 
+mod tools;
+mod extension;
 pub mod client;
-pub mod extension;
 pub mod response;
-pub mod common;
 pub mod error;
-pub mod tools;
 pub mod sendable_email;
 pub mod mailer;
+
+use std::old_io::net::ip::Port;
+
+/// Default smtp port
+pub static SMTP_PORT: Port = 25;
+
+/// Default smtps port
+pub static SMTPS_PORT: Port = 465;
+
+/// Default submission port
+pub static SUBMISSION_PORT: Port = 587;

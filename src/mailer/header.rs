@@ -13,7 +13,7 @@ use time::Tm;
 
 use std::fmt::{Display, Formatter, Result};
 
-use common::{SP, COLON};
+use tools::{SP, COLON};
 use mailer::address::Address;
 
 /// Converts to an `Header`

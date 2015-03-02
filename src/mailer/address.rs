@@ -11,7 +11,7 @@
 
 use std::fmt::{Display, Formatter, Result};
 
-use common::SP;
+use tools::SP;
 
 /// Converts an adress or an address with an alias to an `Address`
 pub trait ToAddress {

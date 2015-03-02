@@ -22,8 +22,9 @@ use crypto::hmac::Hmac;
 use crypto::md5::Md5;
 use crypto::mac::Mac;
 
+use SMTP_PORT;
 use tools::get_first_word;
-use common::{NUL, CRLF, MESSAGE_ENDING, SMTP_PORT};
+use tools::{NUL, CRLF, MESSAGE_ENDING};
 use response::Response;
 use extension::Extension;
 use error::{SmtpResult, ErrorKind};

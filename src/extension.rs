@@ -12,7 +12,7 @@
 use std::str::FromStr;
 use std::result::Result;
 
-use common::CRLF;
+use tools::CRLF;
 use response::Response;
 use self::Extension::{PlainAuthentication, CramMd5Authentication, EightBitMime, SmtpUtfEight, StartTls};
 

@@ -11,7 +11,26 @@
 
 use std::string::String;
 
-use common::{CR, LF, CRLF};
+/// The word separator for SMTP transactions
+pub static SP: &'static str = " ";
+
+/// The line ending for SMTP transactions (carriage return + line feed)
+pub static CRLF: &'static str = "\r\n";
+
+/// Carriage return
+pub static CR: &'static str = "\r";
+
+/// Line feed
+pub static LF: &'static str = "\n";
+
+/// Colon
+pub static COLON: &'static str = ":";
+
+/// The ending of message content
+pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
+
+/// NUL unicode character
+pub static NUL: &'static str = "\0";
 
 /// Removes the trailing line return at the end of a string
 #[inline]
