@@ -15,7 +15,6 @@ use std::error::FromError;
 use std::old_io::net::tcp::TcpStream;
 use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
 
-use log::LogLevel::Info;
 use uuid::Uuid;
 use serialize::base64::{self, ToBase64, FromBase64};
 use serialize::hex::ToHex;
@@ -59,8 +58,6 @@ pub struct State {
     pub panic: bool,
     /// Connection reuse counter
     pub connection_reuse_count: u16,
-    /// Current message id
-    pub current_message: Option<Uuid>,
 }
 
 /// Represents the credentials
@@ -143,7 +140,6 @@ impl<S = TcpStream> Client<S> {
             state: State {
                 panic: false,
                 connection_reuse_count: 0,
-                current_message: None,
             },
             credentials: None,
         }
@@ -196,7 +192,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.server_info = None;
         self.state.panic = false;
         self.state.connection_reuse_count = 0;
-        self.state.current_message = None;
     }
 
     /// Sends an email
@@ -212,6 +207,10 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         // Connect to the server if needed
         if self.stream.is_none() {
             try!(self.connect());
+
+            // Log the connection
+            info!("connection established to {}",
+                self.stream.as_mut().unwrap().peer_name().unwrap());
 
             // Extended Hello or Hello if needed
             if let Err(error) = self.ehlo() {
@@ -246,8 +245,8 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             }
         }
 
-        self.state.current_message = Some(Uuid::new_v4());
-        email.set_message_id(format!("<{}@{}>", self.state.current_message.as_ref().unwrap(),
+        let current_message = Uuid::new_v4();
+        email.set_message_id(format!("<{}@{}>", current_message,
             self.configuration.hello_name.clone()));
 
         let from_address = email.from_address();
@@ -257,11 +256,16 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         // Mail
         try_smtp!(self.mail(from_address.as_slice()), self);
 
+        // Log the mail command
+        info!("{}: from=<{}>", current_message, from_address);
+
         // Recipient
         // TODO Return rejected addresses
         // TODO Limit the number of recipients
         for to_address in to_addresses.iter() {
             try_smtp!(self.rcpt(to_address.as_slice()), self);
+            // Log the rcpt command
+            info!("{}: to=<{}>", current_message, to_address);
         }
 
         // Data
@@ -273,6 +277,10 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         if result.is_ok() {
             // Increment the connection reuse counter
             self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
+
+            // Log the message
+            info!("{}: conn_use={}, size={}, status=sent ({})", current_message,
+                self.state.connection_reuse_count, message.len(), result.as_ref().ok().unwrap());
         }
 
         // Test if we can reuse the existing connection
@@ -293,10 +301,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Try to connect
         self.stream = Some(try!(Connecter::connect(self.server_addr)));
-
-        // Log the connection
-        info!("connection established to {}",
-            self.stream.as_mut().unwrap().peer_name().unwrap());
 
         let result = self.stream.as_mut().unwrap().get_reply();
         with_code!(result, [220].iter())
@@ -355,36 +359,12 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             None => "",
         };
 
-        let result = self.command(
-            format!("MAIL FROM:<{}> {}", address, options).as_slice(), [250].iter()
-        );
-
-        if result.is_ok() {
-            // Log the mail command
-            if log_enabled!(Info) {
-                // Generate an ID for the logs if None was provided
-                if self.state.current_message.is_none() {
-                    self.state.current_message = Some(Uuid::new_v4());
-                }
-                info!("{}: from=<{}>", self.state.current_message.as_ref().unwrap(), address);
-            }
-        }
-
-        result
+        self.command(format!("MAIL FROM:<{}> {}", address, options).as_slice(), [250].iter())
     }
 
     /// Sends a RCPT command
     pub fn rcpt(&mut self, address: &str) -> SmtpResult {
-        let result = self.command(
-            format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter()
-        );
-
-        if result.is_ok() {
-            // Log the rcpt command
-            info!("{}: to=<{}>", self.state.current_message.as_ref().unwrap(), address);
-        }
-
-        result
+        self.command(format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter())
     }
 
     /// Sends a DATA command
@@ -439,16 +419,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends the message content and close
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
-        let result = self.send_server(message_content, MESSAGE_ENDING, [250].iter());
-
-        if result.is_ok() {
-            // Log the message
-            info!("{}: conn_use={}, size={}, status=sent ({})", self.state.current_message.as_ref().unwrap(),
-                self.state.connection_reuse_count, message_content.len(), result.as_ref().ok().unwrap());
-        }
-
-        self.state.current_message = None;
-
-        result
+        self.send_server(message_content, MESSAGE_ENDING, [250].iter())
     }
 }
