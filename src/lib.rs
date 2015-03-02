@@ -7,12 +7,12 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! # Rust SMTP library
+//! # Rust SMTP client
 //!
 //! The client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
 //! a work in progress.
 //!
-//! It may eventually implement the following extensions :
+//! It should eventually implement the following extensions :
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
@@ -120,15 +120,8 @@
 //! let _ = email_client.quit();
 //! ```
 
-#![crate_type = "lib"]
-
-#![doc(html_root_url = "http://amousset.github.io/rust-smtp/smtp/")]
-
-#![unstable]
-
-#![deny(missing_docs)]
-
 #![feature(plugin, core, old_io, io, collections)]
+#![deny(missing_docs)]
 
 #[macro_use] extern crate log;
 extern crate "rustc-serialize" as serialize;

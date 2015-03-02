@@ -21,13 +21,13 @@ use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoEr
 /// An enum of all error kinds.
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum ErrorKind {
-    /// Transient error
+    /// Transient error, 4xx reply code
     ///
-    /// 4xx reply code
+    /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     TransientError(Response),
-    /// Permanent error
+    /// Permanent error, 5xx reply code
     ///
-    /// 5xx reply code
+    /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     PermanentError(Response),
     /// Unknown error
     UnknownError(String),
@@ -74,7 +74,7 @@ impl FromError<Response> for SmtpError {
             _ => UnknownError(format! ("{:?}", response)),
         };
         let desc = match kind {
-            TransientError(_) => "a permanent error occured during the SMTP transaction",
+            TransientError(_) => "a transient error occured during the SMTP transaction",
             PermanentError(_) => "a permanent error occured during the SMTP transaction",
             UnknownError(_) => "an unknown error occured during the SMTP transaction",
             InternalIoError(_) => "an I/O error occurred",

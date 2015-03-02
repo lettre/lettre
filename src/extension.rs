@@ -42,7 +42,6 @@ pub enum Extension {
 }
 
 impl Extension {
-    // TODO: check RFC
     fn from_str(s: &str) -> Result<Vec<Extension>, &'static str> {
         let splitted : Vec<&str> = s.split(' ').collect();
         match (splitted[0], splitted.len()) {

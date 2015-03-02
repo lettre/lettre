@@ -2,16 +2,13 @@
 
 name = "smtp"
 version = "0.0.7"
-authors = ["Alexis Mousset <contact@amousset.eu>"]
-description = "Simple SMTP client and library"
-
+description = "Simple SMTP client"
+readme = "README.md"
 documentation = "http://amousset.github.io/rust-smtp/smtp/"
 repository = "https://github.com/amousset/rust-smtp"
-
 license = "MIT/Apache-2.0"
-readme = "README.md"
-
-keywords = ["email", "smtp"]
+authors = ["Alexis Mousset <contact@amousset.me>"]
+keywords = ["email", "smtp", "mailer"]
 
 [dependencies]
 time = "*"

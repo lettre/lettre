@@ -129,7 +129,7 @@ impl<S = TcpStream> Client<S> {
     pub fn new<A: ToSocketAddr>(addr: A) -> Client<S> {
         Client{
             stream: None,
-            server_addr: addr.to_socket_addr().unwrap(),
+            server_addr: addr.to_socket_addr().ok().expect("could not parse server address"),
             server_info: None,
             configuration: Configuration {
                 connection_reuse_count_limit: 100,
@@ -232,7 +232,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         if self.credentials.is_some() && self.state.connection_reuse_count == 0 {
             let credentials = self.credentials.clone().unwrap();
             if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication).is_some() {
-
                 let result = self.auth_cram_md5(credentials.username.as_slice(),
                                                 credentials.password.as_slice());
                 try_smtp!(result, self);
@@ -260,8 +259,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         info!("{}: from=<{}>", current_message, from_address);
 
         // Recipient
-        // TODO Return rejected addresses
-        // TODO Limit the number of recipients
         for to_address in to_addresses.iter() {
             try_smtp!(self.rcpt(to_address.as_slice()), self);
             // Log the rcpt command
@@ -285,7 +282,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         // Test if we can reuse the existing connection
         if (!self.configuration.enable_connection_reuse) ||
-            (self.state.connection_reuse_count == self.configuration.connection_reuse_count_limit) {
+            (self.state.connection_reuse_count >= self.configuration.connection_reuse_count_limit) {
             self.reset();
         }
 
@@ -306,8 +303,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         with_code!(result, [220].iter())
     }
 
-    /// Sends content to the server, after checking the command sequence, and then
-    /// updates the transaction state
+    /// Sends content to the server
     fn send_server(&mut self, content: &str, end: &str, expected_codes: Iter<u16>) -> SmtpResult {
         let result = self.stream.as_mut().unwrap().send_and_get_response(content, end);
         with_code!(result, expected_codes)
