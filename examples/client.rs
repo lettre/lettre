@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(core, old_io, rustc_private, env, collections)]
+#![feature(core, old_io, rustc_private, collections)]
 
 #[macro_use]
 extern crate log;
@@ -23,19 +23,19 @@ use getopts::{optopt, optflag, getopts, OptGroup, usage};
 
 use smtp::client::ClientBuilder;
 use smtp::error::SmtpResult;
-use smtp::mailer::Email;
+use smtp::mailer::EmailBuilder;
 
 fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, subject: String,
         server: String, port: Port, my_hostname: String, number: u16) -> SmtpResult {
 
-    let mut email = Email::new();
+    let mut email_builder = EmailBuilder::new();
     for destination in recipient_addresses.iter() {
-        email.to(destination.as_slice());
+        email_builder = email_builder.to(destination.as_slice());
     }
-    email.from(source_address.as_slice());
-    email.body(message.as_slice());
-    email.subject(subject.as_slice());
-    email.date_now();
+    let email = email_builder.from(source_address.as_slice())
+                         .body(message.as_slice())
+                         .subject(subject.as_slice())
+                         .build();
 
     let mut client = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname)
         .enable_connection_reuse(true).build();

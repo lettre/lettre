@@ -9,15 +9,19 @@
 
 //! # Rust SMTP client
 //!
-//! The client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
-//! a work in progress.
+//! This client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
+//! a work in progress. It is designed to efficiently send emails from a rust application to a
+//! relay email server.
 //!
-//! It should eventually implement the following extensions :
+//! It implements the following extensions :
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
-//! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
-//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954))
+//!
+//! It will eventually implement the following extensions :
+//!
+//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
+//! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 //! ## Usage
 //!
@@ -27,17 +31,17 @@
 //!
 //! ```rust,no_run
 //! use smtp::client::ClientBuilder;
-//! use smtp::mailer::Email;
+//! use smtp::mailer::EmailBuilder;
 //!
 //! // Create an email
-//! let mut email = Email::new();
-//! // Addresses can be specified by the couple (email, alias)
-//! email.to(("user@example.org", "Firstname Lastname"));
-//! // ... or by an address only
-//! email.from("user@example.com");
-//! email.subject("Hello world");
-//! email.body("Hi, Hello world.");
-//! email.date_now();
+//! let email = EmailBuilder::new()
+//!     // Addresses can be specified by the couple (email, alias)
+//!     .to(("user@example.org", "Firstname Lastname"))
+//!     // ... or by an address only
+//!     .from("user@example.com")
+//!     .subject("Hi, Hello world")
+//!     .body("Hello world.")
+//!     .build();
 //!
 //! // Open a local connection on port 25
 //! let mut client = ClientBuilder::localhost().build();
@@ -51,26 +55,29 @@
 //!
 //! ```rust,no_run
 //! use smtp::client::ClientBuilder;
-//! use smtp::mailer::Email;
+//! use smtp::mailer::EmailBuilder;
 //!
-//! let mut email = Email::new();
-//! email.to(("user@example.org", "Alias name"));
-//! email.cc(("user@example.net", "Alias name"));
-//! email.from("no-reply@example.com");
-//! email.from("no-reply@example.eu");
-//! email.sender("no-reply@example.com");
-//! email.subject("Hello world");
-//! email.body("Hi, Hello world.");
-//! email.reply_to("contact@example.com");
-//! email.add_header(("X-Custom-Header", "my header"));
-//! email.date_now();
+//! let mut builder = EmailBuilder::new();
+//! builder = builder.to(("user@example.org", "Alias name"));
+//! builder = builder.cc(("user@example.net", "Alias name"));
+//! builder = builder.from("no-reply@example.com");
+//! builder = builder.from("no-reply@example.eu");
+//! builder = builder.sender("no-reply@example.com");
+//! builder = builder.subject("Hello world");
+//! builder = builder.body("Hi, Hello world.");
+//! builder = builder.reply_to("contact@example.com");
+//! builder = builder.add_header(("X-Custom-Header", "my header"));
+//!
+//! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
 //! let mut client = ClientBuilder::new(("server.tld", 10025))
-//!                  // Set the name sent during EHLO/HELO, default is `localhost`
-//!                  .hello_name("my.hostname.tld".to_string())
-//!                  // Enable connection reuse
-//!                  .enable_connection_reuse(true).build();
+//!     // Set the name sent during EHLO/HELO, default is `localhost`
+//!     .hello_name("my.hostname.tld".to_string())
+//!     // Add credentials for authentication
+//!     .credentials("username".to_string(), "password".to_string())
+//!     // Enable connection reuse
+//!     .enable_connection_reuse(true).build();
 //! let result_1 = client.send(email.clone());
 //! assert!(result_1.is_ok());
 //! // The second email will use the same connection

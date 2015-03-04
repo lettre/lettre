@@ -63,7 +63,7 @@ mod test {
         }), "name with [EightBitMime]".to_string());
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: vec!()
+            esmtp_features: vec![]
         }), "name with no supported features".to_string());
     }
 

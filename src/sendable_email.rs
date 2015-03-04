@@ -36,7 +36,7 @@ impl SimpleSendableEmail {
     pub fn new(from_address: &str, to_address: &str, message: &str) -> SimpleSendableEmail {
         SimpleSendableEmail {
             from: from_address.to_string(),
-            to: vec!(to_address.to_string()),
+            to: vec![to_address.to_string()],
             message: message.to_string(),
         }
     }

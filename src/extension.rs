@@ -45,11 +45,11 @@ impl Extension {
     fn from_str(s: &str) -> Result<Vec<Extension>, &'static str> {
         let splitted : Vec<&str> = s.split(' ').collect();
         match (splitted[0], splitted.len()) {
-            ("8BITMIME", 1) => Ok(vec!(EightBitMime)),
-            ("SMTPUTF8", 1) => Ok(vec!(SmtpUtfEight)),
-            ("STARTTLS", 1) => Ok(vec!(StartTls)),
+            ("8BITMIME", 1) => Ok(vec![EightBitMime]),
+            ("SMTPUTF8", 1) => Ok(vec![SmtpUtfEight]),
+            ("STARTTLS", 1) => Ok(vec![StartTls]),
             ("AUTH", _) => {
-                let mut mecanisms: Vec<Extension> = vec!();
+                let mut mecanisms: Vec<Extension> = vec![];
                 for &mecanism in &splitted[1..] {
                     match mecanism {
                         "PLAIN" => mecanisms.push(PlainAuthentication),
@@ -83,24 +83,24 @@ mod test {
 
     #[test]
     fn test_from_str() {
-        assert_eq!(Extension::from_str("8BITMIME"), Ok(vec!(Extension::EightBitMime)));
-        assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec!(Extension::PlainAuthentication)));
-        assert_eq!(Extension::from_str("AUTH PLAIN LOGIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
-        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec!(Extension::CramMd5Authentication, Extension::PlainAuthentication)));
-        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec!(Extension::PlainAuthentication, Extension::CramMd5Authentication)));
+        assert_eq!(Extension::from_str("8BITMIME"), Ok(vec![Extension::EightBitMime]));
+        assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec![Extension::PlainAuthentication]));
+        assert_eq!(Extension::from_str("AUTH PLAIN LOGIN CRAM-MD5"), Ok(vec![Extension::PlainAuthentication, Extension::CramMd5Authentication]));
+        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec![Extension::CramMd5Authentication, Extension::PlainAuthentication]));
+        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec![Extension::PlainAuthentication, Extension::CramMd5Authentication]));
     }
 
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-            vec!(Extension::EightBitMime));
+            vec![Extension::EightBitMime]);
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 AUTH PLAIN CRAM-MD5\r\n250 UNKNON 42"),
-            vec!(Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication));
+            vec![Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication]);
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
-            vec!());
+            vec![]);
         assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-            vec!());
+            vec![]);
         assert_eq!(Extension::parse_esmtp_response(""),
-            vec!());
+            vec![]);
     }
 }

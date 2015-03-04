@@ -330,7 +330,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         self.server_info = Some(
             ServerInfo{
                 name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
-                esmtp_features: vec!(),
+                esmtp_features: vec![],
             }
         );
         Ok(result)
@@ -384,7 +384,7 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends an AUTH command with PLAIN mecanism
     fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
-        let auth_string = format!("{}{}{}{}{}", "", NUL, username, NUL, password);
+        let auth_string = format!("{}{}{}{}", NUL, username, NUL, password);
         self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
     }
 
