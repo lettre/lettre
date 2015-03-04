@@ -37,7 +37,7 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
                          .subject(subject.as_slice())
                          .build();
 
-    let mut client = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname)
+    let mut client = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
         .enable_connection_reuse(true).build();
 
     for _ in range(1, number) {

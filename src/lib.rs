@@ -73,9 +73,9 @@
 //! // Connect to a remote server on a custom port
 //! let mut client = ClientBuilder::new(("server.tld", 10025))
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
-//!     .hello_name("my.hostname.tld".to_string())
+//!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
-//!     .credentials("username".to_string(), "password".to_string())
+//!     .credentials("username", "password")
 //!     // Enable connection reuse
 //!     .enable_connection_reuse(true).build();
 //! let result_1 = client.send(email.clone());

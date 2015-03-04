@@ -72,8 +72,8 @@ impl ClientBuilder {
     }
 
     /// Set the name used during HELO or EHLO
-    pub fn hello_name(mut self, name: String) -> ClientBuilder {
-        self.hello_name = name;
+    pub fn hello_name(mut self, name: &str) -> ClientBuilder {
+        self.hello_name = name.to_string();
         self
     }
 
@@ -90,8 +90,8 @@ impl ClientBuilder {
     }
 
     /// Set the client credentials
-    pub fn credentials(mut self, username: String, password: String) -> ClientBuilder {
-        self.credentials = Some((username, password));
+    pub fn credentials(mut self, username: &str, password: &str) -> ClientBuilder {
+        self.credentials = Some((username.to_string(), password.to_string()));
         self
     }
 

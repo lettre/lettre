@@ -117,6 +117,7 @@ impl EmailBuilder {
 
     /// Adds a `Sender` header
     pub fn sender<A: ToAddress>(mut self, address: A) -> EmailBuilder {
+        self.content.from = Some(address.to_address().get_address());
         self.content.headers.push(
             Header::Sender(address.to_address())
         );
