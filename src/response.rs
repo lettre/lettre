@@ -197,5 +197,29 @@ impl Response {
 
 #[cfg(test)]
 mod test {
-    // TODO
+    use super::{Severity, Category, Response};
+
+    #[test]
+    fn test_severity_from_str() {
+        assert_eq!("2".parse::<Severity>(), Ok(Severity::PositiveCompletion));
+        assert_eq!("4".parse::<Severity>(), Ok(Severity::TransientNegativeCompletion));
+        assert!("1".parse::<Severity>().is_err());
+    }
+
+    #[test]
+    fn test_severity_fmt() {
+        assert_eq!(format!("{}", Severity::PositiveCompletion).as_slice(), "2");
+    }
+
+    #[test]
+    fn test_category_from_str() {
+        assert_eq!("2".parse::<Category>(), Ok(Category::Connections));
+        assert_eq!("4".parse::<Category>(), Ok(Category::Unspecified4));
+        assert!("6".parse::<Category>().is_err());
+    }
+
+    #[test]
+    fn test_category_fmt() {
+        assert_eq!(format!("{}", Category::Unspecified4).as_slice(), "4");
+    }
 }

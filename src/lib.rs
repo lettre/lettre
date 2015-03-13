@@ -13,12 +13,12 @@
 //! a work in progress. It is designed to efficiently send emails from a rust application to a
 //! relay email server.
 //!
-//! It implements the following extensions :
+//! It implements the following extensions:
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954))
 //!
-//! It will eventually implement the following extensions :
+//! It will eventually implement the following extensions:
 //!
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
@@ -27,9 +27,9 @@
 //!
 //! This client is divided into three parts:
 //!
-//! * `client`: a low level SMTP client providing all SMTP commands
-//! * `sender`: a high level SMTP client providing an easy method to send emails
-//! * `mailer`: generates the email to be sent with `sender`
+//! * client: a low level SMTP client providing all SMTP commands
+//! * sender: a high level SMTP client providing an easy method to send emails
+//! * mailer: generates the email to be sent with the sender
 //!
 //! ## Usage
 //!
@@ -139,7 +139,6 @@
 //! let _ = email_client.message("Test email");
 //! let _ = email_client.quit();
 //! ```
-
 
 #![feature(plugin, core, io, collections, net, str_words)]
 #![deny(missing_docs)]
