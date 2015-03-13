@@ -26,6 +26,7 @@
 //! ## Architecture
 //!
 //! This client is divided into three parts:
+//!
 //! * `client`: a low level SMTP client providing all SMTP commands
 //! * `sender`: a high level SMTP client providing an easy method to send emails
 //! * `mailer`: generates the email to be sent with `sender`
@@ -87,8 +88,10 @@
 //!     .credentials("username", "password")
 //!     // Enable connection reuse
 //!     .enable_connection_reuse(true).build();
+//!
 //! let result_1 = sender.send(email.clone());
 //! assert!(result_1.is_ok());
+//!
 //! // The second email will use the same connection
 //! let result_2 = sender.send(email);
 //! assert!(result_2.is_ok());

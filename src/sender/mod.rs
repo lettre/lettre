@@ -7,10 +7,9 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! SMTP client
+//! Sends an email using the client
 
 use std::string::String;
-use std::error::FromError;
 use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io::{Read, Write};
@@ -119,31 +118,13 @@ macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({
         match $err {
             Ok(val) => val,
-            Err(err) => close_and_return_err!(err, $client),
-        }
-    })
-);
-
-macro_rules! close_and_return_err (
-    ($err: expr, $client: ident) => ({
-        if !$client.state.panic {
-            $client.state.panic = true;
-            $client.client.close();
-        }
-        return Err(FromError::from_error($err))
-    })
-);
-
-macro_rules! check_response (
-    ($result: ident) => ({
-        match $result {
-            Ok(response) => {
-                match response.is_positive() {
-                    true => Ok(response),
-                    false => Err(FromError::from_error(response)),
+            Err(err) => {
+                if !$client.state.panic {
+                    $client.state.panic = true;
+                    $client.client.close();
                 }
+                return Err(err)
             },
-            Err(_) => $result,
         }
     })
 );

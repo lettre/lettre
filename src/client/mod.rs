@@ -35,32 +35,9 @@ pub struct Client<S = TcpStream> {
 
 }
 
-macro_rules! try_smtp (
-    ($err: expr, $client: ident) => ({
-        match $err {
-            Ok(val) => val,
-            Err(err) => return_err!(err, $client),
-        }
-    })
-);
-
 macro_rules! return_err (
     ($err: expr, $client: ident) => ({
         return Err(FromError::from_error($err))
-    })
-);
-
-macro_rules! check_response (
-    ($result: ident) => ({
-        match $result {
-            Ok(response) => {
-                match response.is_positive() {
-                    true => Ok(response),
-                    false => Err(FromError::from_error(response)),
-                }
-            },
-            Err(_) => $result,
-        }
     })
 );
 
@@ -173,7 +150,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
     pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
-        let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5"), self).first_word().expect("No challenge");
+        let encoded_challenge = try!(self.command("AUTH CRAM-MD5")).first_word().expect("No challenge");
         self.command(format!("AUTH CRAM-MD5 {}", cram_md5(username, password, encoded_challenge.as_slice())).as_slice())
     }
 
