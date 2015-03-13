@@ -13,109 +13,189 @@ use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};
 use std::result::Result as RResult;
 
-use tools::remove_trailing_crlf;
+use self::Severity::*;
+use self::Category::*;
+
+/// First digit indicates severity
+#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+pub enum Severity {
+    /// 2yx
+    PositiveCompletion,
+    /// 3yz
+    PositiveIntermediate,
+    /// 4yz
+    TransientNegativeCompletion,
+    /// 5yz
+    PermanentNegativeCompletion,
+}
+
+impl FromStr for Severity {
+    type Err = &'static str;
+    fn from_str(s: &str) -> RResult<Severity, &'static str> {
+        match s {
+            "2" => Ok(PositiveCompletion),
+            "3" => Ok(PositiveIntermediate),
+            "4" => Ok(TransientNegativeCompletion),
+            "5" => Ok(PermanentNegativeCompletion),
+            _ => Err("First digit must be between 2 and 5"),
+        }
+    }
+}
+
+impl Display for Severity {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}",
+            match *self {
+                PositiveCompletion => 2,
+                PositiveIntermediate => 3,
+                TransientNegativeCompletion => 4,
+                PermanentNegativeCompletion => 5,
+            }
+        )
+    }
+}
+
+/// Second digit
+#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+pub enum Category {
+    /// x0z
+    Syntax,
+    /// x1z
+    Information,
+    /// x2z
+    Connections,
+    /// x3z
+    Unspecified3,
+    /// x4z
+    Unspecified4,
+    /// x5z
+    MailSystem,
+}
+
+impl FromStr for Category {
+    type Err = &'static str;
+    fn from_str(s: &str) -> RResult<Category, &'static str> {
+        match s {
+            "0" => Ok(Syntax),
+            "1" => Ok(Information),
+            "2" => Ok(Connections),
+            "3" => Ok(Unspecified3),
+            "4" => Ok(Unspecified4),
+            "5" => Ok(MailSystem),
+            _ => Err("Second digit must be between 0 and 5"),
+        }
+    }
+}
+
+impl Display for Category {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}",
+            match *self {
+                Syntax => 0,
+                Information => 1,
+                Connections => 2,
+                Unspecified3 => 3,
+                Unspecified4 => 4,
+                MailSystem => 5,
+            }
+        )
+    }
+}
 
 /// Contains an SMTP reply, with separed code and message
 ///
 /// The text message is optional, only the code is mandatory
 #[derive(PartialEq,Eq,Clone,Debug)]
 pub struct Response {
-    /// Server response code
-    pub code: u16,
+    /// First digit of the response code
+    severity: Severity,
+    /// Second digit of the response code
+    category: Category,
+    /// Third digit
+    detail: u8,
     /// Server response string (optional)
-    pub message: Option<String>
+    /// Handle multiline responses
+    message: Vec<String>
 }
 
 impl Display for Response {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write! (f, "{}",
-            match self.clone().message {
-                Some(message) => format!("{} {}", self.code, message),
-                None => format!("{}", self.code),
-            }
+        let code = self.code();
+        for line in self.message[..-1].iter() {
+            let _ = write!(f, "{}-{}",
+                code,
+                line
+            );
+        }
+        write!(f, "{} {}",
+            code,
+            self.message[-1]
         )
+
     }
 }
 
-impl FromStr for Response {
-    type Err = &'static str;
-    fn from_str(s: &str) -> RResult<Response, &'static str> {
-        // If the string is too short to be a response code
-        if s.len() < 3 {
-            Err("len < 3")
-        // If we have only a code, with or without a trailing space
-        } else if s.len() == 3 || (s.len() == 4 && &s[3..4] == " ") {
-            match s[..3].parse::<u16>() {
-                Ok(code) => Ok(Response{
-                                code: code,
-                                message: None
-                              }),
-                Err(_) => Err("Can't parse the code"),
-            }
-        // If we have a code and a message
-        } else {
-            match (
-                s[..3].parse::<u16>(),
-                vec![" ", "-"].contains(&&s[3..4]),
-                (remove_trailing_crlf(&s[4..]))
-            ) {
-                (Ok(code), true, message) => Ok(Response{
-                            code: code,
-                            message: Some(message.to_string())
-                        }),
-                _ => Err("Error parsing a code with a message"),
-            }
+impl Response {
+    /// Creates a new `Response`
+    pub fn new(severity: Severity, category: Category, detail: u8, message: Vec<String>) -> Response {
+        Response {
+            severity: severity,
+            category: category,
+            detail: detail,
+            message: message
         }
+    }
+
+    /// Tells if the response is positive
+    pub fn is_positive(&self) -> bool {
+        match self.severity {
+            PositiveCompletion => true,
+            PositiveIntermediate => true,
+            _ => false,
+        }
+    }
+
+    /// Returns the message
+    pub fn message(&self) -> Vec<String> {
+        self.message.clone()
+    }
+
+    /// Returns the severity (i.e. 1st digit)
+    pub fn severity(&self) -> Severity {
+        self.severity
+    }
+
+    /// Returns the category (i.e. 2nd digit)
+    pub fn category(&self) -> Category {
+        self.category
+    }
+
+    /// Returns the detail (i.e. 3rd digit)
+    pub fn detail(&self) -> u8 {
+        self.detail
+    }
+
+    /// Returns the reply code
+    fn code(&self) -> String {
+        format!("{}{}{}", self.severity, self.category, self.detail)
+    }
+
+    /// Checls code equality
+    pub fn has_code(&self, code: u16) -> bool {
+        self.code() == format!("{}", code)
+    }
+
+    /// Returns only the first word of the message if possible
+    pub fn first_word(&self) -> Option<String> {
+        match self.message.is_empty() {
+            true => None,
+            false => Some(self.message[0].words().next().unwrap().to_string())
+        }
+
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::Response;
-
-    #[test]
-    fn test_fmt() {
-        assert_eq!(format!("{}", Response{code: 200, message: Some("message".to_string())}),
-                   "200 message".to_string());
-    }
-
-    #[test]
-    fn test_from_str() {
-        assert_eq!("200 response message".parse::<Response>(),
-            Ok(Response{
-                code: 200,
-                message: Some("response message".to_string())
-            })
-        );
-        assert_eq!("200-response message".parse::<Response>(),
-            Ok(Response{
-                code: 200,
-                message: Some("response message".to_string())
-            })
-        );
-        assert_eq!("200".parse::<Response>(),
-            Ok(Response{
-                code: 200,
-                message: None
-            })
-        );
-        assert_eq!("200 ".parse::<Response>(),
-            Ok(Response{
-                code: 200,
-                message: None
-            })
-        );
-        assert_eq!("200-response\r\nmessage".parse::<Response>(),
-            Ok(Response{
-                code: 200,
-                message: Some("response\r\nmessage".to_string())
-            })
-        );
-        assert!("2000response message".parse::<Response>().is_err());
-        assert!("20a response message".parse::<Response>().is_err());
-        assert!("20 ".parse::<Response>().is_err());
-        assert!("20".parse::<Response>().is_err());
-        assert!("2".parse::<Response>().is_err());
-        assert!("".parse::<Response>().is_err());
-    }
+    // TODO
 }

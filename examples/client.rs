@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(core, old_io, rustc_private, collections)]
+#![feature(core, old_io, net, rustc_private, collections)]
 
 #[macro_use]
 extern crate log;
@@ -16,17 +16,19 @@ extern crate smtp;
 extern crate getopts;
 
 use std::old_io::stdin;
-use std::old_io::net::ip::Port;
 use std::string::String;
 use std::env;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
+use std::net::TcpStream;
 
-use smtp::client::ClientBuilder;
+use smtp::client::{Client, ClientBuilder};
 use smtp::error::SmtpResult;
 use smtp::mailer::EmailBuilder;
 
+
+
 fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, subject: String,
-        server: String, port: Port, my_hostname: String, number: u16) -> SmtpResult {
+        server: String, port: u16, my_hostname: String, number: u16) -> SmtpResult {
 
     let mut email_builder = EmailBuilder::new();
     for destination in recipient_addresses.iter() {
@@ -37,7 +39,7 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
                          .subject(subject.as_slice())
                          .build();
 
-    let mut client = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
+    let mut client: Client<TcpStream> = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
         .enable_connection_reuse(true).build();
 
     for _ in range(1, number) {
@@ -135,7 +137,7 @@ fn main() {
         },
         // port
         match matches.opt_str("p") {
-            Some(port) => port.as_slice().parse::<Port>().unwrap(),
+            Some(port) => port.as_slice().parse::<u16>().unwrap(),
             None => 25,
         },
         // my hostname

@@ -32,22 +32,16 @@ pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 /// NUL unicode character
 pub static NUL: &'static str = "\0";
 
-/// Removes the trailing line return at the end of a string
-#[inline]
-pub fn remove_trailing_crlf(string: &str) -> &str {
-    if string.ends_with(CRLF) {
-        &string[.. string.len() - 2]
-    } else if string.ends_with(CR) {
-        &string[.. string.len() - 1]
-    } else {
-        string
-    }
-}
-
 /// Returns the first word of a string, or the string if it contains no space
 #[inline]
 pub fn get_first_word(string: &str) -> &str {
-    string.split(CRLF).next().unwrap().splitn(1, ' ').next().unwrap()
+    match string.lines_any().next() {
+        Some(line) => match line.words().next() {
+            Some(word) => word,
+            None => "",
+        },
+        None => "",
+    }
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
@@ -71,19 +65,7 @@ pub fn escape_dot(string: &str) -> String {
 
 #[cfg(test)]
 mod test {
-    use super::{remove_trailing_crlf, get_first_word, escape_crlf, escape_dot};
-
-    #[test]
-    fn test_remove_trailing_crlf() {
-        assert_eq!(remove_trailing_crlf("word"), "word");
-        assert_eq!(remove_trailing_crlf("word\r\n"), "word");
-        assert_eq!(remove_trailing_crlf("word\r\n "), "word\r\n ");
-        assert_eq!(remove_trailing_crlf("word\r"), "word");
-        assert_eq!(remove_trailing_crlf("\r\n"), "");
-        assert_eq!(remove_trailing_crlf("\r"), "");
-        assert_eq!(remove_trailing_crlf("a"), "a");
-        assert_eq!(remove_trailing_crlf(""), "");
-    }
+    use super::*;
 
     #[test]
     fn test_get_first_word() {

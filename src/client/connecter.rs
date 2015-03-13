@@ -7,28 +7,20 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-// Taken fron rust-http
-
 //! TODO
 
-use std::old_io::IoResult;
-use std::old_io::net::ip::SocketAddr;
-use std::old_io::net::tcp::TcpStream;
+use std::io;
+use std::net::SocketAddr;
+use std::net::TcpStream;
 
 /// A trait for the concept of opening a stream connected to a IP socket address.
 pub trait Connecter {
     /// TODO
-    fn connect(addr: SocketAddr) -> IoResult<Self>;
-    /// TODO
-    fn peer_name(&mut self) -> IoResult<SocketAddr>;
+    fn connect(addr: &SocketAddr) -> io::Result<Self>;
 }
 
 impl Connecter for TcpStream {
-    fn connect(addr: SocketAddr) -> IoResult<TcpStream> {
+    fn connect(addr: &SocketAddr) -> io::Result<TcpStream> {
         TcpStream::connect(addr)
-    }
-
-    fn peer_name(&mut self) -> IoResult<SocketAddr> {
-        self.peer_name()
     }
 }

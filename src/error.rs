@@ -10,17 +10,17 @@
 //! Error and result type for SMTP clients
 
 use std::error::Error;
-use std::old_io::IoError;
+use std::io;
 use std::error::FromError;
 use std::fmt::{Display, Formatter};
-use std::fmt::Error as FmtError;
+use std::fmt;
 
-use response::Response;
-use self::ErrorKind::{TransientError, PermanentError, UnknownError, InternalIoError};
+use response::{Severity, Response};
+use self::SmtpError::*;
 
 /// An enum of all error kinds.
 #[derive(PartialEq, Eq, Clone, Debug)]
-pub enum ErrorKind {
+pub enum SmtpError {
     /// Transient error, 4xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
@@ -29,98 +29,55 @@ pub enum ErrorKind {
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     PermanentError(Response),
-    /// Unknown error
-    UnknownError(String),
+    /// TODO
+    ClientError(String),
     /// IO error
-    InternalIoError(IoError),
+    IoError(io::Error),
 }
 
-/// smtp error type
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct SmtpError {
-    /// Error kind
-    pub kind: ErrorKind,
-    /// Error description
-    pub desc: &'static str,
-    /// Error cause
-    pub detail: Option<String>,
+impl Display for SmtpError {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        fmt.write_str(self.description())
+    }
 }
 
-impl FromError<IoError> for SmtpError {
-    fn from_error(err: IoError) -> SmtpError {
-        SmtpError {
-            kind: InternalIoError(err),
-            desc: "An internal IO error ocurred.",
-            detail: None,
+impl Error for SmtpError {
+    fn description(&self) -> &str {
+        match *self {
+            TransientError(_) => "a transient error occured during the SMTP transaction",
+            PermanentError(_) => "a permanent error occured during the SMTP transaction",
+            ClientError(_) => "an unknown error occured",
+            IoError(_) => "an I/O error occured",
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            IoError(ref err) => Some(&*err as &Error),
+            _ => None,
         }
     }
 }
 
-impl FromError<(ErrorKind, &'static str)> for SmtpError {
-    fn from_error((kind, desc): (ErrorKind, &'static str)) -> SmtpError {
-        SmtpError {
-            kind: kind,
-            desc: desc,
-            detail: None,
-        }
+impl FromError<io::Error> for SmtpError {
+    fn from_error(err: io::Error) -> SmtpError {
+        IoError(err)
     }
 }
 
 impl FromError<Response> for SmtpError {
     fn from_error(response: Response) -> SmtpError {
-        let kind = match response.code/100 {
-            4 => TransientError(response),
-            5 => PermanentError(response),
-            _ => UnknownError(format! ("{:?}", response)),
-        };
-        let desc = match kind {
-            TransientError(_) => "a transient error occured during the SMTP transaction",
-            PermanentError(_) => "a permanent error occured during the SMTP transaction",
-            UnknownError(_) => "an unknown error occured during the SMTP transaction",
-            InternalIoError(_) => "an I/O error occurred",
-        };
-        SmtpError {
-            kind: kind,
-            desc: desc,
-            detail: None,
+        match response.severity() {
+            Severity::TransientNegativeCompletion => TransientError(response),
+            Severity::PermanentNegativeCompletion => PermanentError(response),
+            _ => ClientError("Unknown error code".to_string())
         }
     }
 }
 
 impl FromError<&'static str> for SmtpError {
     fn from_error(string: &'static str) -> SmtpError {
-        SmtpError {
-            kind: UnknownError(string.to_string()),
-            desc: "an unknown error occured during the SMTP transaction",
-            detail: None,
-        }
-    }
-}
-
-impl Display for SmtpError {
-    fn fmt (&self, fmt: &mut Formatter) -> Result<(), FmtError> {
-        match self.kind {
-            TransientError(ref response) => write! (fmt, "{:?}", response),
-            PermanentError(ref response) => write! (fmt, "{:?}", response),
-            UnknownError(ref string) => write! (fmt, "{}", string),
-            InternalIoError(ref err) => write! (fmt, "{:?}", err.detail),
-        }
-    }
-}
-
-impl Error for SmtpError {
-    fn description(&self) -> &str {
-        match self.kind {
-            InternalIoError(ref err) => err.desc,
-            _ => self.desc,
-        }
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        match self.kind {
-            InternalIoError(ref err) => Some(&*err as &Error),
-            _ => None,
-        }
+        ClientError(string.to_string())
     }
 }
 

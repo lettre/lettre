@@ -9,11 +9,11 @@
 
 //! SMTP client
 
-use std::slice::Iter;
 use std::string::String;
 use std::error::FromError;
-use std::old_io::net::tcp::TcpStream;
-use std::old_io::net::ip::{SocketAddr, ToSocketAddr};
+use std::net::TcpStream;
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::io::{BufRead, BufStream, Read, Write};
 
 use uuid::Uuid;
 use serialize::base64::{self, ToBase64, FromBase64};
@@ -23,19 +23,17 @@ use crypto::md5::Md5;
 use crypto::mac::Mac;
 
 use SMTP_PORT;
-use tools::get_first_word;
 use tools::{NUL, CRLF, MESSAGE_ENDING};
-use response::Response;
+use tools::{escape_dot, escape_crlf};
+use response::{Response, Severity, Category};
 use extension::Extension;
-use error::{SmtpResult, ErrorKind};
+use error::{SmtpResult, SmtpError};
 use sendable_email::SendableEmail;
 use client::connecter::Connecter;
 use client::server_info::ServerInfo;
-use client::stream::ClientStream;
 
 mod server_info;
 mod connecter;
-mod stream;
 
 /// Contains client configuration
 pub struct ClientBuilder {
@@ -56,9 +54,9 @@ pub struct ClientBuilder {
 /// Builder for the SMTP Client
 impl ClientBuilder {
     /// Creates a new local SMTP client
-    pub fn new<A: ToSocketAddr>(addr: A) -> ClientBuilder {
+    pub fn new<A: ToSocketAddrs>(addr: A) -> ClientBuilder {
         ClientBuilder {
-            server_addr: addr.to_socket_addr().ok().expect("could not parse server address"),
+            server_addr: addr.to_socket_addrs().ok().expect("could not parse server address").next().unwrap(),
             credentials: None,
             connection_reuse_count_limit: 100,
             enable_connection_reuse: false,
@@ -98,7 +96,7 @@ impl ClientBuilder {
     /// Build the SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn build(self) -> Client {
+    pub fn build<S: Connecter + Read + Write>(self) -> Client<S> {
         Client::new(self)
     }
 }
@@ -116,7 +114,7 @@ struct State {
 pub struct Client<S = TcpStream> {
     /// TCP stream between client and server
     /// Value is None before connection
-    stream: Option<S>,
+    stream: Option<BufStream<S>>,
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
@@ -145,16 +143,14 @@ macro_rules! close_and_return_err (
     })
 );
 
-macro_rules! with_code (
-    ($result: ident, $codes: expr) => ({
+macro_rules! check_response (
+    ($result: ident) => ({
         match $result {
             Ok(response) => {
-                for code in $codes {
-                    if *code == response.code {
-                        return Ok(response);
-                    }
+                match response.is_positive() {
+                    true => Ok(response),
+                    false => Err(FromError::from_error(response)),
                 }
-                Err(FromError::from_error(response))
             },
             Err(_) => $result,
         }
@@ -178,7 +174,7 @@ impl<S = TcpStream> Client<S> {
     }
 }
 
-impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
+impl<S: Connecter + Write + Read = TcpStream> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
@@ -198,7 +194,6 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
     /// Sends an email
     pub fn send<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
-
         // If there is a usable connection, test if the server answers and hello has been sent
         if self.state.connection_reuse_count > 0 {
             if !self.is_connected() {
@@ -211,13 +206,12 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
             try!(self.connect());
 
             // Log the connection
-            info!("connection established to {}",
-                self.stream.as_mut().unwrap().peer_name().unwrap());
+            info!("connection established to {}", self.client_info.server_addr);
 
             // Extended Hello or Hello if needed
             if let Err(error) = self.ehlo() {
-                match error.kind {
-                    ErrorKind::PermanentError(Response{code: 550, message: _}) => {
+                match error {
+                    SmtpError::PermanentError(ref response) if response.has_code(550) => {
                         try_smtp!(self.helo(), self);
                     },
                     _ => {
@@ -281,7 +275,11 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})", current_message,
-                self.state.connection_reuse_count, message.len(), result.as_ref().ok().unwrap());
+                self.state.connection_reuse_count, message.len(), match result.as_ref().ok().unwrap().message().as_slice() {
+                    [ref line, ..] => line.as_slice(),
+                    [] => "no response",
+                }
+            );
         }
 
         // Test if we can reuse the existing connection
@@ -301,35 +299,28 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
         }
 
         // Try to connect
-        self.stream = Some(try!(Connecter::connect(self.client_info.server_addr)));
+        self.stream = Some(BufStream::new(try!(Connecter::connect(&self.client_info.server_addr))));
 
-        let result = self.stream.as_mut().unwrap().get_reply();
-        with_code!(result, [220].iter())
-    }
-
-    /// Sends content to the server
-    fn send_server(&mut self, content: &str, end: &str, expected_codes: Iter<u16>) -> SmtpResult {
-        let result = self.stream.as_mut().unwrap().send_and_get_response(content, end);
-        with_code!(result, expected_codes)
+        self.get_reply()
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
-    fn is_connected(&mut self) -> bool {
+    pub fn is_connected(&mut self) -> bool {
         self.noop().is_ok()
     }
 
     /// Sends an SMTP command
-    fn command(&mut self, command: &str, expected_codes: Iter<u16>) -> SmtpResult {
-        self.send_server(command, CRLF, expected_codes)
+    pub fn command(&mut self, command: &str) -> SmtpResult {
+        self.send_server(command, CRLF)
     }
 
     /// Send a HELO command and fills `server_info`
-    fn helo(&mut self) -> SmtpResult {
+    pub fn helo(&mut self) -> SmtpResult {
         let hostname = self.client_info.hello_name.clone();
-        let result = try!(self.command(format!("HELO {}", hostname).as_slice(), [250].iter()));
+        let result = try!(self.command(format!("HELO {}", hostname).as_slice()));
         self.server_info = Some(
             ServerInfo{
-                name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
+                name: result.first_word().expect("Server announced no hostname"),
                 esmtp_features: vec![],
             }
         );
@@ -337,60 +328,81 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
     }
 
     /// Sends a EHLO command and fills `server_info`
-    fn ehlo(&mut self) -> SmtpResult {
+    pub fn ehlo(&mut self) -> SmtpResult {
         let hostname = self.client_info.hello_name.clone();
-        let result = try!(self.command(format!("EHLO {}", hostname).as_slice(), [250].iter()));
+        let result = try!(self.command(format!("EHLO {}", hostname).as_slice()));
         self.server_info = Some(
             ServerInfo{
-                name: get_first_word(result.message.as_ref().unwrap().as_slice()).to_string(),
-                esmtp_features: Extension::parse_esmtp_response(
-                                    result.message.as_ref().unwrap().as_slice()
-                                ),
+                name: result.first_word().expect("Server announced no hostname"),
+                esmtp_features: Extension::parse_esmtp_response(&result),
             }
         );
         Ok(result)
     }
 
     /// Sends a MAIL command
-    fn mail(&mut self, address: &str) -> SmtpResult {
+    pub fn mail(&mut self, address: &str) -> SmtpResult {
         // Checks message encoding according to the server's capability
         let options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
             true => "BODY=8BITMIME",
             false => "",
         };
 
-        self.command(format!("MAIL FROM:<{}> {}", address, options).as_slice(), [250].iter())
+        self.command(format!("MAIL FROM:<{}> {}", address, options).as_slice())
     }
 
     /// Sends a RCPT command
-    fn rcpt(&mut self, address: &str) -> SmtpResult {
-        self.command(format!("RCPT TO:<{}>", address).as_slice(), [250, 251].iter())
+    pub fn rcpt(&mut self, address: &str) -> SmtpResult {
+        self.command(format!("RCPT TO:<{}>", address).as_slice())
     }
 
     /// Sends a DATA command
-    fn data(&mut self) -> SmtpResult {
-        self.command("DATA", [354].iter())
+    pub fn data(&mut self) -> SmtpResult {
+        self.command("DATA")
     }
 
     /// Sends a QUIT command
-    fn quit(&mut self) -> SmtpResult {
-        self.command("QUIT", [221].iter())
+    pub fn quit(&mut self) -> SmtpResult {
+        self.command("QUIT")
     }
 
     /// Sends a NOOP command
-    fn noop(&mut self) -> SmtpResult {
-        self.command("NOOP", [250].iter())
+    pub fn noop(&mut self) -> SmtpResult {
+        self.command("NOOP")
+    }
+
+    /// Sends a HELP command
+    pub fn help(&mut self, argument: Option<&str>) -> SmtpResult {
+        match argument {
+            Some(ref argument) => self.command(format!("HELP {}", argument).as_slice()),
+            None => self.command("HELP"),
+        }
+    }
+
+    /// Sends a VRFY command
+    pub fn vrfy(&mut self, address: &str) -> SmtpResult {
+        self.command(format!("VRFY {}", address).as_slice())
+    }
+
+    /// Sends a EXPN command
+    pub fn expn(&mut self, address: &str) -> SmtpResult {
+        self.command(format!("EXPN {}", address).as_slice())
+    }
+
+    /// Sends a RSET command
+    pub fn rset(&mut self) -> SmtpResult {
+        self.command("RSET")
     }
 
     /// Sends an AUTH command with PLAIN mecanism
-    fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
+    pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
         let auth_string = format!("{}{}{}{}", NUL, username, NUL, password);
-        self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
+        self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice())
     }
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
-    fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
-        let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5", [334].iter()), self).message.unwrap();
+    pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
+        let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5"), self).first_word().expect("No challenge");
         // TODO manage errors
         let challenge = encoded_challenge.from_base64().unwrap();
 
@@ -399,11 +411,58 @@ impl<S: Connecter + ClientStream + Clone = TcpStream> Client<S> {
 
         let auth_string = format!("{} {}", username, hmac.result().code().to_hex());
 
-        self.command(format!("AUTH CRAM-MD5 {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice(), [235].iter())
+        self.command(format!("AUTH CRAM-MD5 {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice())
     }
 
     /// Sends the message content and close
-    fn message(&mut self, message_content: &str) -> SmtpResult {
-        self.send_server(message_content, MESSAGE_ENDING, [250].iter())
+    pub fn message(&mut self, message_content: &str) -> SmtpResult {
+        self.send_server(escape_dot(message_content).as_slice(), MESSAGE_ENDING)
+    }
+
+    /// Sends a string to the server and gets the response
+    fn send_server(&mut self, string: &str, end: &str) -> SmtpResult {
+        try!(write!(self.stream.as_mut().unwrap(), "{}{}", string, end));
+        try!(self.stream.as_mut().unwrap().flush());
+
+        debug!("Wrote: {}", escape_crlf(string));
+
+        self.get_reply()
+    }
+
+    /// Gets the SMTP response
+    fn get_reply(&mut self) -> SmtpResult {
+        let mut line = String::new();
+        try!(self.stream.as_mut().unwrap().read_line(&mut line));
+
+        // If the string is too short to be a response code
+        if line.len() < 3 {
+            return Err(FromError::from_error("Could not parse reply code, line too short"));
+        }
+
+        let (severity, category, detail) =  match (line[0..1].parse::<Severity>(), line[1..2].parse::<Category>(), line[2..3].parse::<u8>()) {
+            (Ok(severity), Ok(category), Ok(detail)) => (severity, category, detail),
+            _ => return Err(FromError::from_error("Could not parse reply code")),
+        };
+
+        let mut message = Vec::new();
+
+        // 3 chars for code + space + CRLF
+        while line.len() > 6 {
+            let end = line.len() - 2;
+            message.push(line[4..end].to_string());
+            if line.as_bytes()[3] == '-' as u8 {
+                line.clear();
+                try!(self.stream.as_mut().unwrap().read_line(&mut line));
+            } else {
+                line.clear();
+            }
+        }
+
+        let response = Response::new(severity, category, detail, message);
+
+        match response.is_positive() {
+            true => Ok(response),
+            false => Err(FromError::from_error(response)),
+        }
     }
 }

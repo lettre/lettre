@@ -30,8 +30,9 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use smtp::client::ClientBuilder;
+//! use smtp::client::{Client, ClientBuilder};
 //! use smtp::mailer::EmailBuilder;
+//! use std::net::TcpStream;
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
@@ -44,7 +45,7 @@
 //!     .build();
 //!
 //! // Open a local connection on port 25
-//! let mut client = ClientBuilder::localhost().build();
+//! let mut client: Client<TcpStream> = ClientBuilder::localhost().build();
 //! // Send the email
 //! let result = client.send(email);
 //!
@@ -54,8 +55,9 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! use smtp::client::ClientBuilder;
+//! use smtp::client::{Client, ClientBuilder};
 //! use smtp::mailer::EmailBuilder;
+//! use std::net::TcpStream;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -71,7 +73,7 @@
 //! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut client = ClientBuilder::new(("server.tld", 10025))
+//! let mut client: Client<TcpStream> = ClientBuilder::new(("server.tld", 10025))
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
@@ -93,8 +95,9 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! use smtp::client::ClientBuilder;
+//! use smtp::client::{Client, ClientBuilder};
 //! use smtp::sendable_email::SimpleSendableEmail;
+//! use std::net::TcpStream;
 //!
 //! // Create a minimal email
 //! let email = SimpleSendableEmail::new(
@@ -103,12 +106,12 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut client = ClientBuilder::localhost().build();
+//! let mut client: Client<TcpStream> = ClientBuilder::localhost().build();
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
 
-#![feature(plugin, core, old_io, io, collections)]
+#![feature(plugin, core, io, collections, net, str_words)]
 #![deny(missing_docs)]
 
 #[macro_use] extern crate log;
@@ -125,16 +128,14 @@ pub mod error;
 pub mod sendable_email;
 pub mod mailer;
 
-use std::old_io::net::ip::Port;
-
 // Registrated port numbers:
 // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 
 /// Default smtp port
-pub static SMTP_PORT: Port = 25;
+pub static SMTP_PORT: u16 = 25;
 
 /// Default smtps port
-pub static SMTPS_PORT: Port = 465;
+pub static SMTPS_PORT: u16 = 465;
 
 /// Default submission port
-pub static SUBMISSION_PORT: Port = 587;
+pub static SUBMISSION_PORT: u16 = 587;
