@@ -15,19 +15,15 @@ use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io::{BufRead, BufStream, Read, Write};
 
-use serialize::base64::{self, ToBase64, FromBase64};
-use serialize::hex::ToHex;
-use crypto::hmac::Hmac;
-use crypto::md5::Md5;
-use crypto::mac::Mac;
-
-use tools::{NUL, CRLF, MESSAGE_ENDING};
+use tools::{CRLF, MESSAGE_ENDING};
 use tools::{escape_dot, escape_crlf};
 use response::{Response, Severity, Category};
 use error::SmtpResult;
 use client::connecter::Connecter;
+use client::authentication::{plain, cram_md5};
 
 pub mod connecter;
+mod authentication;
 
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
@@ -172,22 +168,13 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
     /// Sends an AUTH command with PLAIN mecanism
     pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
-        let auth_string = format!("{}{}{}{}", NUL, username, NUL, password);
-        self.command(format!("AUTH PLAIN {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice())
+        self.command(format!("AUTH PLAIN {}", plain(username, password)).as_slice())
     }
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
     pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
         let encoded_challenge = try_smtp!(self.command("AUTH CRAM-MD5"), self).first_word().expect("No challenge");
-        // TODO manage errors
-        let challenge = encoded_challenge.from_base64().unwrap();
-
-        let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
-        hmac.input(challenge.as_slice());
-
-        let auth_string = format!("{} {}", username, hmac.result().code().to_hex());
-
-        self.command(format!("AUTH CRAM-MD5 {}", auth_string.as_bytes().to_base64(base64::STANDARD)).as_slice())
+        self.command(format!("AUTH CRAM-MD5 {}", cram_md5(username, password, encoded_challenge.as_slice())).as_slice())
     }
 
     /// Sends the message content and close
