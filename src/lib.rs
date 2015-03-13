@@ -110,6 +110,26 @@
 //! let result = client.send(email);
 //! assert!(result.is_ok());
 //! ```
+//!
+//! ### Lower level
+//!
+//! You can also send commands, here is a simple email transaction without error handling:
+//!
+//! ```rust,no_run
+//! use smtp::client::{Client, ClientBuilder};
+//! use smtp::SMTP_PORT;
+//! use std::net::TcpStream;
+//!
+//! let mut email_client: Client<TcpStream> = ClientBuilder::new(("localhost", SMTP_PORT)).build();
+//! let _ = email_client.connect();
+//! let _ = email_client.ehlo();
+//! let _ = email_client.mail("user@example.com");
+//! let _ = email_client.rcpt("user@example.org");
+//! let _ = email_client.data();
+//! let _ = email_client.message("Test email");
+//! let _ = email_client.quit();
+//! ```
+
 
 #![feature(plugin, core, io, collections, net, str_words)]
 #![deny(missing_docs)]

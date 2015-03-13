@@ -292,7 +292,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
     }
 
     /// Connects to the configured server
-    fn connect(&mut self) -> SmtpResult {
+    pub fn connect(&mut self) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             close_and_return_err!("The connection is already established", self);
