@@ -21,11 +21,9 @@ use std::env;
 use getopts::{optopt, optflag, getopts, OptGroup, usage};
 use std::net::TcpStream;
 
-use smtp::client::{Client, ClientBuilder};
+use smtp::sender::{Sender, SenderBuilder};
 use smtp::error::SmtpResult;
 use smtp::mailer::EmailBuilder;
-
-
 
 fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: String, subject: String,
         server: String, port: u16, my_hostname: String, number: u16) -> SmtpResult {
@@ -39,14 +37,14 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
                          .subject(subject.as_slice())
                          .build();
 
-    let mut client: Client<TcpStream> = ClientBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
+    let mut sender: Sender<TcpStream> = SenderBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
         .enable_connection_reuse(true).build();
 
     for _ in range(1, number) {
-        let _ = client.send(email.clone());
+        let _ = sender.send(email.clone());
     }
-    let result = client.send(email);
-    client.close();
+    let result = sender.send(email);
+    sender.close();
 
     result
 }

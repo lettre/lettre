@@ -23,6 +23,13 @@
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
+//! ## Architecture
+//!
+//! This client is divided into three parts:
+//! * `client`: a low level SMTP client providing all SMTP commands
+//! * `sender`: a high level SMTP client providing an easy method to send emails
+//! * `mailer`: generates the email to be sent with `sender`
+//!
 //! ## Usage
 //!
 //! ### Simple example
@@ -30,7 +37,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use smtp::client::{Client, ClientBuilder};
+//! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::mailer::EmailBuilder;
 //! use std::net::TcpStream;
 //!
@@ -45,9 +52,9 @@
 //!     .build();
 //!
 //! // Open a local connection on port 25
-//! let mut client: Client<TcpStream> = ClientBuilder::localhost().build();
+//! let mut sender: Sender<TcpStream> = SenderBuilder::localhost().build();
 //! // Send the email
-//! let result = client.send(email);
+//! let result = sender.send(email);
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -55,7 +62,7 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! use smtp::client::{Client, ClientBuilder};
+//! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::mailer::EmailBuilder;
 //! use std::net::TcpStream;
 //!
@@ -73,21 +80,21 @@
 //! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut client: Client<TcpStream> = ClientBuilder::new(("server.tld", 10025))
+//! let mut sender: Sender<TcpStream> = SenderBuilder::new(("server.tld", 10025))
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
 //!     // Enable connection reuse
 //!     .enable_connection_reuse(true).build();
-//! let result_1 = client.send(email.clone());
+//! let result_1 = sender.send(email.clone());
 //! assert!(result_1.is_ok());
 //! // The second email will use the same connection
-//! let result_2 = client.send(email);
+//! let result_2 = sender.send(email);
 //! assert!(result_2.is_ok());
 //!
 //! // Explicitely close the SMTP transaction as we enabled connection reuse
-//! client.close();
+//! sender.close();
 //! ```
 //!
 //! ### Using the client directly
@@ -95,7 +102,7 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! use smtp::client::{Client, ClientBuilder};
+//! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::sendable_email::SimpleSendableEmail;
 //! use std::net::TcpStream;
 //!
@@ -106,8 +113,8 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut client: Client<TcpStream> = ClientBuilder::localhost().build();
-//! let result = client.send(email);
+//! let mut sender: Sender<TcpStream> = SenderBuilder::localhost().build();
+//! let result = sender.send(email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -116,14 +123,14 @@
 //! You can also send commands, here is a simple email transaction without error handling:
 //!
 //! ```rust,no_run
-//! use smtp::client::{Client, ClientBuilder};
+//! use smtp::client::Client;
 //! use smtp::SMTP_PORT;
 //! use std::net::TcpStream;
 //!
-//! let mut email_client: Client<TcpStream> = ClientBuilder::new(("localhost", SMTP_PORT)).build();
+//! let mut email_client: Client<TcpStream> = Client::new(("localhost", SMTP_PORT));
 //! let _ = email_client.connect();
-//! let _ = email_client.ehlo();
-//! let _ = email_client.mail("user@example.com");
+//! let _ = email_client.ehlo("my_hostname");
+//! let _ = email_client.mail("user@example.com", None);
 //! let _ = email_client.rcpt("user@example.org");
 //! let _ = email_client.data();
 //! let _ = email_client.message("Test email");
@@ -143,6 +150,7 @@ extern crate uuid;
 mod tools;
 mod extension;
 pub mod client;
+pub mod sender;
 pub mod response;
 pub mod error;
 pub mod sendable_email;

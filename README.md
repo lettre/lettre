@@ -28,10 +28,10 @@ There is an example command-line program included:
 ```sh
 $ cargo test
 $ env RUST_LOG=info cargo run --example client -- -s "My subject" -r sender@localhost recipient@localhost < email.txt
-INFO:smtp::client: connection established to 127.0.0.1:25
-INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: from=<sender@localhost>
-INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: to=<recipient@localhost>
-INFO:smtp::client: 1d0467fb21b2454f90a85dd1e0eda839: conn_use=1, size=1889, status=sent (250 2.0.0 Ok: queued as BAA9C1C0055)
+INFO:smtp::sender: connection established to 127.0.0.1:25
+INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: from=<sender@localhost>
+INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: to=<recipient@localhost>
+INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: conn_use=1, size=1889, status=sent (2.0.0 Ok: queued as BAA9C1C0055)
 INFO:client: Email sent successfully
 ```
 
