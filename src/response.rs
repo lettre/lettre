@@ -222,4 +222,123 @@ mod test {
     fn test_category_fmt() {
         assert_eq!(format!("{}", Category::Unspecified4).as_slice(), "4");
     }
+
+    #[test]
+    fn test_response_new() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ), Response {
+            severity: Severity::PositiveCompletion,
+            category: Category::Unspecified4,
+            detail: 1,
+            message: vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()],
+        });
+    }
+
+    #[test]
+    fn test_response_is_positive() {
+        assert!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).is_positive());
+        assert!(! Response::new(
+            "4".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).is_positive());
+    }
+
+    #[test]
+    fn test_response_message() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).message(), vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
+    }
+
+    #[test]
+    fn test_response_severity() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).severity(), Severity::PositiveCompletion);
+    }
+
+    #[test]
+    fn test_response_category() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).category(), Category::Unspecified4);
+    }
+
+    #[test]
+    fn test_response_detail() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).detail(), 1);
+    }
+
+    #[test]
+    fn test_response_code() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).code(), "241");
+    }
+
+    #[test]
+    fn test_response_has_code() {
+        assert!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).has_code(241));
+        assert!(! Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).has_code(251));
+    }
+
+    #[test]
+    fn test_response_first_word() {
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).first_word(), Some("me".to_string()));
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me mo".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).first_word(), Some("me".to_string()));
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec![]
+        ).first_word(), None);
+    }
 }

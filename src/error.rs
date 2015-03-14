@@ -83,3 +83,8 @@ impl FromError<&'static str> for SmtpError {
 
 /// SMTP result type
 pub type SmtpResult = Result<Response, SmtpError>;
+
+#[cfg(test)]
+mod test {
+    // TODO
+}

@@ -79,6 +79,7 @@ impl Extension {
 #[cfg(test)]
 mod test {
     use super::Extension;
+    use response::{Severity, Category, Response};
 
     #[test]
     fn test_from_str() {
@@ -89,17 +90,19 @@ mod test {
         assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec![Extension::PlainAuthentication, Extension::CramMd5Authentication]));
     }
 
-    // #[test]
-    // fn test_parse_esmtp_response() {
-    //     assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 SIZE 42"),
-    //         vec![Extension::EightBitMime]);
-    //     assert_eq!(Extension::parse_esmtp_response("me\r\n250-8BITMIME\r\n250 AUTH PLAIN CRAM-MD5\r\n250 UNKNON 42"),
-    //         vec![Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication]);
-    //     assert_eq!(Extension::parse_esmtp_response("me\r\n250-9BITMIME\r\n250 SIZE a"),
-    //         vec![]);
-    //     assert_eq!(Extension::parse_esmtp_response("me\r\n250-SIZE 42\r\n250 SIZE 43"),
-    //         vec![]);
-    //     assert_eq!(Extension::parse_esmtp_response(""),
-    //         vec![]);
-    // }
+    #[test]
+    fn test_parse_esmtp_response() {
+        assert_eq!(Extension::parse_esmtp_response(&Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "2".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        )), vec![Extension::EightBitMime]);
+        assert_eq!(Extension::parse_esmtp_response(&Response::new(
+            "4".parse::<Severity>().unwrap(),
+            "3".parse::<Category>().unwrap(),
+            3,
+            vec!["me".to_string(), "8BITMIME".to_string(), "AUTH PLAIN CRAM-MD5".to_string()]
+        )), vec![Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication]);
+    }
 }

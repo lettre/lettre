@@ -13,8 +13,8 @@ use time::Tm;
 
 use std::fmt::{Display, Formatter, Result};
 
-use tools::{SP, COLON};
 use mailer::address::Address;
+use {COLON, SP};
 
 /// Converts to an `Header`
 pub trait ToHeader {

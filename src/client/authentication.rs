@@ -15,7 +15,7 @@ use crypto::hmac::Hmac;
 use crypto::md5::Md5;
 use crypto::mac::Mac;
 
-use tools::NUL;
+use NUL;
 
 /// Returns a PLAIN mecanism response
 pub fn plain(username: &str, password: &str) -> String {

@@ -15,8 +15,8 @@ use time::{now, Tm};
 
 use mailer::header::{ToHeader, Header};
 use mailer::address::ToAddress;
-use tools::CRLF;
 use sendable_email::SendableEmail;
+use CRLF;
 
 pub mod header;
 pub mod address;

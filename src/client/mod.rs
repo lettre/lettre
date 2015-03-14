@@ -15,15 +15,33 @@ use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io::{BufRead, BufStream, Read, Write};
 
-use tools::{CRLF, MESSAGE_ENDING};
-use tools::{escape_dot, escape_crlf};
 use response::{Response, Severity, Category};
 use error::SmtpResult;
 use client::connecter::Connecter;
 use client::authentication::{plain, cram_md5};
+use {CRLF, MESSAGE_ENDING};
 
 pub mod connecter;
 mod authentication;
+
+/// Returns the string after adding a dot at the beginning of each line starting with a dot
+///
+/// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
+#[inline]
+fn escape_dot(string: &str) -> String {
+    if string.starts_with(".") {
+        format!(".{}", string)
+    } else {
+        string.to_string()
+    }.replace("\r.", "\r..")
+     .replace("\n.", "\n..")
+}
+
+/// Returns the string replacing all the CRLF with "\<CRLF\>"
+#[inline]
+fn escape_crlf(string: &str) -> String {
+    string.replace(CRLF, "<CR><LF>")
+}
 
 /// Structure that implements the SMTP client
 pub struct Client<S = TcpStream> {
@@ -208,5 +226,28 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
             true => Ok(response),
             false => Err(FromError::from_error(response)),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::{escape_dot, escape_crlf};
+
+    #[test]
+    fn test_escape_dot() {
+        assert_eq!(escape_dot(".test").as_slice(), "..test");
+        assert_eq!(escape_dot("\r.\n.\r\n").as_slice(), "\r..\n..\r\n");
+        assert_eq!(escape_dot("test\r\n.test\r\n").as_slice(), "test\r\n..test\r\n");
+        assert_eq!(escape_dot("test\r\n.\r\ntest").as_slice(), "test\r\n..\r\ntest");
+    }
+
+    #[test]
+    fn test_escape_crlf() {
+        assert_eq!(escape_crlf("\r\n").as_slice(), "<CR><LF>");
+        assert_eq!(escape_crlf("EHLO my_name\r\n").as_slice(), "EHLO my_name<CR><LF>");
+        assert_eq!(
+            escape_crlf("EHLO my_name\r\nSIZE 42\r\n").as_slice(),
+            "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
+        );
     }
 }
