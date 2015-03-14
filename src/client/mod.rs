@@ -102,25 +102,25 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
     /// Send a HELO command and fills `server_info`
     pub fn helo(&mut self, hostname: &str) -> SmtpResult {
-        self.command(format!("HELO {}", hostname).as_slice())
+        self.command(&format!("HELO {}", hostname))
     }
 
     /// Sends a EHLO command and fills `server_info`
     pub fn ehlo(&mut self, hostname: &str) -> SmtpResult {
-        self.command(format!("EHLO {}", hostname).as_slice())
+        self.command(&format!("EHLO {}", hostname))
     }
 
     /// Sends a MAIL command
     pub fn mail(&mut self, address: &str, options: Option<&str>) -> SmtpResult {
         match options {
-            Some(ref options) => self.command(format!("MAIL FROM:<{}> {}", address, options).as_slice()),
-            None => self.command(format!("MAIL FROM:<{}>", address).as_slice()),
+            Some(ref options) => self.command(&format!("MAIL FROM:<{}> {}", address, options)),
+            None => self.command(&format!("MAIL FROM:<{}>", address)),
         }
     }
 
     /// Sends a RCPT command
     pub fn rcpt(&mut self, address: &str) -> SmtpResult {
-        self.command(format!("RCPT TO:<{}>", address).as_slice())
+        self.command(&format!("RCPT TO:<{}>", address))
     }
 
     /// Sends a DATA command
@@ -141,19 +141,19 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
     /// Sends a HELP command
     pub fn help(&mut self, argument: Option<&str>) -> SmtpResult {
         match argument {
-            Some(ref argument) => self.command(format!("HELP {}", argument).as_slice()),
+            Some(ref argument) => self.command(&format!("HELP {}", argument)),
             None => self.command("HELP"),
         }
     }
 
     /// Sends a VRFY command
     pub fn vrfy(&mut self, address: &str) -> SmtpResult {
-        self.command(format!("VRFY {}", address).as_slice())
+        self.command(&format!("VRFY {}", address))
     }
 
     /// Sends a EXPN command
     pub fn expn(&mut self, address: &str) -> SmtpResult {
-        self.command(format!("EXPN {}", address).as_slice())
+        self.command(&format!("EXPN {}", address))
     }
 
     /// Sends a RSET command
@@ -163,18 +163,18 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
     /// Sends an AUTH command with PLAIN mecanism
     pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
-        self.command(format!("AUTH PLAIN {}", plain(username, password)).as_slice())
+        self.command(&format!("AUTH PLAIN {}", plain(username, password)))
     }
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
     pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
         let encoded_challenge = try!(self.command("AUTH CRAM-MD5")).first_word().expect("No challenge");
-        self.command(format!("AUTH CRAM-MD5 {}", cram_md5(username, password, encoded_challenge.as_slice())).as_slice())
+        self.command(&format!("AUTH CRAM-MD5 {}", cram_md5(username, password, &encoded_challenge)))
     }
 
     /// Sends the message content and close
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
-        self.send_server(escape_dot(message_content).as_slice(), MESSAGE_ENDING)
+        self.send_server(&escape_dot(message_content), MESSAGE_ENDING)
     }
 
     /// Sends a string to the server and gets the response

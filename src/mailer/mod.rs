@@ -47,7 +47,7 @@ impl Display for Email {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let mut formatted_headers = String::new();
         for header in self.headers.iter() {
-            formatted_headers.push_str(format! ("{}", header) .as_slice());
+            formatted_headers.push_str(&format! ("{}", header));
             formatted_headers.push_str(CRLF);
         }
         write! (f, "{}{}{}", formatted_headers, CRLF, self.body)

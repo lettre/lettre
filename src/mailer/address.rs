@@ -50,7 +50,7 @@ pub struct Address {
 impl Display for Address {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write! (f, "{}", match self.alias {
-            Some(ref alias_string) => format!("{}{}<{}>", alias_string, SP, self.address.as_slice()),
+            Some(ref alias_string) => format!("{}{}<{}>", alias_string, SP, &self.address),
             None => self.address.clone(),
         })
     }

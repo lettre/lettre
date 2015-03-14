@@ -67,7 +67,7 @@ impl Extension {
         let mut esmtp_features: Vec<Extension> = Vec::new();
 
         for line in response.message() {
-            if let Ok(keywords) = Extension::from_str(line.as_slice()) {
+            if let Ok(keywords) = Extension::from_str(&line) {
                 esmtp_features.push_all(&keywords);
             };
         }

@@ -181,7 +181,7 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
             info!("connection established to {}", self.client_info.server_addr);
 
             // Extended Hello or Hello if needed
-            match self.client.ehlo(self.client_info.hello_name.as_slice()) {
+            match self.client.ehlo(&self.client_info.hello_name) {
                 Ok(response) => {self.server_info = Some(
                     ServerInfo{
                         name: response.first_word().expect("Server announced no hostname"),
@@ -190,7 +190,7 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
                 },
                 Err(error) => match error {
                     SmtpError::PermanentError(ref response) if response.has_code(550) => {
-                        match self.client.helo(self.client_info.hello_name.as_slice()) {
+                        match self.client.helo(&self.client_info.hello_name) {
                             Ok(response) => {self.server_info = Some(
                                 ServerInfo{
                                     name: response.first_word().expect("Server announced no hostname"),
@@ -217,12 +217,10 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
             let (username, password) = self.client_info.credentials.clone().unwrap();
 
             if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication) {
-                let result = self.client.auth_cram_md5(username.as_slice(),
-                                                password.as_slice());
+                let result = self.client.auth_cram_md5(&username, &password);
                 try_smtp!(result, self);
             } else if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication) {
-                let result = self.client.auth_plain(username.as_slice(),
-                                             password.as_slice());
+                let result = self.client.auth_plain(&username, &password);
                 try_smtp!(result, self);
             } else {
                 debug!("No supported authentication mecanisms available");
@@ -243,14 +241,14 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
             false => None,
         };
 
-        try_smtp!(self.client.mail(from_address.as_slice(), mail_options), self);
+        try_smtp!(self.client.mail(&from_address, mail_options), self);
 
         // Log the mail command
         info!("{}: from=<{}>", current_message, from_address);
 
         // Recipient
         for to_address in to_addresses.iter() {
-            try_smtp!(self.client.rcpt(to_address.as_slice()), self);
+            try_smtp!(self.client.rcpt(&to_address), self);
             // Log the rcpt command
             info!("{}: to=<{}>", current_message, to_address);
         }
@@ -259,7 +257,7 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
         try_smtp!(self.client.data(), self);
 
         // Message content
-        let result = self.client.message(message.as_slice());
+        let result = self.client.message(&message);
 
         if result.is_ok() {
             // Increment the connection reuse counter

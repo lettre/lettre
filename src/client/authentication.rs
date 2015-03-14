@@ -28,7 +28,7 @@ pub fn cram_md5(username: &str, password: &str, encoded_challenge: &str) -> Stri
     let challenge = encoded_challenge.from_base64().unwrap();
 
     let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
-    hmac.input(challenge.as_slice());
+    hmac.input(&challenge);
 
     format!("{} {}", username, hmac.result().code().to_hex()).as_bytes().to_base64(base64::STANDARD)
 }
