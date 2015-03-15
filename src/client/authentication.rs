@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Provides authentications functions
+//! Provides authentication functions
 
 use serialize::base64::{self, ToBase64, FromBase64};
 use serialize::hex::ToHex;

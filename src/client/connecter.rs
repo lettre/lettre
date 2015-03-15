@@ -7,15 +7,15 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! TODO
+//! A trait to represent a connected stream
 
 use std::io;
 use std::net::SocketAddr;
 use std::net::TcpStream;
 
-/// A trait for the concept of opening a stream connected to a IP socket address.
+/// A trait for the concept of opening a stream
 pub trait Connecter {
-    /// TODO
+    /// Opens a connection to the given IP socket
     fn connect(addr: &SocketAddr) -> io::Result<Self>;
 }
 
