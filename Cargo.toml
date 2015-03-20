@@ -6,6 +6,7 @@ description = "Simple SMTP client"
 readme = "README.md"
 documentation = "http://amousset.github.io/rust-smtp/smtp/"
 repository = "https://github.com/amousset/rust-smtp"
+homepage = "https://github.com/amousset/rust-smtp"
 license = "MIT/Apache-2.0"
 authors = ["Alexis Mousset <contact@amousset.me>"]
 keywords = ["email", "smtp", "mailer"]

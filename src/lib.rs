@@ -140,7 +140,7 @@
 //! let _ = email_client.quit();
 //! ```
 
-#![feature(plugin, core, io, collections, net, str_words)]
+#![feature(plugin, core, collections, str_words)]
 #![deny(missing_docs)]
 
 #[macro_use] extern crate log;

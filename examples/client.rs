@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(core, old_io, net, rustc_private, collections)]
+#![feature(core, old_io, rustc_private, collections)]
 
 #[macro_use]
 extern crate log;
@@ -40,7 +40,7 @@ fn sendmail(source_address: String, recipient_addresses: Vec<String>, message: S
     let mut sender: Sender<TcpStream> = SenderBuilder::new((server.as_slice(), port)).hello_name(my_hostname.as_slice())
         .enable_connection_reuse(true).build();
 
-    for _ in range(1, number) {
+    for _ in (1..number) {
         let _ = sender.send(email.clone());
     }
     let result = sender.send(email);
