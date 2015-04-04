@@ -4,11 +4,6 @@ rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=m
 This library implements a simple SMTP client.
 See the [documentation](http://amousset.github.io/rust-smtp/smtp/) for more information.
 
-Rust versions
--------------
-
-This library is designed for Rust 1.0.0-nightly (master).
-
 Install
 -------
 
@@ -18,24 +13,6 @@ To use this library, add the following to your `Cargo.toml`:
 [dependencies]
 smtp = "*"
 ```
-
-Otherwise, you can clone this repository and run `cargo build`.
-
-Example
--------
-
-There is an example command-line program included:
-```sh
-$ cargo test
-$ env RUST_LOG=info cargo run --example client -- -s "My subject" -r sender@localhost recipient@localhost < email.txt
-INFO:smtp::sender: connection established to 127.0.0.1:25
-INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: from=<sender@localhost>
-INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: to=<recipient@localhost>
-INFO:smtp::sender: 1d0467fb21b2454f90a85dd1e0eda839: conn_use=1, size=1889, status=sent (2.0.0 Ok: queued as BAA9C1C0055)
-INFO:client: Email sent successfully
-```
-
-Run `cargo run --example client -- -h` to get a list of available options.
 
 Tests
 -----

@@ -1,7 +1,7 @@
 [package]
 
 name = "smtp"
-version = "0.0.10"
+version = "0.0.11"
 description = "Simple SMTP client"
 readme = "README.md"
 documentation = "http://amousset.github.io/rust-smtp/smtp/"
@@ -15,6 +15,8 @@ keywords = ["email", "smtp", "mailer"]
 time = "*"
 uuid = "*"
 log = "*"
-env_logger = "*"
 rustc-serialize = "*"
 rust-crypto = "*"
+
+[dev-dependencies]
+env_logger = "*"
