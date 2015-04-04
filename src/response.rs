@@ -189,7 +189,7 @@ impl Response {
     pub fn first_word(&self) -> Option<String> {
         match self.message.is_empty() {
             true => None,
-            false => Some(self.message[0].words().next().unwrap().to_string())
+            false => Some(self.message[0].split(" ").next().unwrap().to_string()),
         }
 
     }

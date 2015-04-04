@@ -74,6 +74,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
+        self.stream = None;
     }
 
     /// Connects to the configured server

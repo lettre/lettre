@@ -68,7 +68,9 @@ impl Extension {
 
         for line in response.message() {
             if let Ok(keywords) = Extension::from_str(&line) {
-                esmtp_features.push_all(&keywords);
+                for keyword in keywords {
+                    esmtp_features.push(keyword);
+                }
             };
         }
 

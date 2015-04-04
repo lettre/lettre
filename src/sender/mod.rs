@@ -121,7 +121,7 @@ macro_rules! try_smtp (
             Err(err) => {
                 if !$client.state.panic {
                     $client.state.panic = true;
-                    $client.client.close();
+                    $client.reset();
                 }
                 return Err(err)
             },
@@ -265,10 +265,8 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
 
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})", current_message,
-                self.state.connection_reuse_count, message.len(), match result.as_ref().ok().unwrap().message().as_ref() {
-                    [ref line, ..] => line.as_ref(),
-                    [] => "no response",
-                }
+                self.state.connection_reuse_count, message.len(),
+                result.as_ref().ok().unwrap().message().iter().next().unwrap_or(&"no response".to_string())
             );
         }
 
