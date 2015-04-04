@@ -208,7 +208,7 @@ mod test {
 
     #[test]
     fn test_severity_fmt() {
-        assert_eq!(format!("{}", Severity::PositiveCompletion).as_slice(), "2");
+        assert_eq!(format!("{}", Severity::PositiveCompletion), "2");
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod test {
 
     #[test]
     fn test_category_fmt() {
-        assert_eq!(format!("{}", Category::Unspecified4).as_slice(), "4");
+        assert_eq!(format!("{}", Category::Unspecified4), "4");
     }
 
     #[test]

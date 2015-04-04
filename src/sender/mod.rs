@@ -102,7 +102,7 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
-pub struct Sender<S = TcpStream> {
+pub struct Sender<S: Write + Read = TcpStream> {
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
@@ -129,7 +129,7 @@ macro_rules! try_smtp (
     })
 );
 
-impl<S = TcpStream> Sender<S> {
+impl<S: Write + Read = TcpStream> Sender<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Sender`
@@ -265,8 +265,8 @@ impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
 
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})", current_message,
-                self.state.connection_reuse_count, message.len(), match result.as_ref().ok().unwrap().message().as_slice() {
-                    [ref line, ..] => line.as_slice(),
+                self.state.connection_reuse_count, message.len(), match result.as_ref().ok().unwrap().message().as_ref() {
+                    [ref line, ..] => line.as_ref(),
                     [] => "no response",
                 }
             );

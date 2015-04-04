@@ -39,13 +39,13 @@ mod test {
 
     #[test]
     fn test_plain() {
-        assert_eq!(plain("username", "password").as_slice(), "AHVzZXJuYW1lAHBhc3N3b3Jk");
+        assert_eq!(plain("username", "password"), "AHVzZXJuYW1lAHBhc3N3b3Jk");
     }
 
     #[test]
     fn test_cram_md5() {
         assert_eq!(cram_md5("alice", "wonderland",
-            "PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==").as_slice(),
+            "PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
             "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
     }
 }

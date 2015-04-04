@@ -11,7 +11,6 @@
 
 use std::error::Error;
 use std::io;
-use std::error::FromError;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
@@ -19,7 +18,7 @@ use response::{Severity, Response};
 use self::SmtpError::*;
 
 /// An enum of all error kinds.
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(Debug)]
 pub enum SmtpError {
     /// Transient error, 4xx reply code
     ///
@@ -59,14 +58,14 @@ impl Error for SmtpError {
     }
 }
 
-impl FromError<io::Error> for SmtpError {
-    fn from_error(err: io::Error) -> SmtpError {
+impl From<io::Error> for SmtpError {
+    fn from(err: io::Error) -> SmtpError {
         IoError(err)
     }
 }
 
-impl FromError<Response> for SmtpError {
-    fn from_error(response: Response) -> SmtpError {
+impl From<Response> for SmtpError {
+    fn from(response: Response) -> SmtpError {
         match response.severity() {
             Severity::TransientNegativeCompletion => TransientError(response),
             Severity::PermanentNegativeCompletion => PermanentError(response),
@@ -75,8 +74,8 @@ impl FromError<Response> for SmtpError {
     }
 }
 
-impl FromError<&'static str> for SmtpError {
-    fn from_error(string: &'static str) -> SmtpError {
+impl From<&'static str> for SmtpError {
+    fn from(string: &'static str) -> SmtpError {
         ClientError(string.to_string())
     }
 }

@@ -140,11 +140,11 @@
 //! let _ = email_client.quit();
 //! ```
 
-#![feature(plugin, core, collections, str_words)]
+#![feature(plugin, collections, str_words, slice_patterns)]
 #![deny(missing_docs)]
 
 #[macro_use] extern crate log;
-extern crate "rustc-serialize" as serialize;
+extern crate rustc_serialize as serialize;
 extern crate crypto;
 extern crate time;
 extern crate uuid;

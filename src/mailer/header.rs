@@ -76,7 +76,7 @@ impl Display for Header {
             Header::MimeVersion => "MIME-Version",
             Header::ContentType(_) => "Content-Type",
             Header::MessageId(_) => "Message-Id",
-            Header::Other(ref name, _) => name.as_slice(),
+            Header::Other(ref name, _) => name.as_ref(),
         },
         COLON, SP,
         match *self {

@@ -10,7 +10,6 @@
 //! SMTP client
 
 use std::string::String;
-use std::error::FromError;
 use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io::{BufRead, BufStream, Read, Write};
@@ -44,7 +43,7 @@ fn escape_crlf(string: &str) -> String {
 }
 
 /// Structure that implements the SMTP client
-pub struct Client<S = TcpStream> {
+pub struct Client<S: Write + Read = TcpStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<BufStream<S>>,
@@ -55,11 +54,11 @@ pub struct Client<S = TcpStream> {
 
 macro_rules! return_err (
     ($err: expr, $client: ident) => ({
-        return Err(FromError::from_error($err))
+        return Err(From::from($err))
     })
 );
 
-impl<S = TcpStream> Client<S> {
+impl<S: Write + Read = TcpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
@@ -180,7 +179,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
     /// Sends a string to the server and gets the response
     fn send_server(&mut self, string: &str, end: &str) -> SmtpResult {
         if self.stream.is_none() {
-            return Err(FromError::from_error("Connection closed"));
+            return Err(From::from("Connection closed"));
         }
 
         try!(write!(self.stream.as_mut().unwrap(), "{}{}", string, end));
@@ -198,12 +197,12 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
         // If the string is too short to be a response code
         if line.len() < 3 {
-            return Err(FromError::from_error("Could not parse reply code, line too short"));
+            return Err(From::from("Could not parse reply code, line too short"));
         }
 
         let (severity, category, detail) =  match (line[0..1].parse::<Severity>(), line[1..2].parse::<Category>(), line[2..3].parse::<u8>()) {
             (Ok(severity), Ok(category), Ok(detail)) => (severity, category, detail),
-            _ => return Err(FromError::from_error("Could not parse reply code")),
+            _ => return Err(From::from("Could not parse reply code")),
         };
 
         let mut message = Vec::new();
@@ -224,7 +223,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
 
         match response.is_positive() {
             true => Ok(response),
-            false => Err(FromError::from_error(response)),
+            false => Err(From::from(response)),
         }
     }
 }
@@ -235,18 +234,18 @@ mod test {
 
     #[test]
     fn test_escape_dot() {
-        assert_eq!(escape_dot(".test").as_slice(), "..test");
-        assert_eq!(escape_dot("\r.\n.\r\n").as_slice(), "\r..\n..\r\n");
-        assert_eq!(escape_dot("test\r\n.test\r\n").as_slice(), "test\r\n..test\r\n");
-        assert_eq!(escape_dot("test\r\n.\r\ntest").as_slice(), "test\r\n..\r\ntest");
+        assert_eq!(escape_dot(".test"), "..test");
+        assert_eq!(escape_dot("\r.\n.\r\n"), "\r..\n..\r\n");
+        assert_eq!(escape_dot("test\r\n.test\r\n"), "test\r\n..test\r\n");
+        assert_eq!(escape_dot("test\r\n.\r\ntest"), "test\r\n..\r\ntest");
     }
 
     #[test]
     fn test_escape_crlf() {
-        assert_eq!(escape_crlf("\r\n").as_slice(), "<CR><LF>");
-        assert_eq!(escape_crlf("EHLO my_name\r\n").as_slice(), "EHLO my_name<CR><LF>");
+        assert_eq!(escape_crlf("\r\n"), "<CR><LF>");
+        assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CR><LF>");
         assert_eq!(
-            escape_crlf("EHLO my_name\r\nSIZE 42\r\n").as_slice(),
+            escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
             "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
         );
     }
