@@ -118,23 +118,6 @@ pub struct Response {
     message: Vec<String>
 }
 
-impl Display for Response {
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        let code = self.code();
-        for line in self.message[..-1].iter() {
-            let _ = write!(f, "{}-{}",
-                code,
-                line
-            );
-        }
-        write!(f, "{} {}",
-            code,
-            self.message[-1]
-        )
-
-    }
-}
-
 impl Response {
     /// Creates a new `Response`
     pub fn new(severity: Severity, category: Category, detail: u8, message: Vec<String>) -> Response {
@@ -236,6 +219,17 @@ mod test {
             detail: 1,
             message: vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()],
         });
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec![]
+        ), Response {
+            severity: Severity::PositiveCompletion,
+            category: Category::Unspecified4,
+            detail: 1,
+            message: vec![],
+        });
     }
 
     #[test]
@@ -262,6 +256,13 @@ mod test {
             1,
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).message(), vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
+        let empty_message: Vec<String> = vec![];
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec![]
+        ).message(), empty_message);
     }
 
     #[test]
