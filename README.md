@@ -1,4 +1,4 @@
-rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp)
+rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![](https://meritbadge.herokuapp.com/smtp)](https://crates.io/crates/smtp)
 =========
 
 This library implements a simple SMTP client.
