@@ -10,9 +10,7 @@
 //! Sends an email using the client
 
 use std::string::String;
-use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::io::{Read, Write};
 
 use uuid::Uuid;
 
@@ -22,7 +20,7 @@ use error::{SmtpResult, SmtpError};
 use sendable_email::SendableEmail;
 use sender::server_info::ServerInfo;
 use client::Client;
-use client::connecter::Connecter;
+use client::net::SmtpStream;
 
 mod server_info;
 
@@ -87,7 +85,7 @@ impl SenderBuilder {
     /// Build the SMTP client
     ///
     /// It does not connects to the server, but only creates the `Sender`
-    pub fn build<S: Connecter + Read + Write>(self) -> Sender<S> {
+    pub fn build(self) -> Sender {
         Sender::new(self)
     }
 }
@@ -102,7 +100,7 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
-pub struct Sender<S: Write + Read = TcpStream> {
+pub struct Sender {
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
@@ -111,7 +109,7 @@ pub struct Sender<S: Write + Read = TcpStream> {
     /// Information about the client
     client_info: SenderBuilder,
     /// Low level client
-    client: Client<S>,
+    client: Client<SmtpStream>,
 }
 
 macro_rules! try_smtp (
@@ -129,12 +127,12 @@ macro_rules! try_smtp (
     })
 );
 
-impl<S: Write + Read = TcpStream> Sender<S> {
+impl Sender {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Sender`
-    pub fn new(builder: SenderBuilder) -> Sender<S> {
-        let client: Client<S> = Client::new(builder.server_addr);
+    pub fn new(builder: SenderBuilder) -> Sender {
+        let client: Client<SmtpStream> = Client::new(builder.server_addr);
         Sender{
             client: client,
             server_info: None,
@@ -145,9 +143,7 @@ impl<S: Write + Read = TcpStream> Sender<S> {
             },
         }
     }
-}
 
-impl<S: Connecter + Write + Read = TcpStream> Sender<S> {
     /// Reset the client state
     fn reset(&mut self) {
         // Close the SMTP transaction if needed

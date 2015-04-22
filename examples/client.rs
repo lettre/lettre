@@ -28,7 +28,7 @@ fn main() {
                          .subject("Hello")
                          .build();
 
-    let mut sender: Sender<TcpStream> = SenderBuilder::localhost().hello_name("localhost")
+    let mut sender: Sender = SenderBuilder::localhost().hello_name("localhost")
         .enable_connection_reuse(true).build();
 
     for _ in (1..5) {

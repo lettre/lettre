@@ -40,7 +40,6 @@
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::mailer::EmailBuilder;
-//! use std::net::TcpStream;
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
@@ -53,7 +52,7 @@
 //!     .build();
 //!
 //! // Open a local connection on port 25
-//! let mut sender: Sender<TcpStream> = SenderBuilder::localhost().build();
+//! let mut sender = SenderBuilder::localhost().build();
 //! // Send the email
 //! let result = sender.send(email);
 //!
@@ -65,7 +64,6 @@
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::mailer::EmailBuilder;
-//! use std::net::TcpStream;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -81,7 +79,7 @@
 //! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut sender: Sender<TcpStream> = SenderBuilder::new(("server.tld", 10025))
+//! let mut sender = SenderBuilder::new(("server.tld", 10025))
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
@@ -107,7 +105,6 @@
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::sendable_email::SimpleSendableEmail;
-//! use std::net::TcpStream;
 //!
 //! // Create a minimal email
 //! let email = SimpleSendableEmail::new(
@@ -116,7 +113,7 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut sender: Sender<TcpStream> = SenderBuilder::localhost().build();
+//! let mut sender = SenderBuilder::localhost().build();
 //! let result = sender.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -127,10 +124,11 @@
 //!
 //! ```rust,no_run
 //! use smtp::client::Client;
+//! use smtp::client::net::SmtpStream;
 //! use smtp::SMTP_PORT;
 //! use std::net::TcpStream;
 //!
-//! let mut email_client: Client<TcpStream> = Client::new(("localhost", SMTP_PORT));
+//! let mut email_client: Client<SmtpStream> = Client::new(("localhost", SMTP_PORT));
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo("my_hostname");
 //! let _ = email_client.mail("user@example.com", None);

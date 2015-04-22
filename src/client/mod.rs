@@ -10,17 +10,16 @@
 //! SMTP client
 
 use std::string::String;
-use std::net::TcpStream;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::io::{BufRead, BufStream, Read, Write};
 
 use response::{Response, Severity, Category};
 use error::SmtpResult;
-use client::connecter::Connecter;
+use client::net::{Connector, SmtpStream};
 use client::authentication::{plain, cram_md5};
 use {CRLF, MESSAGE_ENDING};
 
-pub mod connecter;
+pub mod net;
 mod authentication;
 
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
@@ -43,7 +42,7 @@ fn escape_crlf(string: &str) -> String {
 }
 
 /// Structure that implements the SMTP client
-pub struct Client<S: Write + Read = TcpStream> {
+pub struct Client<S: Write + Read = SmtpStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<BufStream<S>>,
@@ -58,7 +57,7 @@ macro_rules! return_err (
     })
 );
 
-impl<S: Write + Read = TcpStream> Client<S> {
+impl<S: Write + Read = SmtpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
@@ -70,7 +69,7 @@ impl<S: Write + Read = TcpStream> Client<S> {
     }
 }
 
-impl<S: Connecter + Write + Read = TcpStream> Client<S> {
+impl<S: Connector + Write + Read = SmtpStream> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
@@ -85,7 +84,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
         }
 
         // Try to connect
-        self.stream = Some(BufStream::new(try!(Connecter::connect(&self.server_addr))));
+        self.stream = Some(BufStream::new(try!(Connector::connect(&self.server_addr))));
 
         self.get_reply()
     }
@@ -172,7 +171,7 @@ impl<S: Connecter + Write + Read = TcpStream> Client<S> {
         self.command(&format!("AUTH CRAM-MD5 {}", cram_md5(username, password, &encoded_challenge)))
     }
 
-    /// Sends the message content and close
+    /// Sends the message content
     pub fn message(&mut self, message_content: &str) -> SmtpResult {
         self.send_server(&escape_dot(message_content), MESSAGE_ENDING)
     }
