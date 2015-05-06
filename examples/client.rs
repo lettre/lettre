@@ -12,8 +12,6 @@ extern crate log;
 extern crate env_logger;
 extern crate smtp;
 
-use std::net::TcpStream;
-
 use smtp::sender::{Sender, SenderBuilder};
 use smtp::mailer::EmailBuilder;
 
