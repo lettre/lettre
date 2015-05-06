@@ -1,16 +1,18 @@
 language: rust
+sudo: required
 
 rust:
   - 1.0.0-beta.4
-
-after_success: |
-  [ $TRAVIS_BRANCH = master ] &&
-  [ $TRAVIS_PULL_REQUEST = false ] &&
-  cargo doc &&
-  echo '<meta http-equiv=refresh content=0;url=smtp/index.html>' > target/doc/index.html &&
-  sudo pip install ghp-import &&
-  ghp-import -n target/doc &&
-  git push -fq https://${TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+before_script:
+  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+script:
+  - |
+      travis-cargo build &&
+      travis-cargo test &&
+      travis-cargo doc
+after_success:
+  - travis-cargo doc-upload
+  - travis-cargo coveralls
 
 env:
   global:
