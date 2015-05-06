@@ -1,7 +1,6 @@
 language: rust
 
 rust:
-  - nightly
   - 1.0.0-beta.4
 
 after_success: |
