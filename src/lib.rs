@@ -138,6 +138,7 @@
 //! let _ = email_client.quit();
 //! ```
 
+#![feature(buf_stream)]
 #![deny(missing_docs)]
 
 #[macro_use] extern crate log;
