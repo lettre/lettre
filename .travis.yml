@@ -16,5 +16,4 @@ after_success:
 
 env:
   global:
-    - TRAVIS_CARGO_NIGHTLY_FEATURE=nightly
-    - secure: m8BXCWDfBh0Hkajp7+KdSFP65q3gUuJWJSb+W6BtAzWNxIuAwTgtm3Ja3gwwlko+XSOO4IG8+p+ApnduK1znWO+mslhUC7qr8oxIWRS3CzvSr3YeEwfVbWOz34/+I5cGh91ie8pbqxP+buMPVj078W3Cr/STzHhS2ZdQpjR/L8c=
+    secure: m8BXCWDfBh0Hkajp7+KdSFP65q3gUuJWJSb+W6BtAzWNxIuAwTgtm3Ja3gwwlko+XSOO4IG8+p+ApnduK1znWO+mslhUC7qr8oxIWRS3CzvSr3YeEwfVbWOz34/+I5cGh91ie8pbqxP+buMPVj078W3Cr/STzHhS2ZdQpjR/L8c=

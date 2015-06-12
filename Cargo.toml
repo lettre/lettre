@@ -20,3 +20,7 @@ rust-crypto = "*"
 
 [dev-dependencies]
 env_logger = "*"
+
+
+[features]
+unstable = []
