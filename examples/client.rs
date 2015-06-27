@@ -13,7 +13,7 @@ extern crate env_logger;
 extern crate smtp;
 
 use smtp::sender::{Sender, SenderBuilder};
-use smtp::mailer::EmailBuilder;
+use smtp::email::EmailBuilder;
 
 fn main() {
     env_logger::init().unwrap();

@@ -11,7 +11,7 @@
 
 use std::fmt::{Display, Formatter, Result};
 
-use email::{MimeMessage, Header, Mailbox};
+use email_format::{MimeMessage, Header, Mailbox};
 use time::{now, Tm};
 use uuid::Uuid;
 
@@ -224,7 +224,7 @@ mod test {
     use time::now;
 
     use uuid::Uuid;
-    use email::{MimeMessage, Header};
+    use email_format::{MimeMessage, Header};
 
     use sendable_email::SendableEmail;
     use super::{EmailBuilder, Email};

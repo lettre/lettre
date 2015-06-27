@@ -29,7 +29,7 @@
 //!
 //! * client: a low level SMTP client providing all SMTP commands
 //! * sender: a high level SMTP client providing an easy method to send emails
-//! * mailer: generates the email to be sent with the sender
+//! * email: generates the email to be sent with the sender
 //!
 //! ## Usage
 //!
@@ -39,7 +39,7 @@
 //!
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
-//! use smtp::mailer::EmailBuilder;
+//! use smtp::email::EmailBuilder;
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
@@ -63,7 +63,7 @@
 //!
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
-//! use smtp::mailer::EmailBuilder;
+//! use smtp::email::EmailBuilder;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -145,7 +145,7 @@ extern crate rustc_serialize as serialize;
 extern crate crypto;
 extern crate time;
 extern crate uuid;
-extern crate email;
+extern crate email as email_format;
 extern crate bufstream;
 
 mod extension;
@@ -154,7 +154,7 @@ pub mod sender;
 pub mod response;
 pub mod error;
 pub mod sendable_email;
-pub mod mailer;
+pub mod email;
 
 // Registrated port numbers:
 // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
