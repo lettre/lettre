@@ -20,7 +20,7 @@ rust-crypto = "0.2"
 bufstream = "0.1"
 
 [dependencies.email]
-git = "https://github.com/amousset/rust-email.git"
+path = "../rust-email"
 
 [dev-dependencies]
 env_logger = "*"

@@ -20,15 +20,15 @@ use self::SmtpError::*;
 /// An enum of all error kinds.
 #[derive(Debug)]
 pub enum SmtpError {
-    /// Transient error, 4xx reply code
+    /// Transient SMTP error, 4xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     TransientError(Response),
-    /// Permanent error, 5xx reply code
+    /// Permanent SMTP error, 5xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     PermanentError(Response),
-    /// TODO
+    /// Internal client error
     ClientError(String),
     /// IO error
     IoError(io::Error),

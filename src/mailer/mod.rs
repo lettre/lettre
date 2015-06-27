@@ -9,7 +9,9 @@
 
 //! Simple email (very incomplete)
 
-use email::{MimeMessage, Header, Address};
+use std::fmt::{Display, Formatter, Result};
+
+use email::{MimeMessage, Header, Mailbox};
 use time::{now, Tm};
 use uuid::Uuid;
 
@@ -17,7 +19,7 @@ use sendable_email::SendableEmail;
 
 /// Converts an adress or an address with an alias to an `Address`
 pub trait ToHeader {
-    /// Converts to an `Address` struct
+    /// Converts to an `Header` struct
     fn to_header(&self) -> Header;
 }
 
@@ -34,32 +36,32 @@ impl<'a> ToHeader for (&'a str, &'a str) {
     }
 }
 
-/// Converts an adress or an address with an alias to an `Address`
-pub trait ToAddress {
-    /// Converts to an `Address` struct
-    fn to_address(&self) -> Address;
+/// Converts an adress or an address with an alias to an `Mailbox`
+pub trait ToMailbox {
+    /// Converts to an `Mailbox` struct
+    fn to_mailbox(&self) -> Mailbox;
 }
 
-impl ToAddress for Address {
-    fn to_address(&self) -> Address {
+impl ToMailbox for Mailbox {
+    fn to_mailbox(&self) -> Mailbox {
         (*self).clone()
     }
 }
 
-impl<'a> ToAddress for &'a str {
-    fn to_address(&self) -> Address {
-        Address::new_mailbox(self.to_string())
+impl<'a> ToMailbox for &'a str {
+    fn to_mailbox(&self) -> Mailbox {
+        Mailbox::new(self.to_string())
     }
 }
 
-impl<'a> ToAddress for (&'a str, &'a str) {
-    fn to_address(&self) -> Address {
+impl<'a> ToMailbox for (&'a str, &'a str) {
+    fn to_mailbox(&self) -> Mailbox {
         let (address, alias) = *self;
-        Address::new_mailbox_with_name(address.to_string(), alias.to_string())
+        Mailbox::new_with_name(alias.to_string(), address.to_string())
     }
 }
 
-/// TODO
+/// Builds an `Email` structure
 #[derive(PartialEq,Eq,Clone,Debug)]
 pub struct EmailBuilder {
     /// Email content
@@ -81,10 +83,11 @@ pub struct Email {
     message_id: Uuid,
 }
 
-impl Email {
-    /// Displays the formatted email content
-    pub fn as_string(&self) -> String {
-        self.message.as_string()
+impl Display for Email {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}",
+            self.message.as_string()
+        )
     }
 }
 
@@ -129,36 +132,41 @@ impl EmailBuilder {
     }
 
     /// Adds a `From` header and store the sender address
-    pub fn from<A: ToAddress>(mut self, address: A) -> EmailBuilder {
-        self.content.from = Some(address.to_address().get_address().unwrap());
-        self.insert_header(("From", address.to_address().to_string().as_ref()));
+    pub fn from<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.to_mailbox();
+        self.insert_header(("From", mailbox.to_string().as_ref()));
+        self.content.from = Some(mailbox.address);
         self
     }
 
     /// Adds a `To` header and store the recipient address
-    pub fn to<A: ToAddress>(mut self, address: A) -> EmailBuilder {
-        self.content.to.push(address.to_address().get_address().unwrap());
-        self.insert_header(("To", address.to_address().to_string().as_ref()));
+    pub fn to<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.to_mailbox();
+        self.insert_header(("To", mailbox.to_string().as_ref()));
+        self.content.to.push(mailbox.address);
         self
     }
 
     /// Adds a `Cc` header and store the recipient address
-    pub fn cc<A: ToAddress>(mut self, address: A) -> EmailBuilder {
-        self.content.to.push(address.to_address().get_address().unwrap());
-        self.insert_header(("Cc", address.to_address().to_string().as_ref()));
+    pub fn cc<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.to_mailbox();
+        self.insert_header(("Cc", mailbox.to_string().as_ref()));
+        self.content.to.push(mailbox.address);
         self
     }
 
     /// Adds a `Reply-To` header
-    pub fn reply_to<A: ToAddress>(mut self, address: A) -> EmailBuilder {
-        self.insert_header(("Reply-To", address.to_address().to_string().as_ref()));
+    pub fn reply_to<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.to_mailbox();
+        self.insert_header(("Reply-To", mailbox.to_string().as_ref()));
         self
     }
 
     /// Adds a `Sender` header
-    pub fn sender<A: ToAddress>(mut self, address: A) -> EmailBuilder {
-        self.content.from = Some(address.to_address().get_address().unwrap());
-        self.insert_header(("Sender", address.to_address().to_string().as_ref()));
+    pub fn sender<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.to_mailbox();
+        self.insert_header(("Sender", mailbox.to_string().as_ref()));
+        self.content.from = Some(mailbox.address);
         self
     }
 
@@ -203,10 +211,105 @@ impl SendableEmail for Email {
     }
 
     fn message(&self) -> String {
-        format! ("{}", self.as_string())
+        format!("{}", self)
     }
 
     fn message_id(&self) -> String {
         format!("{}", self.message_id)
     }
+}
+
+#[cfg(test)]
+mod test {
+    use time::now;
+
+    use uuid::Uuid;
+    use email::{MimeMessage, Header};
+
+    use sendable_email::SendableEmail;
+    use super::{EmailBuilder, Email};
+
+    #[test]
+    fn test_email_display() {
+        let current_message = Uuid::new_v4();
+
+        let mut email = Email {
+            message: MimeMessage::new_blank_message(),
+            to: vec![],
+            from: None,
+            message_id: current_message,
+        };
+
+        email.message.headers.insert(
+            Header::new_with_value("Message-ID".to_string(),
+                format!("<{}@rust-smtp>", current_message)
+            ).unwrap()
+        );
+
+        email.message.headers.insert(
+            Header::new_with_value("To".to_string(), "to@example.com".to_string()).unwrap()
+        );
+
+        email.message.body = "body".to_string();
+
+        assert_eq!(
+            format!("{}", email),
+            format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n", current_message)
+        );
+        assert_eq!(current_message.to_string(), email.message_id());
+    }
+
+    #[test]
+    fn test_email_builder() {
+        let email_builder = EmailBuilder::new();
+        let date_now = now();
+
+        let email = email_builder.to("user@localhost")
+                             .from("user@localhost")
+                             .cc(("cc@localhost", "Alias"))
+                             .reply_to("reply@localhost")
+                             .sender("sender@localhost")
+                             .body("Hello World!")
+                             .date(&date_now)
+                             .subject("Hello")
+                             .add_header(("X-test", "value"))
+                             .build();
+
+        assert_eq!(
+            format!("{}", email),
+            format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
+                    email.message_id(), date_now.rfc822())
+        );
+    }
+
+    #[test]
+    fn test_email_sendable() {
+        let email_builder = EmailBuilder::new();
+        let date_now = now();
+
+        let email = email_builder.to("user@localhost")
+                             .from("user@localhost")
+                             .cc(("cc@localhost", "Alias"))
+                             .reply_to("reply@localhost")
+                             .sender("sender@localhost")
+                             .body("Hello World!")
+                             .date(&date_now)
+                             .subject("Hello")
+                             .add_header(("X-test", "value"))
+                             .build();
+
+        assert_eq!(
+            email.from_address(),
+            "sender@localhost".to_string()
+        );
+        assert_eq!(
+            email.to_addresses(),
+            vec!["user@localhost".to_string(), "cc@localhost".to_string()]
+        );
+        assert_eq!(
+            email.message(),
+            format!("{}", email)
+        );
+    }
+
 }

@@ -18,13 +18,12 @@ use smtp::mailer::EmailBuilder;
 fn main() {
     env_logger::init().unwrap();
 
-    let mut email_builder = EmailBuilder::new();
-
-    email_builder = email_builder.to("user@localhost");
-    let email = email_builder.from("user@localhost")
-                         .body("Hello World!")
-                         .subject("Hello")
-                         .build();
+    let email = EmailBuilder::new()
+                    .to("user@localhost")
+                    .from("user@localhost")
+                    .body("Hello World!")
+                    .subject("Hello")
+                    .build();
 
     let mut sender: Sender = SenderBuilder::localhost().hello_name("localhost")
         .enable_connection_reuse(true).build();
