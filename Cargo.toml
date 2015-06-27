@@ -1,7 +1,7 @@
 [package]
 
 name = "smtp"
-version = "0.0.12"
+version = "0.0.13"
 description = "Simple SMTP client"
 readme = "README.md"
 documentation = "http://amousset.github.io/rust-smtp/smtp/"
@@ -12,12 +12,12 @@ authors = ["Alexis Mousset <contact@amousset.me>"]
 keywords = ["email", "smtp", "mailer"]
 
 [dependencies]
-time = "*"
-uuid = "*"
-log = "*"
-rustc-serialize = "*"
-rust-crypto = "*"
-bufstream = "*"
+time = "0.1"
+uuid = "0.1"
+log = "0.3"
+rustc-serialize = "0.3"
+rust-crypto = "0.2"
+bufstream = "0.1"
 
 [dependencies.email]
 git = "https://github.com/amousset/rust-email.git"

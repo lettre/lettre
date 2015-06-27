@@ -82,6 +82,7 @@ pub struct Email {
 }
 
 impl Email {
+    /// Displays the formatted email content
     pub fn as_string(&self) -> String {
         self.message.as_string()
     }

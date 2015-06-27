@@ -74,7 +74,7 @@
 //! builder = builder.subject("Hello world");
 //! builder = builder.body("Hi, Hello world.");
 //! builder = builder.reply_to("contact@example.com");
-//! //builder = builder.add_header(("X-Custom-Header", "my header"));
+//! builder = builder.add_header(("X-Custom-Header", "my header"));
 //!
 //! let email = builder.build();
 //!
@@ -138,7 +138,7 @@
 //! let _ = email_client.quit();
 //! ```
 
-//#![deny(missing_docs)]
+#![deny(missing_docs)]
 
 #[macro_use] extern crate log;
 extern crate rustc_serialize as serialize;
