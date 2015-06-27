@@ -12,8 +12,6 @@
 use std::string::String;
 use std::net::{SocketAddr, ToSocketAddrs};
 
-use uuid::Uuid;
-
 use SMTP_PORT;
 use extension::Extension;
 use error::{SmtpResult, SmtpError};
@@ -161,7 +159,7 @@ impl Sender {
     }
 
     /// Sends an email
-    pub fn send<T: SendableEmail>(&mut self, mut email: T) -> SmtpResult {
+    pub fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
         // Check if the connection is still available
         if self.state.connection_reuse_count > 0 {
             if !self.client.is_connected() {
@@ -223,10 +221,7 @@ impl Sender {
             }
         }
 
-        let current_message = Uuid::new_v4();
-        email.set_message_id(format!("<{}@{}>", current_message,
-            self.client_info.hello_name.clone()));
-
+        let current_message = email.message_id();
         let from_address = email.from_address();
         let to_addresses = email.to_addresses();
         let message = email.message();

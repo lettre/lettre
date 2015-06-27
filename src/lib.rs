@@ -74,7 +74,7 @@
 //! builder = builder.subject("Hello world");
 //! builder = builder.body("Hi, Hello world.");
 //! builder = builder.reply_to("contact@example.com");
-//! builder = builder.add_header(("X-Custom-Header", "my header"));
+//! //builder = builder.add_header(("X-Custom-Header", "my header"));
 //!
 //! let email = builder.build();
 //!
@@ -138,14 +138,15 @@
 //! let _ = email_client.quit();
 //! ```
 
-#![feature(buf_stream)]
-#![deny(missing_docs)]
+//#![deny(missing_docs)]
 
 #[macro_use] extern crate log;
 extern crate rustc_serialize as serialize;
 extern crate crypto;
 extern crate time;
 extern crate uuid;
+extern crate email;
+extern crate bufstream;
 
 mod extension;
 pub mod client;

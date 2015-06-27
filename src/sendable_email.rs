@@ -9,6 +9,8 @@
 
 //! SMTP sendable email
 
+use uuid::Uuid;
+
 /// Email sendable by an SMTP client
 pub trait SendableEmail {
     /// From address
@@ -17,8 +19,8 @@ pub trait SendableEmail {
     fn to_addresses(&self) -> Vec<String>;
     /// Message content
     fn message(&self) -> String;
-    /// Set message-ID header
-    fn set_message_id(&mut self, id: String);
+    /// Message ID
+    fn message_id(&self) -> String;
 }
 
 /// Minimal email structure
@@ -55,7 +57,7 @@ impl SendableEmail for SimpleSendableEmail {
         self.message.clone()
     }
 
-    fn set_message_id(&mut self, id: String) {
-        let _ = id;
+    fn message_id(&self) -> String {
+        format!("<{}@rust-smtp>", Uuid::new_v4())
     }
 }

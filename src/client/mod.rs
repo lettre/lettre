@@ -11,7 +11,9 @@
 
 use std::string::String;
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::io::{BufRead, BufStream, Read, Write};
+use std::io::{BufRead, Read, Write};
+
+use bufstream::BufStream;
 
 use response::{Response, Severity, Category};
 use error::SmtpResult;

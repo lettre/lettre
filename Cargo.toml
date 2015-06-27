@@ -17,10 +17,13 @@ uuid = "*"
 log = "*"
 rustc-serialize = "*"
 rust-crypto = "*"
+bufstream = "*"
+
+[dependencies.email]
+git = "https://github.com/amousset/rust-email.git"
 
 [dev-dependencies]
 env_logger = "*"
-
 
 [features]
 unstable = []
