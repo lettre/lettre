@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! SMTP response, containing a mandatory return code, and an optional text message
+//! SMTP response, containing a mandatory return code and an optional text message
 
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};
@@ -163,7 +163,7 @@ impl Response {
         format!("{}{}{}", self.severity, self.category, self.detail)
     }
 
-    /// Checls code equality
+    /// Tests code equality
     pub fn has_code(&self, code: u16) -> bool {
         self.code() == format!("{}", code)
     }
@@ -172,9 +172,11 @@ impl Response {
     pub fn first_word(&self) -> Option<String> {
         match self.message.is_empty() {
             true => None,
-            false => Some(self.message[0].split(" ").next().unwrap().to_string()),
+            false => match self.message[0].split_whitespace().next() {
+                Some(word) => Some(word.to_string()),
+                None => None,
+            }
         }
-
     }
 }
 
@@ -273,6 +275,12 @@ mod test {
             1,
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).severity(), Severity::PositiveCompletion);
+        assert_eq!(Response::new(
+            "5".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
+        ).severity(), Severity::PermanentNegativeCompletion);
     }
 
     #[test]
@@ -340,6 +348,24 @@ mod test {
             "4".parse::<Category>().unwrap(),
             1,
             vec![]
+        ).first_word(), None);
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec![" ".to_string()]
+        ).first_word(), None);
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["  ".to_string()]
+        ).first_word(), None);
+        assert_eq!(Response::new(
+            "2".parse::<Severity>().unwrap(),
+            "4".parse::<Category>().unwrap(),
+            1,
+            vec!["".to_string()]
         ).first_word(), None);
     }
 }

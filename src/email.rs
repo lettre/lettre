@@ -17,9 +17,9 @@ use uuid::Uuid;
 
 use sendable_email::SendableEmail;
 
-/// Converts an adress or an address with an alias to an `Address`
+/// Converts an adress or an address with an alias to a `Address`
 pub trait ToHeader {
-    /// Converts to an `Header` struct
+    /// Converts to a `Header` struct
     fn to_header(&self) -> Header;
 }
 
@@ -36,9 +36,9 @@ impl<'a> ToHeader for (&'a str, &'a str) {
     }
 }
 
-/// Converts an adress or an address with an alias to an `Mailbox`
+/// Converts an adress or an address with an alias to a `Mailbox`
 pub trait ToMailbox {
-    /// Converts to an `Mailbox` struct
+    /// Converts to a `Mailbox` struct
     fn to_mailbox(&self) -> Mailbox;
 }
 
