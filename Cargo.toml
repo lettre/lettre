@@ -18,9 +18,7 @@ log = "0.3"
 rustc-serialize = "0.3"
 rust-crypto = "0.2"
 bufstream = "0.1"
-
-[dependencies.email]
-git = "https://github.com/amousset/rust-email.git"
+email = "*"
 
 [dev-dependencies]
 env_logger = "*"
