@@ -15,6 +15,7 @@ use std::result::Result as RResult;
 
 use self::Severity::*;
 use self::Category::*;
+use error::{SmtpResult, SmtpError};
 
 /// First digit indicates severity
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -102,17 +103,113 @@ impl Display for Category {
     }
 }
 
-/// Contains an SMTP reply, with separed code and message
-///
-/// The text message is optional, only the code is mandatory
+/// Represents a 3 digit SMTP response code
 #[derive(PartialEq,Eq,Clone,Debug)]
-pub struct Response {
+pub struct Code {
     /// First digit of the response code
     severity: Severity,
     /// Second digit of the response code
     category: Category,
     /// Third digit
     detail: u8,
+}
+
+impl FromStr for Code {
+    type Err = SmtpError;
+
+    #[inline]
+    fn from_str(s: &str) -> RResult<Code, SmtpError> {
+        if s.len() == 3 {
+            match (s[0..1].parse::<Severity>(), s[1..2].parse::<Category>(), s[2..3].parse::<u8>()) {
+                (Ok(severity), Ok(category), Ok(detail)) => Ok(Code {severity: severity, category: category, detail: detail}),
+                _ => return Err(From::from("Could not parse reply code")),
+            }
+        } else {
+            Err(From::from("Could not parse reply code"))
+        }
+    }
+}
+
+impl Code {
+    /// Creates a new `Code` structure
+    pub fn new(severity: Severity, category: Category, detail: u8) -> Code {
+        Code {
+            severity: severity,
+            category: category,
+            detail: detail,
+        }
+    }
+
+    /// Returns the reply code
+    pub fn code(&self) -> String {
+        format!("{}{}{}", self.severity, self.category, self.detail)
+    }
+}
+
+/// Parses an SMTP response
+#[derive(PartialEq,Eq,Clone,Debug)]
+pub struct ResponseParser {
+    /// Response code
+    code: Option<Code>,
+    /// Server response string (optional)
+    /// Handle multiline responses
+    message: Vec<String>
+}
+
+impl ResponseParser {
+    /// Creates a new parser
+    pub fn new() -> ResponseParser {
+        ResponseParser {
+            code: None,
+            message: vec![],
+        }
+    }
+
+    /// Parses a line and return a `bool` indicating if there are more lines to come
+    pub fn read_line(&mut self, line: &str) -> RResult<bool, SmtpError> {
+
+        if line.len() < 3 {
+            return Err(From::from("Could not parse reply code, line too short"));
+        }
+
+        if self.code.is_none() {
+            self.code = Some(try!(line[0..3].parse::<Code>()));
+        } else {
+            if self.code.as_ref().unwrap().code() != line[0..3] {
+                println!("pouet");
+                return Err(From::from("Could not parse reply code"));
+            }
+        }
+
+        if line.len() > 4 {
+            self.message.push(line[4..].to_string());
+            if line.as_bytes()[3] == '-' as u8 {
+                Ok(true)
+            } else {
+                Ok(false)
+            }
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Builds a response from a `ResponseParser`
+    pub fn response(self) -> SmtpResult {
+        if self.code.is_some() {
+            Ok(Response::new(self.code.unwrap(), self.message))
+        } else {
+            Err(From::from("Could not parse reply code"))
+        }
+    }
+}
+
+/// Contains an SMTP reply, with separed code and message
+///
+/// The text message is optional, only the code is mandatory
+#[derive(PartialEq,Eq,Clone,Debug)]
+pub struct Response {
+    /// Response code
+    code: Code,
     /// Server response string (optional)
     /// Handle multiline responses
     message: Vec<String>
@@ -120,18 +217,16 @@ pub struct Response {
 
 impl Response {
     /// Creates a new `Response`
-    pub fn new(severity: Severity, category: Category, detail: u8, message: Vec<String>) -> Response {
+    pub fn new(code: Code, message: Vec<String>) -> Response {
         Response {
-            severity: severity,
-            category: category,
-            detail: detail,
-            message: message
+            code: code,
+            message: message,
         }
     }
 
     /// Tells if the response is positive
     pub fn is_positive(&self) -> bool {
-        match self.severity {
+        match self.code.severity {
             PositiveCompletion => true,
             PositiveIntermediate => true,
             _ => false,
@@ -143,24 +238,30 @@ impl Response {
         self.message.clone()
     }
 
+    /// Gets the first line beginning with the given string
+    /// TODO testing
+    pub fn get_line_beginning_with(&self, start: &str) -> Option<String> {
+        self.message.iter().find(|&x| (*x).starts_with(start)).map(|s| s.to_string())
+    }
+
     /// Returns the severity (i.e. 1st digit)
     pub fn severity(&self) -> Severity {
-        self.severity
+        self.code.severity
     }
 
     /// Returns the category (i.e. 2nd digit)
     pub fn category(&self) -> Category {
-        self.category
+        self.code.category
     }
 
     /// Returns the detail (i.e. 3rd digit)
     pub fn detail(&self) -> u8 {
-        self.detail
+        self.code.detail
     }
 
     /// Returns the reply code
     fn code(&self) -> String {
-        format!("{}{}{}", self.severity, self.category, self.detail)
+        self.code.code()
     }
 
     /// Tests code equality
@@ -182,7 +283,7 @@ impl Response {
 
 #[cfg(test)]
 mod test {
-    use super::{Severity, Category, Response};
+    use super::{Severity, Category, Response, ResponseParser, Code};
 
     #[test]
     fn test_severity_from_str() {
@@ -209,43 +310,116 @@ mod test {
     }
 
     #[test]
+    fn test_code_new() {
+        assert_eq!(
+            Code::new(Severity::TransientNegativeCompletion, Category::Connections, 0),
+            Code {
+                severity: Severity::TransientNegativeCompletion,
+                category: Category::Connections,
+                detail: 0,
+            }
+        );
+    }
+
+    #[test]
+    fn test_code_from_str() {
+        assert_eq!(
+            "421".parse::<Code>().unwrap(),
+            Code {
+                severity: Severity::TransientNegativeCompletion,
+                category: Category::Connections,
+                detail: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn test_code_code() {
+        let code = Code {
+            severity: Severity::TransientNegativeCompletion,
+            category: Category::Connections,
+            detail: 1,
+        };
+
+        assert_eq!(code.code(), "421");
+    }
+
+    #[test]
     fn test_response_new() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail: 1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ), Response {
-            severity: Severity::PositiveCompletion,
-            category: Category::Unspecified4,
-            detail: 1,
+            code: Code {
+                severity: Severity::PositiveCompletion,
+                category: Category::Unspecified4,
+                detail: 1,
+            },
             message: vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()],
         });
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec![]
         ), Response {
-            severity: Severity::PositiveCompletion,
-            category: Category::Unspecified4,
-            detail: 1,
+            code: Code {
+                severity: Severity::PositiveCompletion,
+                category: Category::Unspecified4,
+                detail: 1,
+            },
             message: vec![],
         });
     }
 
     #[test]
+    fn test_response_parser() {
+        let mut parser = ResponseParser::new();
+
+        assert!(parser.read_line("250-me").unwrap());
+        assert!(parser.read_line("250-8BITMIME").unwrap());
+        assert!(parser.read_line("250-SIZE 42").unwrap());
+        assert!(!parser.read_line("250 AUTH PLAIN CRAM-MD5").unwrap());
+
+        let response = parser.response().unwrap();
+
+        assert_eq!(
+            response,
+            Response {
+                code: Code {
+                    severity: Severity::PositiveCompletion,
+                    category: Category::MailSystem,
+                    detail: 0,
+                },
+                message: vec!["me".to_string(), "8BITMIME".to_string(),
+                              "SIZE 42".to_string(), "AUTH PLAIN CRAM-MD5".to_string()],
+            }
+        );
+
+    }
+
+    #[test]
     fn test_response_is_positive() {
         assert!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).is_positive());
         assert!(! Response::new(
-            "4".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "5".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).is_positive());
     }
@@ -253,16 +427,20 @@ mod test {
     #[test]
     fn test_response_message() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).message(), vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
         let empty_message: Vec<String> = vec![];
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec![]
         ).message(), empty_message);
     }
@@ -270,15 +448,19 @@ mod test {
     #[test]
     fn test_response_severity() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).severity(), Severity::PositiveCompletion);
         assert_eq!(Response::new(
-            "5".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "5".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail: 1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).severity(), Severity::PermanentNegativeCompletion);
     }
@@ -286,9 +468,11 @@ mod test {
     #[test]
     fn test_response_category() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).category(), Category::Unspecified4);
     }
@@ -296,9 +480,11 @@ mod test {
     #[test]
     fn test_response_detail() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).detail(), 1);
     }
@@ -306,9 +492,11 @@ mod test {
     #[test]
     fn test_response_code() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).code(), "241");
     }
@@ -316,15 +504,19 @@ mod test {
     #[test]
     fn test_response_has_code() {
         assert!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).has_code(241));
         assert!(! Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).has_code(251));
     }
@@ -332,39 +524,51 @@ mod test {
     #[test]
     fn test_response_first_word() {
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).first_word(), Some("me".to_string()));
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["me mo".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         ).first_word(), Some("me".to_string()));
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec![]
         ).first_word(), None);
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec![" ".to_string()]
         ).first_word(), None);
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["  ".to_string()]
         ).first_word(), None);
         assert_eq!(Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "4".parse::<Category>().unwrap(),
-            1,
+            Code {
+                severity: "2".parse::<Severity>().unwrap(),
+                category: "4".parse::<Category>().unwrap(),
+                detail:1,
+            },
             vec!["".to_string()]
         ).first_word(), None);
     }

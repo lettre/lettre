@@ -81,7 +81,7 @@ impl Extension {
 #[cfg(test)]
 mod test {
     use super::Extension;
-    use response::{Severity, Category, Response};
+    use response::{Severity, Category, Response, Code};
 
     #[test]
     fn test_from_str() {
@@ -95,15 +95,19 @@ mod test {
     #[test]
     fn test_parse_esmtp_response() {
         assert_eq!(Extension::parse_esmtp_response(&Response::new(
-            "2".parse::<Severity>().unwrap(),
-            "2".parse::<Category>().unwrap(),
-            1,
+            Code::new(
+                "2".parse::<Severity>().unwrap(),
+                "2".parse::<Category>().unwrap(),
+                1,
+            ),
             vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
         )), vec![Extension::EightBitMime]);
         assert_eq!(Extension::parse_esmtp_response(&Response::new(
-            "4".parse::<Severity>().unwrap(),
-            "3".parse::<Category>().unwrap(),
-            3,
+            Code::new(
+                "4".parse::<Severity>().unwrap(),
+                "3".parse::<Category>().unwrap(),
+                3,
+            ),
             vec!["me".to_string(), "8BITMIME".to_string(), "AUTH PLAIN CRAM-MD5".to_string()]
         )), vec![Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication]);
     }

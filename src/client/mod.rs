@@ -15,7 +15,7 @@ use std::io::{BufRead, Read, Write};
 
 use bufstream::BufStream;
 
-use response::{Response, Severity, Category};
+use response::ResponseParser;
 use error::SmtpResult;
 use client::net::{Connector, SmtpStream};
 use client::authentication::{plain, cram_md5};
@@ -41,6 +41,12 @@ fn escape_dot(string: &str) -> String {
 #[inline]
 fn escape_crlf(string: &str) -> String {
     string.replace(CRLF, "<CR><LF>")
+}
+
+/// Returns the string removing all the CRLF
+#[inline]
+fn remove_crlf(string: &str) -> String {
+    string.replace(CRLF, "")
 }
 
 /// Structure that implements the SMTP client
@@ -194,34 +200,18 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
 
     /// Gets the SMTP response
     fn get_reply(&mut self) -> SmtpResult {
+
+        let mut parser = ResponseParser::new();
+
         let mut line = String::new();
         try!(self.stream.as_mut().unwrap().read_line(&mut line));
 
-        // If the string is too short to be a response code
-        if line.len() < 3 {
-            return Err(From::from("Could not parse reply code, line too short"));
+        while try!(parser.read_line(remove_crlf(line.as_ref()).as_ref())) {
+            line.clear();
+            try!(self.stream.as_mut().unwrap().read_line(&mut line));
         }
 
-        let (severity, category, detail) =  match (line[0..1].parse::<Severity>(), line[1..2].parse::<Category>(), line[2..3].parse::<u8>()) {
-            (Ok(severity), Ok(category), Ok(detail)) => (severity, category, detail),
-            _ => return Err(From::from("Could not parse reply code")),
-        };
-
-        let mut message = Vec::new();
-
-        // 3 chars for code + space + CRLF
-        while line.len() > 6 {
-            let end = line.len() - 2;
-            message.push(line[4..end].to_string());
-            if line.as_bytes()[3] == '-' as u8 {
-                line.clear();
-                try!(self.stream.as_mut().unwrap().read_line(&mut line));
-            } else {
-                line.clear();
-            }
-        }
-
-        let response = Response::new(severity, category, detail, message);
+        let response = try!(parser.response());
 
         match response.is_positive() {
             true => Ok(response),
@@ -232,7 +222,7 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
 
 #[cfg(test)]
 mod test {
-    use super::{escape_dot, escape_crlf};
+    use super::{escape_dot, remove_crlf, escape_crlf};
 
     #[test]
     fn test_escape_dot() {
@@ -240,6 +230,16 @@ mod test {
         assert_eq!(escape_dot("\r.\n.\r\n"), "\r..\n..\r\n");
         assert_eq!(escape_dot("test\r\n.test\r\n"), "test\r\n..test\r\n");
         assert_eq!(escape_dot("test\r\n.\r\ntest"), "test\r\n..\r\ntest");
+    }
+
+    #[test]
+    fn test_remove_crlf() {
+        assert_eq!(remove_crlf("\r\n"), "");
+        assert_eq!(remove_crlf("EHLO my_name\r\n"), "EHLO my_name");
+        assert_eq!(
+            remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+            "EHLO my_nameSIZE 42"
+        );
     }
 
     #[test]
