@@ -14,7 +14,7 @@ use std::net::{SocketAddr, ToSocketAddrs};
 
 use SMTP_PORT;
 use extension::Extension;
-use error::{SmtpResult, SmtpError};
+use error::{SmtpResult, Error};
 use sendable_email::SendableEmail;
 use sender::server_info::ServerInfo;
 use client::Client;
@@ -183,7 +183,7 @@ impl Sender {
                     });
                 },
                 Err(error) => match error {
-                    SmtpError::PermanentError(ref response) if response.has_code(550) => {
+                    Error::PermanentError(ref response) if response.has_code(550) => {
                         match self.client.helo(&self.client_info.hello_name) {
                             Ok(response) => {self.server_info = Some(
                                 ServerInfo{

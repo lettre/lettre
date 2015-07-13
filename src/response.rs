@@ -15,7 +15,7 @@ use std::result::Result as RResult;
 
 use self::Severity::*;
 use self::Category::*;
-use error::{SmtpResult, SmtpError};
+use error::{SmtpResult, Error};
 
 /// First digit indicates severity
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -115,10 +115,10 @@ pub struct Code {
 }
 
 impl FromStr for Code {
-    type Err = SmtpError;
+    type Err = Error;
 
     #[inline]
-    fn from_str(s: &str) -> RResult<Code, SmtpError> {
+    fn from_str(s: &str) -> RResult<Code, Error> {
         if s.len() == 3 {
             match (s[0..1].parse::<Severity>(), s[1..2].parse::<Category>(), s[2..3].parse::<u8>()) {
                 (Ok(severity), Ok(category), Ok(detail)) => Ok(Code {severity: severity, category: category, detail: detail}),
@@ -166,7 +166,7 @@ impl ResponseParser {
     }
 
     /// Parses a line and return a `bool` indicating if there are more lines to come
-    pub fn read_line(&mut self, line: &str) -> RResult<bool, SmtpError> {
+    pub fn read_line(&mut self, line: &str) -> RResult<bool, Error> {
 
         if line.len() < 3 {
             return Err(From::from("Could not parse reply code, line too short"));
@@ -176,7 +176,6 @@ impl ResponseParser {
             self.code = Some(try!(line[0..3].parse::<Code>()));
         } else {
             if self.code.as_ref().unwrap().code() != line[0..3] {
-                println!("pouet");
                 return Err(From::from("Could not parse reply code"));
             }
         }
@@ -236,12 +235,6 @@ impl Response {
     /// Returns the message
     pub fn message(&self) -> Vec<String> {
         self.message.clone()
-    }
-
-    /// Gets the first line beginning with the given string
-    /// TODO testing
-    pub fn get_line_beginning_with(&self, start: &str) -> Option<String> {
-        self.message.iter().find(|&x| (*x).starts_with(start)).map(|s| s.to_string())
     }
 
     /// Returns the severity (i.e. 1st digit)
@@ -401,7 +394,6 @@ mod test {
                               "SIZE 42".to_string(), "AUTH PLAIN CRAM-MD5".to_string()],
             }
         );
-
     }
 
     #[test]

@@ -9,17 +9,17 @@
 
 //! Error and result type for SMTP clients
 
-use std::error::Error;
+use std::error::Error as StdError;
 use std::io;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use response::{Severity, Response};
-use self::SmtpError::*;
+use self::Error::*;
 
 /// An enum of all error kinds.
 #[derive(Debug)]
-pub enum SmtpError {
+pub enum Error {
     /// Transient SMTP error, 4xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
@@ -34,13 +34,13 @@ pub enum SmtpError {
     IoError(io::Error),
 }
 
-impl Display for SmtpError {
+impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
         fmt.write_str(self.description())
     }
 }
 
-impl Error for SmtpError {
+impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
             TransientError(_) => "a transient error occured during the SMTP transaction",
@@ -50,22 +50,22 @@ impl Error for SmtpError {
         }
     }
 
-    fn cause(&self) -> Option<&Error> {
+    fn cause(&self) -> Option<&StdError> {
         match *self {
-            IoError(ref err) => Some(&*err as &Error),
+            IoError(ref err) => Some(&*err as &StdError),
             _ => None,
         }
     }
 }
 
-impl From<io::Error> for SmtpError {
-    fn from(err: io::Error) -> SmtpError {
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
         IoError(err)
     }
 }
 
-impl From<Response> for SmtpError {
-    fn from(response: Response) -> SmtpError {
+impl From<Response> for Error {
+    fn from(response: Response) -> Error {
         match response.severity() {
             Severity::TransientNegativeCompletion => TransientError(response),
             Severity::PermanentNegativeCompletion => PermanentError(response),
@@ -74,14 +74,14 @@ impl From<Response> for SmtpError {
     }
 }
 
-impl From<&'static str> for SmtpError {
-    fn from(string: &'static str) -> SmtpError {
+impl From<&'static str> for Error {
+    fn from(string: &'static str) -> Error {
         ClientError(string.to_string())
     }
 }
 
 /// SMTP result type
-pub type SmtpResult = Result<Response, SmtpError>;
+pub type SmtpResult = Result<Response, Error>;
 
 #[cfg(test)]
 mod test {
