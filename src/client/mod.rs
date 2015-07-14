@@ -16,7 +16,7 @@ use std::io::{BufRead, Read, Write};
 use bufstream::BufStream;
 
 use response::ResponseParser;
-use authentication::{Mecanism, CramMd5, Plain};
+use authentication::Mecanism;
 use error::{Error, SmtpResult};
 use client::net::{Connector, SmtpStream};
 use {CRLF, MESSAGE_ENDING};
@@ -167,21 +167,21 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
         self.command("RSET")
     }
 
-    /// Sends an AUTH command with PLAIN mecanism
-    pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
-        self.command(&format!("AUTH PLAIN {}", try!(Plain::response(username, password, None))))
-    }
+    /// Sends an AUTH command with the given mecanism
+    pub fn auth(&mut self, mecanism: Mecanism, username: &str, password: &str) -> SmtpResult {
 
-    /// Sends an AUTH command with CRAM-MD5 mecanism
-    pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
-        let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
-            Some(challenge) => challenge,
-            None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
-        };
+        if mecanism.supports_initial_response() {
+            self.command(&format!("AUTH {} {}", mecanism, try!(mecanism.response(username, password, None))))
+        } else {
+            let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
+                Some(challenge) => challenge,
+                None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
+            };
 
-        let cram_response = try!(CramMd5::response(username, password, Some(&encoded_challenge)));
+            let cram_response = try!(mecanism.response(username, password, Some(&encoded_challenge)));
 
-        self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
+            self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
+        }
     }
 
     /// Sends the message content

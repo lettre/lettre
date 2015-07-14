@@ -13,14 +13,12 @@ use std::string::String;
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use SMTP_PORT;
-use extension::Extension;
+use extension::{Extension, ServerInfo};
 use error::{SmtpResult, Error};
 use sendable_email::SendableEmail;
-use sender::server_info::ServerInfo;
 use client::Client;
 use client::net::SmtpStream;
-
-mod server_info;
+use authentication::Mecanism;
 
 /// Contains client configuration
 pub struct SenderBuilder {
@@ -171,37 +169,26 @@ impl Sender {
         if self.state.connection_reuse_count == 0 {
             try!(self.client.connect());
 
-            let hello_error = Error::ResponseParsingError("No hostname announced by the server");
-
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
 
             // Extended Hello or Hello if needed
-            match self.client.ehlo(&self.client_info.hello_name) {
-                Ok(response) => {self.server_info = Some(
-                    ServerInfo{
-                        name: try_smtp!(response.first_word().ok_or(hello_error), self),
-                        esmtp_features: Extension::parse_esmtp_response(&response),
-                    });
-                },
+            let hello_response = match self.client.ehlo(&self.client_info.hello_name) {
+                Ok(response) => response,
                 Err(error) => match error {
                     Error::PermanentError(ref response) if response.has_code(550) => {
                         match self.client.helo(&self.client_info.hello_name) {
-                            Ok(response) => {self.server_info = Some(
-                                ServerInfo{
-                                    name: try_smtp!(response.first_word().ok_or(hello_error), self),
-                                    esmtp_features: vec!(),
-                                });
-                            },
+                            Ok(response) => response,
                             Err(error) => try_smtp!(Err(error), self)
                         }
-
                     },
                     _ => {
                         try_smtp!(Err(error), self)
                     },
                 },
-            }
+            };
+
+            self.server_info = Some(try_smtp!(ServerInfo::from_response(&hello_response), self));
 
             // Print server information
             debug!("server {}", self.server_info.as_ref().unwrap());
@@ -212,11 +199,11 @@ impl Sender {
 
             let (username, password) = self.client_info.credentials.clone().unwrap();
 
-            if self.server_info.as_ref().unwrap().supports_feature(Extension::CramMd5Authentication) {
-                let result = self.client.auth_cram_md5(&username, &password);
+            if self.server_info.as_ref().unwrap().supports_auth_mecanism(Mecanism::CramMd5) {
+                let result = self.client.auth(Mecanism::CramMd5, &username, &password);
                 try_smtp!(result, self);
-            } else if self.server_info.as_ref().unwrap().supports_feature(Extension::PlainAuthentication) {
-                let result = self.client.auth_plain(&username, &password);
+            } else if self.server_info.as_ref().unwrap().supports_auth_mecanism(Mecanism::Plain) {
+                let result = self.client.auth(Mecanism::Plain, &username, &password);
                 try_smtp!(result, self);
             } else {
                 debug!("No supported authentication mecanisms available");
@@ -229,7 +216,7 @@ impl Sender {
         let message = email.message();
 
         // Mail
-        let mail_options = match self.server_info.as_ref().unwrap().supports_feature(Extension::EightBitMime) {
+        let mail_options = match self.server_info.as_ref().unwrap().supports_feature(&Extension::EightBitMime) {
             true => Some("BODY=8BITMIME"),
             false => None,
         };

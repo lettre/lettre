@@ -9,14 +9,17 @@
 
 //! ESMTP features
 
-use std::str::FromStr;
 use std::result::Result;
+use std::fmt::{Display, Formatter};
+use std::fmt::Result as FmtResult;
+use std::collections::HashSet;
 
 use response::Response;
-use self::Extension::*;
+use error::Error;
+use authentication::Mecanism;
 
 /// Supported ESMTP keywords
-#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+#[derive(PartialEq,Eq,Hash,Clone,Debug)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -30,85 +33,115 @@ pub enum Extension {
     ///
     /// RFC 2487: https://tools.ietf.org/html/rfc2487
     StartTls,
-    /// AUTH PLAIN mecanism
-    ///
-    /// RFC 4616: https://tools.ietf.org/html/rfc4616
-    PlainAuthentication,
-    /// AUTH CRAM-MD5 mecanism
-    ///
-    /// RFC 2195: https://tools.ietf.org/html/rfc2195
-    CramMd5Authentication,
+    /// AUTH mecanism
+    Authentication(Mecanism),
 }
 
-impl Extension {
-    fn from_str(s: &str) -> Result<Vec<Extension>, &'static str> {
-        let splitted : Vec<&str> = s.split_whitespace().collect();
-        match (splitted[0], splitted.len()) {
-            ("8BITMIME", 1) => Ok(vec![EightBitMime]),
-            ("SMTPUTF8", 1) => Ok(vec![SmtpUtfEight]),
-            ("STARTTLS", 1) => Ok(vec![StartTls]),
-            ("AUTH", _) => {
-                let mut mecanisms: Vec<Extension> = vec![];
-                for &mecanism in &splitted[1..] {
-                    match mecanism {
-                        "PLAIN" => mecanisms.push(PlainAuthentication),
-                        "CRAM-MD5" => mecanisms.push(CramMd5Authentication),
-                        _ => (),
-                    }
-                }
-                Ok(mecanisms)
-            },
-            _ => Err("Unknown extension"),
-        }
+impl Display for Extension {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{}",
+            match *self {
+                Extension::EightBitMime => "8BITMIME",
+                Extension::SmtpUtfEight => "SMTPUTF8",
+                Extension::StartTls => "STARTTLS",
+                Extension::Authentication(_) => "AUTH",
+            }
+        )
     }
+}
 
-    /// Parses supported ESMTP features
-    pub fn parse_esmtp_response(response: &Response) -> Vec<Extension> {
-        let mut esmtp_features: Vec<Extension> = Vec::new();
+/// Contains information about an SMTP server
+#[derive(Clone,Debug)]
+pub struct ServerInfo {
+    /// Server name
+    ///
+    /// The name given in the server banner
+    pub name: String,
+    /// ESMTP features supported by the server
+    ///
+    /// It contains the features supported by the server and known by the `Extension` module.
+    pub esmtp_features: HashSet<Extension>,
+}
+
+impl Display for ServerInfo {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(f, "{} with {}",
+            self.name,
+            match self.esmtp_features.is_empty() {
+                true => "no supported features".to_string(),
+                false => format! ("{:?}", self.esmtp_features),
+            }
+        )
+    }
+}
+
+impl ServerInfo {
+    /// Parses a response to create a `ServerInfo`
+    pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
+        let name = match response.first_word() {
+            Some(name) => name,
+            None => return Err(Error::ResponseParsingError("Could not read server name"))
+        };
+
+        let mut esmtp_features: HashSet<Extension> = HashSet::new();
 
         for line in response.message() {
-            if let Ok(keywords) = Extension::from_str(&line) {
-                for keyword in keywords {
-                    esmtp_features.push(keyword);
-                }
+
+            let splitted : Vec<&str> = line.split_whitespace().collect();
+            let _ = match (splitted[0], splitted.len()) {
+                ("8BITMIME", 1) => {esmtp_features.insert(Extension::EightBitMime);},
+                ("SMTPUTF8", 1) => {esmtp_features.insert(Extension::SmtpUtfEight);},
+                ("STARTTLS", 1) => {esmtp_features.insert(Extension::StartTls);},
+                ("AUTH", _) => {
+                    for &mecanism in &splitted[1..] {
+                        match mecanism {
+                            "PLAIN" => {esmtp_features.insert(Extension::Authentication(Mecanism::Plain));},
+                            "CRAM-MD5" => {esmtp_features.insert(Extension::Authentication(Mecanism::CramMd5));},
+                            _ => (),
+                        }
+                    }
+                },
+                (_, _) => (),
             };
         }
 
-        esmtp_features
+        Ok(ServerInfo{
+            name: name,
+            esmtp_features: esmtp_features,
+        })
+    }
+
+    /// Checks if the server supports an ESMTP feature
+    pub fn supports_feature(&self, keyword: &Extension) -> bool {
+        self.esmtp_features.contains(keyword)
+    }
+
+    /// Checks if the server supports an ESMTP feature
+    pub fn supports_auth_mecanism(&self, mecanism: Mecanism) -> bool {
+        self.esmtp_features.contains(&Extension::Authentication(mecanism))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::Extension;
-    use response::{Severity, Category, Response, Code};
-
+	use std::collections::HashSet;
+	
+    use super::{ServerInfo, Extension};
+    
     #[test]
-    fn test_from_str() {
-        assert_eq!(Extension::from_str("8BITMIME"), Ok(vec![Extension::EightBitMime]));
-        assert_eq!(Extension::from_str("AUTH PLAIN"), Ok(vec![Extension::PlainAuthentication]));
-        assert_eq!(Extension::from_str("AUTH PLAIN LOGIN CRAM-MD5"), Ok(vec![Extension::PlainAuthentication, Extension::CramMd5Authentication]));
-        assert_eq!(Extension::from_str("AUTH CRAM-MD5 PLAIN"), Ok(vec![Extension::CramMd5Authentication, Extension::PlainAuthentication]));
-        assert_eq!(Extension::from_str("AUTH DIGEST-MD5 PLAIN CRAM-MD5"), Ok(vec![Extension::PlainAuthentication, Extension::CramMd5Authentication]));
-    }
-
-    #[test]
-    fn test_parse_esmtp_response() {
-        assert_eq!(Extension::parse_esmtp_response(&Response::new(
-            Code::new(
-                "2".parse::<Severity>().unwrap(),
-                "2".parse::<Category>().unwrap(),
-                1,
-            ),
-            vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]
-        )), vec![Extension::EightBitMime]);
-        assert_eq!(Extension::parse_esmtp_response(&Response::new(
-            Code::new(
-                "4".parse::<Severity>().unwrap(),
-                "3".parse::<Category>().unwrap(),
-                3,
-            ),
-            vec!["me".to_string(), "8BITMIME".to_string(), "AUTH PLAIN CRAM-MD5".to_string()]
-        )), vec![Extension::EightBitMime, Extension::PlainAuthentication, Extension::CramMd5Authentication]);
+    fn test_serverinfo_fmt() {
+    	let mut eightbitmime = HashSet::new();
+    	assert!(eightbitmime.insert(Extension::EightBitMime));
+    	
+    	let empty = HashSet::new();
+    	
+        assert_eq!(format!("{}", ServerInfo{
+            name: "name".to_string(),
+            esmtp_features: eightbitmime.clone()
+        }), "name with {EightBitMime}".to_string());
+        assert_eq!(format!("{}", ServerInfo{
+            name: "name".to_string(),
+            esmtp_features: empty,
+        }), "name with no supported features".to_string());
     }
 }
