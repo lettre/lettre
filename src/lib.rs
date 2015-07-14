@@ -147,6 +147,7 @@ extern crate time;
 extern crate uuid;
 extern crate email as email_format;
 extern crate bufstream;
+extern crate openssl;
 
 mod extension;
 pub mod client;

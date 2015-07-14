@@ -10,7 +10,7 @@
 //! Provides authentication mecanisms
 
 use std::fmt::{Display, Formatter};
-use std::fmt::Result as FmtResult;
+use std::fmt;
 
 use serialize::base64::{self, ToBase64, FromBase64};
 use serialize::hex::ToHex;
@@ -33,7 +33,7 @@ pub enum Mecanism {
 }
 
 impl Display for Mecanism {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}",
             match *self {
                 Mecanism::Plain => "PLAIN",

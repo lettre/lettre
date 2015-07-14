@@ -11,7 +11,7 @@
 
 use std::result::Result;
 use std::fmt::{Display, Formatter};
-use std::fmt::Result as FmtResult;
+use std::fmt;
 use std::collections::HashSet;
 
 use response::Response;
@@ -38,7 +38,7 @@ pub enum Extension {
 }
 
 impl Display for Extension {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}",
             match *self {
                 Extension::EightBitMime => "8BITMIME",
@@ -64,7 +64,7 @@ pub struct ServerInfo {
 }
 
 impl Display for ServerInfo {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} with {}",
             self.name,
             match self.esmtp_features.is_empty() {

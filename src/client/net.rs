@@ -13,6 +13,8 @@ use std::io;
 use std::net::SocketAddr;
 use std::net::TcpStream;
 
+use openssl::ssl::{SslContext, SslStream};
+
 /// A trait for the concept of opening a stream
 pub trait Connector {
     /// Opens a connection to the given IP socket

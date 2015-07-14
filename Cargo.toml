@@ -18,6 +18,7 @@ log = "0.3"
 rustc-serialize = "0.3"
 rust-crypto = "0.2"
 bufstream = "0.1"
+openssl = "0.6"
 email = "*"
 
 [dev-dependencies]
