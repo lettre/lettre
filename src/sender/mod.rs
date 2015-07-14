@@ -171,6 +171,8 @@ impl Sender {
         if self.state.connection_reuse_count == 0 {
             try!(self.client.connect());
 
+            let hello_error = Error::ResponseParsingError("No hostname announced by the server");
+
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
 
@@ -178,7 +180,7 @@ impl Sender {
             match self.client.ehlo(&self.client_info.hello_name) {
                 Ok(response) => {self.server_info = Some(
                     ServerInfo{
-                        name: response.first_word().expect("Server announced no hostname"),
+                        name: try_smtp!(response.first_word().ok_or(hello_error), self),
                         esmtp_features: Extension::parse_esmtp_response(&response),
                     });
                 },
@@ -187,7 +189,7 @@ impl Sender {
                         match self.client.helo(&self.client_info.hello_name) {
                             Ok(response) => {self.server_info = Some(
                                 ServerInfo{
-                                    name: response.first_word().expect("Server announced no hostname"),
+                                    name: try_smtp!(response.first_word().ok_or(hello_error), self),
                                     esmtp_features: vec!(),
                                 });
                             },

@@ -42,7 +42,7 @@ pub enum Extension {
 
 impl Extension {
     fn from_str(s: &str) -> Result<Vec<Extension>, &'static str> {
-        let splitted : Vec<&str> = s.split(' ').collect();
+        let splitted : Vec<&str> = s.split_whitespace().collect();
         match (splitted[0], splitted.len()) {
             ("8BITMIME", 1) => Ok(vec![EightBitMime]),
             ("SMTPUTF8", 1) => Ok(vec![SmtpUtfEight]),

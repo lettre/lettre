@@ -28,8 +28,12 @@ pub enum Error {
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
     PermanentError(Response),
+    /// Error parsing a response
+    ResponseParsingError(&'static str),
     /// Internal client error
-    ClientError(String),
+    ClientError(&'static str),
+    /// DNS resolution error
+    ResolutionError,
     /// IO error
     IoError(io::Error),
 }
@@ -45,6 +49,8 @@ impl StdError for Error {
         match *self {
             TransientError(_) => "a transient error occured during the SMTP transaction",
             PermanentError(_) => "a permanent error occured during the SMTP transaction",
+            ResponseParsingError(_) => "an error occured while parsing an SMTP response",
+            ResolutionError => "Could no resolve hostname",
             ClientError(_) => "an unknown error occured",
             IoError(_) => "an I/O error occured",
         }
@@ -69,14 +75,14 @@ impl From<Response> for Error {
         match response.severity() {
             Severity::TransientNegativeCompletion => TransientError(response),
             Severity::PermanentNegativeCompletion => PermanentError(response),
-            _ => ClientError("Unknown error code".to_string())
+            _ => ClientError("Unknown error code")
         }
     }
 }
 
 impl From<&'static str> for Error {
     fn from(string: &'static str) -> Error {
-        ClientError(string.to_string())
+        ClientError(string)
     }
 }
 

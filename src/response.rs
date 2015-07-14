@@ -31,14 +31,14 @@ pub enum Severity {
 }
 
 impl FromStr for Severity {
-    type Err = &'static str;
-    fn from_str(s: &str) -> RResult<Severity, &'static str> {
+    type Err = Error;
+    fn from_str(s: &str) -> RResult<Severity, Error> {
         match s {
             "2" => Ok(PositiveCompletion),
             "3" => Ok(PositiveIntermediate),
             "4" => Ok(TransientNegativeCompletion),
             "5" => Ok(PermanentNegativeCompletion),
-            _ => Err("First digit must be between 2 and 5"),
+            _ => Err(Error::ResponseParsingError("First digit must be between 2 and 5")),
         }
     }
 }
@@ -74,8 +74,8 @@ pub enum Category {
 }
 
 impl FromStr for Category {
-    type Err = &'static str;
-    fn from_str(s: &str) -> RResult<Category, &'static str> {
+    type Err = Error;
+    fn from_str(s: &str) -> RResult<Category, Error> {
         match s {
             "0" => Ok(Syntax),
             "1" => Ok(Information),
@@ -83,7 +83,7 @@ impl FromStr for Category {
             "3" => Ok(Unspecified3),
             "4" => Ok(Unspecified4),
             "5" => Ok(MailSystem),
-            _ => Err("Second digit must be between 0 and 5"),
+            _ => Err(Error::ResponseParsingError("Second digit must be between 0 and 5")),
         }
     }
 }
@@ -122,10 +122,10 @@ impl FromStr for Code {
         if s.len() == 3 {
             match (s[0..1].parse::<Severity>(), s[1..2].parse::<Category>(), s[2..3].parse::<u8>()) {
                 (Ok(severity), Ok(category), Ok(detail)) => Ok(Code {severity: severity, category: category, detail: detail}),
-                _ => return Err(From::from("Could not parse reply code")),
+                _ => return Err(Error::ResponseParsingError("Could not parse response code")),
             }
         } else {
-            Err(From::from("Could not parse reply code"))
+            Err(Error::ResponseParsingError("Wrong code length (should be 3 digit)"))
         }
     }
 }
@@ -169,15 +169,16 @@ impl ResponseParser {
     pub fn read_line(&mut self, line: &str) -> RResult<bool, Error> {
 
         if line.len() < 3 {
-            return Err(From::from("Could not parse reply code, line too short"));
+            return Err(Error::ResponseParsingError("Wrong code length (should be 3 digit)"));
         }
 
-        if self.code.is_none() {
-            self.code = Some(try!(line[0..3].parse::<Code>()));
-        } else {
-            if self.code.as_ref().unwrap().code() != line[0..3] {
-                return Err(From::from("Could not parse reply code"));
-            }
+        match self.code {
+            Some(ref code) => {
+                if code.code() != line[0..3] {
+                    return Err(Error::ResponseParsingError("Response code has changed during a reponse"));
+                }
+            },
+            None => self.code = Some(try!(line[0..3].parse::<Code>()))
         }
 
         if line.len() > 4 {
@@ -194,10 +195,9 @@ impl ResponseParser {
 
     /// Builds a response from a `ResponseParser`
     pub fn response(self) -> SmtpResult {
-        if self.code.is_some() {
-            Ok(Response::new(self.code.unwrap(), self.message))
-        } else {
-            Err(From::from("Could not parse reply code"))
+        match self.code {
+            Some(code) => Ok(Response::new(code, self.message)),
+            None => Err(Error::ResponseParsingError("Incomplete response, could not read response code"))
         }
     }
 }
@@ -280,8 +280,8 @@ mod test {
 
     #[test]
     fn test_severity_from_str() {
-        assert_eq!("2".parse::<Severity>(), Ok(Severity::PositiveCompletion));
-        assert_eq!("4".parse::<Severity>(), Ok(Severity::TransientNegativeCompletion));
+        assert_eq!("2".parse::<Severity>().unwrap(), Severity::PositiveCompletion);
+        assert_eq!("4".parse::<Severity>().unwrap(), Severity::TransientNegativeCompletion);
         assert!("1".parse::<Severity>().is_err());
     }
 
@@ -292,8 +292,8 @@ mod test {
 
     #[test]
     fn test_category_from_str() {
-        assert_eq!("2".parse::<Category>(), Ok(Category::Connections));
-        assert_eq!("4".parse::<Category>(), Ok(Category::Unspecified4));
+        assert_eq!("2".parse::<Category>().unwrap(), Category::Connections);
+        assert_eq!("4".parse::<Category>().unwrap(), Category::Unspecified4);
         assert!("6".parse::<Category>().is_err());
     }
 
