@@ -16,13 +16,12 @@ use std::io::{BufRead, Read, Write};
 use bufstream::BufStream;
 
 use response::ResponseParser;
+use authentication::{Mecanism, CramMd5, Plain};
 use error::{Error, SmtpResult};
 use client::net::{Connector, SmtpStream};
-use client::authentication::{plain, cram_md5};
 use {CRLF, MESSAGE_ENDING};
 
 pub mod net;
-mod authentication;
 
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
 ///
@@ -170,7 +169,7 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
 
     /// Sends an AUTH command with PLAIN mecanism
     pub fn auth_plain(&mut self, username: &str, password: &str) -> SmtpResult {
-        self.command(&format!("AUTH PLAIN {}", plain(username, password)))
+        self.command(&format!("AUTH PLAIN {}", try!(Plain::response(username, password, None))))
     }
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
@@ -180,7 +179,7 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
             None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
         };
 
-        let cram_response = try!(cram_md5(username, password, &encoded_challenge));
+        let cram_response = try!(CramMd5::response(username, password, Some(&encoded_challenge)));
 
         self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
     }

@@ -155,6 +155,7 @@ pub mod response;
 pub mod error;
 pub mod sendable_email;
 pub mod email;
+pub mod authentication;
 
 // Registrated port numbers:
 // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
