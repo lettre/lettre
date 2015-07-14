@@ -58,16 +58,16 @@ pub struct ServerInfo {
     /// ESMTP features supported by the server
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
-    pub esmtp_features: HashSet<Extension>,
+    pub features: HashSet<Extension>,
 }
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} with {}",
             self.name,
-            match self.esmtp_features.is_empty() {
+            match self.features.is_empty() {
                 true => "no supported features".to_string(),
-                false => format! ("{:?}", self.esmtp_features),
+                false => format! ("{:?}", self.features),
             }
         )
     }
@@ -81,20 +81,20 @@ impl ServerInfo {
             None => return Err(Error::ResponseParsingError("Could not read server name"))
         };
 
-        let mut esmtp_features: HashSet<Extension> = HashSet::new();
+        let mut features: HashSet<Extension> = HashSet::new();
 
         for line in response.message() {
 
             let splitted : Vec<&str> = line.split_whitespace().collect();
             let _ = match (splitted[0], splitted.len()) {
-                ("8BITMIME", 1) => {esmtp_features.insert(Extension::EightBitMime);},
-                ("SMTPUTF8", 1) => {esmtp_features.insert(Extension::SmtpUtfEight);},
-                ("STARTTLS", 1) => {esmtp_features.insert(Extension::StartTls);},
+                ("8BITMIME", 1) => {features.insert(Extension::EightBitMime);},
+                ("SMTPUTF8", 1) => {features.insert(Extension::SmtpUtfEight);},
+                ("STARTTLS", 1) => {features.insert(Extension::StartTls);},
                 ("AUTH", _) => {
                     for &mecanism in &splitted[1..] {
                         match mecanism {
-                            "PLAIN" => {esmtp_features.insert(Extension::Authentication(Mecanism::Plain));},
-                            "CRAM-MD5" => {esmtp_features.insert(Extension::Authentication(Mecanism::CramMd5));},
+                            "PLAIN" => {features.insert(Extension::Authentication(Mecanism::Plain));},
+                            "CRAM-MD5" => {features.insert(Extension::Authentication(Mecanism::CramMd5));},
                             _ => (),
                         }
                     }
@@ -105,18 +105,18 @@ impl ServerInfo {
 
         Ok(ServerInfo{
             name: name,
-            esmtp_features: esmtp_features,
+            features: features,
         })
     }
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_feature(&self, keyword: &Extension) -> bool {
-        self.esmtp_features.contains(keyword)
+        self.features.contains(keyword)
     }
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_auth_mecanism(&self, mecanism: Mecanism) -> bool {
-        self.esmtp_features.contains(&Extension::Authentication(mecanism))
+        self.features.contains(&Extension::Authentication(mecanism))
     }
 }
 
@@ -141,14 +141,14 @@ mod test {
     	
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: eightbitmime.clone()
+            features: eightbitmime.clone()
         }), "name with {EightBitMime}".to_string());
         
         let empty = HashSet::new();
         
         assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: empty,
+            features: empty,
         }), "name with no supported features".to_string());
         
         let mut plain = HashSet::new();
@@ -156,7 +156,7 @@ mod test {
     	
     	assert_eq!(format!("{}", ServerInfo{
             name: "name".to_string(),
-            esmtp_features: plain.clone()
+            features: plain.clone()
         }), "name with {Authentication(Plain)}".to_string());
     }
     
@@ -172,7 +172,7 @@ mod test {
     	
     	let server_info = ServerInfo {
     		name: "me".to_string(),
-    		esmtp_features: features,
+    		features: features,
     	};
     	
     	assert_eq!(ServerInfo::from_response(&response).unwrap(), server_info);
@@ -193,7 +193,7 @@ mod test {
     	
     	let server_info2 = ServerInfo {
     		name: "me".to_string(),
-    		esmtp_features: features2,
+    		features: features2,
     	};
     	
     	assert_eq!(ServerInfo::from_response(&response2).unwrap(), server_info2);
