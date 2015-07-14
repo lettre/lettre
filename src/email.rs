@@ -103,11 +103,10 @@ impl EmailBuilder {
             message_id: current_message,
         };
 
-        email.message.headers.insert(
-            Header::new_with_value("Message-ID".to_string(),
-                format!("<{}@rust-smtp>", current_message)
-            ).unwrap()
-        );
+        match Header::new_with_value("Message-ID".to_string(), format!("<{}@rust-smtp>", current_message)) {
+            Ok(header) => email.message.headers.insert(header),
+            Err(_) => (),
+        }
 
         EmailBuilder {
             content: email,

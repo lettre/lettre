@@ -16,7 +16,7 @@ use std::io::{BufRead, Read, Write};
 use bufstream::BufStream;
 
 use response::ResponseParser;
-use error::SmtpResult;
+use error::{Error, SmtpResult};
 use client::net::{Connector, SmtpStream};
 use client::authentication::{plain, cram_md5};
 use {CRLF, MESSAGE_ENDING};
@@ -175,8 +175,14 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
 
     /// Sends an AUTH command with CRAM-MD5 mecanism
     pub fn auth_cram_md5(&mut self, username: &str, password: &str) -> SmtpResult {
-        let encoded_challenge = try!(self.command("AUTH CRAM-MD5")).first_word().expect("No challenge");
-        self.command(&format!("AUTH CRAM-MD5 {}", cram_md5(username, password, &encoded_challenge)))
+        let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
+            Some(challenge) => challenge,
+            None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
+        };
+
+        let cram_response = try!(cram_md5(username, password, &encoded_challenge));
+
+        self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
     }
 
     /// Sends the message content

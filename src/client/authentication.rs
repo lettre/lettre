@@ -16,6 +16,7 @@ use crypto::md5::Md5;
 use crypto::mac::Mac;
 
 use NUL;
+use error::Error;
 
 /// Returns a PLAIN mecanism response
 pub fn plain(username: &str, password: &str) -> String {
@@ -23,14 +24,16 @@ pub fn plain(username: &str, password: &str) -> String {
 }
 
 /// Returns a CRAM-MD5 mecanism response
-pub fn cram_md5(username: &str, password: &str, encoded_challenge: &str) -> String {
-    // TODO manage errors
-    let challenge = encoded_challenge.from_base64().unwrap();
+pub fn cram_md5(username: &str, password: &str, encoded_challenge: &str) -> Result<String, Error> {
+    let challenge = match encoded_challenge.from_base64() {
+        Ok(challenge) => challenge,
+        Err(error) => return Err(Error::ChallengeParsingError(error)),
+    };
 
     let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
     hmac.input(&challenge);
 
-    format!("{} {}", username, hmac.result().code().to_hex()).as_bytes().to_base64(base64::STANDARD)
+    Ok(format!("{} {}", username, hmac.result().code().to_hex()).as_bytes().to_base64(base64::STANDARD))
 }
 
 #[cfg(test)]
@@ -45,7 +48,7 @@ mod test {
     #[test]
     fn test_cram_md5() {
         assert_eq!(cram_md5("alice", "wonderland",
-            "PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
+            "PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==").unwrap(),
             "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
     }
 }

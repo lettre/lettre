@@ -15,6 +15,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use response::{Severity, Response};
+use serialize::base64::FromBase64Error;
 use self::Error::*;
 
 /// An enum of all error kinds.
@@ -30,6 +31,8 @@ pub enum Error {
     PermanentError(Response),
     /// Error parsing a response
     ResponseParsingError(&'static str),
+    /// Error parsing a base64 string in response
+    ChallengeParsingError(FromBase64Error),
     /// Internal client error
     ClientError(&'static str),
     /// DNS resolution error
@@ -50,6 +53,7 @@ impl StdError for Error {
             TransientError(_) => "a transient error occured during the SMTP transaction",
             PermanentError(_) => "a permanent error occured during the SMTP transaction",
             ResponseParsingError(_) => "an error occured while parsing an SMTP response",
+            ChallengeParsingError(_) => "an error occured while parsing a CRAM-MD5 challenge",
             ResolutionError => "Could no resolve hostname",
             ClientError(_) => "an unknown error occured",
             IoError(_) => "an I/O error occured",
