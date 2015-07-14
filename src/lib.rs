@@ -104,7 +104,7 @@
 //!
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
-//! use smtp::sendable_email::SimpleSendableEmail;
+//! use smtp::email::SimpleSendableEmail;
 //!
 //! // Create a minimal email
 //! let email = SimpleSendableEmail::new(
@@ -153,9 +153,8 @@ pub mod client;
 pub mod sender;
 pub mod response;
 pub mod error;
-pub mod sendable_email;
-pub mod email;
 pub mod authentication;
+pub mod email;
 
 // Registrated port numbers:
 // https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml

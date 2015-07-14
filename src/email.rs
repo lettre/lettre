@@ -15,8 +15,6 @@ use email_format::{MimeMessage, Header, Mailbox};
 use time::{now, Tm};
 use uuid::Uuid;
 
-use sendable_email::SendableEmail;
-
 /// Converts an adress or an address with an alias to a `Address`
 pub trait ToHeader {
     /// Converts to a `Header` struct
@@ -192,6 +190,58 @@ impl EmailBuilder {
     }
 }
 
+
+/// Email sendable by an SMTP client
+pub trait SendableEmail {
+    /// From address
+    fn from_address(&self) -> String;
+    /// To addresses
+    fn to_addresses(&self) -> Vec<String>;
+    /// Message content
+    fn message(&self) -> String;
+    /// Message ID
+    fn message_id(&self) -> String;
+}
+
+/// Minimal email structure
+pub struct SimpleSendableEmail {
+    /// From address
+    from: String,
+    /// To addresses
+    to: Vec<String>,
+    /// Message
+    message: String,
+}
+
+impl SimpleSendableEmail {
+    /// Returns a new email
+    pub fn new(from_address: &str, to_address: &str, message: &str) -> SimpleSendableEmail {
+        SimpleSendableEmail {
+            from: from_address.to_string(),
+            to: vec![to_address.to_string()],
+            message: message.to_string(),
+        }
+    }
+}
+
+impl SendableEmail for SimpleSendableEmail {
+    fn from_address(&self) -> String {
+        self.from.clone()
+    }
+
+    fn to_addresses(&self) -> Vec<String> {
+        self.to.clone()
+    }
+
+    fn message(&self) -> String {
+        self.message.clone()
+    }
+
+    fn message_id(&self) -> String {
+        format!("<{}@rust-smtp>", Uuid::new_v4())
+    }
+}
+
 impl SendableEmail for Email {
     /// Return the to addresses, and fails if it is not set
     fn to_addresses(&self) -> Vec<String> {
@@ -225,8 +275,7 @@ mod test {
     use uuid::Uuid;
     use email_format::{MimeMessage, Header};
 
-    use sendable_email::SendableEmail;
-    use super::{EmailBuilder, Email};
+    use super::{SendableEmail, EmailBuilder, Email};
 
     #[test]
     fn test_email_display() {

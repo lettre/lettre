@@ -15,7 +15,7 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use SMTP_PORT;
 use extension::{Extension, ServerInfo};
 use error::{SmtpResult, Error};
-use sendable_email::SendableEmail;
+use email::SendableEmail;
 use client::Client;
 use client::net::SmtpStream;
 use authentication::Mecanism;
