@@ -1,4 +1,4 @@
-rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![Coverage Status](https://coveralls.io/repos/github/amousset/rust-smtp/badge.svg?branch=master)](https://coveralls.io/github/amousset/rust-smtp?branch=master) [![](https://meritbadge.herokuapp.com/smtp)](https://crates.io/crates/smtp)
+rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![Coverage Status](https://coveralls.io/repos/github/amousset/rust-smtp/badge.svg?branch=master)](https://coveralls.io/github/amousset/rust-smtp?branch=master) [![](https://meritbadge.herokuapp.com/smtp)](https://crates.io/crates/smtp)[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 =========
 
 This library implements a simple SMTP client.
@@ -11,22 +11,12 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-smtp = "*"
+smtp = "0.1"
 ```
-
-Tests
------
-
-You can build and run the tests with `cargo test`.
-
-Documentation
--------------
-
-You can build the documentation with `cargo doc`. It is also available on [GitHub pages](http://amousset.github.io/rust-smtp/smtp/).
 
 License
 -------
 
-This program is distributed under the terms of both the MIT license and the Apache License (Version 2.0).
+This program is distributed under the terms of the MIT license.
 
-See LICENSE-APACHE, LICENSE-MIT, and COPYRIGHT for details.
+See LICENSE for details.
