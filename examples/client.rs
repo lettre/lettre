@@ -12,25 +12,48 @@ extern crate log;
 extern crate env_logger;
 extern crate smtp;
 
+use std::sync::{Arc, Mutex};
+use std::collections::HashSet;
+use std::thread;
+
 use smtp::sender::{Sender, SenderBuilder};
 use smtp::email::EmailBuilder;
 
 fn main() {
     env_logger::init().unwrap();
 
-    let email = EmailBuilder::new()
+    let mut sender = Arc::new(Mutex::new(SenderBuilder::localhost().hello_name("localhost")
+        .enable_connection_reuse(true).build()));
+
+	let mut threads = Vec::new();
+    for _ in 1..5 {
+    	
+    	let th_sender = sender.clone();
+    	threads.push(thread::spawn(move || {
+    			println!("thpouet");
+    			    let email = EmailBuilder::new()
                     .to("user@localhost")
                     .from("user@localhost")
                     .body("Hello World!")
                     .subject("Hello")
                     .build();
-
-    let mut sender: Sender = SenderBuilder::localhost().hello_name("localhost")
-        .enable_connection_reuse(true).build();
-
-    for _ in (1..5) {
-        let _ = sender.send(email.clone());
+    			
+    		let _ = th_sender.lock().unwrap().send(email);
+		}));
     }
+    
+    for thread in threads {
+    	let _ = thread.join();
+    }
+    
+    let email = EmailBuilder::new()
+                    .to("user@localhost")
+                    .from("user@localhost")
+                    .body("Hello World!")
+                    .subject("Hello Bis")
+                    .build();
+
+	let mut sender = sender.lock().unwrap();
     let result = sender.send(email);
     sender.close();
 

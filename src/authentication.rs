@@ -21,7 +21,7 @@ use crypto::mac::Mac;
 use NUL;
 use error::Error;
 
-/// TODO
+/// Represents authentication mecanisms
 #[derive(PartialEq,Eq,Copy,Clone,Hash,Debug)]
 pub enum Mecanism {
     /// PLAIN authentication mecanism
@@ -44,7 +44,7 @@ impl Display for Mecanism {
 }
 
 impl Mecanism {
-    /// TODO
+    /// Does the mecanism supports initial response
     pub fn supports_initial_response(&self) -> bool {
         match *self {
             Mecanism::Plain => true,
@@ -52,7 +52,7 @@ impl Mecanism {
         }
     }
 
- /// TODO
+ /// Returns the string to send to the server, using the provided username, password and challenge in some cases
     pub fn response(&self, username: &str, password: &str, challenge: Option<&str>) -> Result<String, Error> {
         match *self {
             Mecanism::Plain => {
