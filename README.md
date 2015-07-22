@@ -1,4 +1,4 @@
-rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![Coverage Status](https://coveralls.io/repos/github/amousset/rust-smtp/badge.svg?branch=master)](https://coveralls.io/github/amousset/rust-smtp?branch=master) [![](https://meritbadge.herokuapp.com/smtp)](https://crates.io/crates/smtp)[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+rust-smtp [![Build Status](https://travis-ci.org/amousset/rust-smtp.svg?branch=master)](https://travis-ci.org/amousset/rust-smtp) [![Coverage Status](https://coveralls.io/repos/github/amousset/rust-smtp/badge.svg?branch=master)](https://coveralls.io/github/amousset/rust-smtp?branch=master) [![Crate](https://meritbadge.herokuapp.com/smtp)](https://crates.io/crates/smtp) [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 =========
 
 This library implements a simple SMTP client.
