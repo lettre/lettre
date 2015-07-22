@@ -208,9 +208,9 @@ impl Sender {
         }
 
         let current_message = try!(email.message_id().ok_or("Missing Message-ID"));
-        let from_address = try!(email.from_address().ok_or("Missing Message-ID"));
-        let to_addresses = try!(email.to_addresses().ok_or("Missing Message-ID"));
-        let message = try!(email.message().ok_or("Missing Message-ID"));
+        let from_address = try!(email.from_address().ok_or("Missing From address"));
+        let to_addresses = try!(email.to_addresses().ok_or("Missing To address"));
+        let message = try!(email.message().ok_or("Missing message"));
 
         // Mail
         let mail_options = match self.server_info.as_ref().unwrap().supports_feature(&Extension::EightBitMime) {

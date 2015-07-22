@@ -1,14 +1,13 @@
 [package]
 
 name = "smtp"
-version = "0.1.0"
+version = "0.1.1"
 description = "Simple SMTP client"
 readme = "README.md"
-documentation = "http://amousset.github.io/rust-smtp/smtp/"
+documentation = "http://amousset.me/rust-smtp/smtp/"
 repository = "https://github.com/amousset/rust-smtp"
-homepage = "https://github.com/amousset/rust-smtp"
-license = "MIT/Apache-2.0"
-authors = ["Alexis Mousset <contact@amousset.me>"]
+license = "MIT"
+authors = ["Alexis Mousset <alexis.mousset@gmx.fr>"]
 keywords = ["email", "smtp", "mailer"]
 
 [dependencies]
