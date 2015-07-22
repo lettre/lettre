@@ -12,7 +12,7 @@ use smtp::email::EmailBuilder;
 fn main() {
     env_logger::init().unwrap();
 
-    let sender = Arc::new(Mutex::new(SenderBuilder::localhost().hello_name("localhost")
+    let sender = Arc::new(Mutex::new(SenderBuilder::localhost().unwrap().hello_name("localhost")
         .enable_connection_reuse(true).build()));
 
 	let mut threads = Vec::new();

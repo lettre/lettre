@@ -30,18 +30,24 @@ pub struct SenderBuilder {
 /// Builder for the SMTP Sender
 impl SenderBuilder {
     /// Creates a new local SMTP client
-    pub fn new<A: ToSocketAddrs>(addr: A) -> SenderBuilder {
-        SenderBuilder {
-            server_addr: addr.to_socket_addrs().ok().expect("could not parse server address").next().unwrap(),
-            credentials: None,
-            connection_reuse_count_limit: 100,
-            enable_connection_reuse: false,
-            hello_name: "localhost".to_string(),
-        }
+    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SenderBuilder, Error> {
+    	let mut addresses = try!(addr.to_socket_addrs());
+    	
+    	
+    	match addresses.next() {
+    		Some(addr) => Ok(SenderBuilder {
+	            server_addr: addr,
+	            credentials: None,
+	            connection_reuse_count_limit: 100,
+	            enable_connection_reuse: false,
+	            hello_name: "localhost".to_string(),
+        	}),
+    		None => Err(From::from("Could nor resolve hostname")),
+    	}        
     }
 
     /// Creates a new local SMTP client to port 25
-    pub fn localhost() -> SenderBuilder {
+    pub fn localhost() -> Result<SenderBuilder, Error> {
         SenderBuilder::new(("localhost", SMTP_PORT))
     }
 
@@ -119,7 +125,7 @@ impl Sender {
     ///
     /// It does not connects to the server, but only creates the `Sender`
     pub fn new(builder: SenderBuilder) -> Sender {
-        let client: Client<SmtpStream> = Client::new(builder.server_addr);
+        let client: Client<SmtpStream> = Client::new(builder.server_addr).unwrap();
         Sender{
             client: client,
             server_info: None,
@@ -201,10 +207,10 @@ impl Sender {
             }
         }
 
-        let current_message = email.message_id();
-        let from_address = email.from_address();
-        let to_addresses = email.to_addresses();
-        let message = email.message();
+        let current_message = try!(email.message_id().ok_or("Missing Message-ID"));
+        let from_address = try!(email.from_address().ok_or("Missing Message-ID"));
+        let to_addresses = try!(email.to_addresses().ok_or("Missing Message-ID"));
+        let message = try!(email.message().ok_or("Missing Message-ID"));
 
         // Mail
         let mail_options = match self.server_info.as_ref().unwrap().supports_feature(&Extension::EightBitMime) {

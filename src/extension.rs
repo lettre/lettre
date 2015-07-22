@@ -77,11 +77,11 @@ impl ServerInfo {
         for line in response.message() {
 
             let splitted : Vec<&str> = line.split_whitespace().collect();
-            let _ = match (splitted[0], splitted.len()) {
-                ("8BITMIME", 1) => {features.insert(Extension::EightBitMime);},
-                ("SMTPUTF8", 1) => {features.insert(Extension::SmtpUtfEight);},
-                ("STARTTLS", 1) => {features.insert(Extension::StartTls);},
-                ("AUTH", _) => {
+            let _ = match splitted[0] {
+                "8BITMIME" => {features.insert(Extension::EightBitMime);},
+                "SMTPUTF8" => {features.insert(Extension::SmtpUtfEight);},
+                "STARTTLS" => {features.insert(Extension::StartTls);},
+                "AUTH" => {
                     for &mecanism in &splitted[1..] {
                         match mecanism {
                             "PLAIN" => {features.insert(Extension::Authentication(Mecanism::Plain));},
@@ -90,7 +90,7 @@ impl ServerInfo {
                         }
                     }
                 },
-                (_, _) => (),
+                _ => (),
             };
         }
 

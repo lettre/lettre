@@ -185,13 +185,13 @@ impl EmailBuilder {
 /// Email sendable by an SMTP client
 pub trait SendableEmail {
     /// From address
-    fn from_address(&self) -> String;
+    fn from_address(&self) -> Option<String>;
     /// To addresses
-    fn to_addresses(&self) -> Vec<String>;
+    fn to_addresses(&self) -> Option<Vec<String>>;
     /// Message content
-    fn message(&self) -> String;
+    fn message(&self) -> Option<String>;
     /// Message ID
-    fn message_id(&self) -> String;
+    fn message_id(&self) -> Option<String>;
 }
 
 /// Minimal email structure
@@ -216,46 +216,47 @@ impl SimpleSendableEmail {
 }
 
 impl SendableEmail for SimpleSendableEmail {
-    fn from_address(&self) -> String {
-        self.from.clone()
+    fn from_address(&self) -> Option<String> {
+        Some(self.from.clone())
     }
 
-    fn to_addresses(&self) -> Vec<String> {
-        self.to.clone()
+    fn to_addresses(&self) -> Option<Vec<String>> {
+        Some(self.to.clone())
     }
 
-    fn message(&self) -> String {
-        self.message.clone()
+    fn message(&self) -> Option<String> {
+        Some(self.message.clone())
     }
 
-    fn message_id(&self) -> String {
-        format!("<{}@rust-smtp>", Uuid::new_v4())
+    fn message_id(&self) -> Option<String> {
+        Some(format!("<{}@rust-smtp>", Uuid::new_v4()))
     }
 }
 
 impl SendableEmail for Email {
     /// Return the to addresses, and fails if it is not set
-    fn to_addresses(&self) -> Vec<String> {
+    fn to_addresses(&self) -> Option<Vec<String>> {
         if self.to.is_empty() {
-            panic!("The To field is empty")
+            None
+        } else {
+        	Some(self.to.clone())
         }
-        self.to.clone()
     }
 
     /// Return the from address, and fails if it is not set
-    fn from_address(&self) -> String {
+    fn from_address(&self) -> Option<String> {
         match self.from {
-            Some(ref from_address) => from_address.clone(),
-            None => panic!("The From field is empty"),
+            Some(ref from_address) => Some(from_address.clone()),
+            None => None,
         }
     }
 
-    fn message(&self) -> String {
-        format!("{}", self)
+    fn message(&self) -> Option<String> {
+        Some(format!("{}", self))
     }
 
-    fn message_id(&self) -> String {
-        format!("{}", self.message_id)
+    fn message_id(&self) -> Option<String> {
+        Some(format!("{}", self.message_id))
     }
 }
 
@@ -295,7 +296,7 @@ mod test {
             format!("{}", email),
             format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n", current_message)
         );
-        assert_eq!(current_message.to_string(), email.message_id());
+        assert_eq!(current_message.to_string(), email.message_id().unwrap());
     }
 
     #[test]
@@ -317,7 +318,7 @@ mod test {
         assert_eq!(
             format!("{}", email),
             format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
-                    email.message_id(), date_now.rfc822())
+                    email.message_id().unwrap(), date_now.rfc822())
         );
     }
 
@@ -338,15 +339,15 @@ mod test {
                              .build();
 
         assert_eq!(
-            email.from_address(),
+            email.from_address().unwrap(),
             "sender@localhost".to_string()
         );
         assert_eq!(
-            email.to_addresses(),
+            email.to_addresses().unwrap(),
             vec!["user@localhost".to_string(), "cc@localhost".to_string()]
         );
         assert_eq!(
-            email.message(),
+            email.message().unwrap(),
             format!("{}", email)
         );
     }

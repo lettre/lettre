@@ -46,7 +46,6 @@ pub struct Client<S: Write + Read = SmtpStream> {
     stream: Option<BufStream<S>>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
-
 }
 
 macro_rules! return_err (
@@ -59,11 +58,16 @@ impl<S: Write + Read = SmtpStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn new<A: ToSocketAddrs>(addr: A) -> Client<S> {
-        Client{
-            stream: None,
-            server_addr: addr.to_socket_addrs().ok().expect("could not parse server address").next().unwrap(),
-        }
+    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<Client<S>, Error> {
+    	let mut addresses = try!(addr.to_socket_addrs());
+    	
+		match addresses.next() {
+    		Some(addr) => Ok(Client {
+    			stream: None,
+            	server_addr: addr,
+        	}),
+    		None => Err(From::from("Could nor resolve hostname")),
+    	}
     }
 }
 

@@ -1,13 +1,14 @@
 //! # Rust SMTP client
 //!
 //! This client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
-//! a work in progress. It is designed to efficiently send emails from a rust application to a
-//! relay email server.
+//! a work in progress. It is designed to efficiently send emails from an application to a
+//! relay email server, as it relies as much as possible on the relay server for sanity and RFC compliance
+//! checks.
 //!
 //! It implements the following extensions:
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
-//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954))
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and CRAM-MD5 mecanisms
 //!
 //! It will eventually implement the following extensions:
 //!
@@ -16,7 +17,7 @@
 //!
 //! ## Architecture
 //!
-//! This client is divided into three parts:
+//! This client is divided into three main parts:
 //!
 //! * client: a low level SMTP client providing all SMTP commands
 //! * sender: a high level SMTP client providing an easy method to send emails
@@ -43,7 +44,7 @@
 //!     .build();
 //!
 //! // Open a local connection on port 25
-//! let mut sender = SenderBuilder::localhost().build();
+//! let mut sender = SenderBuilder::localhost().unwrap().build();
 //! // Send the email
 //! let result = sender.send(email);
 //!
@@ -70,7 +71,7 @@
 //! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut sender = SenderBuilder::new(("server.tld", 10025))
+//! let mut sender = SenderBuilder::new(("server.tld", 10025)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
@@ -104,7 +105,7 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut sender = SenderBuilder::localhost().build();
+//! let mut sender = SenderBuilder::localhost().unwrap().build();
 //! let result = sender.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -119,7 +120,7 @@
 //! use smtp::SMTP_PORT;
 //! use std::net::TcpStream;
 //!
-//! let mut email_client: Client<SmtpStream> = Client::new(("localhost", SMTP_PORT));
+//! let mut email_client: Client<SmtpStream> = Client::new(("localhost", SMTP_PORT)).unwrap();
 //! let _ = email_client.connect();
 //! let _ = email_client.ehlo("my_hostname");
 //! let _ = email_client.mail("user@example.com", None);
