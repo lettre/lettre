@@ -201,7 +201,6 @@ impl Sender {
         }
 
         if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
-
             let (username, password) = self.client_info.credentials.clone().unwrap();
 
 			let mut found = false;

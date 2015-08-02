@@ -56,6 +56,7 @@
 //! ```rust,no_run
 //! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::email::EmailBuilder;
+//! use smtp::authentication::Mecanism;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -76,6 +77,8 @@
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
+//!     // Configure accepted authetication mecanisms
+//!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
 //!     .enable_connection_reuse(true).build();
 //!
