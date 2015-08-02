@@ -25,6 +25,8 @@ pub struct SenderBuilder {
     credentials: Option<(String, String)>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
+    /// List of authentication mecanism, sorted by priority
+    authentication_mecanisms: Vec<Mecanism>,
 }
 
 /// Builder for the SMTP Sender
@@ -41,6 +43,7 @@ impl SenderBuilder {
 	            connection_reuse_count_limit: 100,
 	            enable_connection_reuse: false,
 	            hello_name: "localhost".to_string(),
+	            authentication_mecanisms: vec![Mecanism::CramMd5, Mecanism::Plain],
         	}),
     		None => Err(From::from("Could nor resolve hostname")),
     	}        
@@ -72,6 +75,12 @@ impl SenderBuilder {
     /// Set the client credentials
     pub fn credentials(mut self, username: &str, password: &str) -> SenderBuilder {
         self.credentials = Some((username.to_string(), password.to_string()));
+        self
+    }
+    
+    /// Set the authentication mecanisms
+    pub fn authentication_mecanisms(mut self, mecanisms: Vec<Mecanism>) -> SenderBuilder {
+        self.authentication_mecanisms = mecanisms;
         self
     }
 
@@ -191,20 +200,23 @@ impl Sender {
             debug!("server {}", self.server_info.as_ref().unwrap());
         }
 
-        // TODO: Use PLAIN AUTH in encrypted connections, CRAM-MD5 otherwise
         if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
 
             let (username, password) = self.client_info.credentials.clone().unwrap();
 
-            if self.server_info.as_ref().unwrap().supports_auth_mecanism(Mecanism::CramMd5) {
-                let result = self.client.auth(Mecanism::CramMd5, &username, &password);
-                try_smtp!(result, self);
-            } else if self.server_info.as_ref().unwrap().supports_auth_mecanism(Mecanism::Plain) {
-                let result = self.client.auth(Mecanism::Plain, &username, &password);
-                try_smtp!(result, self);
-            } else {
-                debug!("No supported authentication mecanisms available");
-            }
+			let mut found = false;
+
+			for mecanism in self.client_info.authentication_mecanisms.clone() {
+				if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
+					found = true;
+                	let result = self.client.auth(mecanism, &username, &password);
+                	try_smtp!(result, self);
+            	}
+			}
+			
+			if !found {
+				debug!("No supported authentication mecanisms available");
+			}
         }
 
         let current_message = try!(email.message_id().ok_or("Missing Message-ID"));
