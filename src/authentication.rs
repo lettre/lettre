@@ -81,6 +81,7 @@ mod test {
         let mecanism = Mecanism::Plain;
 
         assert_eq!(mecanism.response("username", "password", None).unwrap(), "AHVzZXJuYW1lAHBhc3N3b3Jk");
+        assert!(mecanism.response("username", "password", Some("test")).is_err());
     }
 
     #[test]
@@ -90,5 +91,7 @@ mod test {
         assert_eq!(mecanism.response("alice", "wonderland",
             Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==")).unwrap(),
             "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
+        assert!(mecanism.response("alice", "wonderland", Some("tést")).is_err());
+        assert!(mecanism.response("alice", "wonderland", None).is_err());
     }
 }
