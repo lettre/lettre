@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};
-use std::result::Result as RResult;
+use std::result;
 
 use self::Severity::*;
 use self::Category::*;
@@ -23,7 +23,7 @@ pub enum Severity {
 
 impl FromStr for Severity {
     type Err = Error;
-    fn from_str(s: &str) -> RResult<Severity, Error> {
+    fn from_str(s: &str) -> result::Result<Severity, Error> {
         match s {
             "2" => Ok(PositiveCompletion),
             "3" => Ok(PositiveIntermediate),
@@ -66,7 +66,7 @@ pub enum Category {
 
 impl FromStr for Category {
     type Err = Error;
-    fn from_str(s: &str) -> RResult<Category, Error> {
+    fn from_str(s: &str) -> result::Result<Category, Error> {
         match s {
             "0" => Ok(Syntax),
             "1" => Ok(Information),
@@ -109,7 +109,7 @@ impl FromStr for Code {
     type Err = Error;
 
     #[inline]
-    fn from_str(s: &str) -> RResult<Code, Error> {
+    fn from_str(s: &str) -> result::Result<Code, Error> {
         if s.len() == 3 {
             match (s[0..1].parse::<Severity>(), s[1..2].parse::<Category>(), s[2..3].parse::<u8>()) {
                 (Ok(severity), Ok(category), Ok(detail)) => Ok(Code {severity: severity, category: category, detail: detail}),
@@ -157,7 +157,7 @@ impl ResponseParser {
     }
 
     /// Parses a line and return a `bool` indicating if there are more lines to come
-    pub fn read_line(&mut self, line: &str) -> RResult<bool, Error> {
+    pub fn read_line(&mut self, line: &str) -> result::Result<bool, Error> {
 
         if line.len() < 3 {
             return Err(Error::ResponseParsingError("Wrong code length (should be 3 digit)"));
