@@ -11,7 +11,7 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-smtp = "0.1"
+smtp = "0.1.2"
 ```
 
 License
