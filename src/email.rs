@@ -166,7 +166,7 @@ impl EmailBuilder {
 
     /// Adds a `Date` header with the given date
     pub fn date(mut self, date: &Tm) -> EmailBuilder {
-        self.insert_header(("Date", Tm::rfc822(date).to_string().as_ref()));
+        self.insert_header(("Date", Tm::rfc822z(date).to_string().as_ref()));
         self.date_issued = true;
         self
     }
@@ -174,7 +174,7 @@ impl EmailBuilder {
     /// Build the Email
     pub fn build(mut self) -> Email {
         if !self.date_issued {
-            self.insert_header(("Date", Tm::rfc822(&now()).to_string().as_ref()));
+            self.insert_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
         self.content.message.update_headers();
         self.content
@@ -318,7 +318,7 @@ mod test {
         assert_eq!(
             format!("{}", email),
             format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
-                    email.message_id().unwrap(), date_now.rfc822())
+                    email.message_id().unwrap(), date_now.rfc822z())
         );
     }
 
