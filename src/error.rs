@@ -70,7 +70,7 @@ impl From<Response> for Error {
         match response.severity() {
             Severity::TransientNegativeCompletion => TransientError(response),
             Severity::PermanentNegativeCompletion => PermanentError(response),
-            _ => ClientError("Unknown error code")
+            _ => ClientError("Unknown error code"),
         }
     }
 }

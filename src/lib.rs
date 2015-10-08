@@ -2,8 +2,8 @@
 //!
 //! This client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
 //! a work in progress. It is designed to efficiently send emails from an application to a
-//! relay email server, as it relies as much as possible on the relay server for sanity and RFC compliance
-//! checks.
+//! relay email server, as it relies as much as possible on the relay server for sanity and RFC
+//! compliance checks.
 //!
 //! It implements the following extensions:
 //!
@@ -135,7 +135,8 @@
 
 #![deny(missing_docs)]
 
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 extern crate rustc_serialize as serialize;
 extern crate crypto;
 extern crate time;

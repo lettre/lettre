@@ -74,9 +74,7 @@ pub struct Email {
 
 impl Display for Email {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}",
-            self.message.as_string()
-        )
+        write!(f, "{}", self.message.as_string())
     }
 }
 
@@ -92,7 +90,8 @@ impl EmailBuilder {
             message_id: current_message,
         };
 
-        match Header::new_with_value("Message-ID".to_string(), format!("<{}@rust-smtp>", current_message)) {
+        match Header::new_with_value("Message-ID".to_string(),
+                                     format!("<{}@rust-smtp>", current_message)) {
             Ok(header) => email.message.headers.insert(header),
             Err(_) => (),
         }
@@ -239,7 +238,7 @@ impl SendableEmail for Email {
         if self.to.is_empty() {
             None
         } else {
-        	Some(self.to.clone())
+            Some(self.to.clone())
         }
     }
 
@@ -280,22 +279,21 @@ mod test {
             message_id: current_message,
         };
 
-        email.message.headers.insert(
-            Header::new_with_value("Message-ID".to_string(),
-                format!("<{}@rust-smtp>", current_message)
-            ).unwrap()
-        );
+        email.message.headers.insert(Header::new_with_value("Message-ID".to_string(),
+                                                            format!("<{}@rust-smtp>",
+                                                                    current_message))
+                                         .unwrap());
 
-        email.message.headers.insert(
-            Header::new_with_value("To".to_string(), "to@example.com".to_string()).unwrap()
-        );
+        email.message
+             .headers
+             .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
+                         .unwrap());
 
         email.message.body = "body".to_string();
 
-        assert_eq!(
-            format!("{}", email),
-            format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n", current_message)
-        );
+        assert_eq!(format!("{}", email),
+                   format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n",
+                           current_message));
         assert_eq!(current_message.to_string(), email.message_id().unwrap());
     }
 
@@ -305,21 +303,23 @@ mod test {
         let date_now = now();
 
         let email = email_builder.to("user@localhost")
-                             .from("user@localhost")
-                             .cc(("cc@localhost", "Alias"))
-                             .reply_to("reply@localhost")
-                             .sender("sender@localhost")
-                             .body("Hello World!")
-                             .date(&date_now)
-                             .subject("Hello")
-                             .add_header(("X-test", "value"))
-                             .build();
+                                 .from("user@localhost")
+                                 .cc(("cc@localhost", "Alias"))
+                                 .reply_to("reply@localhost")
+                                 .sender("sender@localhost")
+                                 .body("Hello World!")
+                                 .date(&date_now)
+                                 .subject("Hello")
+                                 .add_header(("X-test", "value"))
+                                 .build();
 
-        assert_eq!(
-            format!("{}", email),
-            format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
-                    email.message_id().unwrap(), date_now.rfc822z())
-        );
+        assert_eq!(format!("{}", email),
+                   format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: \
+                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                            <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: \
+                            {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
+                           email.message_id().unwrap(),
+                           date_now.rfc822z()));
     }
 
     #[test]
@@ -328,28 +328,21 @@ mod test {
         let date_now = now();
 
         let email = email_builder.to("user@localhost")
-                             .from("user@localhost")
-                             .cc(("cc@localhost", "Alias"))
-                             .reply_to("reply@localhost")
-                             .sender("sender@localhost")
-                             .body("Hello World!")
-                             .date(&date_now)
-                             .subject("Hello")
-                             .add_header(("X-test", "value"))
-                             .build();
+                                 .from("user@localhost")
+                                 .cc(("cc@localhost", "Alias"))
+                                 .reply_to("reply@localhost")
+                                 .sender("sender@localhost")
+                                 .body("Hello World!")
+                                 .date(&date_now)
+                                 .subject("Hello")
+                                 .add_header(("X-test", "value"))
+                                 .build();
 
-        assert_eq!(
-            email.from_address().unwrap(),
-            "sender@localhost".to_string()
-        );
-        assert_eq!(
-            email.to_addresses().unwrap(),
-            vec!["user@localhost".to_string(), "cc@localhost".to_string()]
-        );
-        assert_eq!(
-            email.message().unwrap(),
-            format!("{}", email)
-        );
+        assert_eq!(email.from_address().unwrap(),
+                   "sender@localhost".to_string());
+        assert_eq!(email.to_addresses().unwrap(),
+                   vec!["user@localhost".to_string(), "cc@localhost".to_string()]);
+        assert_eq!(email.message().unwrap(), format!("{}", email));
     }
 
 }

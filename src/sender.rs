@@ -33,20 +33,20 @@ pub struct SenderBuilder {
 impl SenderBuilder {
     /// Creates a new local SMTP client
     pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SenderBuilder, Error> {
-    	let mut addresses = try!(addr.to_socket_addrs());
-    	
-    	
-    	match addresses.next() {
-    		Some(addr) => Ok(SenderBuilder {
-	            server_addr: addr,
-	            credentials: None,
-	            connection_reuse_count_limit: 100,
-	            enable_connection_reuse: false,
-	            hello_name: "localhost".to_string(),
-	            authentication_mecanisms: vec![Mecanism::CramMd5, Mecanism::Plain],
-        	}),
-    		None => Err(From::from("Could nor resolve hostname")),
-    	}        
+        let mut addresses = try!(addr.to_socket_addrs());
+
+
+        match addresses.next() {
+            Some(addr) => Ok(SenderBuilder {
+                server_addr: addr,
+                credentials: None,
+                connection_reuse_count_limit: 100,
+                enable_connection_reuse: false,
+                hello_name: "localhost".to_string(),
+                authentication_mecanisms: vec![Mecanism::CramMd5, Mecanism::Plain],
+            }),
+            None => Err(From::from("Could nor resolve hostname")),
+        }
     }
 
     /// Creates a new local SMTP client to port 25
@@ -77,7 +77,7 @@ impl SenderBuilder {
         self.credentials = Some((username.to_string(), password.to_string()));
         self
     }
-    
+
     /// Set the authentication mecanisms
     pub fn authentication_mecanisms(mut self, mecanisms: Vec<Mecanism>) -> SenderBuilder {
         self.authentication_mecanisms = mecanisms;
@@ -135,7 +135,7 @@ impl Sender {
     /// It does not connects to the server, but only creates the `Sender`
     pub fn new(builder: SenderBuilder) -> Sender {
         let client: Client<SmtpStream> = Client::new(builder.server_addr).unwrap();
-        Sender{
+        Sender {
             client: client,
             server_info: None,
             client_info: builder,
@@ -185,12 +185,12 @@ impl Sender {
                     Error::PermanentError(ref response) if response.has_code(550) => {
                         match self.client.helo(&self.client_info.hello_name) {
                             Ok(response) => response,
-                            Err(error) => try_smtp!(Err(error), self)
+                            Err(error) => try_smtp!(Err(error), self),
                         }
-                    },
+                    }
                     _ => {
                         try_smtp!(Err(error), self)
-                    },
+                    }
                 },
             };
 
@@ -203,19 +203,19 @@ impl Sender {
         if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
             let (username, password) = self.client_info.credentials.clone().unwrap();
 
-			let mut found = false;
+            let mut found = false;
 
-			for mecanism in self.client_info.authentication_mecanisms.clone() {
-				if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
-					found = true;
-                	let result = self.client.auth(mecanism, &username, &password);
-                	try_smtp!(result, self);
-            	}
-			}
-			
-			if !found {
-				debug!("No supported authentication mecanisms available");
-			}
+            for mecanism in self.client_info.authentication_mecanisms.clone() {
+                if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
+                    found = true;
+                    let result = self.client.auth(mecanism, &username, &password);
+                    try_smtp!(result, self);
+                }
+            }
+
+            if !found {
+                debug!("No supported authentication mecanisms available");
+            }
         }
 
         let current_message = try!(email.message_id().ok_or("Missing Message-ID"));
@@ -224,7 +224,10 @@ impl Sender {
         let message = try!(email.message().ok_or("Missing message"));
 
         // Mail
-        let mail_options = match self.server_info.as_ref().unwrap().supports_feature(&Extension::EightBitMime) {
+        let mail_options = match self.server_info
+                                     .as_ref()
+                                     .unwrap()
+                                     .supports_feature(&Extension::EightBitMime) {
             true => Some("BODY=8BITMIME"),
             false => None,
         };
@@ -252,15 +255,22 @@ impl Sender {
             self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
 
             // Log the message
-            info!("{}: conn_use={}, size={}, status=sent ({})", current_message,
-                self.state.connection_reuse_count, message.len(),
-                result.as_ref().ok().unwrap().message().iter().next().unwrap_or(&"no response".to_string())
-            );
+            info!("{}: conn_use={}, size={}, status=sent ({})",
+                  current_message,
+                  self.state.connection_reuse_count,
+                  message.len(),
+                  result.as_ref()
+                        .ok()
+                        .unwrap()
+                        .message()
+                        .iter()
+                        .next()
+                        .unwrap_or(&"no response".to_string()));
         }
 
         // Test if we can reuse the existing connection
         if (!self.client_info.enable_connection_reuse) ||
-            (self.state.connection_reuse_count >= self.client_info.connection_reuse_count_limit) {
+           (self.state.connection_reuse_count >= self.client_info.connection_reuse_count_limit) {
             self.reset();
         }
 

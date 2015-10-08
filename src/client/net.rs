@@ -19,5 +19,3 @@ impl Connector for SmtpStream {
 /// Represents an atual SMTP network stream
 //Used later for ssl
 pub type SmtpStream = TcpStream;
-
-

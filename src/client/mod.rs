@@ -23,8 +23,9 @@ fn escape_dot(string: &str) -> String {
         format!(".{}", string)
     } else {
         string.to_string()
-    }.replace("\r.", "\r..")
-     .replace("\n.", "\n..")
+    }
+        .replace("\r.", "\r..")
+        .replace("\n.", "\n..")
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
@@ -59,15 +60,15 @@ impl<S: Write + Read = SmtpStream> Client<S> {
     ///
     /// It does not connects to the server, but only creates the `Client`
     pub fn new<A: ToSocketAddrs>(addr: A) -> Result<Client<S>, Error> {
-    	let mut addresses = try!(addr.to_socket_addrs());
-    	
-		match addresses.next() {
-    		Some(addr) => Ok(Client {
-    			stream: None,
-            	server_addr: addr,
-        	}),
-    		None => Err(From::from("Could nor resolve hostname")),
-    	}
+        let mut addresses = try!(addr.to_socket_addrs());
+
+        match addresses.next() {
+            Some(addr) => Ok(Client {
+                stream: None,
+                server_addr: addr,
+            }),
+            None => Err(From::from("Could nor resolve hostname")),
+        }
     }
 }
 
@@ -166,14 +167,18 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
     pub fn auth(&mut self, mecanism: Mecanism, username: &str, password: &str) -> SmtpResult {
 
         if mecanism.supports_initial_response() {
-            self.command(&format!("AUTH {} {}", mecanism, try!(mecanism.response(username, password, None))))
+            self.command(&format!("AUTH {} {}",
+                                  mecanism,
+                                  try!(mecanism.response(username, password, None))))
         } else {
             let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
                 Some(challenge) => challenge,
                 None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
             };
 
-            let cram_response = try!(mecanism.response(username, password, Some(&encoded_challenge)));
+            let cram_response = try!(mecanism.response(username,
+                                                       password,
+                                                       Some(&encoded_challenge)));
 
             self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
         }
@@ -236,19 +241,15 @@ mod test {
     fn test_remove_crlf() {
         assert_eq!(remove_crlf("\r\n"), "");
         assert_eq!(remove_crlf("EHLO my_name\r\n"), "EHLO my_name");
-        assert_eq!(
-            remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-            "EHLO my_nameSIZE 42"
-        );
+        assert_eq!(remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+                   "EHLO my_nameSIZE 42");
     }
 
     #[test]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CR><LF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CR><LF>");
-        assert_eq!(
-            escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-            "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
-        );
+        assert_eq!(escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+                   "EHLO my_name<CR><LF>SIZE 42<CR><LF>");
     }
 }
