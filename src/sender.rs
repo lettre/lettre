@@ -57,15 +57,15 @@ impl SenderBuilder {
         SenderBuilder::new(("localhost", SMTP_PORT))
     }
 
-    /// Add an SSL context and try to use SSL connection
+    /// Use STARTTLS with a specific context
     pub fn ssl_context(mut self, ssl_context: SslContext) -> SenderBuilder {
         self.ssl_context = Some(ssl_context);
         self
     }
 
-    /// Add an SSL context and try to use SSL connection
-    pub fn ssl(self) -> SenderBuilder {
-        self.ssl_context(SslContext::new(SslMethod::Sslv23).unwrap())
+    /// Require SSL/TLS using STARTTLS
+    pub fn starttls(self) -> SenderBuilder {
+        self.ssl_context(SslContext::new(SslMethod::Tlsv1).unwrap())
     }
 
     /// Set the name used during HELO or EHLO
@@ -178,6 +178,19 @@ impl Sender {
         self.client.close();
     }
 
+    /// Gets the EHLO response and updates server information
+    pub fn get_ehlo(&mut self) -> SmtpResult {
+        // Extended Hello
+        let ehlo_response = try_smtp!(self.client.ehlo(&self.client_info.hello_name), self);
+
+        self.server_info = Some(try_smtp!(ServerInfo::from_response(&ehlo_response), self));
+
+        // Print server information
+        debug!("server {}", self.server_info.as_ref().unwrap());
+
+        Ok(ehlo_response)
+    }
+
     /// Sends an email
     pub fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
         // Check if the connection is still available
@@ -189,48 +202,37 @@ impl Sender {
 
         // If there is a usable connection, test if the server answers and hello has been sent
         if self.state.connection_reuse_count == 0 {
-            try!(self.client.connect(&self.client_info.server_addr, self.client_info.ssl_context.as_ref()));
+            try!(self.client.connect(&self.client_info.server_addr));
 
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
 
-            // Extended Hello or Hello if needed
-            let hello_response = match self.client.ehlo(&self.client_info.hello_name) {
-                Ok(response) => response,
-                Err(error) => match error {
-                    Error::PermanentError(ref response) if response.has_code(550) => {
-                        match self.client.helo(&self.client_info.hello_name) {
-                            Ok(response) => response,
-                            Err(error) => try_smtp!(Err(error), self),
-                        }
-                    }
-                    _ => {
-                        try_smtp!(Err(error), self)
-                    }
-                },
-            };
+            try!(self.get_ehlo());
 
-            self.server_info = Some(try_smtp!(ServerInfo::from_response(&hello_response), self));
+            if self.client_info.ssl_context.is_some() {
+                try_smtp!(self.client.starttls(), self);
 
-            // Print server information
-            debug!("server {}", self.server_info.as_ref().unwrap());
-        }
+                try!(self.client.upgrade_tls_stream(self.client_info.ssl_context.as_ref().unwrap()));
 
-        if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
-            let (username, password) = self.client_info.credentials.clone().unwrap();
-
-            let mut found = false;
-
-            for mecanism in self.client_info.authentication_mecanisms.clone() {
-                if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
-                    found = true;
-                    let result = self.client.auth(mecanism, &username, &password);
-                    try_smtp!(result, self);
-                }
+                try!(self.get_ehlo());
             }
 
-            if !found {
-                debug!("No supported authentication mecanisms available");
+            if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
+                let (username, password) = self.client_info.credentials.clone().unwrap();
+
+                let mut found = false;
+
+                for mecanism in self.client_info.authentication_mecanisms.clone() {
+                    if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
+                        found = true;
+                        let result = self.client.auth(mecanism, &username, &password);
+                        try_smtp!(result, self);
+                    }
+                }
+
+                if !found {
+                    debug!("No supported authentication mecanisms available");
+                }
             }
         }
 

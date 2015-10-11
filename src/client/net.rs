@@ -12,6 +12,8 @@ use openssl::ssl::{SslContext, SslStream};
 pub trait Connector {
     /// Opens a connection to the given IP socket
     fn connect(addr: &SocketAddr, ssl_context: Option<&SslContext>) -> io::Result<Self>;
+    /// Upgrades to TLS connection
+    fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()>;
 }
 
 impl Connector for NetworkStream {
@@ -26,7 +28,19 @@ impl Connector for NetworkStream {
             None => Ok(NetworkStream::Plain(tcp_stream)),
         }
     }
+
+    fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
+        *self = match self.clone() {
+            NetworkStream::Plain(stream) => match SslStream::new(ssl_context, stream) {
+                    Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
+                    Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
+            },
+            NetworkStream::Ssl(stream) => NetworkStream::Ssl(stream),
+        };
+        Ok(())
+    }
 }
+
 
 /// Represents the different types of underlying network streams
 pub enum NetworkStream {

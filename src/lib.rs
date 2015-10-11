@@ -9,10 +9,10 @@
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and CRAM-MD5 mecanisms
+//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //!
 //! It will eventually implement the following extensions:
 //!
-//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 //! ## Architecture
@@ -57,6 +57,7 @@
 //! use smtp::sender::{Sender, SenderBuilder};
 //! use smtp::email::EmailBuilder;
 //! use smtp::authentication::Mecanism;
+//! use smtp::SUBMISSION_PORT;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -72,13 +73,13 @@
 //! let email = builder.build();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut sender = SenderBuilder::new(("server.tld", 10025)).unwrap()
+//! let mut sender = SenderBuilder::new(("server.tld", SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
-//!     // Use smtps, you can also specify a specific SSL context with `.ssl_context(context)`
-//!     .ssl()
+//!     // Use TLS with STARTTLS, you can also specify a specific SSL context with `.ssl_context(context)`
+//!     .starttls()
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
@@ -125,7 +126,7 @@
 //! use smtp::client::net::NetworkStream;
 //!
 //! let mut email_client: Client<NetworkStream> = Client::new();
-//! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
+//! let _ = email_client.connect(&("localhost", SMTP_PORT));
 //! let _ = email_client.ehlo("my_hostname");
 //! let _ = email_client.mail("user@example.com", None);
 //! let _ = email_client.rcpt("user@example.org");

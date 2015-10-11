@@ -3,6 +3,8 @@
 use std::string::String;
 use std::net::ToSocketAddrs;
 use std::io::{BufRead, Read, Write};
+use std::io;
+use std::fmt::Debug;
 
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
@@ -65,15 +67,30 @@ impl<S: Write + Read = NetworkStream> Client<S> {
     }
 }
 
-impl<S: Connector + Write + Read = NetworkStream> Client<S> {
+impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
         self.stream = None;
     }
 
+    /// Sets the underlying stream
+    pub fn set_stream(&mut self, stream: S) {
+        self.stream = Some(BufStream::new(stream));
+    }
+
+    /// Upgrades the underlying connection to SSL/TLS
+    pub fn upgrade_tls_stream(&mut self, ssl_context: &SslContext) -> io::Result<()> {
+        //let current_stream = self.stream.clone();
+        if self.stream.is_some() {
+            self.stream.as_mut().unwrap().get_mut().upgrade_tls(ssl_context)
+        } else {
+            Ok(())
+        }
+    }
+
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A, ssl_context: Option<&SslContext>) -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -87,7 +104,7 @@ impl<S: Connector + Write + Read = NetworkStream> Client<S> {
         };
 
         // Try to connect
-        self.stream = Some(BufStream::new(try!(Connector::connect(&server_addr, ssl_context))));
+        self.set_stream(try!(Connector::connect(&server_addr, None)));
 
         self.get_reply()
     }
@@ -102,12 +119,7 @@ impl<S: Connector + Write + Read = NetworkStream> Client<S> {
         self.send_server(command, CRLF)
     }
 
-    /// Send a HELO command and fills `server_info`
-    pub fn helo(&mut self, hostname: &str) -> SmtpResult {
-        self.command(&format!("HELO {}", hostname))
-    }
-
-    /// Sends a EHLO command and fills `server_info`
+    /// Sends a EHLO command
     pub fn ehlo(&mut self, hostname: &str) -> SmtpResult {
         self.command(&format!("EHLO {}", hostname))
     }
@@ -184,6 +196,11 @@ impl<S: Connector + Write + Read = NetworkStream> Client<S> {
 
             self.command(&format!("{}", cram_response))
         }
+    }
+
+    /// Sends a STARTTLS command
+    pub fn starttls(&mut self) -> SmtpResult {
+        self.command("STARTTLS")
     }
 
     /// Sends the message content
