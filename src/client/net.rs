@@ -28,11 +28,11 @@ impl Connector for NetworkStream {
     }
 }
 
-/// TODO
+/// Represents the different types of underlying network streams
 pub enum NetworkStream {
-    /// TODO
+    /// Plain TCP
     Plain(TcpStream),
-    /// TODO
+    /// SSL over TCP
     Ssl(SslStream<TcpStream>),
 }
 

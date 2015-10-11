@@ -77,6 +77,8 @@
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
+//!     // Use smtps, you can also specify a specific SSL context with `.ssl_context(context)`
+//!     .ssl()
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
