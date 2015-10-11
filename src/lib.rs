@@ -119,12 +119,11 @@
 //!
 //! ```rust,no_run
 //! use smtp::client::Client;
-//! use smtp::client::net::SmtpStream;
 //! use smtp::SMTP_PORT;
-//! use std::net::TcpStream;
+//! use smtp::client::net::NetworkStream;
 //!
-//! let mut email_client: Client<SmtpStream> = Client::new(("localhost", SMTP_PORT)).unwrap();
-//! let _ = email_client.connect();
+//! let mut email_client: Client<NetworkStream> = Client::new();
+//! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
 //! let _ = email_client.ehlo("my_hostname");
 //! let _ = email_client.mail("user@example.com", None);
 //! let _ = email_client.rcpt("user@example.org");
@@ -143,6 +142,7 @@ extern crate time;
 extern crate uuid;
 extern crate email as email_format;
 extern crate bufstream;
+extern crate openssl;
 
 mod extension;
 pub mod client;

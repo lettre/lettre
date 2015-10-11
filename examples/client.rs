@@ -17,7 +17,7 @@ fn main() {
 
 	let mut threads = Vec::new();
     for _ in 1..5 {
-    	
+
     	let th_sender = sender.clone();
     	threads.push(thread::spawn(move || {
 
@@ -27,15 +27,15 @@ fn main() {
                     	.body("Hello World!")
                     	.subject("Hello")
                     	.build();
-    			
+
     		let _ = th_sender.lock().unwrap().send(email);
 		}));
     }
-    
+
     for thread in threads {
     	let _ = thread.join();
     }
-    
+
     let email = EmailBuilder::new()
                     .to("user@localhost")
                     .from("user@localhost")

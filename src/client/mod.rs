@@ -1,15 +1,16 @@
 //! SMTP client
 
 use std::string::String;
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::ToSocketAddrs;
 use std::io::{BufRead, Read, Write};
 
 use bufstream::BufStream;
+use openssl::ssl::SslContext;
 
 use response::ResponseParser;
 use authentication::Mecanism;
 use error::{Error, SmtpResult};
-use client::net::{Connector, SmtpStream};
+use client::net::{Connector, NetworkStream};
 use {CRLF, MESSAGE_ENDING};
 
 pub mod net;
@@ -41,12 +42,10 @@ fn remove_crlf(string: &str) -> String {
 }
 
 /// Structure that implements the SMTP client
-pub struct Client<S: Write + Read = SmtpStream> {
+pub struct Client<S: Write + Read = NetworkStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<BufStream<S>>,
-    /// Socket we are connecting to
-    server_addr: SocketAddr,
 }
 
 macro_rules! return_err (
@@ -55,24 +54,18 @@ macro_rules! return_err (
     })
 );
 
-impl<S: Write + Read = SmtpStream> Client<S> {
+impl<S: Write + Read = NetworkStream> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<Client<S>, Error> {
-        let mut addresses = try!(addr.to_socket_addrs());
-
-        match addresses.next() {
-            Some(addr) => Ok(Client {
-                stream: None,
-                server_addr: addr,
-            }),
-            None => Err(From::from("Could nor resolve hostname")),
+    pub fn new() -> Client<S> {
+        Client {
+            stream: None,
         }
     }
 }
 
-impl<S: Connector + Write + Read = SmtpStream> Client<S> {
+impl<S: Connector + Write + Read = NetworkStream> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
@@ -80,14 +73,21 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect(&mut self) -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A, ssl_context: Option<&SslContext>) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
         }
 
+        let mut addresses = try!(addr.to_socket_addrs());
+
+        let server_addr = match addresses.next() {
+            Some(addr) => addr,
+            None => return_err!("Could not resolve hostname", self),
+        };
+
         // Try to connect
-        self.stream = Some(BufStream::new(try!(Connector::connect(&self.server_addr))));
+        self.stream = Some(BufStream::new(try!(Connector::connect(&server_addr, ssl_context))));
 
         self.get_reply()
     }
@@ -176,11 +176,13 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
                 None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
             };
 
+            debug!("CRAM challenge: {}", encoded_challenge);
+
             let cram_response = try!(mecanism.response(username,
                                                        password,
                                                        Some(&encoded_challenge)));
 
-            self.command(&format!("AUTH CRAM-MD5 {}", cram_response))
+            self.command(&format!("{}", cram_response))
         }
     }
 
@@ -210,6 +212,8 @@ impl<S: Connector + Write + Read = SmtpStream> Client<S> {
 
         let mut line = String::new();
         try!(self.stream.as_mut().unwrap().read_line(&mut line));
+
+        debug!("Read: {}", escape_crlf(line.as_ref()));
 
         while try!(parser.read_line(remove_crlf(line.as_ref()).as_ref())) {
             line.clear();

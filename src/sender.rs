@@ -3,12 +3,13 @@
 use std::string::String;
 use std::net::{SocketAddr, ToSocketAddrs};
 
+use openssl::ssl::{SslMethod, SslContext};
+
 use SMTP_PORT;
 use extension::{Extension, ServerInfo};
 use error::{SmtpResult, Error};
 use email::SendableEmail;
 use client::Client;
-use client::net::SmtpStream;
 use authentication::Mecanism;
 
 /// Contains client configuration
@@ -25,6 +26,8 @@ pub struct SenderBuilder {
     credentials: Option<(String, String)>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
+    /// SSL contexyt to use
+    ssl_context: Option<SslContext>,
     /// List of authentication mecanism, sorted by priority
     authentication_mecanisms: Vec<Mecanism>,
 }
@@ -35,10 +38,10 @@ impl SenderBuilder {
     pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SenderBuilder, Error> {
         let mut addresses = try!(addr.to_socket_addrs());
 
-
         match addresses.next() {
             Some(addr) => Ok(SenderBuilder {
                 server_addr: addr,
+                ssl_context: None,
                 credentials: None,
                 connection_reuse_count_limit: 100,
                 enable_connection_reuse: false,
@@ -52,6 +55,17 @@ impl SenderBuilder {
     /// Creates a new local SMTP client to port 25
     pub fn localhost() -> Result<SenderBuilder, Error> {
         SenderBuilder::new(("localhost", SMTP_PORT))
+    }
+
+    /// Add an SSL context and try to use SSL connection
+    pub fn ssl_context(mut self, ssl_context: SslContext) -> SenderBuilder {
+        self.ssl_context = Some(ssl_context);
+        self
+    }
+
+    /// Add an SSL context and try to use SSL connection
+    pub fn ssl(self) -> SenderBuilder {
+        self.ssl_context(SslContext::new(SslMethod::Sslv23).unwrap())
     }
 
     /// Set the name used during HELO or EHLO
@@ -111,7 +125,7 @@ pub struct Sender {
     /// Information about the client
     client_info: SenderBuilder,
     /// Low level client
-    client: Client<SmtpStream>,
+    client: Client,
 }
 
 macro_rules! try_smtp (
@@ -134,7 +148,9 @@ impl Sender {
     ///
     /// It does not connects to the server, but only creates the `Sender`
     pub fn new(builder: SenderBuilder) -> Sender {
-        let client: Client<SmtpStream> = Client::new(builder.server_addr).unwrap();
+
+        let client = Client::new();
+
         Sender {
             client: client,
             server_info: None,
@@ -173,7 +189,7 @@ impl Sender {
 
         // If there is a usable connection, test if the server answers and hello has been sent
         if self.state.connection_reuse_count == 0 {
-            try!(self.client.connect());
+            try!(self.client.connect(&self.client_info.server_addr, self.client_info.ssl_context.as_ref()));
 
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
