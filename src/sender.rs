@@ -239,7 +239,6 @@ impl Sender {
                     // Send EHLO again
                     try!(self.get_ehlo());
                 }
-
             }
 
             if self.client_info.credentials.is_some() {
@@ -250,8 +249,8 @@ impl Sender {
                 for mecanism in self.client_info.authentication_mecanisms.clone() {
                     if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
                         found = true;
-                        let result = self.client.auth(mecanism, &username, &password);
-                        try_smtp!(result, self);
+                        try_smtp!(self.client.auth(mecanism, &username, &password), self);
+                        break;
                     }
                 }
 
