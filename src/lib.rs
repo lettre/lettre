@@ -54,7 +54,7 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! use smtp::sender::{Sender, SenderBuilder};
+//! use smtp::sender::{SecurityLevel, Sender, SenderBuilder};
 //! use smtp::email::EmailBuilder;
 //! use smtp::authentication::Mecanism;
 //! use smtp::SUBMISSION_PORT;
@@ -78,9 +78,9 @@
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
-//!     // Use TLS with STARTTLS, you can also specify a specific SSL context
-//!     // with `.ssl_context(context)`
-//!     .starttls()
+//!     // Specify a TLS security level. You can also specify an SslContext with
+//!     // .ssl_context(SslContext::Ssl23)
+//!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse

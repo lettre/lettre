@@ -12,6 +12,16 @@ use email::SendableEmail;
 use client::Client;
 use authentication::Mecanism;
 
+/// TLS security level
+pub enum SecurityLevel {
+    /// Only send an email on encrypted connection
+    AlwaysEncrypt,
+    /// Use TLS when available
+    Opportunistic,
+    /// Never use TLS
+    NeverEncrypt,
+}
+
 /// Contains client configuration
 pub struct SenderBuilder {
     /// Maximum connection reuse
@@ -27,7 +37,9 @@ pub struct SenderBuilder {
     /// Socket we are connecting to
     server_addr: SocketAddr,
     /// SSL contexyt to use
-    ssl_context: Option<SslContext>,
+    ssl_context: SslContext,
+    /// TLS security level
+    security_level: SecurityLevel,
     /// List of authentication mecanism, sorted by priority
     authentication_mecanisms: Vec<Mecanism>,
 }
@@ -41,7 +53,8 @@ impl SenderBuilder {
         match addresses.next() {
             Some(addr) => Ok(SenderBuilder {
                 server_addr: addr,
-                ssl_context: None,
+                ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
+                security_level: SecurityLevel::Opportunistic,
                 credentials: None,
                 connection_reuse_count_limit: 100,
                 enable_connection_reuse: false,
@@ -59,13 +72,14 @@ impl SenderBuilder {
 
     /// Use STARTTLS with a specific context
     pub fn ssl_context(mut self, ssl_context: SslContext) -> SenderBuilder {
-        self.ssl_context = Some(ssl_context);
+        self.ssl_context = ssl_context;
         self
     }
 
     /// Require SSL/TLS using STARTTLS
-    pub fn starttls(self) -> SenderBuilder {
-        self.ssl_context(SslContext::new(SslMethod::Tlsv1).unwrap())
+    pub fn security_level(mut self, level: SecurityLevel) -> SenderBuilder {
+        self.security_level = level;
+        self
     }
 
     /// Set the name used during HELO or EHLO
@@ -137,7 +151,7 @@ macro_rules! try_smtp (
                     $client.state.panic = true;
                     $client.reset();
                 }
-                return Err(err)
+                return Err(From::from(err))
             },
         }
     })
@@ -209,16 +223,26 @@ impl Sender {
 
             try!(self.get_ehlo());
 
-            if self.client_info.ssl_context.is_some() {
-                try_smtp!(self.client.starttls(), self);
+            match (&self.client_info.security_level,
+                   self.server_info.as_ref().unwrap().supports_feature(&Extension::StartTls)) {
+                (&SecurityLevel::AlwaysEncrypt, false) =>
+                    return Err(From::from("Could not encrypt connection, aborting")),
+                (&SecurityLevel::Opportunistic, false) => (),
+                (&SecurityLevel::NeverEncrypt, _) => (),
+                (_, true) => {
+                    try_smtp!(self.client.starttls(), self);
+                    try_smtp!(self.client.upgrade_tls_stream(&self.client_info.ssl_context),
+                              self);
 
-                try!(self.client
-                         .upgrade_tls_stream(self.client_info.ssl_context.as_ref().unwrap()));
+                    debug!("connection encrypted");
 
-                try!(self.get_ehlo());
+                    // Send EHLO again
+                    try!(self.get_ehlo());
+                }
+
             }
 
-            if self.client_info.credentials.is_some() && self.state.connection_reuse_count == 0 {
+            if self.client_info.credentials.is_some() {
                 let (username, password) = self.client_info.credentials.clone().unwrap();
 
                 let mut found = false;
@@ -232,7 +256,7 @@ impl Sender {
                 }
 
                 if !found {
-                    debug!("No supported authentication mecanisms available");
+                    info!("No supported authentication mecanisms available");
                 }
             }
         }
