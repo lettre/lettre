@@ -32,8 +32,8 @@ impl Connector for NetworkStream {
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
         *self = match self.clone() {
             NetworkStream::Plain(stream) => match SslStream::new(ssl_context, stream) {
-                    Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
-                    Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
+                Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
+                Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
             },
             NetworkStream::Ssl(stream) => NetworkStream::Ssl(stream),
         };

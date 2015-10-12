@@ -212,7 +212,8 @@ impl Sender {
             if self.client_info.ssl_context.is_some() {
                 try_smtp!(self.client.starttls(), self);
 
-                try!(self.client.upgrade_tls_stream(self.client_info.ssl_context.as_ref().unwrap()));
+                try!(self.client
+                         .upgrade_tls_stream(self.client_info.ssl_context.as_ref().unwrap()));
 
                 try!(self.get_ehlo());
             }

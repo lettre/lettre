@@ -61,9 +61,7 @@ impl<S: Write + Read = NetworkStream> Client<S> {
     ///
     /// It does not connects to the server, but only creates the `Client`
     pub fn new() -> Client<S> {
-        Client {
-            stream: None,
-        }
+        Client { stream: None }
     }
 }
 
