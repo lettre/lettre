@@ -1,4 +1,4 @@
-//! # Rust SMTP client
+//! # Rust email client
 //!
 //! This client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
 //! a work in progress. It is designed to efficiently send emails from an application to a
@@ -19,8 +19,8 @@
 //!
 //! This client is divided into three main parts:
 //!
-//! * client: a low level SMTP client providing all SMTP commands
-//! * sender: a high level SMTP client providing an easy method to send emails
+//! * transport: a low level SMTP client providing all SMTP commands
+//! * mailer: a high level SMTP client providing an easy method to send emails
 //! * email: generates the email to be sent with the sender
 //!
 //! ## Usage
@@ -30,8 +30,10 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use smtp::sender::{Sender, SenderBuilder};
-//! use smtp::email::EmailBuilder;
+//! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
+//! use lettre::email::EmailBuilder;
+//! use lettre::transport::EmailTransport;
+//! use lettre::mailer::Mailer;
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
@@ -41,12 +43,12 @@
 //!     .from("user@example.com")
 //!     .subject("Hi, Hello world")
 //!     .body("Hello world.")
-//!     .build();
+//!     .build().unwrap();
 //!
 //! // Open a local connection on port 25
-//! let mut sender = SenderBuilder::localhost().unwrap().build();
+//! let mut mailer = Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
 //! // Send the email
-//! let result = sender.send(email);
+//! let result = mailer.send(email);
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -54,10 +56,12 @@
 //! ### Complete example
 //!
 //! ```rust,no_run
-//! use smtp::sender::{SecurityLevel, Sender, SenderBuilder};
-//! use smtp::email::EmailBuilder;
-//! use smtp::authentication::Mecanism;
-//! use smtp::SUBMISSION_PORT;
+//! use lettre::email::EmailBuilder;
+//! use lettre::transport::smtp::{SecurityLevel, SmtpTransport, SmtpTransportBuilder};
+//! use lettre::transport::smtp::authentication::Mecanism;
+//! use lettre::transport::smtp::SUBMISSION_PORT;
+//! use lettre::transport::EmailTransport;
+//! use lettre::mailer::Mailer;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -70,10 +74,10 @@
 //! builder = builder.reply_to("contact@example.com");
 //! builder = builder.add_header(("X-Custom-Header", "my header"));
 //!
-//! let email = builder.build();
+//! let email = builder.build().unwrap();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut sender = SenderBuilder::new(("server.tld", SUBMISSION_PORT)).unwrap()
+//! let mut mailer = Mailer::new(SmtpTransportBuilder::new(("server.tld", SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
@@ -84,17 +88,17 @@
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
-//!     .enable_connection_reuse(true).build();
+//!     .enable_connection_reuse(true).build());
 //!
-//! let result_1 = sender.send(email.clone());
+//! let result_1 = mailer.send(email.clone());
 //! assert!(result_1.is_ok());
 //!
 //! // The second email will use the same connection
-//! let result_2 = sender.send(email);
+//! let result_2 = mailer.send(email);
 //! assert!(result_2.is_ok());
 //!
 //! // Explicitely close the SMTP transaction as we enabled connection reuse
-//! sender.close();
+//! mailer.close();
 //! ```
 //!
 //! ### Using the client directly
@@ -102,8 +106,10 @@
 //! If you just want to send an email without using `Email` to provide headers:
 //!
 //! ```rust,no_run
-//! use smtp::sender::{Sender, SenderBuilder};
-//! use smtp::email::SimpleSendableEmail;
+//! use lettre::email::SimpleSendableEmail;
+//! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
+//! use lettre::transport::EmailTransport;
+//! use lettre::mailer::Mailer;
 //!
 //! // Create a minimal email
 //! let email = SimpleSendableEmail::new(
@@ -112,8 +118,8 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut sender = SenderBuilder::localhost().unwrap().build();
-//! let result = sender.send(email);
+//! let mut mailer = Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
+//! let result = mailer.send(email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -122,9 +128,9 @@
 //! You can also send commands, here is a simple email transaction without error handling:
 //!
 //! ```rust,no_run
-//! use smtp::client::Client;
-//! use smtp::SMTP_PORT;
-//! use smtp::client::net::NetworkStream;
+//! use lettre::transport::smtp::SMTP_PORT;
+//! use lettre::transport::smtp::client::Client;
+//! use lettre::transport::smtp::client::net::NetworkStream;
 //!
 //! let mut email_client: Client<NetworkStream> = Client::new();
 //! let _ = email_client.connect(&("localhost", SMTP_PORT));
@@ -148,39 +154,6 @@ extern crate email as email_format;
 extern crate bufstream;
 extern crate openssl;
 
-mod extension;
-pub mod client;
-pub mod sender;
-pub mod response;
-pub mod error;
-pub mod authentication;
+pub mod transport;
 pub mod email;
-
-// Registrated port numbers:
-// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
-
-/// Default smtp port
-pub static SMTP_PORT: u16 = 25;
-
-/// Default smtps port
-pub static SMTPS_PORT: u16 = 465;
-
-/// Default submission port
-pub static SUBMISSION_PORT: u16 = 587;
-
-// Useful strings and characters
-
-/// The word separator for SMTP transactions
-pub static SP: &'static str = " ";
-
-/// The line ending for SMTP transactions (carriage return + line feed)
-pub static CRLF: &'static str = "\r\n";
-
-/// Colon
-pub static COLON: &'static str = ":";
-
-/// The ending of message content
-pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
-
-/// NUL unicode character
-pub static NUL: &'static str = "\0";
+pub mod mailer;

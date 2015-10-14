@@ -5,9 +5,9 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 use std::collections::HashSet;
 
-use response::Response;
-use error::Error;
-use authentication::Mecanism;
+use transport::smtp::response::Response;
+use transport::error::Error;
+use transport::smtp::authentication::Mecanism;
 
 /// Supported ESMTP keywords
 #[derive(PartialEq,Eq,Hash,Clone,Debug)]
@@ -126,8 +126,8 @@ mod test {
     use std::collections::HashSet;
 
     use super::{ServerInfo, Extension};
-    use authentication::Mecanism;
-    use response::{Code, Response, Severity, Category};
+    use transport::smtp::authentication::Mecanism;
+    use transport::smtp::response::{Code, Response, Severity, Category};
 
     #[test]
     fn test_extension_fmt() {

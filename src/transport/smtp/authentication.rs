@@ -9,8 +9,8 @@ use crypto::hmac::Hmac;
 use crypto::md5::Md5;
 use crypto::mac::Mac;
 
-use NUL;
-use error::Error;
+use transport::smtp::NUL;
+use transport::error::Error;
 
 /// Represents authentication mecanisms
 #[derive(PartialEq,Eq,Copy,Clone,Hash,Debug)]

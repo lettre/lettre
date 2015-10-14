@@ -9,11 +9,11 @@ use std::fmt::Debug;
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
 
-use response::ResponseParser;
-use authentication::Mecanism;
-use error::{Error, SmtpResult};
-use client::net::{Connector, NetworkStream};
-use {CRLF, MESSAGE_ENDING};
+use transport::smtp::response::ResponseParser;
+use transport::smtp::authentication::Mecanism;
+use transport::error::{Error, EmailResult};
+use transport::smtp::client::net::{Connector, NetworkStream};
+use transport::smtp::{CRLF, MESSAGE_ENDING};
 
 pub mod net;
 
@@ -88,7 +88,7 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A) -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A) -> EmailResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -113,17 +113,17 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Sends an SMTP command
-    pub fn command(&mut self, command: &str) -> SmtpResult {
+    pub fn command(&mut self, command: &str) -> EmailResult {
         self.send_server(command, CRLF)
     }
 
     /// Sends a EHLO command
-    pub fn ehlo(&mut self, hostname: &str) -> SmtpResult {
+    pub fn ehlo(&mut self, hostname: &str) -> EmailResult {
         self.command(&format!("EHLO {}", hostname))
     }
 
     /// Sends a MAIL command
-    pub fn mail(&mut self, address: &str, options: Option<&str>) -> SmtpResult {
+    pub fn mail(&mut self, address: &str, options: Option<&str>) -> EmailResult {
         match options {
             Some(ref options) => self.command(&format!("MAIL FROM:<{}> {}", address, options)),
             None => self.command(&format!("MAIL FROM:<{}>", address)),
@@ -131,27 +131,27 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Sends a RCPT command
-    pub fn rcpt(&mut self, address: &str) -> SmtpResult {
+    pub fn rcpt(&mut self, address: &str) -> EmailResult {
         self.command(&format!("RCPT TO:<{}>", address))
     }
 
     /// Sends a DATA command
-    pub fn data(&mut self) -> SmtpResult {
+    pub fn data(&mut self) -> EmailResult {
         self.command("DATA")
     }
 
     /// Sends a QUIT command
-    pub fn quit(&mut self) -> SmtpResult {
+    pub fn quit(&mut self) -> EmailResult {
         self.command("QUIT")
     }
 
     /// Sends a NOOP command
-    pub fn noop(&mut self) -> SmtpResult {
+    pub fn noop(&mut self) -> EmailResult {
         self.command("NOOP")
     }
 
     /// Sends a HELP command
-    pub fn help(&mut self, argument: Option<&str>) -> SmtpResult {
+    pub fn help(&mut self, argument: Option<&str>) -> EmailResult {
         match argument {
             Some(ref argument) => self.command(&format!("HELP {}", argument)),
             None => self.command("HELP"),
@@ -159,22 +159,22 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Sends a VRFY command
-    pub fn vrfy(&mut self, address: &str) -> SmtpResult {
+    pub fn vrfy(&mut self, address: &str) -> EmailResult {
         self.command(&format!("VRFY {}", address))
     }
 
     /// Sends a EXPN command
-    pub fn expn(&mut self, address: &str) -> SmtpResult {
+    pub fn expn(&mut self, address: &str) -> EmailResult {
         self.command(&format!("EXPN {}", address))
     }
 
     /// Sends a RSET command
-    pub fn rset(&mut self) -> SmtpResult {
+    pub fn rset(&mut self) -> EmailResult {
         self.command("RSET")
     }
 
     /// Sends an AUTH command with the given mecanism
-    pub fn auth(&mut self, mecanism: Mecanism, username: &str, password: &str) -> SmtpResult {
+    pub fn auth(&mut self, mecanism: Mecanism, username: &str, password: &str) -> EmailResult {
 
         if mecanism.supports_initial_response() {
             self.command(&format!("AUTH {} {}",
@@ -197,17 +197,17 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Sends a STARTTLS command
-    pub fn starttls(&mut self) -> SmtpResult {
+    pub fn starttls(&mut self) -> EmailResult {
         self.command("STARTTLS")
     }
 
     /// Sends the message content
-    pub fn message(&mut self, message_content: &str) -> SmtpResult {
+    pub fn message(&mut self, message_content: &str) -> EmailResult {
         self.send_server(&escape_dot(message_content), MESSAGE_ENDING)
     }
 
     /// Sends a string to the server and gets the response
-    fn send_server(&mut self, string: &str, end: &str) -> SmtpResult {
+    fn send_server(&mut self, string: &str, end: &str) -> EmailResult {
         if self.stream.is_none() {
             return Err(From::from("Connection closed"));
         }
@@ -221,7 +221,7 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Gets the SMTP response
-    fn get_reply(&mut self) -> SmtpResult {
+    fn get_reply(&mut self) -> EmailResult {
 
         let mut parser = ResponseParser::new();
 

@@ -6,6 +6,7 @@ use std::net::SocketAddr;
 use std::net::TcpStream;
 use std::fmt;
 use std::fmt::{Debug, Formatter};
+
 use openssl::ssl::{SslContext, SslStream};
 
 /// A trait for the concept of opening a stream

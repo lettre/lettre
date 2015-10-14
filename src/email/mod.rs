@@ -1,6 +1,7 @@
 //! Simple email (very incomplete)
 
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter};
+use std::fmt;
 
 use email_format::{MimeMessage, Header, Mailbox};
 use time::{now, Tm};
@@ -53,8 +54,12 @@ impl<'a> ToMailbox for (&'a str, &'a str) {
 /// Builds an `Email` structure
 #[derive(PartialEq,Eq,Clone,Debug)]
 pub struct EmailBuilder {
-    /// Email content
-    content: Email,
+    /// Message
+    message: MimeMessage,
+    /// The enveloppe recipients addresses
+    to: Vec<String>,
+    /// The enveloppe sender address
+    from: Option<String>,
     /// Date issued
     date_issued: bool,
 }
@@ -67,13 +72,13 @@ pub struct Email {
     /// The enveloppe recipients addresses
     to: Vec<String>,
     /// The enveloppe sender address
-    from: Option<String>,
+    from: String,
     /// Message-ID
     message_id: Uuid,
 }
 
 impl Display for Email {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{}", self.message.as_string())
     }
 }
@@ -81,30 +86,17 @@ impl Display for Email {
 impl EmailBuilder {
     /// Creates a new empty email
     pub fn new() -> EmailBuilder {
-        let current_message = Uuid::new_v4();
-
-        let mut email = Email {
+        EmailBuilder {
             message: MimeMessage::new_blank_message(),
             to: vec![],
             from: None,
-            message_id: current_message,
-        };
-
-        match Header::new_with_value("Message-ID".to_string(),
-                                     format!("<{}@rust-smtp>", current_message)) {
-            Ok(header) => email.message.headers.insert(header),
-            Err(_) => (),
-        }
-
-        EmailBuilder {
-            content: email,
             date_issued: false,
         }
     }
 
     /// Sets the email body
     pub fn body(mut self, body: &str) -> EmailBuilder {
-        self.content.message.body = body.to_string();
+        self.message.body = body.to_string();
         self
     }
 
@@ -115,14 +107,14 @@ impl EmailBuilder {
     }
 
     fn insert_header<A: ToHeader>(&mut self, header: A) {
-        self.content.message.headers.insert(header.to_header());
+        self.message.headers.insert(header.to_header());
     }
 
     /// Adds a `From` header and store the sender address
     pub fn from<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
         self.insert_header(("From", mailbox.to_string().as_ref()));
-        self.content.from = Some(mailbox.address);
+        self.from = Some(mailbox.address);
         self
     }
 
@@ -130,7 +122,7 @@ impl EmailBuilder {
     pub fn to<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
         self.insert_header(("To", mailbox.to_string().as_ref()));
-        self.content.to.push(mailbox.address);
+        self.to.push(mailbox.address);
         self
     }
 
@@ -138,7 +130,7 @@ impl EmailBuilder {
     pub fn cc<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
         self.insert_header(("Cc", mailbox.to_string().as_ref()));
-        self.content.to.push(mailbox.address);
+        self.to.push(mailbox.address);
         self
     }
 
@@ -153,7 +145,7 @@ impl EmailBuilder {
     pub fn sender<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
         self.insert_header(("Sender", mailbox.to_string().as_ref()));
-        self.content.from = Some(mailbox.address);
+        self.from = Some(mailbox.address);
         self
     }
 
@@ -171,12 +163,34 @@ impl EmailBuilder {
     }
 
     /// Build the Email
-    pub fn build(mut self) -> Email {
+    pub fn build(mut self) -> Result<Email, &'static str> {
+        if self.from.is_none() {
+            return Err("No from address")
+        }
+        if self.to.is_empty() {
+            return Err("No to address")
+        }
+
         if !self.date_issued {
             self.insert_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
-        self.content.message.update_headers();
-        self.content
+
+        let message_id = Uuid::new_v4();
+
+        match Header::new_with_value("Message-ID".to_string(),
+                                     format!("<{}.lettre@localhost>", message_id)) {
+            Ok(header) => self.insert_header(header),
+            Err(_) => (),
+        }
+
+        self.message.update_headers();
+
+        Ok(Email {
+            message: self.message,
+            to: self.to,
+            from: self.from.unwrap(),
+            message_id: message_id,
+        })
     }
 }
 
@@ -184,13 +198,13 @@ impl EmailBuilder {
 /// Email sendable by an SMTP client
 pub trait SendableEmail {
     /// From address
-    fn from_address(&self) -> Option<String>;
+    fn from_address(&self) -> String;
     /// To addresses
-    fn to_addresses(&self) -> Option<Vec<String>>;
+    fn to_addresses(&self) -> Vec<String>;
     /// Message content
-    fn message(&self) -> Option<String>;
+    fn message(&self) -> String;
     /// Message ID
-    fn message_id(&self) -> Option<String>;
+    fn message_id(&self) -> String;
 }
 
 /// Minimal email structure
@@ -215,47 +229,38 @@ impl SimpleSendableEmail {
 }
 
 impl SendableEmail for SimpleSendableEmail {
-    fn from_address(&self) -> Option<String> {
-        Some(self.from.clone())
+    fn from_address(&self) -> String {
+        self.from.clone()
     }
 
-    fn to_addresses(&self) -> Option<Vec<String>> {
-        Some(self.to.clone())
+    fn to_addresses(&self) -> Vec<String> {
+        self.to.clone()
     }
 
-    fn message(&self) -> Option<String> {
-        Some(self.message.clone())
+    fn message(&self) -> String {
+        self.message.clone()
     }
 
-    fn message_id(&self) -> Option<String> {
-        Some(format!("<{}@rust-smtp>", Uuid::new_v4()))
+    fn message_id(&self) -> String {
+        format!("{}", Uuid::new_v4())
     }
 }
 
 impl SendableEmail for Email {
-    /// Return the to addresses, and fails if it is not set
-    fn to_addresses(&self) -> Option<Vec<String>> {
-        if self.to.is_empty() {
-            None
-        } else {
-            Some(self.to.clone())
-        }
+    fn to_addresses(&self) -> Vec<String> {
+        self.to.clone()
     }
 
-    /// Return the from address, and fails if it is not set
-    fn from_address(&self) -> Option<String> {
-        match self.from {
-            Some(ref from_address) => Some(from_address.clone()),
-            None => None,
-        }
+    fn from_address(&self) -> String {
+        self.from.clone()
     }
 
-    fn message(&self) -> Option<String> {
-        Some(format!("{}", self))
+    fn message(&self) -> String {
+        format!("{}", self)
     }
 
-    fn message_id(&self) -> Option<String> {
-        Some(format!("{}", self.message_id))
+    fn message_id(&self) -> String {
+        format!("{}", self.message_id)
     }
 }
 
@@ -275,7 +280,7 @@ mod test {
         let mut email = Email {
             message: MimeMessage::new_blank_message(),
             to: vec![],
-            from: None,
+            from: "".to_string(),
             message_id: current_message,
         };
 
@@ -294,7 +299,7 @@ mod test {
         assert_eq!(format!("{}", email),
                    format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n",
                            current_message));
-        assert_eq!(current_message.to_string(), email.message_id().unwrap());
+        assert_eq!(current_message.to_string(), email.message_id());
     }
 
     #[test]
@@ -311,15 +316,16 @@ mod test {
                                  .date(&date_now)
                                  .subject("Hello")
                                  .add_header(("X-test", "value"))
-                                 .build();
+                                 .build()
+                                 .unwrap();
 
         assert_eq!(format!("{}", email),
-                   format!("Message-ID: <{}@rust-smtp>\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                            <reply@localhost>\r\nSender: <sender@localhost>\r\nDate: \
-                            {}\r\nSubject: Hello\r\nX-test: value\r\n\r\nHello World!\r\n",
-                           email.message_id().unwrap(),
-                           date_now.rfc822z()));
+                   format!("To: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" \
+                            <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: \
+                            <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: \
+                            value\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                           date_now.rfc822z(),
+                           email.message_id()));
     }
 
     #[test]
@@ -336,13 +342,13 @@ mod test {
                                  .date(&date_now)
                                  .subject("Hello")
                                  .add_header(("X-test", "value"))
-                                 .build();
+                                 .build()
+                                 .unwrap();
 
-        assert_eq!(email.from_address().unwrap(),
-                   "sender@localhost".to_string());
-        assert_eq!(email.to_addresses().unwrap(),
+        assert_eq!(email.from_address(), "sender@localhost".to_string());
+        assert_eq!(email.to_addresses(),
                    vec!["user@localhost".to_string(), "cc@localhost".to_string()]);
-        assert_eq!(email.message().unwrap(), format!("{}", email));
+        assert_eq!(email.message(), format!("{}", email));
     }
 
 }

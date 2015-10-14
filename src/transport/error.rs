@@ -5,7 +5,7 @@ use std::io;
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
-use response::{Severity, Response};
+use transport::smtp::response::{Severity, Response};
 use serialize::base64::FromBase64Error;
 use self::Error::*;
 
@@ -82,7 +82,7 @@ impl From<&'static str> for Error {
 }
 
 /// SMTP result type
-pub type SmtpResult = Result<Response, Error>;
+pub type EmailResult = Result<Response, Error>;
 
 #[cfg(test)]
 mod test {

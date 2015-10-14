@@ -5,12 +5,46 @@ use std::net::{SocketAddr, ToSocketAddrs};
 
 use openssl::ssl::{SslMethod, SslContext};
 
-use SMTP_PORT;
-use extension::{Extension, ServerInfo};
-use error::{SmtpResult, Error};
 use email::SendableEmail;
-use client::Client;
-use authentication::Mecanism;
+use transport::smtp::extension::{Extension, ServerInfo};
+use transport::error::{EmailResult, Error};
+use transport::smtp::client::Client;
+use transport::smtp::authentication::Mecanism;
+use transport::EmailTransport;
+
+pub mod extension;
+pub mod authentication;
+pub mod response;
+pub mod client;
+
+// Registrated port numbers:
+// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+
+/// Default smtp port
+pub static SMTP_PORT: u16 = 25;
+
+/// Default smtps port
+pub static SMTPS_PORT: u16 = 465;
+
+/// Default submission port
+pub static SUBMISSION_PORT: u16 = 587;
+
+// Useful strings and characters
+
+/// The word separator for SMTP transactions
+pub static SP: &'static str = " ";
+
+/// The line ending for SMTP transactions (carriage return + line feed)
+pub static CRLF: &'static str = "\r\n";
+
+/// Colon
+pub static COLON: &'static str = ":";
+
+/// The ending of message content
+pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
+
+/// NUL unicode character
+pub static NUL: &'static str = "\0";
 
 /// TLS security level
 pub enum SecurityLevel {
@@ -23,7 +57,7 @@ pub enum SecurityLevel {
 }
 
 /// Contains client configuration
-pub struct SenderBuilder {
+pub struct SmtpTransportBuilder {
     /// Maximum connection reuse
     ///
     /// Zero means no limitation
@@ -44,14 +78,14 @@ pub struct SenderBuilder {
     authentication_mecanisms: Vec<Mecanism>,
 }
 
-/// Builder for the SMTP Sender
-impl SenderBuilder {
+/// Builder for the SMTP SmtpTransport
+impl SmtpTransportBuilder {
     /// Creates a new local SMTP client
-    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SenderBuilder, Error> {
+    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
         let mut addresses = try!(addr.to_socket_addrs());
 
         match addresses.next() {
-            Some(addr) => Ok(SenderBuilder {
+            Some(addr) => Ok(SmtpTransportBuilder {
                 server_addr: addr,
                 ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
                 security_level: SecurityLevel::Opportunistic,
@@ -66,57 +100,57 @@ impl SenderBuilder {
     }
 
     /// Creates a new local SMTP client to port 25
-    pub fn localhost() -> Result<SenderBuilder, Error> {
-        SenderBuilder::new(("localhost", SMTP_PORT))
+    pub fn localhost() -> Result<SmtpTransportBuilder, Error> {
+        SmtpTransportBuilder::new(("localhost", SMTP_PORT))
     }
 
     /// Use STARTTLS with a specific context
-    pub fn ssl_context(mut self, ssl_context: SslContext) -> SenderBuilder {
+    pub fn ssl_context(mut self, ssl_context: SslContext) -> SmtpTransportBuilder {
         self.ssl_context = ssl_context;
         self
     }
 
     /// Require SSL/TLS using STARTTLS
-    pub fn security_level(mut self, level: SecurityLevel) -> SenderBuilder {
+    pub fn security_level(mut self, level: SecurityLevel) -> SmtpTransportBuilder {
         self.security_level = level;
         self
     }
 
     /// Set the name used during HELO or EHLO
-    pub fn hello_name(mut self, name: &str) -> SenderBuilder {
+    pub fn hello_name(mut self, name: &str) -> SmtpTransportBuilder {
         self.hello_name = name.to_string();
         self
     }
 
     /// Enable connection reuse
-    pub fn enable_connection_reuse(mut self, enable: bool) -> SenderBuilder {
+    pub fn enable_connection_reuse(mut self, enable: bool) -> SmtpTransportBuilder {
         self.enable_connection_reuse = enable;
         self
     }
 
     /// Set the maximum number of emails sent using one connection
-    pub fn connection_reuse_count_limit(mut self, limit: u16) -> SenderBuilder {
+    pub fn connection_reuse_count_limit(mut self, limit: u16) -> SmtpTransportBuilder {
         self.connection_reuse_count_limit = limit;
         self
     }
 
     /// Set the client credentials
-    pub fn credentials(mut self, username: &str, password: &str) -> SenderBuilder {
+    pub fn credentials(mut self, username: &str, password: &str) -> SmtpTransportBuilder {
         self.credentials = Some((username.to_string(), password.to_string()));
         self
     }
 
     /// Set the authentication mecanisms
-    pub fn authentication_mecanisms(mut self, mecanisms: Vec<Mecanism>) -> SenderBuilder {
+    pub fn authentication_mecanisms(mut self, mecanisms: Vec<Mecanism>) -> SmtpTransportBuilder {
         self.authentication_mecanisms = mecanisms;
         self
     }
 
     /// Build the SMTP client
     ///
-    /// It does not connects to the server, but only creates the `Sender`
-    pub fn build(self) -> Sender {
-        Sender::new(self)
+    /// It does not connects to the server, but only creates the `SmtpTransport`
+    pub fn build(self) -> SmtpTransport {
+        SmtpTransport::new(self)
     }
 }
 
@@ -130,14 +164,14 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
-pub struct Sender {
+pub struct SmtpTransport {
     /// Information about the server
     /// Value is None before HELO/EHLO
     server_info: Option<ServerInfo>,
-    /// Sender variable states
+    /// SmtpTransport variable states
     state: State,
     /// Information about the client
-    client_info: SenderBuilder,
+    client_info: SmtpTransportBuilder,
     /// Low level client
     client: Client,
 }
@@ -157,15 +191,15 @@ macro_rules! try_smtp (
     })
 );
 
-impl Sender {
+impl SmtpTransport {
     /// Creates a new SMTP client
     ///
-    /// It does not connects to the server, but only creates the `Sender`
-    pub fn new(builder: SenderBuilder) -> Sender {
+    /// It does not connects to the server, but only creates the `SmtpTransport`
+    pub fn new(builder: SmtpTransportBuilder) -> SmtpTransport {
 
         let client = Client::new();
 
-        Sender {
+        SmtpTransport {
             client: client,
             server_info: None,
             client_info: builder,
@@ -187,13 +221,8 @@ impl Sender {
         self.state.connection_reuse_count = 0;
     }
 
-    /// Closes the inner connection
-    pub fn close(&mut self) {
-        self.client.close();
-    }
-
     /// Gets the EHLO response and updates server information
-    pub fn get_ehlo(&mut self) -> SmtpResult {
+    pub fn get_ehlo(&mut self) -> EmailResult {
         // Extended Hello
         let ehlo_response = try_smtp!(self.client.ehlo(&self.client_info.hello_name), self);
 
@@ -204,9 +233,16 @@ impl Sender {
 
         Ok(ehlo_response)
     }
+}
 
+impl EmailTransport for SmtpTransport {
     /// Sends an email
-    pub fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
+    fn send(&mut self,
+            to_addresses: Vec<String>,
+            from_address: String,
+            message: String,
+            message_id: String)
+            -> EmailResult {
         // Check if the connection is still available
         if self.state.connection_reuse_count > 0 {
             if !self.client.is_connected() {
@@ -260,11 +296,6 @@ impl Sender {
             }
         }
 
-        let current_message = try!(email.message_id().ok_or("Missing Message-ID"));
-        let from_address = try!(email.from_address().ok_or("Missing From address"));
-        let to_addresses = try!(email.to_addresses().ok_or("Missing To address"));
-        let message = try!(email.message().ok_or("Missing message"));
-
         // Mail
         let mail_options = match self.server_info
                                      .as_ref()
@@ -277,13 +308,13 @@ impl Sender {
         try_smtp!(self.client.mail(&from_address, mail_options), self);
 
         // Log the mail command
-        info!("{}: from=<{}>", current_message, from_address);
+        info!("{}: from=<{}>", message_id, from_address);
 
         // Recipient
         for to_address in to_addresses.iter() {
             try_smtp!(self.client.rcpt(&to_address), self);
             // Log the rcpt command
-            info!("{}: to=<{}>", current_message, to_address);
+            info!("{}: to=<{}>", message_id, to_address);
         }
 
         // Data
@@ -298,7 +329,7 @@ impl Sender {
 
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})",
-                  current_message,
+                  message_id,
                   self.state.connection_reuse_count,
                   message.len(),
                   result.as_ref()
@@ -317,5 +348,10 @@ impl Sender {
         }
 
         result
+    }
+
+    /// Closes the inner connection
+    fn close(&mut self) {
+        self.client.close();
     }
 }

@@ -6,7 +6,7 @@ use std::result;
 
 use self::Severity::*;
 use self::Category::*;
-use error::{SmtpResult, Error};
+use transport::error::{EmailResult, Error};
 
 /// First digit indicates severity
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -192,7 +192,7 @@ impl ResponseParser {
     }
 
     /// Builds a response from a `ResponseParser`
-    pub fn response(self) -> SmtpResult {
+    pub fn response(self) -> EmailResult {
         match self.code {
             Some(code) => Ok(Response::new(code, self.message)),
             None => Err(Error::ResponseParsingError("Incomplete response, could not read \
