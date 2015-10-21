@@ -10,9 +10,6 @@
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and CRAM-MD5 mecanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
-//!
-//! It will eventually implement the following extensions:
-//!
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 //! ## Architecture
@@ -85,10 +82,12 @@
 //!     // Specify a TLS security level. You can also specify an SslContext with
 //!     // .ssl_context(SslContext::Ssl23)
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
+//!     // Enable SMTPUTF8 is the server supports it
+//!     .smtp_utf8(true)
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
-//!     .enable_connection_reuse(true).build());
+//!     .connection_reuse(true).build());
 //!
 //! let result_1 = mailer.send(email.clone());
 //! assert!(result_1.is_ok());

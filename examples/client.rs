@@ -15,7 +15,7 @@ fn main() {
     env_logger::init().unwrap();
 
     let sender = SmtpTransportBuilder::localhost().unwrap().hello_name("localhost")
-        .enable_connection_reuse(true).build();
+        .connection_reuse(true).build();
     let mailer = Arc::new(Mutex::new(Mailer::new(sender)));
 
 	let mut threads = Vec::new();

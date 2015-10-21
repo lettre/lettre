@@ -23,9 +23,6 @@ pub mod client;
 /// Default smtp port
 pub static SMTP_PORT: u16 = 25;
 
-/// Default smtps port
-pub static SMTPS_PORT: u16 = 465;
-
 /// Default submission port
 pub static SUBMISSION_PORT: u16 = 587;
 
@@ -47,6 +44,7 @@ pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 pub static NUL: &'static str = "\0";
 
 /// TLS security level
+#[derive(Debug)]
 pub enum SecurityLevel {
     /// Only send an email on encrypted connection
     AlwaysEncrypt,
@@ -63,7 +61,7 @@ pub struct SmtpTransportBuilder {
     /// Zero means no limitation
     connection_reuse_count_limit: u16,
     /// Enable connection reuse
-    enable_connection_reuse: bool,
+    connection_reuse: bool,
     /// Name sent during HELO or EHLO
     hello_name: String,
     /// Credentials
@@ -74,6 +72,8 @@ pub struct SmtpTransportBuilder {
     ssl_context: SslContext,
     /// TLS security level
     security_level: SecurityLevel,
+    /// Enable UTF8 mailboxes in enveloppe or headers
+    smtp_utf8: bool,
     /// List of authentication mecanism, sorted by priority
     authentication_mecanisms: Vec<Mecanism>,
 }
@@ -89,9 +89,10 @@ impl SmtpTransportBuilder {
                 server_addr: addr,
                 ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
                 security_level: SecurityLevel::Opportunistic,
+                smtp_utf8: false,
                 credentials: None,
                 connection_reuse_count_limit: 100,
-                enable_connection_reuse: false,
+                connection_reuse: false,
                 hello_name: "localhost".to_string(),
                 authentication_mecanisms: vec![Mecanism::CramMd5, Mecanism::Plain],
             }),
@@ -116,6 +117,12 @@ impl SmtpTransportBuilder {
         self
     }
 
+    /// Require SSL/TLS using STARTTLS
+    pub fn smtp_utf8(mut self, enabled: bool) -> SmtpTransportBuilder {
+        self.smtp_utf8 = enabled;
+        self
+    }
+
     /// Set the name used during HELO or EHLO
     pub fn hello_name(mut self, name: &str) -> SmtpTransportBuilder {
         self.hello_name = name.to_string();
@@ -123,8 +130,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Enable connection reuse
-    pub fn enable_connection_reuse(mut self, enable: bool) -> SmtpTransportBuilder {
-        self.enable_connection_reuse = enable;
+    pub fn connection_reuse(mut self, enable: bool) -> SmtpTransportBuilder {
+        self.connection_reuse = enable;
         self
     }
 
@@ -297,12 +304,17 @@ impl EmailTransport for SmtpTransport {
         }
 
         // Mail
-        let mail_options = match self.server_info
+        let mail_options = match (self.server_info
                                      .as_ref()
                                      .unwrap()
-                                     .supports_feature(&Extension::EightBitMime) {
-            true => Some("BODY=8BITMIME"),
-            false => None,
+                                     .supports_feature(&Extension::EightBitMime),
+                                 self.server_info
+                                     .as_ref()
+                                     .unwrap()
+                                     .supports_feature(&Extension::EightBitMime)) {
+            (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
+            (true, false) => Some("BODY=8BITMIME"),
+            (false, _) => None,
         };
 
         try_smtp!(self.client.mail(&from_address, mail_options), self);
@@ -342,7 +354,7 @@ impl EmailTransport for SmtpTransport {
         }
 
         // Test if we can reuse the existing connection
-        if (!self.client_info.enable_connection_reuse) ||
+        if (!self.client_info.connection_reuse) ||
            (self.state.connection_reuse_count >= self.client_info.connection_reuse_count_limit) {
             self.reset();
         }
