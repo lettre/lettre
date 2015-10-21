@@ -2,7 +2,7 @@ lettre [![Build Status](https://travis-ci.org/lettre/lettre.svg?branch=master)](
 =========
 
 This is an email library written in Rust.
-See the [documentation](http://lettre.github.io/) for more information.
+See the [documentation](http://lettre.github.io/lettre) for more information.
 
 Install
 -------
