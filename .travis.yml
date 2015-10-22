@@ -29,9 +29,9 @@ script:
   - travis-cargo build
   - travis-cargo test
   - travis-cargo doc
-  - 'if [ $TRAVIS_RUST_VERSION = nightly ]; then cargo bench; fi'
 
 after_success:
+  - travis-cargo --only nightly bench
   - travis-cargo --only stable doc-upload
   - travis-cargo --only stable coveralls
 
