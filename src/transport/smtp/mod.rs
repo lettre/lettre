@@ -313,7 +313,7 @@ impl EmailTransport for SmtpTransport {
                                   self.server_info
                                       .as_ref()
                                       .unwrap()
-                                      .supports_feature(&Extension::EightBitMime)) {
+                                      .supports_feature(&Extension::SmtpUtfEight)) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
             (true, false) => Some("BODY=8BITMIME"),
             (false, _) => None,
