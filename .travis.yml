@@ -12,6 +12,8 @@ cache:
     directories:
         - target/debug/deps
         - target/debug/build
+        - target/release/deps
+        - target/release/build
 
 install: pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
