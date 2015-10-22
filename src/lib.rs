@@ -30,7 +30,7 @@
 //!
 //! This is the most basic example of usage:
 //!
-//! ```rust,no_run
+//! ```rust
 //! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
 //! use lettre::email::EmailBuilder;
 //! use lettre::transport::EmailTransport;
@@ -111,7 +111,7 @@
 //!
 //! If you just want to send an email without using `Email` to provide headers:
 //!
-//! ```rust,no_run
+//! ```rust
 //! use lettre::email::SimpleSendableEmail;
 //! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
 //! use lettre::transport::EmailTransport;
@@ -135,7 +135,7 @@
 //! You can also send commands, here is a simple email transaction without
 //! error handling:
 //!
-//! ```rust,no_run
+//! ```rust
 //! use lettre::transport::smtp::SMTP_PORT;
 //! use lettre::transport::smtp::client::Client;
 //! use lettre::transport::smtp::client::net::NetworkStream;

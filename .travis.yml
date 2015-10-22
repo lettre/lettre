@@ -8,6 +8,8 @@ rust:
 before_script:
   - sudo apt-get update -qq
   - sudo apt-get install -y postfix
+  - sudo netstat -taupe
+  - cat /etc/postfix/{main.cf,master.cf}
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 script:
   - |
