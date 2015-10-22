@@ -80,7 +80,6 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
 
     /// Upgrades the underlying connection to SSL/TLS
     pub fn upgrade_tls_stream(&mut self, ssl_context: &SslContext) -> io::Result<()> {
-        //let current_stream = self.stream.clone();
         if self.stream.is_some() {
             self.stream.as_mut().unwrap().get_mut().upgrade_tls(ssl_context)
         } else {

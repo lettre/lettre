@@ -165,10 +165,10 @@ impl EmailBuilder {
     /// Build the Email
     pub fn build(mut self) -> Result<Email, &'static str> {
         if self.from.is_none() {
-            return Err("No from address")
+            return Err("No from address");
         }
         if self.to.is_empty() {
-            return Err("No to address")
+            return Err("No to address");
         }
 
         if !self.date_issued {

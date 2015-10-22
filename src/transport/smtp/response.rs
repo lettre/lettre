@@ -1,4 +1,5 @@
-//! SMTP response, containing a mandatory return code and an optional text message
+//! SMTP response, containing a mandatory return code and an optional text
+//! message
 
 use std::str::FromStr;
 use std::fmt::{Display, Formatter, Result};

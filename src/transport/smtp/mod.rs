@@ -18,7 +18,8 @@ pub mod response;
 pub mod client;
 
 // Registrated port numbers:
-// https://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
+// https://www.iana.
+// org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 
 /// Default smtp port
 pub static SMTP_PORT: u16 = 25;
@@ -257,7 +258,8 @@ impl EmailTransport for SmtpTransport {
             }
         }
 
-        // If there is a usable connection, test if the server answers and hello has been sent
+        // If there is a usable connection, test if the server answers and hello has
+        // been sent
         if self.state.connection_reuse_count == 0 {
             try!(self.client.connect(&self.client_info.server_addr));
 
@@ -305,13 +307,13 @@ impl EmailTransport for SmtpTransport {
 
         // Mail
         let mail_options = match (self.server_info
-                                     .as_ref()
-                                     .unwrap()
-                                     .supports_feature(&Extension::EightBitMime),
-                                 self.server_info
-                                     .as_ref()
-                                     .unwrap()
-                                     .supports_feature(&Extension::EightBitMime)) {
+                                      .as_ref()
+                                      .unwrap()
+                                      .supports_feature(&Extension::EightBitMime),
+                                  self.server_info
+                                      .as_ref()
+                                      .unwrap()
+                                      .supports_feature(&Extension::EightBitMime)) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
             (true, false) => Some("BODY=8BITMIME"),
             (false, _) => None,

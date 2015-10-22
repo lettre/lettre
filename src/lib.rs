@@ -1,14 +1,18 @@
 //! # Rust email client
 //!
-//! This client should tend to follow [RFC 5321](https://tools.ietf.org/html/rfc5321), but is still
-//! a work in progress. It is designed to efficiently send emails from an application to a
-//! relay email server, as it relies as much as possible on the relay server for sanity and RFC
+//! This client should tend to follow [RFC
+//! 5321](https://tools.ietf.org/html/rfc5321), but is still
+//! a work in progress. It is designed to efficiently send emails from an
+//! application to a
+//! relay email server, as it relies as much as possible on the relay server
+//! for sanity and RFC
 //! compliance checks.
 //!
 //! It implements the following extensions:
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
-//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and CRAM-MD5 mecanisms
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and
+//! CRAM-MD5 mecanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
@@ -43,7 +47,8 @@
 //!     .build().unwrap();
 //!
 //! // Open a local connection on port 25
-//! let mut mailer = Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
+//! let mut mailer =
+//! Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
 //! // Send the email
 //! let result = mailer.send(email);
 //!
@@ -54,7 +59,8 @@
 //!
 //! ```rust,no_run
 //! use lettre::email::EmailBuilder;
-//! use lettre::transport::smtp::{SecurityLevel, SmtpTransport, SmtpTransportBuilder};
+//! use lettre::transport::smtp::{SecurityLevel, SmtpTransport,
+//! SmtpTransportBuilder};
 //! use lettre::transport::smtp::authentication::Mecanism;
 //! use lettre::transport::smtp::SUBMISSION_PORT;
 //! use lettre::transport::EmailTransport;
@@ -74,7 +80,8 @@
 //! let email = builder.build().unwrap();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = Mailer::new(SmtpTransportBuilder::new(("server.tld", SUBMISSION_PORT)).unwrap()
+//! let mut mailer = Mailer::new(SmtpTransportBuilder::new(("server.tld",
+//! SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
 //!     // Add credentials for authentication
@@ -117,14 +124,16 @@
 //!     "Hello world !"
 //! );
 //!
-//! let mut mailer = Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
+//! let mut mailer =
+//! Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
 //! let result = mailer.send(email);
 //! assert!(result.is_ok());
 //! ```
 //!
 //! ### Lower level
 //!
-//! You can also send commands, here is a simple email transaction without error handling:
+//! You can also send commands, here is a simple email transaction without
+//! error handling:
 //!
 //! ```rust,no_run
 //! use lettre::transport::smtp::SMTP_PORT;

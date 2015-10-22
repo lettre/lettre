@@ -86,5 +86,5 @@ pub type EmailResult = Result<Response, Error>;
 
 #[cfg(test)]
 mod test {
-    // TODO
+// TODO
 }
