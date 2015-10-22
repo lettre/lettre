@@ -14,10 +14,10 @@ before_script:
 script:
   - |
       travis-cargo build &&
-      travis-cargo test &&
-      export RUST_LOG=debug &&
-      ./target/debug/examples/client &&
-      travis-cargo doc
+      travis-cargo test
+  -   export RUST_LOG=debug
+  -   ./target/debug/examples/client
+  -   travis-cargo doc
 after_success:
   - travis-cargo --only stable doc-upload
   - travis-cargo --only stable coveralls
