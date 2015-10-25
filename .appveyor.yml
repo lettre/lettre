@@ -13,4 +13,4 @@ install:
   - cargo -vV
 build: false
 test_script:
-  - cargo test --verbose
+  - env OPENSSL_LIB_DIR=C:/OpenSSL-Win64 OPENSSL_INCLUDE_DIR=C:/OpenSSL-Win64/include cargo build --verbose
