@@ -5,12 +5,12 @@ use std::net::{SocketAddr, ToSocketAddrs};
 
 use openssl::ssl::{SslMethod, SslContext};
 
-use email::SendableEmail;
 use transport::smtp::extension::{Extension, ServerInfo};
 use transport::error::{EmailResult, Error};
 use transport::smtp::client::Client;
 use transport::smtp::authentication::Mecanism;
 use transport::EmailTransport;
+use email::SendableEmail;
 
 pub mod extension;
 pub mod authentication;
@@ -245,12 +245,14 @@ impl SmtpTransport {
 
 impl EmailTransport for SmtpTransport {
     /// Sends an email
-    fn send(&mut self,
-            to_addresses: Vec<String>,
-            from_address: String,
-            message: String,
-            message_id: String)
-            -> EmailResult {
+    fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
+
+        // Extract email information
+        let message_id = email.message_id();
+        let from_address = email.from_address();
+        let to_addresses = email.to_addresses();
+        let message = email.message();
+
         // Check if the connection is still available
         if self.state.connection_reuse_count > 0 {
             if !self.client.is_connected() {

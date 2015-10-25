@@ -5,23 +5,18 @@ use transport::error::EmailResult;
 use transport::smtp::response::Response;
 use transport::EmailTransport;
 use transport::smtp::response::{Code, Category, Severity};
+use email::SendableEmail;
 
 /// This transport does nothing exept logging the message enveloppe
 pub struct StubEmailTransport;
 
 impl EmailTransport for StubEmailTransport {
-    fn send(&mut self,
-            to_addresses: Vec<String>,
-            from_address: String,
-            message: String,
-            message_id: String)
-            -> EmailResult {
+    fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
 
-        let _ = message;
         info!("message '{}': from '{}' to '{:?}'",
-              message_id,
-              from_address,
-              to_addresses);
+              email.message_id(),
+              email.from_address(),
+              email.to_addresses());
         Ok(Response::new(Code::new(Severity::PositiveCompletion, Category::MailSystem, 0),
                          vec!["Ok: email logged".to_string()]))
     }

@@ -34,7 +34,6 @@
 //! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
 //! use lettre::email::EmailBuilder;
 //! use lettre::transport::EmailTransport;
-//! use lettre::mailer::Mailer;
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
@@ -48,7 +47,7 @@
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
-//! Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
+//! SmtpTransportBuilder::localhost().unwrap().build();
 //! // Send the email
 //! let result = mailer.send(email);
 //!
@@ -64,7 +63,6 @@
 //! use lettre::transport::smtp::authentication::Mecanism;
 //! use lettre::transport::smtp::SUBMISSION_PORT;
 //! use lettre::transport::EmailTransport;
-//! use lettre::mailer::Mailer;
 //!
 //! let mut builder = EmailBuilder::new();
 //! builder = builder.to(("user@example.org", "Alias name"));
@@ -80,7 +78,7 @@
 //! let email = builder.build().unwrap();
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = Mailer::new(SmtpTransportBuilder::new(("server.tld",
+//! let mut mailer = SmtpTransportBuilder::new(("server.tld",
 //! SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name("my.hostname.tld")
@@ -94,7 +92,7 @@
 //!     // Configure accepted authetication mecanisms
 //!     .authentication_mecanisms(vec![Mecanism::CramMd5])
 //!     // Enable connection reuse
-//!     .connection_reuse(true).build());
+//!     .connection_reuse(true).build();
 //!
 //! let result_1 = mailer.send(email.clone());
 //! assert!(result_1.is_ok());
@@ -115,7 +113,6 @@
 //! use lettre::email::SimpleSendableEmail;
 //! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
 //! use lettre::transport::EmailTransport;
-//! use lettre::mailer::Mailer;
 //!
 //! // Create a minimal email
 //! let email = SimpleSendableEmail::new(
@@ -125,7 +122,7 @@
 //! );
 //!
 //! let mut mailer =
-//! Mailer::new(SmtpTransportBuilder::localhost().unwrap().build());
+//! SmtpTransportBuilder::localhost().unwrap().build();
 //! let result = mailer.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -164,4 +161,3 @@ extern crate openssl;
 
 pub mod transport;
 pub mod email;
-pub mod mailer;
