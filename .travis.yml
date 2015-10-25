@@ -9,6 +9,7 @@ sudo: false
 
 cache:
     apt: true
+    pip: true
     directories:
         - target/debug/deps
         - target/debug/build

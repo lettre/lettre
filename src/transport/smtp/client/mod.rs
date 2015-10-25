@@ -27,8 +27,8 @@ fn escape_dot(string: &str) -> String {
     } else {
         string.to_string()
     }
-        .replace("\r.", "\r..")
-        .replace("\n.", "\n..")
+    .replace("\r.", "\r..")
+    .replace("\n.", "\n..")
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"

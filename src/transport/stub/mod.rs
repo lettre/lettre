@@ -1,11 +1,12 @@
-//! TODO
+//! This transport is a stub that only logs the message, and always returns
+//! succes
 
 use transport::error::EmailResult;
 use transport::smtp::response::Response;
 use transport::EmailTransport;
 use transport::smtp::response::{Code, Category, Severity};
 
-/// TODO
+/// This transport does nothing exept logging the message enveloppe
 pub struct StubEmailTransport;
 
 impl EmailTransport for StubEmailTransport {

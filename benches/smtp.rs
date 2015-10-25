@@ -10,9 +10,9 @@ use lettre::email::EmailBuilder;
 
 #[bench]
 fn bench_simple_send(b: &mut test::Bencher) {
+    let sender = SmtpTransportBuilder::new("127.0.0.1:2525").unwrap().build();
+    let mut mailer = Mailer::new(sender);
     b.iter(|| {
-        let sender = SmtpTransportBuilder::new("127.0.0.1:2525").unwrap().build();
-        let mut mailer = Mailer::new(sender);
         let email = EmailBuilder::new()
                         .to("root@localhost")
                         .from("user@localhost")
@@ -22,13 +22,15 @@ fn bench_simple_send(b: &mut test::Bencher) {
                         .unwrap();
         let result = mailer.send(email);
         assert!(result.is_ok());
-        mailer.close()
     });
 }
 
 #[bench]
 fn bench_reuse_send(b: &mut test::Bencher) {
-    let sender = SmtpTransportBuilder::new("127.0.0.1:2525").unwrap().connection_reuse(true).build();
+    let sender = SmtpTransportBuilder::new("127.0.0.1:2525")
+                     .unwrap()
+                     .connection_reuse(true)
+                     .build();
     let mut mailer = Mailer::new(sender);
     b.iter(|| {
         let email = EmailBuilder::new()

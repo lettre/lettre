@@ -1,7 +1,8 @@
 //! TODO
 pub mod smtp;
-pub mod stub;
 pub mod error;
+pub mod stub;
+// pub mod file;
 
 use transport::error::EmailResult;
 
