@@ -22,6 +22,9 @@ addons:
   apt:
     packages:
       - postfix
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
 
 before_script:
   - smtp-sink 2525 1000&
@@ -34,7 +37,7 @@ script:
 after_success:
   - travis-cargo --only nightly bench
   - travis-cargo --only stable doc-upload
-  - travis-cargo --only stable coveralls
+  - travis-cargo --only stable coveralls --no-sudo
 
 env:
   global:
