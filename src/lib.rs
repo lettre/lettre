@@ -151,7 +151,7 @@
 
 #[macro_use]
 extern crate log;
-extern crate rustc_serialize as serialize;
+extern crate rustc_serialize;
 extern crate crypto;
 extern crate time;
 extern crate uuid;

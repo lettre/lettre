@@ -3,8 +3,8 @@
 use std::fmt::{Display, Formatter};
 use std::fmt;
 
-use serialize::base64::{self, ToBase64, FromBase64};
-use serialize::hex::ToHex;
+use rustc_serialize::base64::{self, ToBase64, FromBase64};
+use rustc_serialize::hex::ToHex;
 use crypto::hmac::Hmac;
 use crypto::md5::Md5;
 use crypto::mac::Mac;

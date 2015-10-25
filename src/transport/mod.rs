@@ -2,7 +2,7 @@
 pub mod smtp;
 pub mod error;
 pub mod stub;
-// pub mod file;
+pub mod file;
 
 use transport::error::EmailResult;
 use email::SendableEmail;

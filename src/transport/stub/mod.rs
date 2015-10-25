@@ -13,7 +13,7 @@ pub struct StubEmailTransport;
 impl EmailTransport for StubEmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
 
-        info!("message '{}': from '{}' to '{:?}'",
+        info!("{}: from=<{}> to=<{:?}>",
               email.message_id(),
               email.from_address(),
               email.to_addresses());

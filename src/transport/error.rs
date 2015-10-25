@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fmt;
 
 use transport::smtp::response::{Severity, Response};
-use serialize::base64::FromBase64Error;
+use rustc_serialize::base64::FromBase64Error;
 use self::Error::*;
 
 /// An enum of all error kinds.
