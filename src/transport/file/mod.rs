@@ -21,7 +21,7 @@ impl FileEmailTransport {
     pub fn new<P: AsRef<Path>>(path: P) -> FileEmailTransport {
         let mut path_buf = PathBuf::new();
         path_buf.push(path);
-        FileEmailTransport {path: path_buf}
+        FileEmailTransport { path: path_buf }
     }
 }
 
@@ -33,9 +33,9 @@ impl EmailTransport for FileEmailTransport {
         let mut f = try!(File::create(file.as_path()));
 
         let log_line = format!("{}: from=<{}> to=<{}>\n",
-              email.message_id(),
-              email.from_address(),
-              email.to_addresses().join("> to=<"));
+                               email.message_id(),
+                               email.from_address(),
+                               email.to_addresses().join("> to=<"));
 
         try!(f.write_all(log_line.as_bytes()));
         try!(f.write_all(format!("{}", email.message()).as_bytes()));
@@ -43,7 +43,8 @@ impl EmailTransport for FileEmailTransport {
         info!("{} status=<written>", log_line);
 
         Ok(Response::new(Code::new(Severity::PositiveCompletion, Category::MailSystem, 0),
-                         vec![format!("Ok: email written to {}", file.to_str().unwrap_or("non-UTF-8 path"))]))
+                         vec![format!("Ok: email written to {}",
+                                      file.to_str().unwrap_or("non-UTF-8 path"))]))
     }
 
     fn close(&mut self) {

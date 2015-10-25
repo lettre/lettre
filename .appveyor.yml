@@ -1,11 +1,10 @@
 environment:
   matrix:
   - TARGET: x86_64-pc-windows-msvc
-  - TARGET: i686-pc-windows-msvc
   - TARGET: x86_64-pc-windows-gnu
-  - TARGET: i686-pc-windows-gnu
 install:
-  - cinst openssl.light
+  - ps: Start-FileDownload 'http://slproweb.com/download/Win64OpenSSL-1_0_2d.exe'
+  - ps: Start-Process "Win64OpenSSL-1_0_2d.exe" -ArgumentList "/silent /verysilent /sp- /suppressmsgboxes" -Wait
   - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe" -FileName "rust-nightly.exe"
   - ps: .\rust-nightly.exe /VERYSILENT /NORESTART /DIR="C:\rust" | Out-Null
   - ps: $env:PATH="$env:PATH;C:\rust\bin"
