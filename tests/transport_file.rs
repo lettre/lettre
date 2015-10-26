@@ -7,7 +7,7 @@ use std::io::Read;
 
 use lettre::transport::file::FileEmailTransport;
 use lettre::transport::EmailTransport;
-use lettre::email::{SendableEmail, EmailBuilder};
+use lettre::email::{EmailBuilder, SendableEmail};
 
 #[test]
 fn file_transport() {
@@ -28,7 +28,10 @@ fn file_transport() {
     let mut buffer = String::new();
     let _ = f.read_to_string(&mut buffer);
 
-    assert_eq!(buffer, format!("{}: from=<user@localhost> to=<root@localhost>\n{}", message_id, email.message()));
+    assert_eq!(buffer,
+               format!("{}: from=<user@localhost> to=<root@localhost>\n{}",
+                       message_id,
+                       email.message()));
 
     remove_file(file).unwrap();
 }

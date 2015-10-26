@@ -147,7 +147,7 @@
 //! let _ = email_client.quit();
 //! ```
 
-#![deny(missing_docs)]
+#![deny(missing_docs, unsafe_code, unstable_features)]
 
 #[macro_use]
 extern crate log;

@@ -276,7 +276,7 @@ impl Response {
 
 #[cfg(test)]
 mod test {
-    use super::{Severity, Category, Response, ResponseParser, Code};
+    use super::{Category, Code, Response, ResponseParser, Severity};
 
     #[test]
     fn test_severity_from_str() {

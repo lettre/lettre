@@ -2,9 +2,8 @@
 //! succes
 
 use transport::error::EmailResult;
-use transport::smtp::response::Response;
+use transport::smtp::response::{Category, Code, Response, Severity};
 use transport::EmailTransport;
-use transport::smtp::response::{Code, Category, Severity};
 use email::SendableEmail;
 
 /// This transport does nothing exept logging the message enveloppe

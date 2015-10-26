@@ -4,12 +4,11 @@ use std::path::{Path, PathBuf};
 use std::io::prelude::*;
 use std::fs::File;
 
+use transport::EmailTransport;
 use transport::error::EmailResult;
 use transport::smtp::response::Response;
-use transport::EmailTransport;
-use transport::smtp::response::{Code, Category, Severity};
+use transport::smtp::response::{Category, Code, Severity};
 use email::SendableEmail;
-
 
 /// TODO
 pub struct FileEmailTransport {

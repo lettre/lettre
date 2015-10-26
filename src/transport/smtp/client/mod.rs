@@ -2,16 +2,16 @@
 
 use std::string::String;
 use std::net::ToSocketAddrs;
-use std::io::{BufRead, Read, Write};
 use std::io;
+use std::io::{BufRead, Read, Write};
 use std::fmt::Debug;
 
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
 
+use transport::error::{EmailResult, Error};
 use transport::smtp::response::ResponseParser;
 use transport::smtp::authentication::Mecanism;
-use transport::error::{Error, EmailResult};
 use transport::smtp::client::net::{Connector, NetworkStream};
 use transport::smtp::{CRLF, MESSAGE_ENDING};
 
@@ -246,7 +246,7 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
 
 #[cfg(test)]
 mod test {
-    use super::{escape_dot, remove_crlf, escape_crlf};
+    use super::{escape_crlf, escape_dot, remove_crlf};
 
     #[test]
     fn test_escape_dot() {

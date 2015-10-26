@@ -2,10 +2,10 @@
 
 use std::error::Error as StdError;
 use std::io;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
-use transport::smtp::response::{Severity, Response};
+use transport::smtp::response::{Response, Severity};
 use rustc_serialize::base64::FromBase64Error;
 use self::Error::*;
 
