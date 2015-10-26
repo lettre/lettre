@@ -11,8 +11,13 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.4"
+lettre = "0.5"
 ```
+
+Testing
+-------
+
+The tests require a mail server listening locally on port 25.
 
 License
 -------
