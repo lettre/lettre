@@ -3,10 +3,10 @@
 use std::string::String;
 use std::net::{SocketAddr, ToSocketAddrs};
 
-use openssl::ssl::{SslMethod, SslContext};
+use openssl::ssl::{SslContext, SslMethod};
 
-use transport::smtp::extension::{Extension, ServerInfo};
 use transport::error::{EmailResult, Error};
+use transport::smtp::extension::{Extension, ServerInfo};
 use transport::smtp::client::Client;
 use transport::smtp::authentication::Mecanism;
 use transport::EmailTransport;

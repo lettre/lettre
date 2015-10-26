@@ -1,9 +1,8 @@
 //! A trait to represent a stream
 
 use std::io;
-use std::io::{Read, Write, ErrorKind};
-use std::net::SocketAddr;
-use std::net::TcpStream;
+use std::io::{ErrorKind, Read, Write};
+use std::net::{SocketAddr, TcpStream};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 

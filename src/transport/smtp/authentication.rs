@@ -1,9 +1,9 @@
 //! Provides authentication mecanisms
 
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
-use rustc_serialize::base64::{self, ToBase64, FromBase64};
+use rustc_serialize::base64::{self, FromBase64, ToBase64};
 use rustc_serialize::hex::ToHex;
 use crypto::hmac::Hmac;
 use crypto::md5::Md5;

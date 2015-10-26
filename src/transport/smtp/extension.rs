@@ -1,12 +1,12 @@
 //! ESMTP features
 
 use std::result::Result;
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 use std::collections::HashSet;
 
-use transport::smtp::response::Response;
 use transport::error::Error;
+use transport::smtp::response::Response;
 use transport::smtp::authentication::Mecanism;
 
 /// Supported ESMTP keywords
@@ -125,9 +125,9 @@ impl ServerInfo {
 mod test {
     use std::collections::HashSet;
 
-    use super::{ServerInfo, Extension};
+    use super::{Extension, ServerInfo};
     use transport::smtp::authentication::Mecanism;
-    use transport::smtp::response::{Code, Response, Severity, Category};
+    use transport::smtp::response::{Category, Code, Response, Severity};
 
     #[test]
     fn test_extension_fmt() {

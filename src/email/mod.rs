@@ -1,10 +1,10 @@
 //! Simple email (very incomplete)
 
-use std::fmt::{Display, Formatter};
 use std::fmt;
+use std::fmt::{Display, Formatter};
 
-use email_format::{MimeMessage, Header, Mailbox};
-use time::{now, Tm};
+use email_format::{Header, Mailbox, MimeMessage};
+use time::{Tm, now};
 use uuid::Uuid;
 
 /// Converts an adress or an address with an alias to a `Address`
@@ -269,9 +269,9 @@ mod test {
     use time::now;
 
     use uuid::Uuid;
-    use email_format::{MimeMessage, Header};
+    use email_format::{Header, MimeMessage};
 
-    use super::{SendableEmail, EmailBuilder, Email};
+    use super::{Email, EmailBuilder, SendableEmail};
 
     #[test]
     fn test_email_display() {
