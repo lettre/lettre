@@ -138,7 +138,7 @@
 //! use lettre::transport::smtp::client::net::NetworkStream;
 //!
 //! let mut email_client: Client<NetworkStream> = Client::new();
-//! let _ = email_client.connect(&("localhost", SMTP_PORT));
+//! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
 //! let _ = email_client.ehlo("my_hostname");
 //! let _ = email_client.mail("user@example.com", None);
 //! let _ = email_client.rcpt("user@example.org");
