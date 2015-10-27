@@ -1,4 +1,4 @@
-//! Provides authentication mecanisms
+//! Provides authentication mechanisms
 
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -12,34 +12,34 @@ use crypto::mac::Mac;
 use transport::smtp::NUL;
 use transport::error::Error;
 
-/// Represents authentication mecanisms
+/// Represents authentication mechanisms
 #[derive(PartialEq,Eq,Copy,Clone,Hash,Debug)]
-pub enum Mecanism {
-    /// PLAIN authentication mecanism
+pub enum Mechanism {
+    /// PLAIN authentication mechanism
     /// RFC 4616: https://tools.ietf.org/html/rfc4616
     Plain,
-    /// CRAM-MD5 authentication mecanism
+    /// CRAM-MD5 authentication mechanism
     /// RFC 2195: https://tools.ietf.org/html/rfc2195
     CramMd5,
 }
 
-impl Display for Mecanism {
+impl Display for Mechanism {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f,
                "{}",
                match *self {
-                   Mecanism::Plain => "PLAIN",
-                   Mecanism::CramMd5 => "CRAM-MD5",
+                   Mechanism::Plain => "PLAIN",
+                   Mechanism::CramMd5 => "CRAM-MD5",
                })
     }
 }
 
-impl Mecanism {
-    /// Does the mecanism supports initial response
+impl Mechanism {
+    /// Does the mechanism supports initial response
     pub fn supports_initial_response(&self) -> bool {
         match *self {
-            Mecanism::Plain => true,
-            Mecanism::CramMd5 => false,
+            Mechanism::Plain => true,
+            Mechanism::CramMd5 => false,
         }
     }
 
@@ -51,18 +51,18 @@ impl Mecanism {
                     challenge: Option<&str>)
                     -> Result<String, Error> {
         match *self {
-            Mecanism::Plain => {
+            Mechanism::Plain => {
                 match challenge {
-                    Some(_) => Err(Error::ClientError("This mecanism does not expect a challenge")),
+                    Some(_) => Err(Error::ClientError("This mechanism does not expect a challenge")),
                     None => Ok(format!("{}{}{}{}", NUL, username, NUL, password)
                                    .as_bytes()
                                    .to_base64(base64::STANDARD)),
                 }
             }
-            Mecanism::CramMd5 => {
+            Mechanism::CramMd5 => {
                 let encoded_challenge = match challenge {
                     Some(challenge) => challenge,
-                    None => return Err(Error::ClientError("This mecanism does expect a challenge")),
+                    None => return Err(Error::ClientError("This mechanism does expect a challenge")),
                 };
 
                 let decoded_challenge = match encoded_challenge.from_base64() {
@@ -83,27 +83,27 @@ impl Mecanism {
 
 #[cfg(test)]
 mod test {
-    use super::Mecanism;
+    use super::Mechanism;
 
     #[test]
     fn test_plain() {
-        let mecanism = Mecanism::Plain;
+        let mechanism = Mechanism::Plain;
 
-        assert_eq!(mecanism.response("username", "password", None).unwrap(),
+        assert_eq!(mechanism.response("username", "password", None).unwrap(),
                    "AHVzZXJuYW1lAHBhc3N3b3Jk");
-        assert!(mecanism.response("username", "password", Some("test")).is_err());
+        assert!(mechanism.response("username", "password", Some("test")).is_err());
     }
 
     #[test]
     fn test_cram_md5() {
-        let mecanism = Mecanism::CramMd5;
+        let mechanism = Mechanism::CramMd5;
 
-        assert_eq!(mecanism.response("alice",
+        assert_eq!(mechanism.response("alice",
                                      "wonderland",
                                      Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
                            .unwrap(),
                    "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
-        assert!(mecanism.response("alice", "wonderland", Some("tést")).is_err());
-        assert!(mecanism.response("alice", "wonderland", None).is_err());
+        assert!(mechanism.response("alice", "wonderland", Some("tést")).is_err());
+        assert!(mechanism.response("alice", "wonderland", None).is_err());
     }
 }

@@ -8,7 +8,7 @@ use openssl::ssl::{SslContext, SslMethod};
 use transport::error::{EmailResult, Error};
 use transport::smtp::extension::{Extension, ServerInfo};
 use transport::smtp::client::Client;
-use transport::smtp::authentication::Mecanism;
+use transport::smtp::authentication::Mechanism;
 use transport::EmailTransport;
 use email::SendableEmail;
 
@@ -75,8 +75,8 @@ pub struct SmtpTransportBuilder {
     security_level: SecurityLevel,
     /// Enable UTF8 mailboxes in enveloppe or headers
     smtp_utf8: bool,
-    /// List of authentication mecanism, sorted by priority
-    authentication_mecanisms: Vec<Mecanism>,
+    /// List of authentication mechanism, sorted by priority
+    authentication_mechanisms: Vec<Mechanism>,
 }
 
 /// Builder for the SMTP SmtpTransport
@@ -95,7 +95,7 @@ impl SmtpTransportBuilder {
                 connection_reuse_count_limit: 100,
                 connection_reuse: false,
                 hello_name: "localhost".to_string(),
-                authentication_mecanisms: vec![Mecanism::CramMd5, Mecanism::Plain],
+                authentication_mechanisms: vec![Mechanism::CramMd5, Mechanism::Plain],
             }),
             None => Err(From::from("Could nor resolve hostname")),
         }
@@ -148,9 +148,9 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Set the authentication mecanisms
-    pub fn authentication_mecanisms(mut self, mecanisms: Vec<Mecanism>) -> SmtpTransportBuilder {
-        self.authentication_mecanisms = mecanisms;
+    /// Set the authentication mechanisms
+    pub fn authentication_mechanisms(mut self, mechanisms: Vec<Mechanism>) -> SmtpTransportBuilder {
+        self.authentication_mechanisms = mechanisms;
         self
     }
 
@@ -293,16 +293,16 @@ impl EmailTransport for SmtpTransport {
 
                 let mut found = false;
 
-                for mecanism in self.client_info.authentication_mecanisms.clone() {
-                    if self.server_info.as_ref().unwrap().supports_auth_mecanism(mecanism) {
+                for mechanism in self.client_info.authentication_mechanisms.clone() {
+                    if self.server_info.as_ref().unwrap().supports_auth_mechanism(mechanism) {
                         found = true;
-                        try_smtp!(self.client.auth(mecanism, &username, &password), self);
+                        try_smtp!(self.client.auth(mechanism, &username, &password), self);
                         break;
                     }
                 }
 
                 if !found {
-                    info!("No supported authentication mecanisms available");
+                    info!("No supported authentication mechanisms available");
                 }
             }
         }

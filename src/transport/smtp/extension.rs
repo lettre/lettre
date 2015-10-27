@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 use transport::error::Error;
 use transport::smtp::response::Response;
-use transport::smtp::authentication::Mecanism;
+use transport::smtp::authentication::Mechanism;
 
 /// Supported ESMTP keywords
 #[derive(PartialEq,Eq,Hash,Clone,Debug)]
@@ -24,8 +24,8 @@ pub enum Extension {
     ///
     /// RFC 2487: https://tools.ietf.org/html/rfc2487
     StartTls,
-    /// AUTH mecanism
-    Authentication(Mecanism),
+    /// AUTH mechanism
+    Authentication(Mechanism),
 }
 
 impl Display for Extension {
@@ -34,7 +34,7 @@ impl Display for Extension {
             Extension::EightBitMime => write!(f, "{}", "8BITMIME"),
             Extension::SmtpUtfEight => write!(f, "{}", "SMTPUTF8"),
             Extension::StartTls => write!(f, "{}", "STARTTLS"),
-            Extension::Authentication(ref mecanism) => write!(f, "{} {}", "AUTH", mecanism),
+            Extension::Authentication(ref mechanism) => write!(f, "{} {}", "AUTH", mechanism),
         }
     }
 }
@@ -88,13 +88,13 @@ impl ServerInfo {
                     features.insert(Extension::StartTls);
                 }
                 "AUTH" => {
-                    for &mecanism in &splitted[1..] {
-                        match mecanism {
+                    for &mechanism in &splitted[1..] {
+                        match mechanism {
                             "PLAIN" => {
-                                features.insert(Extension::Authentication(Mecanism::Plain));
+                                features.insert(Extension::Authentication(Mechanism::Plain));
                             }
                             "CRAM-MD5" => {
-                                features.insert(Extension::Authentication(Mecanism::CramMd5));
+                                features.insert(Extension::Authentication(Mechanism::CramMd5));
                             }
                             _ => (),
                         }
@@ -116,8 +116,8 @@ impl ServerInfo {
     }
 
     /// Checks if the server supports an ESMTP feature
-    pub fn supports_auth_mecanism(&self, mecanism: Mecanism) -> bool {
-        self.features.contains(&Extension::Authentication(mecanism))
+    pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
+        self.features.contains(&Extension::Authentication(mechanism))
     }
 }
 
@@ -126,14 +126,14 @@ mod test {
     use std::collections::HashSet;
 
     use super::{Extension, ServerInfo};
-    use transport::smtp::authentication::Mecanism;
+    use transport::smtp::authentication::Mechanism;
     use transport::smtp::response::{Category, Code, Response, Severity};
 
     #[test]
     fn test_extension_fmt() {
         assert_eq!(format!("{}", Extension::EightBitMime),
                    "8BITMIME".to_string());
-        assert_eq!(format!("{}", Extension::Authentication(Mecanism::Plain)),
+        assert_eq!(format!("{}", Extension::Authentication(Mechanism::Plain)),
                    "AUTH PLAIN".to_string());
     }
 
@@ -159,7 +159,7 @@ mod test {
                    "name with no supported features".to_string());
 
         let mut plain = HashSet::new();
-        assert!(plain.insert(Extension::Authentication(Mecanism::Plain)));
+        assert!(plain.insert(Extension::Authentication(Mechanism::Plain)));
 
         assert_eq!(format!("{}",
                            ServerInfo {
@@ -190,7 +190,7 @@ mod test {
 
         assert!(server_info.supports_feature(&Extension::EightBitMime));
         assert!(!server_info.supports_feature(&Extension::StartTls));
-        assert!(!server_info.supports_auth_mecanism(Mecanism::CramMd5));
+        assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
         let response2 = Response::new(Code::new(Severity::PositiveCompletion,
                                                 Category::Unspecified4,
@@ -202,8 +202,8 @@ mod test {
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
-        assert!(features2.insert(Extension::Authentication(Mecanism::Plain)));
-        assert!(features2.insert(Extension::Authentication(Mecanism::CramMd5)));
+        assert!(features2.insert(Extension::Authentication(Mechanism::Plain)));
+        assert!(features2.insert(Extension::Authentication(Mechanism::CramMd5)));
 
         let server_info2 = ServerInfo {
             name: "me".to_string(),
@@ -213,8 +213,8 @@ mod test {
         assert_eq!(ServerInfo::from_response(&response2).unwrap(), server_info2);
 
         assert!(server_info2.supports_feature(&Extension::EightBitMime));
-        assert!(server_info2.supports_auth_mecanism(Mecanism::Plain));
-        assert!(server_info2.supports_auth_mecanism(Mecanism::CramMd5));
+        assert!(server_info2.supports_auth_mechanism(Mechanism::Plain));
+        assert!(server_info2.supports_auth_mechanism(Mechanism::CramMd5));
         assert!(!server_info2.supports_feature(&Extension::StartTls));
     }
 }
