@@ -47,9 +47,17 @@ pub static NUL: &'static str = "\0";
 /// TLS security level
 #[derive(Debug)]
 pub enum SecurityLevel {
-    /// Only send an email on encrypted connection
+    /// Use a TLS wrapped connection
+    ///
+    /// Non RFC-compliant, should only be used if the server does not support STARTTLS.
+    EncryptedWrapper,
+    /// Only send an email on encrypted connection (with STARTTLS)
+    ///
+    /// Recommended mode, prevents MITM when used with verified certificates.
     AlwaysEncrypt,
-    /// Use TLS when available
+    /// Use TLS when available (with STARTTLS)
+    ///
+    /// Default mode.
     Opportunistic,
     /// Never use TLS
     NeverEncrypt,
@@ -112,13 +120,29 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Require SSL/TLS using STARTTLS
+    /// Set the security level for SSL/TLS
     pub fn security_level(mut self, level: SecurityLevel) -> SmtpTransportBuilder {
         self.security_level = level;
         self
     }
 
     /// Require SSL/TLS using STARTTLS
+    ///
+    /// Incompatible with `ssl_wrapper()``
+    pub fn encrypt(mut self) -> SmtpTransportBuilder {
+        self.security_level = SecurityLevel::AlwaysEncrypt;
+        self
+    }
+
+    /// Require SSL/TLS using STARTTLS
+    ///
+    /// Incompatible with `encrypt()`
+    pub fn ssl_wrapper(mut self) -> SmtpTransportBuilder {
+        self.security_level = SecurityLevel::EncryptedWrapper;
+        self
+    }
+
+    /// Enable SMTPUTF8 if the server supports it
     pub fn smtp_utf8(mut self, enabled: bool) -> SmtpTransportBuilder {
         self.smtp_utf8 = enabled;
         self
@@ -260,10 +284,13 @@ impl EmailTransport for SmtpTransport {
             }
         }
 
-        // If there is a usable connection, test if the server answers and hello has
-        // been sent
         if self.state.connection_reuse_count == 0 {
-            try!(self.client.connect(&self.client_info.server_addr));
+            try!(self.client.connect(&self.client_info.server_addr,
+                                     match &self.client_info.security_level {
+                                         &SecurityLevel::EncryptedWrapper =>
+                                             Some(&self.client_info.ssl_context),
+                                         _ => None,
+                                     }));
 
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
@@ -276,6 +303,7 @@ impl EmailTransport for SmtpTransport {
                     return Err(From::from("Could not encrypt connection, aborting")),
                 (&SecurityLevel::Opportunistic, false) => (),
                 (&SecurityLevel::NeverEncrypt, _) => (),
+                (&SecurityLevel::EncryptedWrapper, _) => (),
                 (_, true) => {
                     try_smtp!(self.client.starttls(), self);
                     try_smtp!(self.client.upgrade_tls_stream(&self.client_info.ssl_context),

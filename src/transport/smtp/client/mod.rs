@@ -88,7 +88,10 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(&mut self, addr: &A) -> EmailResult {
+    pub fn connect<A: ToSocketAddrs>(&mut self,
+                                     addr: &A,
+                                     ssl_context: Option<&SslContext>)
+                                     -> EmailResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -102,7 +105,7 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
         };
 
         // Try to connect
-        self.set_stream(try!(Connector::connect(&server_addr, None)));
+        self.set_stream(try!(Connector::connect(&server_addr, ssl_context)));
 
         self.get_reply()
     }
@@ -189,8 +192,8 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
             debug!("CRAM challenge: {}", encoded_challenge);
 
             let cram_response = try!(mechanism.response(username,
-                                                       password,
-                                                       Some(&encoded_challenge)));
+                                                        password,
+                                                        Some(&encoded_challenge)));
 
             self.command(&format!("{}", cram_response))
         }
