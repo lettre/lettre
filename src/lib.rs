@@ -12,7 +12,7 @@
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN and
-//! CRAM-MD5 mecanisms
+//! CRAM-MD5 mechanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
@@ -60,7 +60,7 @@
 //! use lettre::email::EmailBuilder;
 //! use lettre::transport::smtp::{SecurityLevel, SmtpTransport,
 //! SmtpTransportBuilder};
-//! use lettre::transport::smtp::authentication::Mecanism;
+//! use lettre::transport::smtp::authentication::Mechanism;
 //! use lettre::transport::smtp::SUBMISSION_PORT;
 //! use lettre::transport::EmailTransport;
 //!
@@ -89,8 +89,8 @@
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Enable SMTPUTF8 is the server supports it
 //!     .smtp_utf8(true)
-//!     // Configure accepted authetication mecanisms
-//!     .authentication_mecanisms(vec![Mecanism::CramMd5])
+//!     // Configure accepted authetication mechanisms
+//!     .authentication_mechanisms(vec![Mechanism::CramMd5])
 //!     // Enable connection reuse
 //!     .connection_reuse(true).build();
 //!

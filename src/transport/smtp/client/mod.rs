@@ -11,7 +11,7 @@ use openssl::ssl::SslContext;
 
 use transport::error::{EmailResult, Error};
 use transport::smtp::response::ResponseParser;
-use transport::smtp::authentication::Mecanism;
+use transport::smtp::authentication::Mechanism;
 use transport::smtp::client::net::{Connector, NetworkStream};
 use transport::smtp::{CRLF, MESSAGE_ENDING};
 
@@ -173,13 +173,13 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
         self.command("RSET")
     }
 
-    /// Sends an AUTH command with the given mecanism
-    pub fn auth(&mut self, mecanism: Mecanism, username: &str, password: &str) -> EmailResult {
+    /// Sends an AUTH command with the given mechanism
+    pub fn auth(&mut self, mechanism: Mechanism, username: &str, password: &str) -> EmailResult {
 
-        if mecanism.supports_initial_response() {
+        if mechanism.supports_initial_response() {
             self.command(&format!("AUTH {} {}",
-                                  mecanism,
-                                  try!(mecanism.response(username, password, None))))
+                                  mechanism,
+                                  try!(mechanism.response(username, password, None))))
         } else {
             let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
                 Some(challenge) => challenge,
@@ -188,7 +188,7 @@ impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
 
             debug!("CRAM challenge: {}", encoded_challenge);
 
-            let cram_response = try!(mecanism.response(username,
+            let cram_response = try!(mechanism.response(username,
                                                        password,
                                                        Some(&encoded_challenge)));
 
