@@ -9,7 +9,7 @@ use std::fmt::{Debug, Formatter};
 use openssl::ssl::{SslContext, SslStream};
 
 /// A trait for the concept of opening a stream
-pub trait Connector {
+pub trait Connector: Sized {
     /// Opens a connection to the given IP socket
     fn connect(addr: &SocketAddr, ssl_context: Option<&SslContext>) -> io::Result<Self>;
     /// Upgrades to TLS connection
