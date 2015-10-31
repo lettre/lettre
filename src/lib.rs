@@ -1,6 +1,80 @@
-//! # Rust email client
+//! Lettre is a mailer written in Rust. It provides a simple email builder and several transports.
 //!
-//! This client should tend to follow [RFC
+//! ## Architecture
+//!
+//! This mailer is divided into:
+//!
+//! * An `email` part: builds the email message
+//! * A `transport` part: contains the available transports for your emails. To be sendable, the emails have to implement `SendableEmail`.
+//!
+//! ## Stub transport
+//!
+//! The stub transport only logs message envelope and drops the content. It can be useful for testing purposes.
+//!
+//! ```rust
+//! use lettre::transport::stub::StubEmailTransport;
+//! use lettre::transport::EmailTransport;
+//! use lettre::email::EmailBuilder;
+//!
+//! let mut sender = StubEmailTransport;
+//! let email = EmailBuilder::new()
+//!                     .to("root@localhost")
+//!                     .from("user@localhost")
+//!                     .body("Hello World!")
+//!                     .subject("Hello")
+//!                     .build()
+//!                     .unwrap();
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
+//!
+//! Will log the line:
+//!
+//! ```text
+//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
+//! ```
+//!
+//! ## File transport
+//!
+//! The file transport writes the emails to the given directory. The name of the file will be `message_id.txt`.
+//! It can be useful for testing purposes.
+//!
+//! ```rust
+//! use std::env::temp_dir;
+//!
+//! use lettre::transport::file::FileEmailTransport;
+//! use lettre::transport::EmailTransport;
+//! use lettre::email::{EmailBuilder, SendableEmail};
+//!
+//! // Write to the local temp directory
+//! let mut sender = FileEmailTransport::new(temp_dir());
+//! let email = EmailBuilder::new()
+//!                 .to("root@localhost")
+//!                 .from("user@localhost")
+//!                 .body("Hello World!")
+//!                 .subject("Hello")
+//!                 .build()
+//!                 .unwrap();
+//!
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
+//! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
+//!
+//! ```text
+//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
+//! To: <root@localhost>
+//! From: <user@localhost>
+//! Subject: Hello
+//! Date: Sat, 31 Oct 2015 13:42:19 +0100
+//! Message-ID: <b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost>
+//!
+//! Hello World!
+//! ```
+//!
+//! ## SMTP transport
+//!
+//! This SMTP follows [RFC
 //! 5321](https://tools.ietf.org/html/rfc5321), but is still
 //! a work in progress. It is designed to efficiently send emails from an
 //! application to a
@@ -15,16 +89,6 @@
 //! CRAM-MD5 mechanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
-//!
-//! ## Architecture
-//!
-//! This client is divided into three main parts:
-//!
-//! * transport: a low level SMTP client providing all SMTP commands
-//! * mailer: a high level SMTP client providing an easy method to send emails
-//! * email: generates the email to be sent with the sender
-//!
-//! ## Usage
 //!
 //! ### Simple example
 //!
@@ -105,28 +169,6 @@
 //! mailer.close();
 //! ```
 //!
-//! ### Using the client directly
-//!
-//! If you just want to send an email without using `Email` to provide headers:
-//!
-//! ```rust
-//! use lettre::email::SimpleSendableEmail;
-//! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
-//! use lettre::transport::EmailTransport;
-//!
-//! // Create a minimal email
-//! let email = SimpleSendableEmail::new(
-//!     "test@example.com",
-//!     "test@example.org",
-//!     "Hello world !"
-//! );
-//!
-//! let mut mailer =
-//! SmtpTransportBuilder::localhost().unwrap().build();
-//! let result = mailer.send(email);
-//! assert!(result.is_ok());
-//! ```
-//!
 //! ### Lower level
 //!
 //! You can also send commands, here is a simple email transaction without
@@ -146,6 +188,7 @@
 //! let _ = email_client.message("Test email");
 //! let _ = email_client.quit();
 //! ```
+
 
 #![deny(missing_docs, unsafe_code, unstable_features)]
 
