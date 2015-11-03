@@ -35,8 +35,8 @@ after_success: |
   [ $TRAVIS_PULL_REQUEST = false ] &&
   [ $TRAVIS_RUST_VERSION = stable ] &&
   cargo doc --no-deps &&
-  ghp-import -n target/doc &&
-  git push -fq https://${GH_TOKEN}@github.com/lettre/lettre.github.io.git master
+  cd target/doc && git init &&
+  git push -fq https://${TOKEN}@github.com/lettre/lettre.github.io.git master
 env:
   global:
-  - secure: W2N2OUB2i6dqDhxbsRpanpOdjrLwDKx7FY03ni4dkMnJ1az79gwgxZidq30L8afBhs1E50ug6CCdTYyI9KQfamg2vGgD8FkvtEgh2zsm6xTlfr7aRtOEYBbBJM6B8x+oJtdvzszlf8Awm/ShQ7ZpEeUnBLrL3LfArIVinv8DGAOxWTurlD7OPaSCktyasW2VGx7DtL1Kj3gP61ag1/1GxoyWdhFIDJX4Hn83De0wkp/He2BHA/xV7nzg3mFUsn2hXzzhk/yYfluA6gdcCFZ7QTm2ZfeHy0qMyfS/8F7E65Mmw8asNAALs7tVYPbxRNF92IWwej0d1WmMnzHLuZ3ogA4ZE2Pbn10ZdfxpVKKcsyUl2WQSxSt1e7seXSYZZQdVgf9ajPTre4IeARKErPa1SVt2dNhuT+VkniRcIkDYsXDWLftu0bglYSR5VRL3ZdgG5hGneIxr4ezFgBrth6leTDB4S+cuJBVOs8/o9NsshaH6sTUYMi025yJDISI01grRmntBwleKPuyPzpHaXNiLXsBvjj2MPeDqMRzx44LnHjLIDRs0DRnfRh/z9QuzIwp2GuU2UoPZYp9NAKjjG7RLjCJkxyQ+q1Eiur9wMGPwMsU2ZMr+fferm8eImioJXyutvyzT2UP8frDpF/SCWD9+BV3I0J7xD1rLgy5qE0QgJBs=
+    secure: sCYtnA/nHhOye43NuxI0VAL8+hf/60nxwfBBCKOsA+0P/U5dDlLoTiW+zcn5ejxBuQbM6GIUuaLe35UqWy5krZda6jpTTtSZNC6Hw5b7UgT8wJ8NN8EuiOsecph019XuTyDLEO7z9vKg/fEgktKbSwnfSlyBMDfgOhwJDfpgwLokbOcFz/zUyCX+b1hHo0EGS0OpDcB9FNX8veYVoz8NET26dvHfws+ZxJAawaUaL72A2L30I9eHe+kc2w8vLJp7wIUM24tXO2gn/sZikMuAuiwhkT76S/pPMl6K2bw/WlrVK9HsgXtM76PlsylNwHZDdUQTDD5Vwfi4K/D73+DkWR5hW0MfcG+wSzDbAXmPbiSVoOmwpuMXnNf6xuMXfZeVDLbBqqjwc760YrOSpsfbVd84JTk17q61eqRuNr5bv/gM7qRydzPJjCr+SJ6Y1Qny+Saepdl6OERfhfrwwGNBlF8xlwQFpIr068LLncl0QxryfIRAhXuseD+mNmhU4MEsPl4mgJdEelVV4E4oMsPtDHaNqEtT6DrYMuVE9sFkvv/4va6cl+1ZRrJVF3/TGpFalLLdq3VCaHI6cadJuRb+VMvsvoZ5WZKCk6j3AIIPp7m7o4flUiHesnkgaPcet3D+Ii6V1ipkvKanzAweh74Faghylr2xYAXfetUbtKKTF+c=
