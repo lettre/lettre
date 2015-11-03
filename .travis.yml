@@ -16,7 +16,10 @@ cache:
         - target/release/deps
         - target/release/build
 
-install: pip install 'ghp-import' 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+install:
+  - pip install 'travis-cargo<0.2' --user
+  - pip install 'ghp-import' --user
+  - export PATH=$HOME/.local/bin:$PATH
 
 addons:
   apt:
@@ -33,16 +36,15 @@ script:
   - travis-cargo build
   - travis-cargo test
 
-after_success:
-  - travis-cargo --only nightly bench
-  - travis-cargo --only stable coveralls --no-sudo
-  - [ $TRAVIS_BRANCH = master ] &&
-    [ $TRAVIS_PULL_REQUEST = false ] &&
-    [ $TRAVIS_RUST_VERSION = stable ] &&
-    cargo doc --no-deps &&
-    ghp-import -n target/doc &&
-    git push -fq https://${TOKEN}@github.com/lettre/lettre.github.io.git master
-
+after_success: |
+  travis-cargo --only nightly bench &&
+  travis-cargo --only stable coveralls --no-sudo &&
+  [ $TRAVIS_BRANCH = master ] &&
+  [ $TRAVIS_PULL_REQUEST = false ] &&
+  [ $TRAVIS_RUST_VERSION = stable ] &&
+  cargo doc --no-deps &&
+  ghp-import -n target/doc &&
+  git push -fq https://${TOKEN}@github.com/lettre/lettre.github.io.git master
 
 env:
   global:
