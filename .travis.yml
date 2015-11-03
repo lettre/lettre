@@ -36,7 +36,7 @@ after_success: |
   [ $TRAVIS_RUST_VERSION = stable ] &&
   cargo doc --no-deps &&
   ghp-import -n target/doc &&
-  git push -fq https://${TOKEN}@github.com/lettre/lettre.github.io.git master
+  git push -fq https://${GH_TOKEN}@github.com/lettre/lettre.github.io.git master
 env:
   global:
   - secure: jji81GOXlldOvW9jG+osg+0WPvC68OdnhcPUFIJgWAacMtS9aohwYkXvey0p6JpRPvdB3RFrjDenurs7U1w5FNr8zvdMIg4pCZx+o3hnlMGtgSHD3MrDRNQpw4bKX3k8PhcKqEaXgRA5t0fHDxikIIYuo/E7JP9YQJ/2lESV/O9Mr/JRKtV6romCflMsQxjCBnTfjoW5iqSDvLdwPFuwGZiJwhnf6Ewb+sLjbUkChLDCf7bI6w4GWsL9RGZQf5vaBHLZvUE6zeG5mkTk1h+biyy8dtzGhNdtQyNIYrYc7WF0L+hqKd+U5t0V9vLqcpwWCSDOUqqJ52+NvpoRmiNONBeVWqq1ffauMfYg4dz+qR6SahldVlxiixm8YVTBKyoZXhTS9Ek0d8/Z/5SCP2A1kdMU/YJuNLIUOwM+Z5quQPpcVY3IShoiza6cERHmNAQsE8wblt1+NN/hwpZK2ff50XEX8JKHWoQRBvD0Uij1hLGS/Pf6tQXez24MAdpqFN7lEoH/uUCIL8gA20lJjwXzDHJ4lkMdtL45qvjmpH0tSEgx4QFGVXaccfHwm0RS97FeQfRkWniMbor//mwSJhV4uga7+qPikRO4dsofgnywAjRu/sw+WTXxWGwHSObbKtS3hCxSV7antQChcJXFZfmyZJhv4rWG60bGMqLoojAtnHU=
