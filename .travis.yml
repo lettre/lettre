@@ -1,41 +1,33 @@
 language: rust
-
 rust:
-  - stable
-  - beta
-  - nightly
-
+- stable
+- beta
+- nightly
 sudo: false
-
 cache:
-    apt: true
-    pip: true
-    directories:
-        - target/debug/deps
-        - target/debug/build
-        - target/release/deps
-        - target/release/build
-
+  apt: true
+  pip: true
+  directories:
+  - target/debug/deps
+  - target/debug/build
+  - target/release/deps
+  - target/release/build
 install:
-  - pip install 'travis-cargo<0.2' --user
-  - pip install 'ghp-import' --user
-  - export PATH=$HOME/.local/bin:$PATH
-
+- pip install 'travis-cargo<0.2' --user
+- pip install 'ghp-import' --user
+- export PATH=$HOME/.local/bin:$PATH
 addons:
   apt:
     packages:
-      - postfix
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-
+    - postfix
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
 before_script:
-  - smtp-sink 2525 1000&
-
+- smtp-sink 2525 1000&
 script:
-  - travis-cargo build
-  - travis-cargo test
-
+- travis-cargo build
+- travis-cargo test
 after_success: |
   travis-cargo --only nightly bench &&
   travis-cargo --only stable coveralls --no-sudo &&
@@ -45,7 +37,7 @@ after_success: |
   cargo doc --no-deps &&
   ghp-import -n target/doc &&
   git push -fq https://${TOKEN}@github.com/lettre/lettre.github.io.git master
-
 env:
   global:
-    secure: "MaZ3TzuaAHuxmxQkfJdqRfkh7/ieScJRk0T/2yjysZhDMTYyRmp5wh/zkfW1ADuG0uc4Pqsxrsh1J9SVO7O0U5NJA8NKZi/pgiL+FHh0g4YtlHxy2xmFNB5am3Kyc+E7B4XylwTbA9S8ublVM0nvX7yX/a5fbwEUInVk2bA8fpc="
+  - secure: jji81GOXlldOvW9jG+osg+0WPvC68OdnhcPUFIJgWAacMtS9aohwYkXvey0p6JpRPvdB3RFrjDenurs7U1w5FNr8zvdMIg4pCZx+o3hnlMGtgSHD3MrDRNQpw4bKX3k8PhcKqEaXgRA5t0fHDxikIIYuo/E7JP9YQJ/2lESV/O9Mr/JRKtV6romCflMsQxjCBnTfjoW5iqSDvLdwPFuwGZiJwhnf6Ewb+sLjbUkChLDCf7bI6w4GWsL9RGZQf5vaBHLZvUE6zeG5mkTk1h+biyy8dtzGhNdtQyNIYrYc7WF0L+hqKd+U5t0V9vLqcpwWCSDOUqqJ52+NvpoRmiNONBeVWqq1ffauMfYg4dz+qR6SahldVlxiixm8YVTBKyoZXhTS9Ek0d8/Z/5SCP2A1kdMU/YJuNLIUOwM+Z5quQPpcVY3IShoiza6cERHmNAQsE8wblt1+NN/hwpZK2ff50XEX8JKHWoQRBvD0Uij1hLGS/Pf6tQXez24MAdpqFN7lEoH/uUCIL8gA20lJjwXzDHJ4lkMdtL45qvjmpH0tSEgx4QFGVXaccfHwm0RS97FeQfRkWniMbor//mwSJhV4uga7+qPikRO4dsofgnywAjRu/sw+WTXxWGwHSObbKtS3hCxSV7antQChcJXFZfmyZJhv4rWG60bGMqLoojAtnHU=
+  - secure: da54AMfdhVUNcpXhEdR00b6CvAo8IlPjjkxprH9rWYCYtKsIWS9WRK9l268aIm95DbCIG8kRib3GUCcgXsH7cgz+xQuYZ9ufRIrSdwEC/jywfQ3Mjo583SXNssoXWZjCX6OUwK6k/LxRfigPs7UdM3VRvsgwXdhP78rskaVk8M+rjF7+HEYXMIbXKn0VLEJn1h+x5mqL9Xs57er9c+6akEtWnvvTGrdVxE3fS4q56p9hT1t3UtP/40aJ1iE22nmRFp7M58q4SXbC9Y9jOA9gjlJraaSY4YLxCjiImjHRq6Mde+QVB1PINHehqVTQ9bF0nJ6dDPaQqO52y3ilRbKPCsKOeKR49tyjRW/2vBfLpGNttBD0hnIIyz96Zc8fbs3+TT3ISZtQ7arp0xZQLKgoUkt7zMUvSSjMErwDcf39Ght7UPIJtFqeV4zREti8TTLuo0nM3RPC++pRqzVgcjc14YvuGEtWYywdsps+RWa6NI941cUt1H/BDyNKLE5eRHM6RNlJciVMjQNOoBgIJxPt4G3ZB0cDNzN7kNQRU/YxSvGltHg61RFu83SL5oGvIDdgzd8HLtjlGueafCYr3hMqeBJwQNWyvV/vH4ZpQoJFaJfAwbo0AhYZORJ46qsWAcwXGwOgXpI++M7vo0xMjtYpB5gRTbxAfiEOjYq+upTnWbM=
