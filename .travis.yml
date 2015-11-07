@@ -27,6 +27,7 @@ before_script:
 script:
 - travis-cargo build
 - travis-cargo test
+- travis-cargo doc
 after_success:
 - travis-cargo --only nightly bench
 - travis-cargo --only stable coveralls --no-sudo
