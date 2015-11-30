@@ -21,7 +21,7 @@ impl Connector for NetworkStream {
         let tcp_stream = try!(TcpStream::connect(addr));
 
         match ssl_context {
-            Some(context) => match SslStream::new(&context, tcp_stream) {
+            Some(context) => match SslStream::connect_generic(context, tcp_stream) {
                 Ok(stream) => Ok(NetworkStream::Ssl(stream)),
                 Err(err) => Err(io::Error::new(ErrorKind::Other, err)),
             },
@@ -31,7 +31,7 @@ impl Connector for NetworkStream {
 
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
         *self = match self.clone() {
-            NetworkStream::Plain(stream) => match SslStream::new(ssl_context, stream) {
+            NetworkStream::Plain(stream) => match SslStream::connect_generic(ssl_context, stream) {
                 Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
                 Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
             },
