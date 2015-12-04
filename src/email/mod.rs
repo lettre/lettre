@@ -219,10 +219,10 @@ pub struct SimpleSendableEmail {
 
 impl SimpleSendableEmail {
     /// Returns a new email
-    pub fn new(from_address: &str, to_address: &str, message: &str) -> SimpleSendableEmail {
+    pub fn new(from_address: &str, to_address: Vec<String>, message: &str) -> SimpleSendableEmail {
         SimpleSendableEmail {
             from: from_address.to_string(),
-            to: vec![to_address.to_string()],
+            to: to_address,
             message: message.to_string(),
         }
     }
