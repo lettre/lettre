@@ -5,72 +5,8 @@
 //! This mailer is divided into:
 //!
 //! * An `email` part: builds the email message
-//! * A `transport` part: contains the available transports for your emails. To be sendable, the emails have to implement `SendableEmail`.
-//!
-//! ## Stub transport
-//!
-//! The stub transport only logs message envelope and drops the content. It can be useful for testing purposes.
-//!
-//! ```rust
-//! use lettre::transport::stub::StubEmailTransport;
-//! use lettre::transport::EmailTransport;
-//! use lettre::email::EmailBuilder;
-//!
-//! let mut sender = StubEmailTransport;
-//! let email = EmailBuilder::new()
-//!                     .to("root@localhost")
-//!                     .from("user@localhost")
-//!                     .body("Hello World!")
-//!                     .subject("Hello")
-//!                     .build()
-//!                     .unwrap();
-//! let result = sender.send(email);
-//! assert!(result.is_ok());
-//! ```
-//!
-//! Will log the line:
-//!
-//! ```text
-//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
-//! ```
-//!
-//! ## File transport
-//!
-//! The file transport writes the emails to the given directory. The name of the file will be `message_id.txt`.
-//! It can be useful for testing purposes.
-//!
-//! ```rust
-//! use std::env::temp_dir;
-//!
-//! use lettre::transport::file::FileEmailTransport;
-//! use lettre::transport::EmailTransport;
-//! use lettre::email::{EmailBuilder, SendableEmail};
-//!
-//! // Write to the local temp directory
-//! let mut sender = FileEmailTransport::new(temp_dir());
-//! let email = EmailBuilder::new()
-//!                 .to("root@localhost")
-//!                 .from("user@localhost")
-//!                 .body("Hello World!")
-//!                 .subject("Hello")
-//!                 .build()
-//!                 .unwrap();
-//!
-//! let result = sender.send(email);
-//! assert!(result.is_ok());
-//! ```
-//! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
-//!
-//! ```text
-//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
-//! To: <root@localhost>
-//! From: <user@localhost>
-//! Subject: Hello
-//! Date: Sat, 31 Oct 2015 13:42:19 +0100
-//! Message-ID: <b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost>
-//!
-//! Hello World!
-//! ```
+//! * A `transport` part: contains the available transports for your emails. To be sendable, the
+//!   emails have to implement `SendableEmail`.
 //!
 //! ## SMTP transport
 //!
@@ -187,6 +123,73 @@
 //! let _ = email_client.data();
 //! let _ = email_client.message("Test email");
 //! let _ = email_client.quit();
+//! ```
+//!
+//! ## Stub transport
+//!
+//! The stub transport only logs message envelope and drops the content. It can be useful for
+//! testing purposes.
+//!
+//! ```rust
+//! use lettre::transport::stub::StubEmailTransport;
+//! use lettre::transport::EmailTransport;
+//! use lettre::email::EmailBuilder;
+//!
+//! let mut sender = StubEmailTransport;
+//! let email = EmailBuilder::new()
+//!                     .to("root@localhost")
+//!                     .from("user@localhost")
+//!                     .body("Hello World!")
+//!                     .subject("Hello")
+//!                     .build()
+//!                     .unwrap();
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
+//!
+//! Will log the line:
+//!
+//! ```text
+//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
+//! ```
+//!
+//! ## File transport
+//!
+//! The file transport writes the emails to the given directory. The name of the file will be
+//! `message_id.txt`.
+//! It can be useful for testing purposes.
+//!
+//! ```rust
+//! use std::env::temp_dir;
+//!
+//! use lettre::transport::file::FileEmailTransport;
+//! use lettre::transport::EmailTransport;
+//! use lettre::email::{EmailBuilder, SendableEmail};
+//!
+//! // Write to the local temp directory
+//! let mut sender = FileEmailTransport::new(temp_dir());
+//! let email = EmailBuilder::new()
+//!                 .to("root@localhost")
+//!                 .from("user@localhost")
+//!                 .body("Hello World!")
+//!                 .subject("Hello")
+//!                 .build()
+//!                 .unwrap();
+//!
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
+//! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
+//!
+//! ```text
+//! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
+//! To: <root@localhost>
+//! From: <user@localhost>
+//! Subject: Hello
+//! Date: Sat, 31 Oct 2015 13:42:19 +0100
+//! Message-ID: <b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost>
+//!
+//! Hello World!
 //! ```
 
 

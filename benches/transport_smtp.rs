@@ -26,9 +26,9 @@ fn bench_simple_send(b: &mut test::Bencher) {
 #[bench]
 fn bench_reuse_send(b: &mut test::Bencher) {
     let mut sender = SmtpTransportBuilder::new("127.0.0.1:2525")
-                     .unwrap()
-                     .connection_reuse(true)
-                     .build();
+                         .unwrap()
+                         .connection_reuse(true)
+                         .build();
     b.iter(|| {
         let email = EmailBuilder::new()
                         .to("root@localhost")
