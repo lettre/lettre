@@ -11,8 +11,8 @@ environment:
 install:
   - ps: Start-FileDownload "http://slproweb.com/download/Win${env:BITS}OpenSSL-1_0_2g.exe"
   - Win%BITS%OpenSSL-1_0_2g.exe /SILENT /VERYSILENT /SP- /DIR="C:\OpenSSL"
-  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-stable-${env:TARGET}.exe"
-  - rust-stable-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-beta-${env:TARGET}.exe"
+  - rust-beta-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
   - SET PATH=%PATH%;C:\MinGW\bin
   - rustc -V
