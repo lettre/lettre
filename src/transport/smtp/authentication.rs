@@ -53,18 +53,22 @@ impl Mechanism {
         match *self {
             Mechanism::Plain => {
                 match challenge {
-                    Some(_) =>
-                        Err(Error::ClientError("This mechanism does not expect a challenge")),
-                    None => Ok(format!("{}{}{}{}", NUL, username, NUL, password)
-                                   .as_bytes()
-                                   .to_base64(base64::STANDARD)),
+                    Some(_) => {
+                        Err(Error::ClientError("This mechanism does not expect a challenge"))
+                    }
+                    None => {
+                        Ok(format!("{}{}{}{}", NUL, username, NUL, password)
+                               .as_bytes()
+                               .to_base64(base64::STANDARD))
+                    }
                 }
             }
             Mechanism::CramMd5 => {
                 let encoded_challenge = match challenge {
                     Some(challenge) => challenge,
-                    None =>
-                        return Err(Error::ClientError("This mechanism does expect a challenge")),
+                    None => {
+                        return Err(Error::ClientError("This mechanism does expect a challenge"))
+                    }
                 };
 
                 let decoded_challenge = match encoded_challenge.from_base64() {

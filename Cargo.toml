@@ -11,14 +11,14 @@ authors = ["Alexis Mousset <contact@amousset.me>"]
 keywords = ["email", "smtp", "mailer"]
 
 [dependencies]
-time = "0.1"
-uuid = "0.1"
-log = "0.3"
-rustc-serialize = "0.3"
-rust-crypto = "0.2"
 bufstream = "0.1"
 email = "0.0"
+log = "0.3"
 openssl = "0.7"
+rustc-serialize = "0.3"
+rust-crypto = "0.2"
+time = "0.1"
+uuid = "0.1"
 
 [dev-dependencies]
 env_logger = "0.3"
