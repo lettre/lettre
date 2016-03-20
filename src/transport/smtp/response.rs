@@ -115,11 +115,13 @@ impl FromStr for Code {
             match (s[0..1].parse::<Severity>(),
                    s[1..2].parse::<Category>(),
                    s[2..3].parse::<u8>()) {
-                (Ok(severity), Ok(category), Ok(detail)) => Ok(Code {
-                    severity: severity,
-                    category: category,
-                    detail: detail,
-                }),
+                (Ok(severity), Ok(category), Ok(detail)) => {
+                    Ok(Code {
+                        severity: severity,
+                        category: category,
+                        detail: detail,
+                    })
+                }
                 _ => return Err(Error::ResponseParsingError("Could not parse response code")),
             }
         } else {
@@ -196,8 +198,10 @@ impl ResponseParser {
     pub fn response(self) -> EmailResult {
         match self.code {
             Some(code) => Ok(Response::new(code, self.message)),
-            None => Err(Error::ResponseParsingError("Incomplete response, could not read \
-                                                     response code")),
+            None => {
+                Err(Error::ResponseParsingError("Incomplete response, could not read response \
+                                                 code"))
+            }
         }
     }
 }
@@ -266,10 +270,12 @@ impl Response {
     pub fn first_word(&self) -> Option<String> {
         match self.message.is_empty() {
             true => None,
-            false => match self.message[0].split_whitespace().next() {
-                Some(word) => Some(word.to_string()),
-                None => None,
-            },
+            false => {
+                match self.message[0].split_whitespace().next() {
+                    Some(word) => Some(word.to_string()),
+                    None => None,
+                }
+            }
         }
     }
 }

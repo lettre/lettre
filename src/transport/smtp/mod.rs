@@ -22,27 +22,27 @@ pub mod client;
 // org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 
 /// Default smtp port
-pub static SMTP_PORT: u16 = 25;
+pub const SMTP_PORT: u16 = 25;
 
 /// Default submission port
-pub static SUBMISSION_PORT: u16 = 587;
+pub const SUBMISSION_PORT: u16 = 587;
 
 // Useful strings and characters
 
 /// The word separator for SMTP transactions
-pub static SP: &'static str = " ";
+pub const SP: &'static str = " ";
 
 /// The line ending for SMTP transactions (carriage return + line feed)
-pub static CRLF: &'static str = "\r\n";
+pub const CRLF: &'static str = "\r\n";
 
 /// Colon
-pub static COLON: &'static str = ":";
+pub const COLON: &'static str = ":";
 
 /// The ending of message content
-pub static MESSAGE_ENDING: &'static str = "\r\n.\r\n";
+pub const MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 
 /// NUL unicode character
-pub static NUL: &'static str = "\0";
+pub const NUL: &'static str = "\0";
 
 /// TLS security level
 #[derive(Debug)]
@@ -94,17 +94,19 @@ impl SmtpTransportBuilder {
         let mut addresses = try!(addr.to_socket_addrs());
 
         match addresses.next() {
-            Some(addr) => Ok(SmtpTransportBuilder {
-                server_addr: addr,
-                ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
-                security_level: SecurityLevel::Opportunistic,
-                smtp_utf8: false,
-                credentials: None,
-                connection_reuse_count_limit: 100,
-                connection_reuse: false,
-                hello_name: "localhost".to_string(),
-                authentication_mechanisms: vec![Mechanism::CramMd5, Mechanism::Plain],
-            }),
+            Some(addr) => {
+                Ok(SmtpTransportBuilder {
+                    server_addr: addr,
+                    ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
+                    security_level: SecurityLevel::Opportunistic,
+                    smtp_utf8: false,
+                    credentials: None,
+                    connection_reuse_count_limit: 100,
+                    connection_reuse: false,
+                    hello_name: "localhost".to_string(),
+                    authentication_mechanisms: vec![Mechanism::CramMd5, Mechanism::Plain],
+                })
+            }
             None => Err(From::from("Could nor resolve hostname")),
         }
     }
@@ -287,8 +289,9 @@ impl EmailTransport for SmtpTransport {
         if self.state.connection_reuse_count == 0 {
             try!(self.client.connect(&self.client_info.server_addr,
                                      match &self.client_info.security_level {
-                                         &SecurityLevel::EncryptedWrapper =>
-                                             Some(&self.client_info.ssl_context),
+                                         &SecurityLevel::EncryptedWrapper => {
+                                             Some(&self.client_info.ssl_context)
+                                         }
                                          _ => None,
                                      }));
 
@@ -299,8 +302,9 @@ impl EmailTransport for SmtpTransport {
 
             match (&self.client_info.security_level,
                    self.server_info.as_ref().unwrap().supports_feature(&Extension::StartTls)) {
-                (&SecurityLevel::AlwaysEncrypt, false) =>
-                    return Err(From::from("Could not encrypt connection, aborting")),
+                (&SecurityLevel::AlwaysEncrypt, false) => {
+                    return Err(From::from("Could not encrypt connection, aborting"))
+                }
                 (&SecurityLevel::Opportunistic, false) => (),
                 (&SecurityLevel::NeverEncrypt, _) => (),
                 (&SecurityLevel::EncryptedWrapper, _) => (),
