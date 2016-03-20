@@ -1,15 +1,24 @@
 environment:
+  OPENSSL_INCLUDE_DIR: C:\OpenSSL\include
+  OPENSSL_LIB_DIR: C:\OpenSSL\lib
+  OPENSSL_LIBS: ssleay32:libeay32
   matrix:
-  - TARGET: x86_64-pc-windows-msvc
-  - TARGET: x86_64-pc-windows-gnu
+  - TARGET: i686-pc-windows-gnu
+    BITS: 32
+#  - TARGET: x86_64-pc-windows-msvc
+#    BITS: 64
+
 install:
-  - ps: Start-FileDownload 'http://slproweb.com/download/Win64OpenSSL-1_0_2d.exe'
-  - ps: Start-Process "Win64OpenSSL-1_0_2d.exe" -ArgumentList "/silent /verysilent /sp- /suppressmsgboxes" -Wait
-  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-nightly-${env:TARGET}.exe" -FileName "rust-nightly.exe"
-  - ps: .\rust-nightly.exe /VERYSILENT /NORESTART /DIR="C:\rust" | Out-Null
-  - ps: $env:PATH="$env:PATH;C:\rust\bin"
-  - rustc -vV
-  - cargo -vV
+  - ps: Start-FileDownload "http://slproweb.com/download/Win${env:BITS}OpenSSL-1_0_2g.exe"
+  - Win%BITS%OpenSSL-1_0_2g.exe /SILENT /VERYSILENT /SP- /DIR="C:\OpenSSL"
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-stable-${env:TARGET}.exe"
+  - rust-stable-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+  - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
+  - SET PATH=%PATH%;C:\MinGW\bin
+  - rustc -V
+  - cargo -V
+
 build: false
+
 test_script:
-  - env OPENSSL_LIB_DIR=C:/OpenSSL-Win64 OPENSSL_INCLUDE_DIR=C:/OpenSSL-Win64/include cargo build --verbose
+  - cargo build --verbose
