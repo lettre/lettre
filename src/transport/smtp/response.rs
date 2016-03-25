@@ -184,11 +184,7 @@ impl ResponseParser {
 
         if line.len() > 4 {
             self.message.push(line[4..].to_string());
-            if line.as_bytes()[3] == '-' as u8 {
-                Ok(true)
-            } else {
-                Ok(false)
-            }
+            Ok(line.as_bytes()[3] == '-' as u8)
         } else {
             Ok(false)
         }

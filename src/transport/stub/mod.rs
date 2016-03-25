@@ -6,7 +6,7 @@ use transport::smtp::response::{Category, Code, Response, Severity};
 use transport::EmailTransport;
 use email::SendableEmail;
 
-/// This transport does nothing exept logging the message enveloppe
+/// This transport does nothing except logging the message enveloppe
 pub struct StubEmailTransport;
 
 impl EmailTransport for StubEmailTransport {
