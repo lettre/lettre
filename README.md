@@ -4,6 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/lettre/lettre/badge.svg?branch=master&service=github)](https://coveralls.io/github/lettre/lettre?branch=master)
 [![Crate](https://meritbadge.herokuapp.com/lettre)](https://crates.io/crates/lettre)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 This is an email library written in Rust.
 See the [documentation](http://lettre.github.io/lettre) for more information.
