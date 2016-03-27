@@ -1,6 +1,6 @@
 //! Lettre is a mailer written in Rust. It provides a simple email builder and several transports.
 //!
-//! ## Architecture
+//! ## Overview
 //!
 //! This mailer is divided into:
 //!
@@ -8,7 +8,64 @@
 //! * A `transport` part: contains the available transports for your emails. To be sendable, the
 //!   emails have to implement `SendableEmail`.
 //!
-//! ## SMTP transport
+//! ## Creating messages
+//!
+//! The `email` part builds email messages. For now, it does not support attachment nor alternative bodies.
+//! An email is built using an `EmailBuilder`. The simplest email could be:
+//!
+//! ```rust
+//! use lettre::email::EmailBuilder;
+//!
+//! // Create an email
+//! let email = EmailBuilder::new()
+//!     // Addresses can be specified by the couple (email, alias)
+//!     .to(("user@example.org", "Firstname Lastname"))
+//!     // ... or by an address only
+//!     .from("user@example.com")
+//!     .subject("Hi, Hello world")
+//!     .body("Hello world.")
+//!     .build();
+//!
+//! assert!(email.is_ok());
+//! ```
+//!
+//! When the `build` method is called, the `EmailBuilder` will add the missing headers (like `Message-ID` or `Date`) and 
+//! check for missing necessary ones (like `From` or `To`). It will then generate an `Email` that can
+//! be sent.
+//!
+//! Below is a more complete example, not using method chaining:
+//!
+//! ```rust
+//! use lettre::email::EmailBuilder;
+//!
+//! let mut builder = EmailBuilder::new();
+//! builder = builder.to(("user@example.org", "Alias name"));
+//! builder = builder.cc(("user@example.net", "Alias name"));
+//! builder = builder.from("no-reply@example.com");
+//! builder = builder.from("no-reply@example.eu");
+//! builder = builder.sender("no-reply@example.com");
+//! builder = builder.subject("Hello world");
+//! builder = builder.body("Hi, Hello world.");
+//! builder = builder.reply_to("contact@example.com");
+//! builder = builder.add_header(("X-Custom-Header", "my header"));
+//!
+//! let email = builder.build();
+//! assert!(email.is_ok());
+//! ```
+//!
+//! See the `EmailBuilder` documentation for a complete list of methods.
+//!
+//! ## Sending messages
+//! 
+//! The following sections describe the available transport methods to treat emails.
+//!
+//! * The `SmtpTransport` uses the SMTP protocol to send the message over the network. It is
+//!   the prefered way of sending emails.
+//! * The `FileTransport` creates a file containing the email content to be sent. It can be used for debugging
+//!   or if you want to keep all sent emails. 
+//! * The `StubTransport` is useful for debugging, and only prints the content of the email in the logs.
+//!
+//! ### SMTP transport
 //!
 //! This SMTP follows [RFC
 //! 5321](https://tools.ietf.org/html/rfc5321), but is still
@@ -35,15 +92,13 @@
 //! use lettre::email::EmailBuilder;
 //! use lettre::transport::EmailTransport;
 //!
-//! // Create an email
 //! let email = EmailBuilder::new()
-//!     // Addresses can be specified by the couple (email, alias)
-//!     .to(("user@example.org", "Firstname Lastname"))
-//!     // ... or by an address only
-//!     .from("user@example.com")
-//!     .subject("Hi, Hello world")
-//!     .body("Hello world.")
-//!     .build().unwrap();
+//!                     .to("root@localhost")
+//!                     .from("user@localhost")
+//!                     .body("Hello World!")
+//!                     .subject("Hello")
+//!                     .build()
+//!                     .unwrap();
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
@@ -64,18 +119,13 @@
 //! use lettre::transport::smtp::SUBMISSION_PORT;
 //! use lettre::transport::EmailTransport;
 //!
-//! let mut builder = EmailBuilder::new();
-//! builder = builder.to(("user@example.org", "Alias name"));
-//! builder = builder.cc(("user@example.net", "Alias name"));
-//! builder = builder.from("no-reply@example.com");
-//! builder = builder.from("no-reply@example.eu");
-//! builder = builder.sender("no-reply@example.com");
-//! builder = builder.subject("Hello world");
-//! builder = builder.body("Hi, Hello world.");
-//! builder = builder.reply_to("contact@example.com");
-//! builder = builder.add_header(("X-Custom-Header", "my header"));
-//!
-//! let email = builder.build().unwrap();
+//! let email = EmailBuilder::new()
+//!                     .to("root@localhost")
+//!                     .from("user@localhost")
+//!                     .body("Hello World!")
+//!                     .subject("Hello")
+//!                     .build()
+//!                     .unwrap();
 //!
 //! // Connect to a remote server on a custom port
 //! let mut mailer = SmtpTransportBuilder::new(("server.tld",
@@ -125,7 +175,7 @@
 //! let _ = email_client.quit();
 //! ```
 //!
-//! ## Stub transport
+//! ### Stub transport
 //!
 //! The stub transport only logs message envelope and drops the content. It can be useful for
 //! testing purposes.
@@ -135,7 +185,6 @@
 //! use lettre::transport::EmailTransport;
 //! use lettre::email::EmailBuilder;
 //!
-//! let mut sender = StubEmailTransport;
 //! let email = EmailBuilder::new()
 //!                     .to("root@localhost")
 //!                     .from("user@localhost")
@@ -143,6 +192,8 @@
 //!                     .subject("Hello")
 //!                     .build()
 //!                     .unwrap();
+//!
+//! let mut sender = StubEmailTransport;
 //! let result = sender.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -153,7 +204,7 @@
 //! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
 //! ```
 //!
-//! ## File transport
+//! ### File transport
 //!
 //! The file transport writes the emails to the given directory. The name of the file will be
 //! `message_id.txt`.
