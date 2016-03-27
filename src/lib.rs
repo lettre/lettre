@@ -83,7 +83,7 @@
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
-//! ### Simple example
+//! #### Simple example
 //!
 //! This is the most basic example of usage:
 //!
@@ -109,7 +109,7 @@
 //! assert!(result.is_ok());
 //! ```
 //!
-//! ### Complete example
+//! #### Complete example
 //!
 //! ```rust,no_run
 //! use lettre::email::EmailBuilder;
@@ -155,7 +155,7 @@
 //! mailer.close();
 //! ```
 //!
-//! ### Lower level
+//! #### Lower level
 //!
 //! You can also send commands, here is a simple email transaction without
 //! error handling:
@@ -208,7 +208,7 @@
 //!
 //! The file transport writes the emails to the given directory. The name of the file will be
 //! `message_id.txt`.
-//! It can be useful for testing purposes.
+//! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 //! ```rust
 //! use std::env::temp_dir;
