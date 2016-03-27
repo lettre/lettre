@@ -10,8 +10,8 @@
 //!
 //! ## Creating messages
 //!
-//! The `email` part builds email messages. For now, it does not support attachment nor alternative bodies.
-//! An email is built using an `EmailBuilder`. The simplest email could be:
+//! The `email` part builds email messages. For now, it does not support attachment nor alternative
+//! bodies. An email is built using an `EmailBuilder`. The simplest email could be:
 //!
 //! ```rust
 //! use lettre::email::EmailBuilder;
@@ -29,9 +29,9 @@
 //! assert!(email.is_ok());
 //! ```
 //!
-//! When the `build` method is called, the `EmailBuilder` will add the missing headers (like `Message-ID` or `Date`) and 
-//! check for missing necessary ones (like `From` or `To`). It will then generate an `Email` that can
-//! be sent.
+//! When the `build` method is called, the `EmailBuilder` will add the missing headers (like
+//! `Message-ID` or `Date`) and check for missing necessary ones (like `From` or `To`). It will
+//! then generate an `Email` that can be sent.
 //!
 //! Below is a more complete example, not using method chaining:
 //!
@@ -56,14 +56,15 @@
 //! See the `EmailBuilder` documentation for a complete list of methods.
 //!
 //! ## Sending messages
-//! 
+//!
 //! The following sections describe the available transport methods to treat emails.
 //!
 //! * The `SmtpTransport` uses the SMTP protocol to send the message over the network. It is
 //!   the prefered way of sending emails.
-//! * The `FileTransport` creates a file containing the email content to be sent. It can be used for debugging
-//!   or if you want to keep all sent emails. 
-//! * The `StubTransport` is useful for debugging, and only prints the content of the email in the logs.
+//! * The `FileTransport` creates a file containing the email content to be sent. It can be used
+//!   for debugging or if you want to keep all sent emails.
+//! * The `StubTransport` is useful for debugging, and only prints the content of the email in the
+//!   logs.
 //!
 //! ### SMTP transport
 //!
