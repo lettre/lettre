@@ -57,7 +57,7 @@ macro_rules! return_err (
     })
 );
 
-impl<S: Write + Read = NetworkStream> Client<S> {
+impl<S: Write + Read> Client<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
@@ -66,7 +66,7 @@ impl<S: Write + Read = NetworkStream> Client<S> {
     }
 }
 
-impl<S: Connector + Write + Read + Debug + Clone = NetworkStream> Client<S> {
+impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
