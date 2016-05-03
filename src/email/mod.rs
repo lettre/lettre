@@ -3,9 +3,15 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
-use email_format::{Header, Mailbox, MimeMessage};
+use email_format::{Header, Mailbox, MimeMessage, MimeMultipartType};
+use mime::Mime;
 use time::{Tm, now};
 use uuid::Uuid;
+
+/// Insert a header in a message
+fn insert_header<A: ToHeader>(message: &mut MimeMessage, header: A) {
+    message.headers.insert(header.to_header());
+}
 
 /// Converts an adress or an address with an alias to a `Address`
 pub trait ToHeader {
@@ -102,18 +108,14 @@ impl EmailBuilder {
 
     /// Add a generic header
     pub fn add_header<A: ToHeader>(mut self, header: A) -> EmailBuilder {
-        self.insert_header(header);
+        insert_header(&mut self.message, header);
         self
-    }
-
-    fn insert_header<A: ToHeader>(&mut self, header: A) {
-        self.message.headers.insert(header.to_header());
     }
 
     /// Adds a `From` header and store the sender address
     pub fn from<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
-        self.insert_header(("From", mailbox.to_string().as_ref()));
+        insert_header(&mut self.message, ("From", mailbox.to_string().as_ref()));
         self.from = Some(mailbox.address);
         self
     }
@@ -121,7 +123,7 @@ impl EmailBuilder {
     /// Adds a `To` header and store the recipient address
     pub fn to<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
-        self.insert_header(("To", mailbox.to_string().as_ref()));
+        insert_header(&mut self.message, ("To", mailbox.to_string().as_ref()));
         self.to.push(mailbox.address);
         self
     }
@@ -129,7 +131,7 @@ impl EmailBuilder {
     /// Adds a `Cc` header and store the recipient address
     pub fn cc<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
-        self.insert_header(("Cc", mailbox.to_string().as_ref()));
+        insert_header(&mut self.message, ("Cc", mailbox.to_string().as_ref()));
         self.to.push(mailbox.address);
         self
     }
@@ -137,28 +139,78 @@ impl EmailBuilder {
     /// Adds a `Reply-To` header
     pub fn reply_to<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
-        self.insert_header(("Reply-To", mailbox.to_string().as_ref()));
+        insert_header(&mut self.message,
+                      ("Reply-To", mailbox.to_string().as_ref()));
         self
     }
 
     /// Adds a `Sender` header
     pub fn sender<A: ToMailbox>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.to_mailbox();
-        self.insert_header(("Sender", mailbox.to_string().as_ref()));
+        insert_header(&mut self.message, ("Sender", mailbox.to_string().as_ref()));
         self.from = Some(mailbox.address);
         self
     }
 
     /// Adds a `Subject` header
     pub fn subject(mut self, subject: &str) -> EmailBuilder {
-        self.insert_header(("Subject", subject));
+        insert_header(&mut self.message, ("Subject", subject));
         self
     }
 
     /// Adds a `Date` header with the given date
     pub fn date(mut self, date: &Tm) -> EmailBuilder {
-        self.insert_header(("Date", Tm::rfc822z(date).to_string().as_ref()));
+        insert_header(&mut self.message,
+                      ("Date", Tm::rfc822z(date).to_string().as_ref()));
         self.date_issued = true;
+        self
+    }
+
+    /// Adds a `ContentType` header with the given MIME type
+    pub fn content_type(mut self, content_type: Mime) -> EmailBuilder {
+        insert_header(&mut self.message,
+                      ("Content-Type", format!("{}", content_type).as_ref()));
+        self
+    }
+
+    /// Sets the email body to a plain text content
+    pub fn text(mut self, body: &str) -> EmailBuilder {
+        self.message.body = body.to_string();
+        insert_header(&mut self.message,
+                      ("Content-Type", format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
+        self
+    }
+
+    /// Sets the email body to a HTML contect
+    pub fn html(mut self, body: &str) -> EmailBuilder {
+        self.message.body = body.to_string();
+        insert_header(&mut self.message,
+                      ("Content-Type", format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
+        self
+    }
+
+    /// Sets the email content
+    pub fn alternative(mut self, body_html: &str, body_text: &str) -> EmailBuilder {
+        let mut alternate = MimeMessage::new_blank_message();
+        alternate.message_type = Some(MimeMultipartType::Alternative);
+
+        let mut text = MimeMessage::new(body_text.to_string());
+        insert_header(&mut text,
+                      ("Content-Type", format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
+        text.update_headers();
+
+        let mut html = MimeMessage::new(body_html.to_string());
+        insert_header(&mut html,
+                      ("Content-Type", format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
+        html.update_headers();
+
+        alternate.children.push(text);
+        alternate.children.push(html);
+        alternate.update_headers();
+
+        self.message.message_type = Some(MimeMultipartType::Mixed);
+        self.message.children.push(alternate);
+
         self
     }
 
@@ -172,14 +224,15 @@ impl EmailBuilder {
         }
 
         if !self.date_issued {
-            self.insert_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            insert_header(&mut self.message,
+                          ("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
         let message_id = Uuid::new_v4();
 
         match Header::new_with_value("Message-ID".to_string(),
                                      format!("<{}.lettre@localhost>", message_id)) {
-            Ok(header) => self.insert_header(header),
+            Ok(header) => insert_header(&mut self.message, header),
             Err(_) => (),
         }
 
@@ -303,7 +356,7 @@ mod test {
     }
 
     #[test]
-    fn test_email_builder() {
+    fn test_simple_email_builder() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
