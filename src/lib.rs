@@ -47,7 +47,7 @@
 //! builder = builder.subject("Hello world");
 //! builder = builder.body("Hi, Hello world.");
 //! builder = builder.reply_to("contact@example.com");
-//! builder = builder.add_header(("X-Custom-Header", "my header"));
+//! builder = builder.header(("X-Custom-Header", "my header"));
 //!
 //! let email = builder.build();
 //! assert!(email.is_ok());
