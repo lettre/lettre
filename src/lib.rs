@@ -10,8 +10,8 @@
 //!
 //! ## Creating messages
 //!
-//! The `email` part builds email messages. For now, it does not support attachment nor alternative
-//! bodies. An email is built using an `EmailBuilder`. The simplest email could be:
+//! The `email` part builds email messages. For now, it does not support attachments.
+//! An email is built using an `EmailBuilder`. The simplest email could be:
 //!
 //! ```rust
 //! use lettre::email::EmailBuilder;
@@ -23,7 +23,7 @@
 //!     // ... or by an address only
 //!     .from("user@example.com")
 //!     .subject("Hi, Hello world")
-//!     .body("Hello world.")
+//!     .text("Hello world.")
 //!     .build();
 //!
 //! assert!(email.is_ok());
@@ -33,21 +33,25 @@
 //! `Message-ID` or `Date`) and check for missing necessary ones (like `From` or `To`). It will
 //! then generate an `Email` that can be sent.
 //!
+//! The `text()` method will create a plain text email, while the `html()` method will create an
+//! HTML email. You can use the `alternative()` method to provide both version, using plain text
+//! as fallback for the HTML version.
+//!
 //! Below is a more complete example, not using method chaining:
 //!
 //! ```rust
 //! use lettre::email::EmailBuilder;
 //!
 //! let mut builder = EmailBuilder::new();
-//! builder = builder.to(("user@example.org", "Alias name"));
-//! builder = builder.cc(("user@example.net", "Alias name"));
-//! builder = builder.from("no-reply@example.com");
-//! builder = builder.from("no-reply@example.eu");
-//! builder = builder.sender("no-reply@example.com");
-//! builder = builder.subject("Hello world");
-//! builder = builder.body("Hi, Hello world.");
-//! builder = builder.reply_to("contact@example.com");
-//! builder = builder.header(("X-Custom-Header", "my header"));
+//! builder.add_to(("user@example.org", "Alias name"));
+//! builder.add_cc(("user@example.net", "Alias name"));
+//! builder.add_from("no-reply@example.com");
+//! builder.add_from("no-reply@example.eu");
+//! builder.set_sender("no-reply@example.com");
+//! builder.set_subject("Hello world");
+//! builder.set_alternative("<h2>Hi, Hello world.</h2>", "Hi, Hello world.");
+//! builder.add_reply_to("contact@example.com");
+//! builder.add_header(("X-Custom-Header", "my header"));
 //!
 //! let email = builder.build();
 //! assert!(email.is_ok());
