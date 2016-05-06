@@ -380,6 +380,8 @@ impl EmailBuilder {
             self.message.add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
+        self.message.add_header(("MIME-Version", "1.0"));
+
         let message_id = Uuid::new_v4();
 
         match Header::new_with_value("Message-ID".to_string(),
@@ -529,7 +531,8 @@ mod test {
                    format!("To: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" \
                             <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: \
                             <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: \
-                            value\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                            value\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                            <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                            date_now.rfc822z(),
                            email.message_id()));
     }
