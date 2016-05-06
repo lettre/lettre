@@ -1,12 +1,12 @@
-== Contributing to Lettre
+## Contributing to Lettre
 
 The following guidelines are inspired from the [hyper project](https://github.com/hyperium/hyper/blob/master/CONTRIBUTING.md).
 
-=== Code formatting
+### Code formatting
 
 All code must be formatted using `rustfmt`.
 
-=== Commit Message Format
+### Commit Message Format
 
 Each commit message consists of a header, a body and a footer. The header has a special format that includes a type, a scope and a subject:
 
