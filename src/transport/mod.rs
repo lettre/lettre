@@ -11,6 +11,6 @@ use email::SendableEmail;
 pub trait EmailTransport {
     /// Sends the email
     fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult;
-    /// Close the transport explicitely
+    /// Close the transport explicitly
     fn close(&mut self);
 }

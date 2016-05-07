@@ -1,12 +1,12 @@
 //! This transport is a stub that only logs the message, and always returns
-//! succes
+//! success
 
 use transport::error::EmailResult;
 use transport::smtp::response::{Category, Code, Response, Severity};
 use transport::EmailTransport;
 use email::SendableEmail;
 
-/// This transport does nothing except logging the message enveloppe
+/// This transport does nothing except logging the message envelope
 pub struct StubEmailTransport;
 
 impl EmailTransport for StubEmailTransport {

@@ -18,7 +18,7 @@
 //!
 //! // Create an email
 //! let email = EmailBuilder::new()
-//!     // Addresses can be specified by the couple (email, alias)
+//!     // Addresses can be specified by the tuple (email, alias)
 //!     .to(("user@example.org", "Firstname Lastname"))
 //!     // ... or by an address only
 //!     .from("user@example.com")
@@ -34,7 +34,7 @@
 //! then generate an `Email` that can be sent.
 //!
 //! The `text()` method will create a plain text email, while the `html()` method will create an
-//! HTML email. You can use the `alternative()` method to provide both version, using plain text
+//! HTML email. You can use the `alternative()` method to provide both versions, using plain text
 //! as fallback for the HTML version.
 //!
 //! Below is a more complete example, not using method chaining:
@@ -61,7 +61,7 @@
 //!
 //! ## Sending messages
 //!
-//! The following sections describe the available transport methods to treat emails.
+//! The following sections describe the available transport methods to handle emails.
 //!
 //! * The `SmtpTransport` uses the SMTP protocol to send the message over the network. It is
 //!   the prefered way of sending emails.
@@ -142,9 +142,9 @@
 //!     // Specify a TLS security level. You can also specify an SslContext with
 //!     // .ssl_context(SslContext::Ssl23)
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
-//!     // Enable SMTPUTF8 is the server supports it
+//!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
-//!     // Configure accepted authetication mechanisms
+//!     // Configure accepted authentication mechanisms
 //!     .authentication_mechanisms(vec![Mechanism::CramMd5])
 //!     // Enable connection reuse
 //!     .connection_reuse(true).build();
@@ -156,7 +156,7 @@
 //! let result_2 = mailer.send(email);
 //! assert!(result_2.is_ok());
 //!
-//! // Explicitely close the SMTP transaction as we enabled connection reuse
+//! // Explicitly close the SMTP transaction as we enabled connection reuse
 //! mailer.close();
 //! ```
 //!
