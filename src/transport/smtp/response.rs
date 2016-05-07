@@ -202,7 +202,7 @@ impl ResponseParser {
     }
 }
 
-/// Contains an SMTP reply, with separed code and message
+/// Contains an SMTP reply, with separated code and message
 ///
 /// The text message is optional, only the code is mandatory
 #[derive(PartialEq,Eq,Clone,Debug)]

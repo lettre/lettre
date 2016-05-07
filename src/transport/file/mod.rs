@@ -1,4 +1,4 @@
-//! This transport creates a file for each email, containing the enveloppe information and the email
+//! This transport creates a file for each email, containing the envelope information and the email
 //! itself.
 
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ use transport::smtp::response::Response;
 use transport::smtp::response::{Category, Code, Severity};
 use email::SendableEmail;
 
-/// Writes the content and the enveloppe information to a file
+/// Writes the content and the envelope information to a file
 pub struct FileEmailTransport {
     path: PathBuf,
 }

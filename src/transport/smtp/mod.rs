@@ -77,13 +77,13 @@ pub struct SmtpTransportBuilder {
     credentials: Option<(String, String)>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
-    /// SSL contexyt to use
+    /// SSL context to use
     ssl_context: SslContext,
     /// TLS security level
     security_level: SecurityLevel,
-    /// Enable UTF8 mailboxes in enveloppe or headers
+    /// Enable UTF8 mailboxes in envelope or headers
     smtp_utf8: bool,
-    /// List of authentication mechanism, sorted by priority
+    /// List of authentication mechanisms, sorted by priority
     authentication_mechanisms: Vec<Mechanism>,
 }
 
@@ -228,7 +228,7 @@ macro_rules! try_smtp (
 impl SmtpTransport {
     /// Creates a new SMTP client
     ///
-    /// It does not connects to the server, but only creates the `SmtpTransport`
+    /// It does not connect to the server, but only creates the `SmtpTransport`
     pub fn new(builder: SmtpTransportBuilder) -> SmtpTransport {
 
         let client = Client::new();

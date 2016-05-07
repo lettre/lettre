@@ -45,7 +45,7 @@ impl StdError for Error {
             PermanentError(_) => "a permanent error occured during the SMTP transaction",
             ResponseParsingError(_) => "an error occured while parsing an SMTP response",
             ChallengeParsingError(_) => "an error occured while parsing a CRAM-MD5 challenge",
-            ResolutionError => "Could no resolve hostname",
+            ResolutionError => "could not resolve hostname",
             ClientError(_) => "an unknown error occured",
             IoError(_) => "an I/O error occured",
         }
