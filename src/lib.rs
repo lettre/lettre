@@ -144,8 +144,8 @@
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
-//!     // Configure accepted authentication mechanisms
-//!     .authentication_mechanisms(vec![Mechanism::CramMd5])
+//!     // Configure expected authentication mechanism
+//!     .authentication_mechanism(Mechanism::CramMd5)
 //!     // Enable connection reuse
 //!     .connection_reuse(true).build();
 //!

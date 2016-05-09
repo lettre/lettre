@@ -82,7 +82,15 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
     pub fn upgrade_tls_stream(&mut self, ssl_context: &SslContext) -> io::Result<()> {
         match self.stream {
             Some(ref mut stream) => stream.get_mut().upgrade_tls(ssl_context),
-            None => Ok(())
+            None => Ok(()),
+        }
+    }
+
+    /// Tells if the underlying stream is currently encrypted
+    pub fn is_encrypted(&self) -> bool {
+        match self.stream {
+            Some(ref stream) => stream.get_ref().is_encrypted(),
+            None => false,
         }
     }
 

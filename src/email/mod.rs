@@ -72,7 +72,7 @@ pub struct EmailBuilder {
     date_issued: bool,
 }
 
-/// todo
+/// Simple email enveloppe representation
 #[derive(PartialEq,Eq,Clone,Debug)]
 pub struct Envelope {
     /// The envelope recipients' addresses

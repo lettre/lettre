@@ -14,6 +14,8 @@ pub trait Connector: Sized {
     fn connect(addr: &SocketAddr, ssl_context: Option<&SslContext>) -> io::Result<Self>;
     /// Upgrades to TLS connection
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()>;
+    /// Is the NetworkStream encrypted
+    fn is_encrypted(&self) -> bool;
 }
 
 impl Connector for NetworkStream {
@@ -42,6 +44,13 @@ impl Connector for NetworkStream {
             NetworkStream::Ssl(stream) => NetworkStream::Ssl(stream),
         };
         Ok(())
+    }
+    
+    fn is_encrypted(&self) -> bool {
+        match *self {
+            NetworkStream::Plain(_) => false,
+            NetworkStream::Ssl(_) => true,
+        }
     }
 }
 
