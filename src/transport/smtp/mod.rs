@@ -83,8 +83,8 @@ pub struct SmtpTransportBuilder {
     security_level: SecurityLevel,
     /// Enable UTF8 mailboxes in envelope or headers
     smtp_utf8: bool,
-    /// List of authentication mechanisms, sorted by priority
-    authentication_mechanisms: Vec<Mechanism>,
+    /// Optionnal enforced authentication mechanism
+    authentication_mechanism: Option<Mechanism>,
 }
 
 /// Builder for the SMTP SmtpTransport
@@ -104,7 +104,7 @@ impl SmtpTransportBuilder {
                     connection_reuse_count_limit: 100,
                     connection_reuse: false,
                     hello_name: "localhost".to_string(),
-                    authentication_mechanisms: vec![Mechanism::CramMd5, Mechanism::Plain],
+                    authentication_mechanism: None,
                 })
             }
             None => Err(From::from("Could nor resolve hostname")),
@@ -175,8 +175,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the authentication mechanisms
-    pub fn authentication_mechanisms(mut self, mechanisms: Vec<Mechanism>) -> SmtpTransportBuilder {
-        self.authentication_mechanisms = mechanisms;
+    pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpTransportBuilder {
+        self.authentication_mechanism = Some(mechanism);
         self
     }
 
@@ -325,7 +325,20 @@ impl EmailTransport for SmtpTransport {
 
                 let mut found = false;
 
-                for mechanism in self.client_info.authentication_mechanisms.clone() {
+                // Compute accepted mechnism
+                let accepted_mechanisms = match self.client_info.authentication_mechanism {
+                    Some(mechanism) => vec![mechanism],
+                    None => {
+                        match self.client.is_encrypted() {
+                            // If encrypted, allow all mechanisms, with a preference for the simplest
+                            true => vec![Mechanism::Plain, Mechanism::CramMd5],
+                            // If not encrypted, do not all clear-text passwords
+                            false => vec![Mechanism::CramMd5],
+                        }
+                    }
+                };
+
+                for mechanism in accepted_mechanisms {
                     if self.server_info.as_ref().unwrap().supports_auth_mechanism(mechanism) {
                         found = true;
                         try_smtp!(self.client.auth(mechanism, &username, &password), self);
