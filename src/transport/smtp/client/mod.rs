@@ -23,12 +23,12 @@ pub mod net;
 #[inline]
 fn escape_dot(string: &str) -> String {
     if string.starts_with(".") {
-        format!(".{}", string)
-    } else {
-        string.to_string()
-    }
-    .replace("\r.", "\r..")
-    .replace("\n.", "\n..")
+            format!(".{}", string)
+        } else {
+            string.to_string()
+        }
+        .replace("\r.", "\r..")
+        .replace("\n.", "\n..")
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"

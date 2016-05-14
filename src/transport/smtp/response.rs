@@ -410,7 +410,7 @@ mod test {
                               vec!["me".to_string(),
                                    "8BITMIME".to_string(),
                                    "SIZE 42".to_string()])
-                    .is_positive());
+            .is_positive());
         assert!(!Response::new(Code {
                                    severity: "5".parse::<Severity>().unwrap(),
                                    category: "4".parse::<Category>().unwrap(),
@@ -419,7 +419,7 @@ mod test {
                                vec!["me".to_string(),
                                     "8BITMIME".to_string(),
                                     "SIZE 42".to_string()])
-                     .is_positive());
+            .is_positive());
     }
 
     #[test]
@@ -521,7 +521,7 @@ mod test {
                               vec!["me".to_string(),
                                    "8BITMIME".to_string(),
                                    "SIZE 42".to_string()])
-                    .has_code(241));
+            .has_code(241));
         assert!(!Response::new(Code {
                                    severity: "2".parse::<Severity>().unwrap(),
                                    category: "4".parse::<Category>().unwrap(),
@@ -530,7 +530,7 @@ mod test {
                                vec!["me".to_string(),
                                     "8BITMIME".to_string(),
                                     "SIZE 42".to_string()])
-                     .has_code(251));
+            .has_code(251));
     }
 
     #[test]

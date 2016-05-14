@@ -58,8 +58,8 @@ impl Mechanism {
                     }
                     None => {
                         Ok(format!("{}{}{}{}", NUL, username, NUL, password)
-                               .as_bytes()
-                               .to_base64(base64::STANDARD))
+                            .as_bytes()
+                            .to_base64(base64::STANDARD))
                     }
                 }
             }
@@ -80,8 +80,8 @@ impl Mechanism {
                 hmac.input(&decoded_challenge);
 
                 Ok(format!("{} {}", username, hmac.result().code().to_hex())
-                       .as_bytes()
-                       .to_base64(base64::STANDARD))
+                    .as_bytes()
+                    .to_base64(base64::STANDARD))
             }
         }
     }
@@ -105,10 +105,9 @@ mod test {
         let mechanism = Mechanism::CramMd5;
 
         assert_eq!(mechanism.response("alice",
-                                      "wonderland",
-                                      Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=\
-                                            ="))
-                            .unwrap(),
+                                 "wonderland",
+                                 Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
+                       .unwrap(),
                    "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
         assert!(mechanism.response("alice", "wonderland", Some("tést")).is_err());
         assert!(mechanism.response("alice", "wonderland", None).is_err());

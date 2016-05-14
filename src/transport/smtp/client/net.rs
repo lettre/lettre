@@ -45,7 +45,7 @@ impl Connector for NetworkStream {
         };
         Ok(())
     }
-    
+
     fn is_encrypted(&self) -> bool {
         match *self {
             NetworkStream::Plain(_) => false,

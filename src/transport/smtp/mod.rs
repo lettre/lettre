@@ -330,7 +330,8 @@ impl EmailTransport for SmtpTransport {
                     Some(mechanism) => vec![mechanism],
                     None => {
                         match self.client.is_encrypted() {
-                            // If encrypted, allow all mechanisms, with a preference for the simplest
+                            // If encrypted, allow all mechanisms, with a preference for the
+                            // simplest
                             true => vec![Mechanism::Plain, Mechanism::CramMd5],
                             // If not encrypted, do not all clear-text passwords
                             false => vec![Mechanism::CramMd5],
@@ -354,13 +355,13 @@ impl EmailTransport for SmtpTransport {
 
         // Mail
         let mail_options = match (self.server_info
-                                      .as_ref()
-                                      .unwrap()
-                                      .supports_feature(&Extension::EightBitMime),
+            .as_ref()
+            .unwrap()
+            .supports_feature(&Extension::EightBitMime),
                                   self.server_info
-                                      .as_ref()
-                                      .unwrap()
-                                      .supports_feature(&Extension::SmtpUtfEight)) {
+            .as_ref()
+            .unwrap()
+            .supports_feature(&Extension::SmtpUtfEight)) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
             (true, false) => Some("BODY=8BITMIME"),
             (false, _) => None,
