@@ -349,16 +349,14 @@ impl EmailBuilder {
         alternate.set_message_type(MimeMultipartType::Alternative);
 
         let text = PartBuilder::new()
-                       .body(body_text)
-                       .header(("Content-Type",
-                                format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()))
-                       .build();
+            .body(body_text)
+            .header(("Content-Type", format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()))
+            .build();
 
         let html = PartBuilder::new()
-                       .body(body_html)
-                       .header(("Content-Type",
-                                format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()))
-                       .build();
+            .body(body_html)
+            .header(("Content-Type", format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()))
+            .build();
 
         alternate.add_child(text);
         alternate.add_child(html);
@@ -495,12 +493,12 @@ mod test {
         email.message.headers.insert(Header::new_with_value("Message-ID".to_string(),
                                                             format!("<{}@rust-smtp>",
                                                                     current_message))
-                                         .unwrap());
+            .unwrap());
 
         email.message
-             .headers
-             .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
-                         .unwrap());
+            .headers
+            .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
+                .unwrap());
 
         email.message.body = "body".to_string();
 
@@ -516,16 +514,16 @@ mod test {
         let date_now = now();
 
         let email = email_builder.to("user@localhost")
-                                 .from("user@localhost")
-                                 .cc(("cc@localhost", "Alias"))
-                                 .reply_to("reply@localhost")
-                                 .sender("sender@localhost")
-                                 .body("Hello World!")
-                                 .date(&date_now)
-                                 .subject("Hello")
-                                 .header(("X-test", "value"))
-                                 .build()
-                                 .unwrap();
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .reply_to("reply@localhost")
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .build()
+            .unwrap();
 
         assert_eq!(format!("{}", email),
                    format!("To: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" \
@@ -543,16 +541,16 @@ mod test {
         let date_now = now();
 
         let email = email_builder.to("user@localhost")
-                                 .from("user@localhost")
-                                 .cc(("cc@localhost", "Alias"))
-                                 .reply_to("reply@localhost")
-                                 .sender("sender@localhost")
-                                 .body("Hello World!")
-                                 .date(&date_now)
-                                 .subject("Hello")
-                                 .header(("X-test", "value"))
-                                 .build()
-                                 .unwrap();
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .reply_to("reply@localhost")
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .build()
+            .unwrap();
 
         assert_eq!(email.from_address(), "sender@localhost".to_string());
         assert_eq!(email.to_addresses(),

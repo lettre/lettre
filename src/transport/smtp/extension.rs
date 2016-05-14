@@ -171,12 +171,9 @@ mod test {
 
     #[test]
     fn test_serverinfo() {
-        let response = Response::new(Code::new(Severity::PositiveCompletion,
-                                               Category::Unspecified4,
-                                               1),
-                                     vec!["me".to_string(),
-                                          "8BITMIME".to_string(),
-                                          "SIZE 42".to_string()]);
+        let response =
+            Response::new(Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+                          vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
 
         let mut features = HashSet::new();
         assert!(features.insert(Extension::EightBitMime));
@@ -192,13 +189,12 @@ mod test {
         assert!(!server_info.supports_feature(&Extension::StartTls));
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
-        let response2 = Response::new(Code::new(Severity::PositiveCompletion,
-                                                Category::Unspecified4,
-                                                1),
-                                      vec!["me".to_string(),
-                                           "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
-                                           "8BITMIME".to_string(),
-                                           "SIZE 42".to_string()]);
+        let response2 =
+            Response::new(Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+                          vec!["me".to_string(),
+                               "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
+                               "8BITMIME".to_string(),
+                               "SIZE 42".to_string()]);
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
