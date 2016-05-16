@@ -22,7 +22,7 @@ pub mod net;
 /// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
 #[inline]
 fn escape_dot(string: &str) -> String {
-    if string.starts_with(".") {
+    if string.starts_with('.') {
             format!(".{}", string)
         } else {
             string.to_string()
@@ -193,7 +193,7 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
         } else {
             let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
                 Some(challenge) => challenge,
-                None => return Err(Error::ResponseParsingError("Could not read CRAM challenge")),
+                None => return Err(Error::ResponseParsing("Could not read CRAM challenge")),
             };
 
             debug!("CRAM challenge: {}", encoded_challenge);
@@ -202,7 +202,7 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
                                                         password,
                                                         Some(&encoded_challenge)));
 
-            self.command(&format!("{}", cram_response))
+            self.command(&cram_response.clone())
         }
     }
 
@@ -233,7 +233,7 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
     /// Gets the SMTP response
     fn get_reply(&mut self) -> EmailResult {
 
-        let mut parser = ResponseParser::new();
+        let mut parser = ResponseParser::default();
 
         let mut line = String::new();
         try!(self.stream.as_mut().unwrap().read_line(&mut line));
@@ -247,10 +247,12 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
 
         let response = try!(parser.response());
 
-        match response.is_positive() {
-            true => Ok(response),
-            false => Err(From::from(response)),
+        if response.is_positive() {
+            Ok(response)
+        } else {
+            Err(From::from(response))
         }
+
     }
 }
 

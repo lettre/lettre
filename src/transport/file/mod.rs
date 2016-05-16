@@ -38,7 +38,7 @@ impl EmailTransport for FileEmailTransport {
                                email.to_addresses().join("> to=<"));
 
         try!(f.write_all(log_line.as_bytes()));
-        try!(f.write_all(format!("{}", email.message()).as_bytes()));
+        try!(f.write_all(email.message().clone().as_bytes()));
 
         info!("{} status=<written>", log_line);
 

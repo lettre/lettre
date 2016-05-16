@@ -69,7 +69,7 @@ impl ServerInfo {
     pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
         let name = match response.first_word() {
             Some(name) => name,
-            None => return Err(Error::ResponseParsingError("Could not read server name")),
+            None => return Err(Error::ResponseParsing("Could not read server name")),
         };
 
         let mut features: HashSet<Extension> = HashSet::new();
@@ -77,7 +77,7 @@ impl ServerInfo {
         for line in response.message() {
 
             let splitted: Vec<&str> = line.split_whitespace().collect();
-            let _ = match splitted[0] {
+            match splitted[0] {
                 "8BITMIME" => {
                     features.insert(Extension::EightBitMime);
                 }

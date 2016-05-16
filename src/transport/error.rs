@@ -15,21 +15,21 @@ pub enum Error {
     /// Transient SMTP error, 4xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
-    TransientError(Response),
+    Transient(Response),
     /// Permanent SMTP error, 5xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
-    PermanentError(Response),
+    Permanent(Response),
     /// Error parsing a response
-    ResponseParsingError(&'static str),
+    ResponseParsing(&'static str),
     /// Error parsing a base64 string in response
-    ChallengeParsingError(FromBase64Error),
+    ChallengeParsing(FromBase64Error),
     /// Internal client error
-    ClientError(&'static str),
+    Client(&'static str),
     /// DNS resolution error
-    ResolutionError,
+    Resolution,
     /// IO error
-    IoError(io::Error),
+    Io(io::Error),
 }
 
 impl Display for Error {
@@ -41,19 +41,19 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            TransientError(_) => "a transient error occured during the SMTP transaction",
-            PermanentError(_) => "a permanent error occured during the SMTP transaction",
-            ResponseParsingError(_) => "an error occured while parsing an SMTP response",
-            ChallengeParsingError(_) => "an error occured while parsing a CRAM-MD5 challenge",
-            ResolutionError => "could not resolve hostname",
-            ClientError(_) => "an unknown error occured",
-            IoError(_) => "an I/O error occured",
+            Transient(_) => "a transient error occured during the SMTP transaction",
+            Permanent(_) => "a permanent error occured during the SMTP transaction",
+            ResponseParsing(_) => "an error occured while parsing an SMTP response",
+            ChallengeParsing(_) => "an error occured while parsing a CRAM-MD5 challenge",
+            Resolution => "could not resolve hostname",
+            Client(_) => "an unknown error occured",
+            Io(_) => "an I/O error occured",
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
-            IoError(ref err) => Some(&*err as &StdError),
+            Io(ref err) => Some(&*err as &StdError),
             _ => None,
         }
     }
@@ -61,23 +61,23 @@ impl StdError for Error {
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
-        IoError(err)
+        Io(err)
     }
 }
 
 impl From<Response> for Error {
     fn from(response: Response) -> Error {
         match response.severity() {
-            Severity::TransientNegativeCompletion => TransientError(response),
-            Severity::PermanentNegativeCompletion => PermanentError(response),
-            _ => ClientError("Unknown error code"),
+            Severity::TransientNegativeCompletion => Transient(response),
+            Severity::PermanentNegativeCompletion => Permanent(response),
+            _ => Client("Unknown error code"),
         }
     }
 }
 
 impl From<&'static str> for Error {
     fn from(string: &'static str) -> Error {
-        ClientError(string)
+        Client(string)
     }
 }
 
