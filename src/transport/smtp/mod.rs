@@ -87,7 +87,7 @@ pub struct SmtpTransportBuilder {
     authentication_mechanism: Option<Mechanism>,
 }
 
-/// Builder for the SMTP SmtpTransport
+/// Builder for the SMTP `SmtpTransport`
 impl SmtpTransportBuilder {
     /// Creates a new local SMTP client
     pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
@@ -280,10 +280,8 @@ impl EmailTransport for SmtpTransport {
         let message = email.message();
 
         // Check if the connection is still available
-        if self.state.connection_reuse_count > 0 {
-            if !self.client.is_connected() {
-                self.reset();
-            }
+        if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
+            self.reset();
         }
 
         if self.state.connection_reuse_count == 0 {
@@ -329,12 +327,13 @@ impl EmailTransport for SmtpTransport {
                 let accepted_mechanisms = match self.client_info.authentication_mechanism {
                     Some(mechanism) => vec![mechanism],
                     None => {
-                        match self.client.is_encrypted() {
+                        if self.client.is_encrypted() {
                             // If encrypted, allow all mechanisms, with a preference for the
                             // simplest
-                            true => vec![Mechanism::Plain, Mechanism::CramMd5],
+                            vec![Mechanism::Plain, Mechanism::CramMd5]
+                        } else {
                             // If not encrypted, do not all clear-text passwords
-                            false => vec![Mechanism::CramMd5],
+                            vec![Mechanism::CramMd5]
                         }
                     }
                 };
@@ -373,7 +372,7 @@ impl EmailTransport for SmtpTransport {
         info!("{}: from=<{}>", message_id, from_address);
 
         // Recipient
-        for to_address in to_addresses.iter() {
+        for to_address in &to_addresses {
             try_smtp!(self.client.rcpt(&to_address), self);
             // Log the rcpt command
             info!("{}: to=<{}>", message_id, to_address);
@@ -387,7 +386,7 @@ impl EmailTransport for SmtpTransport {
 
         if result.is_ok() {
             // Increment the connection reuse counter
-            self.state.connection_reuse_count = self.state.connection_reuse_count + 1;
+            self.state.connection_reuse_count += 1;
 
             // Log the message
             info!("{}: conn_use={}, size={}, status=sent ({})",

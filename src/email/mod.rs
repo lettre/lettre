@@ -382,10 +382,9 @@ impl EmailBuilder {
 
         let message_id = Uuid::new_v4();
 
-        match Header::new_with_value("Message-ID".to_string(),
-                                     format!("<{}.lettre@localhost>", message_id)) {
-            Ok(header) => self.message.add_header(header),
-            Err(_) => (),
+        if let Ok(header) = Header::new_with_value("Message-ID".to_string(),
+                                                   format!("<{}.lettre@localhost>", message_id)) {
+            self.message.add_header(header)
         }
 
         Ok(Email {

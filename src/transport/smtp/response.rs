@@ -30,7 +30,7 @@ impl FromStr for Severity {
             "3" => Ok(PositiveIntermediate),
             "4" => Ok(TransientNegativeCompletion),
             "5" => Ok(PermanentNegativeCompletion),
-            _ => Err(Error::ResponseParsingError("First digit must be between 2 and 5")),
+            _ => Err(Error::ResponseParsing("First digit must be between 2 and 5")),
         }
     }
 }
@@ -75,7 +75,7 @@ impl FromStr for Category {
             "3" => Ok(Unspecified3),
             "4" => Ok(Unspecified4),
             "5" => Ok(MailSystem),
-            _ => Err(Error::ResponseParsingError("Second digit must be between 0 and 5")),
+            _ => Err(Error::ResponseParsing("Second digit must be between 0 and 5")),
         }
     }
 }
@@ -122,10 +122,10 @@ impl FromStr for Code {
                         detail: detail,
                     })
                 }
-                _ => return Err(Error::ResponseParsingError("Could not parse response code")),
+                _ => Err(Error::ResponseParsing("Could not parse response code")),
             }
         } else {
-            Err(Error::ResponseParsingError("Wrong code length (should be 3 digit)"))
+            Err(Error::ResponseParsing("Wrong code length (should be 3 digit)"))
         }
     }
 }
@@ -147,7 +147,7 @@ impl Code {
 }
 
 /// Parses an SMTP response
-#[derive(PartialEq,Eq,Clone,Debug)]
+#[derive(PartialEq,Eq,Clone,Debug,Default)]
 pub struct ResponseParser {
     /// Response code
     code: Option<Code>,
@@ -157,25 +157,17 @@ pub struct ResponseParser {
 }
 
 impl ResponseParser {
-    /// Creates a new parser
-    pub fn new() -> ResponseParser {
-        ResponseParser {
-            code: None,
-            message: vec![],
-        }
-    }
-
     /// Parses a line and return a `bool` indicating if there are more lines to come
     pub fn read_line(&mut self, line: &str) -> result::Result<bool, Error> {
 
         if line.len() < 3 {
-            return Err(Error::ResponseParsingError("Wrong code length (should be 3 digit)"));
+            return Err(Error::ResponseParsing("Wrong code length (should be 3 digit)"));
         }
 
         match self.code {
             Some(ref code) => {
                 if code.code() != line[0..3] {
-                    return Err(Error::ResponseParsingError("Response code has changed during a \
+                    return Err(Error::ResponseParsing("Response code has changed during a \
                                                             reponse"));
                 }
             }
@@ -184,7 +176,7 @@ impl ResponseParser {
 
         if line.len() > 4 {
             self.message.push(line[4..].to_string());
-            Ok(line.as_bytes()[3] == '-' as u8)
+            Ok(line.as_bytes()[3] == b'-')
         } else {
             Ok(false)
         }
@@ -195,7 +187,7 @@ impl ResponseParser {
         match self.code {
             Some(code) => Ok(Response::new(code, self.message)),
             None => {
-                Err(Error::ResponseParsingError("Incomplete response, could not read response \
+                Err(Error::ResponseParsing("Incomplete response, could not read response \
                                                  code"))
             }
         }
@@ -264,15 +256,15 @@ impl Response {
 
     /// Returns only the first word of the message if possible
     pub fn first_word(&self) -> Option<String> {
-        match self.message.is_empty() {
-            true => None,
-            false => {
-                match self.message[0].split_whitespace().next() {
-                    Some(word) => Some(word.to_string()),
-                    None => None,
-                }
+        if self.message.is_empty() {
+            None
+        } else {
+            match self.message[0].split_whitespace().next() {
+                Some(word) => Some(word.to_string()),
+                None => None,
             }
         }
+
     }
 }
 
@@ -377,7 +369,7 @@ mod test {
 
     #[test]
     fn test_response_parser() {
-        let mut parser = ResponseParser::new();
+        let mut parser = ResponseParser::default();
 
         assert!(parser.read_line("250-me").unwrap());
         assert!(parser.read_line("250-8BITMIME").unwrap());

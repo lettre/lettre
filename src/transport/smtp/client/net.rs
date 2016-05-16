@@ -66,9 +66,9 @@ pub enum NetworkStream {
 impl Clone for NetworkStream {
     #[inline]
     fn clone(&self) -> NetworkStream {
-        match self {
-            &NetworkStream::Plain(ref stream) => NetworkStream::Plain(stream.try_clone().unwrap()),
-            &NetworkStream::Ssl(ref stream) => NetworkStream::Ssl(stream.try_clone().unwrap()),
+        match *self {
+            NetworkStream::Plain(ref stream) => NetworkStream::Plain(stream.try_clone().unwrap()),
+            NetworkStream::Ssl(ref stream) => NetworkStream::Ssl(stream.try_clone().unwrap()),
         }
     }
 }
