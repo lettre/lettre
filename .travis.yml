@@ -28,10 +28,10 @@ script:
 - travis-cargo build
 - travis-cargo test
 - travis-cargo doc
+- travis-cargo --only stable doc-upload
 after_success:
 - travis-cargo --only nightly bench
 - travis-cargo --only stable coveralls --no-sudo
-- pwd && ls target/doc && travis-cargo --only stable doc-upload
 env:
   global:
     secure: "MaZ3TzuaAHuxmxQkfJdqRfkh7/ieScJRk0T/2yjysZhDMTYyRmp5wh/zkfW1ADuG0uc4Pqsxrsh1J9SVO7O0U5NJA8NKZi/pgiL+FHh0g4YtlHxy2xmFNB5am3Kyc+E7B4XylwTbA9S8ublVM0nvX7yX/a5fbwEUInVk2bA8fpc="
