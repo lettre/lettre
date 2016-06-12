@@ -1,4 +1,5 @@
-//! Simple email (very incomplete)
+//! Simple email representation
+pub mod error;
 
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -7,6 +8,7 @@ use email_format::{Header, Mailbox, MimeMessage, MimeMultipartType};
 use mime::Mime;
 use time::{Tm, now};
 use uuid::Uuid;
+use email::error::Error;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait ToHeader {
@@ -49,6 +51,177 @@ impl<'a> ToMailbox for (&'a str, &'a str) {
     fn to_mailbox(&self) -> Mailbox {
         let (address, alias) = *self;
         Mailbox::new_with_name(alias.to_string(), address.to_string())
+    }
+}
+
+/// Can be transformed to a sendable email
+pub trait IntoEmail {
+    /// Builds an email
+    fn into_email(&self) -> Result<Email, Error>;
+}
+
+impl IntoEmail for SimpleEmail {
+    fn into_email(&self) -> Result<Email, Error> {
+        let mut builder = EmailBuilder::new();
+
+        if self.from.is_some() {
+            builder.add_from(self.from.as_ref().unwrap().as_str().to_mailbox());
+        }
+
+        for to_address in self.to.as_slice() {
+            builder.add_to(to_address.as_str().to_mailbox());
+        }
+
+        for cc_address in self.cc.as_slice() {
+            builder.add_cc(cc_address.as_str().to_mailbox());
+        }
+
+        // No bcc for now
+
+        if self.reply_to.is_some() {
+            builder.add_reply_to(self.reply_to.as_ref().unwrap().as_str().to_mailbox());
+        }
+
+        if self.subject.is_some() {
+            builder.set_subject(self.subject.as_ref().unwrap().as_str());
+        }
+
+        // No date for now
+
+        match (self.text.as_ref(), self.html.as_ref()) {
+            (Some(text), Some(html)) => builder.set_alternative(html.as_str(), text.as_str()),
+            (Some(text), None) => builder.set_text(text.as_str()),
+            (None, Some(html)) => builder.set_html(html.as_str()),
+            (None, None) => (),
+        }
+
+        for header in self.headers.as_slice() {
+            builder.add_header(header.to_header());
+        }
+
+        Ok(builder.build().unwrap())
+    }
+}
+
+
+/// Simple representation of an email, useful for some transports
+#[derive(PartialEq,Eq,Clone,Debug,Default)]
+pub struct SimpleEmail {
+    from: Option<String>,
+    to: Vec<String>,
+    cc: Vec<String>,
+    // bcc: Vec<String>,
+    reply_to: Option<String>,
+    subject: Option<String>,
+    date: Option<Tm>,
+    html: Option<String>,
+    text: Option<String>,
+    // attachments: Vec<String>,
+    headers: Vec<Header>,
+}
+
+impl SimpleEmail {
+    /// Adds a generic header
+    pub fn header<A: ToHeader>(mut self, header: A) -> SimpleEmail {
+        self.add_header(header);
+        self
+    }
+
+    /// Adds a generic header
+    pub fn add_header<A: ToHeader>(&mut self, header: A) {
+        self.headers.push(header.to_header());
+    }
+
+    /// Adds a `From` header and stores the sender address
+    pub fn from<A: ToMailbox>(mut self, address: A) -> SimpleEmail {
+        self.add_from(address);
+        self
+    }
+
+    /// Adds a `From` header and stores the sender address
+    pub fn add_from<A: ToMailbox>(&mut self, address: A) {
+        let mailbox = address.to_mailbox();
+        self.from = Some(mailbox.address);
+    }
+
+    /// Adds a `To` header and stores the recipient address
+    pub fn to<A: ToMailbox>(mut self, address: A) -> SimpleEmail {
+        self.add_to(address);
+        self
+    }
+
+    /// Adds a `To` header and stores the recipient address
+    pub fn add_to<A: ToMailbox>(&mut self, address: A) {
+        let mailbox = address.to_mailbox();
+        self.to.push(mailbox.address);
+    }
+
+    /// Adds a `Cc` header and stores the recipient address
+    pub fn cc<A: ToMailbox>(mut self, address: A) -> SimpleEmail {
+        self.add_cc(address);
+        self
+    }
+
+    /// Adds a `Cc` header and stores the recipient address
+    pub fn add_cc<A: ToMailbox>(&mut self, address: A) {
+        let mailbox = address.to_mailbox();
+        self.cc.push(mailbox.address);
+    }
+
+    /// Adds a `Reply-To` header
+    pub fn reply_to<A: ToMailbox>(mut self, address: A) -> SimpleEmail {
+        self.add_reply_to(address);
+        self
+    }
+
+    /// Adds a `Reply-To` header
+    pub fn add_reply_to<A: ToMailbox>(&mut self, address: A) {
+        let mailbox = address.to_mailbox();
+        self.reply_to = Some(mailbox.address);
+    }
+
+    /// Adds a `Subject` header
+    pub fn subject(mut self, subject: &str) -> SimpleEmail {
+        self.set_subject(subject);
+        self
+    }
+
+    /// Adds a `Subject` header
+    pub fn set_subject(&mut self, subject: &str) {
+        self.subject = Some(subject.to_string());
+    }
+
+    /// Adds a `Date` header with the given date
+    pub fn date(mut self, date: &Tm) -> SimpleEmail {
+        self.set_date(date);
+        self
+    }
+
+    /// Adds a `Date` header with the given date
+    pub fn set_date(&mut self, date: &Tm) {
+        self.date = Some(date.clone());
+    }
+
+    /// Sets the email body to plain text content
+    pub fn text(mut self, body: &str) -> SimpleEmail {
+        self.set_text(body);
+        self
+    }
+
+    /// Sets the email body to plain text content
+    pub fn set_text(&mut self, body: &str) {
+        self.text = Some(body.to_string());
+    }
+
+    /// Sets the email body to HTML content
+    pub fn html(mut self, body: &str) -> SimpleEmail {
+        self.set_html(body);
+        self
+    }
+
+    /// Sets the email body to HTML content
+    pub fn set_html(&mut self, body: &str) {
+        self.html = Some(body.to_string());
     }
 }
 
@@ -166,8 +339,6 @@ impl PartBuilder {
         self.message
     }
 }
-
-
 
 impl EmailBuilder {
     /// Creates a new empty email
@@ -366,12 +537,12 @@ impl EmailBuilder {
     }
 
     /// Builds the Email
-    pub fn build(mut self) -> Result<Email, &'static str> {
+    pub fn build(mut self) -> Result<Email, Error> {
         if self.from.is_none() {
-            return Err("No from address");
+            return Err(Error::MissingFrom);
         }
         if self.to.is_empty() {
-            return Err("No to address");
+            return Err(Error::MissingTo);
         }
 
         if !self.date_issued {
