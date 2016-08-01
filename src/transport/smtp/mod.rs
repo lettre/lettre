@@ -83,7 +83,7 @@ pub struct SmtpTransportBuilder {
     security_level: SecurityLevel,
     /// Enable UTF8 mailboxes in envelope or headers
     smtp_utf8: bool,
-    /// Optionnal enforced authentication mechanism
+    /// Optional enforced authentication mechanism
     authentication_mechanism: Option<Mechanism>,
 }
 
@@ -182,7 +182,7 @@ impl SmtpTransportBuilder {
 
     /// Build the SMTP client
     ///
-    /// It does not connects to the server, but only creates the `SmtpTransport`
+    /// It does not connect to the server, but only creates the `SmtpTransport`
     pub fn build(self) -> SmtpTransport {
         SmtpTransport::new(self)
     }
@@ -323,7 +323,7 @@ impl EmailTransport for SmtpTransport {
 
                 let mut found = false;
 
-                // Compute accepted mechnism
+                // Compute accepted mechanism
                 let accepted_mechanisms = match self.client_info.authentication_mechanism {
                     Some(mechanism) => vec![mechanism],
                     None => {
@@ -332,7 +332,7 @@ impl EmailTransport for SmtpTransport {
                             // simplest
                             vec![Mechanism::Plain, Mechanism::CramMd5]
                         } else {
-                            // If not encrypted, do not all clear-text passwords
+                            // If not encrypted, do not allow clear-text passwords
                             vec![Mechanism::CramMd5]
                         }
                     }
