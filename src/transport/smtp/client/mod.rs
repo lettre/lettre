@@ -110,7 +110,7 @@ impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
             Some(addr) => addr,
             None => return_err!("Could not resolve hostname", self),
         };
-        
+
         debug!("connecting to {}", server_addr);
 
         // Try to connect
