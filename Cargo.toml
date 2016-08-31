@@ -16,7 +16,7 @@ bufstream = "0.1"
 email = "0.0"
 log = "0.3"
 mime = "0.2"
-openssl = { version = "0.8", features = ["tlsv1_2"] }
+openssl = "0.8"
 rustc-serialize = "0.3"
 rust-crypto = "0.2"
 time = "0.1"

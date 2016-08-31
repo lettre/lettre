@@ -42,7 +42,7 @@ impl Connector for NetworkStream {
                     Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
                 }
             }
-            NetworkStream::Ssl(_) => return Ok(())
+            NetworkStream::Ssl(_) => return Ok(()),
         };
 
         Ok(())

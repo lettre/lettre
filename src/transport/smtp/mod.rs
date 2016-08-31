@@ -1,4 +1,4 @@
-//! Sends an email using the client
+//! This transport sends emails using the SMTP protocol
 
 use email::SendableEmail;
 
