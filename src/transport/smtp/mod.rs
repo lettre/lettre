@@ -137,7 +137,7 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Require SSL/TLS using STARTTLS
+    /// Require SSL/TLS using SMTPS
     ///
     /// Incompatible with `encrypt()`
     pub fn ssl_wrapper(mut self) -> SmtpTransportBuilder {

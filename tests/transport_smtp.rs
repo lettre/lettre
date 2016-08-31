@@ -5,7 +5,7 @@ use lettre::transport::EmailTransport;
 use lettre::email::EmailBuilder;
 
 #[test]
-fn simple_sender() {
+fn smtp_transport_simple() {
     let mut sender = SmtpTransportBuilder::localhost().unwrap().build();
     let email = EmailBuilder::new()
                     .to("root@localhost")

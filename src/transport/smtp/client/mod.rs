@@ -66,7 +66,7 @@ impl<S: Write + Read> Client<S> {
     }
 }
 
-impl<S: Connector + Write + Read + Debug + Clone> Client<S> {
+impl<S: Connector + Write + Read + Debug> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
