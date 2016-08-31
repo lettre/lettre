@@ -24,7 +24,7 @@ impl Connector for NetworkStream {
 
         match ssl_context {
             Some(context) => {
-                match SslStream::connect_generic(context, tcp_stream) {
+                match SslStream::connect(context, tcp_stream) {
                     Ok(stream) => Ok(NetworkStream::Ssl(stream)),
                     Err(err) => Err(io::Error::new(ErrorKind::Other, err)),
                 }
@@ -34,16 +34,19 @@ impl Connector for NetworkStream {
     }
 
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
-        *self = match self.clone() {
-            NetworkStream::Plain(stream) => {
-                match SslStream::connect_generic(ssl_context, stream) {
+
+        *self = match *self {
+            NetworkStream::Plain(ref mut stream) => {
+                match SslStream::connect(ssl_context, stream.try_clone().unwrap()) {
                     Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
                     Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
                 }
             }
-            NetworkStream::Ssl(stream) => NetworkStream::Ssl(stream),
+            NetworkStream::Ssl(_) => return Ok(())
         };
+
         Ok(())
+
     }
 
     fn is_encrypted(&self) -> bool {
@@ -61,16 +64,6 @@ pub enum NetworkStream {
     Plain(TcpStream),
     /// SSL over TCP
     Ssl(SslStream<TcpStream>),
-}
-
-impl Clone for NetworkStream {
-    #[inline]
-    fn clone(&self) -> NetworkStream {
-        match *self {
-            NetworkStream::Plain(ref stream) => NetworkStream::Plain(stream.try_clone().unwrap()),
-            NetworkStream::Ssl(ref stream) => NetworkStream::Ssl(stream.try_clone().unwrap()),
-        }
-    }
 }
 
 impl Debug for NetworkStream {
