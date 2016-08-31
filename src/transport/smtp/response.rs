@@ -1,13 +1,14 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use std::str::FromStr;
-use std::fmt::{Display, Formatter, Result};
-use std::result;
+use self::Category::*;
 
 use self::Severity::*;
-use self::Category::*;
-use transport::error::{EmailResult, Error};
+use std::fmt::{Display, Formatter, Result};
+use std::result;
+use std::str::FromStr;
+use transport::smtp::error::{Error, SmtpResult};
+
 
 /// First digit indicates severity
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
@@ -183,7 +184,7 @@ impl ResponseParser {
     }
 
     /// Builds a response from a `ResponseParser`
-    pub fn response(self) -> EmailResult {
+    pub fn response(self) -> SmtpResult {
         match self.code {
             Some(code) => Ok(Response::new(code, self.message)),
             None => {

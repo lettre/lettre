@@ -1,13 +1,13 @@
 //! ESMTP features
 
-use std::result::Result;
+use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::collections::HashSet;
-
-use transport::error::Error;
-use transport::smtp::response::Response;
+use std::result::Result;
 use transport::smtp::authentication::Mechanism;
+
+use transport::smtp::error::Error;
+use transport::smtp::response::Response;
 
 /// Supported ESMTP keywords
 #[derive(PartialEq,Eq,Hash,Clone,Debug)]

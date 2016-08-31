@@ -1,16 +1,16 @@
 //! Provides authentication mechanisms
 
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use crypto::hmac::Hmac;
+use crypto::mac::Mac;
+use crypto::md5::Md5;
 
 use rustc_serialize::base64::{self, FromBase64, ToBase64};
 use rustc_serialize::hex::ToHex;
-use crypto::hmac::Hmac;
-use crypto::md5::Md5;
-use crypto::mac::Mac;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 
 use transport::smtp::NUL;
-use transport::error::Error;
+use transport::smtp::error::Error;
 
 /// Represents authentication mechanisms
 #[derive(PartialEq,Eq,Copy,Clone,Hash,Debug)]

@@ -1,21 +1,22 @@
 //! Sends an email using the client
 
-use std::string::String;
-use std::net::{SocketAddr, ToSocketAddrs};
+use email::SendableEmail;
 
 use openssl::ssl::{SslContext, SslMethod};
-
-use transport::error::{EmailResult, Error};
-use transport::smtp::extension::{Extension, ServerInfo};
-use transport::smtp::client::Client;
-use transport::smtp::authentication::Mechanism;
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::string::String;
 use transport::EmailTransport;
-use email::SendableEmail;
+use transport::smtp::authentication::Mechanism;
+use transport::smtp::client::Client;
+
+use transport::smtp::error::{SmtpResult, Error};
+use transport::smtp::extension::{Extension, ServerInfo};
 
 pub mod extension;
 pub mod authentication;
 pub mod response;
 pub mod client;
+pub mod error;
 
 // Registrated port numbers:
 // https://www.iana.
@@ -256,7 +257,7 @@ impl SmtpTransport {
     }
 
     /// Gets the EHLO response and updates server information
-    pub fn get_ehlo(&mut self) -> EmailResult {
+    pub fn get_ehlo(&mut self) -> SmtpResult {
         // Extended Hello
         let ehlo_response = try_smtp!(self.client.ehlo(&self.client_info.hello_name), self);
 
@@ -269,9 +270,9 @@ impl SmtpTransport {
     }
 }
 
-impl EmailTransport for SmtpTransport {
+impl EmailTransport<SmtpResult> for SmtpTransport {
     /// Sends an email
-    fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
+    fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
 
         // Extract email information
         let message_id = email.message_id();

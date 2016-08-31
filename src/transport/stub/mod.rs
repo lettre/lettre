@@ -1,23 +1,25 @@
 //! This transport is a stub that only logs the message, and always returns
 //! success
 
-use transport::error::EmailResult;
-use transport::smtp::response::{Category, Code, Response, Severity};
-use transport::EmailTransport;
 use email::SendableEmail;
+use transport::EmailTransport;
+
+pub mod error;
 
 /// This transport does nothing except logging the message envelope
 pub struct StubEmailTransport;
 
-impl EmailTransport for StubEmailTransport {
-    fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
+/// SMTP result type
+pub type StubResult = Result<(), error::Error>;
+
+impl EmailTransport<StubResult> for StubEmailTransport {
+    fn send<T: SendableEmail>(&mut self, email: T) -> StubResult {
 
         info!("{}: from=<{}> to=<{:?}>",
               email.message_id(),
               email.from_address(),
               email.to_addresses());
-        Ok(Response::new(Code::new(Severity::PositiveCompletion, Category::MailSystem, 0),
-                         vec!["Ok: email logged".to_string()]))
+        Ok(())
     }
 
     fn close(&mut self) {
