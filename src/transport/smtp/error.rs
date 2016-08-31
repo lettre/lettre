@@ -1,13 +1,13 @@
 //! Error and result type for SMTP clients
 
-use std::error::Error as StdError;
-use std::io;
-use std::fmt;
-use std::fmt::{Display, Formatter};
-
-use transport::smtp::response::{Response, Severity};
 use rustc_serialize::base64::FromBase64Error;
 use self::Error::*;
+use std::error::Error as StdError;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::io;
+
+use transport::smtp::response::{Response, Severity};
 
 /// An enum of all error kinds.
 #[derive(Debug)]
@@ -82,4 +82,4 @@ impl From<&'static str> for Error {
 }
 
 /// SMTP result type
-pub type EmailResult = Result<Response, Error>;
+pub type SmtpResult = Result<Response, Error>;

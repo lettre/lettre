@@ -1,14 +1,14 @@
 //! Simple email representation
 pub mod error;
 
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use email::error::Error;
 
 use email_format::{Header, Mailbox, MimeMessage, MimeMultipartType};
 use mime::Mime;
+use std::fmt;
+use std::fmt::{Display, Formatter};
 use time::{Tm, now};
 use uuid::Uuid;
-use email::error::Error;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait ToHeader {
@@ -640,12 +640,12 @@ impl SendableEmail for Email {
 
 #[cfg(test)]
 mod test {
-    use time::now;
-
-    use uuid::Uuid;
     use email_format::{Header, MimeMessage};
 
     use super::{Email, EmailBuilder, Envelope, SendableEmail};
+    use time::now;
+
+    use uuid::Uuid;
 
     #[test]
     fn test_email_display() {

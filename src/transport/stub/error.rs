@@ -1,5 +1,4 @@
-//! Error and result type for emails
-
+//! Error and result type for file transport
 
 use self::Error::*;
 use std::error::Error as StdError;
@@ -9,10 +8,8 @@ use std::fmt::{Display, Formatter};
 /// An enum of all error kinds.
 #[derive(Debug)]
 pub enum Error {
-    /// Missinf sender
-    MissingFrom,
-    /// Missing recipient
-    MissingTo,
+    /// Internal client error
+    Client(&'static str),
 }
 
 impl Display for Error {
@@ -24,8 +21,17 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            MissingFrom => "the sender is missing",
-            MissingTo => "the recipient is missing",
+            Client(_) => "an unknown error occured",
         }
+    }
+
+    fn cause(&self) -> Option<&StdError> {
+        None
+    }
+}
+
+impl From<&'static str> for Error {
+    fn from(string: &'static str) -> Error {
+        Client(string)
     }
 }

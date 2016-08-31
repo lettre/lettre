@@ -1,12 +1,12 @@
 //! A trait to represent a stream
 
+
+use openssl::ssl::{SslContext, SslStream};
+use std::fmt;
+use std::fmt::{Debug, Formatter};
 use std::io;
 use std::io::{ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpStream};
-use std::fmt;
-use std::fmt::{Debug, Formatter};
-
-use openssl::ssl::{SslContext, SslStream};
 
 /// A trait for the concept of opening a stream
 pub trait Connector: Sized {

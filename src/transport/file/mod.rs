@@ -1,15 +1,15 @@
 //! This transport creates a file for each email, containing the envelope information and the email
 //! itself.
 
-use std::path::{Path, PathBuf};
-use std::io::prelude::*;
+use email::SendableEmail;
 use std::fs::File;
+use std::io::prelude::*;
+use std::path::{Path, PathBuf};
 
 use transport::EmailTransport;
-use transport::error::EmailResult;
-use transport::smtp::response::Response;
-use transport::smtp::response::{Category, Code, Severity};
-use email::SendableEmail;
+use transport::file::error::FileResult;
+
+pub mod error;
 
 /// Writes the content and the envelope information to a file
 pub struct FileEmailTransport {
@@ -25,8 +25,8 @@ impl FileEmailTransport {
     }
 }
 
-impl EmailTransport for FileEmailTransport {
-    fn send<T: SendableEmail>(&mut self, email: T) -> EmailResult {
+impl EmailTransport<FileResult> for FileEmailTransport {
+    fn send<T: SendableEmail>(&mut self, email: T) -> FileResult {
         let mut file = self.path.clone();
         file.push(format!("{}.txt", email.message_id()));
 
@@ -42,9 +42,7 @@ impl EmailTransport for FileEmailTransport {
 
         info!("{} status=<written>", log_line);
 
-        Ok(Response::new(Code::new(Severity::PositiveCompletion, Category::MailSystem, 0),
-                         vec![format!("Ok: email written to {}",
-                                      file.to_str().unwrap_or("non-UTF-8 path"))]))
+        Ok(())
     }
 
     fn close(&mut self) {
