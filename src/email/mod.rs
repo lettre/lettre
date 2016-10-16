@@ -3,7 +3,7 @@ pub mod error;
 
 use email::error::Error;
 
-use email_format::{Header, Mailbox, MimeMessage, MimeMultipartType};
+use email_format::{Header, Mailbox, Address, MimeMessage, MimeMultipartType};
 use mime::Mime;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -237,6 +237,16 @@ pub struct PartBuilder {
 pub struct EmailBuilder {
     /// Message
     message: PartBuilder,
+    /// The recipients' addresses for the mail header
+    to_header: Vec<Address>,
+    /// The sender addresses for the mail header
+    from_header: Vec<Address>,
+    /// The Cc addresses for the mail header
+    cc_header: Vec<Address>,
+    /// The Reply-To addresses for the mail header
+    reply_to_header: Vec<Address>,
+    /// The sender address for the mail header
+    sender_header: Option<Mailbox>,
     /// The envelope recipients' addresses
     to: Vec<String>,
     /// The envelope sender address
@@ -345,6 +355,11 @@ impl EmailBuilder {
     pub fn new() -> EmailBuilder {
         EmailBuilder {
             message: PartBuilder::new(),
+            to_header: vec![],
+            from_header: vec![],
+            cc_header: vec![],
+            reply_to_header: vec![],
+            sender_header: None,
             to: vec![],
             from: None,
             date_issued: false,
@@ -382,8 +397,8 @@ impl EmailBuilder {
     /// Adds a `From` header and stores the sender address
     pub fn add_from<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.message.add_header(("From", mailbox.to_string().as_ref()));
-        self.from = Some(mailbox.address);
+        self.from = Some(mailbox.address.clone());
+        self.from_header.push(Address::Mailbox(mailbox));
     }
 
     /// Adds a `To` header and stores the recipient address
@@ -395,8 +410,8 @@ impl EmailBuilder {
     /// Adds a `To` header and stores the recipient address
     pub fn add_to<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.message.add_header(("To", mailbox.to_string().as_ref()));
-        self.to.push(mailbox.address);
+        self.to.push(mailbox.address.clone());
+        self.to_header.push(Address::Mailbox(mailbox));
     }
 
     /// Adds a `Cc` header and stores the recipient address
@@ -408,8 +423,8 @@ impl EmailBuilder {
     /// Adds a `Cc` header and stores the recipient address
     pub fn add_cc<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.message.add_header(("Cc", mailbox.to_string().as_ref()));
-        self.to.push(mailbox.address);
+        self.to.push(mailbox.address.clone());
+        self.cc_header.push(Address::Mailbox(mailbox));
     }
 
     /// Adds a `Reply-To` header
@@ -421,7 +436,7 @@ impl EmailBuilder {
     /// Adds a `Reply-To` header
     pub fn add_reply_to<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.message.add_header(("Reply-To", mailbox.to_string().as_ref()));
+        self.reply_to_header.push(Address::Mailbox(mailbox));
     }
 
     /// Adds a `Sender` header
@@ -433,8 +448,8 @@ impl EmailBuilder {
     /// Adds a `Sender` header
     pub fn set_sender<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.message.add_header(("Sender", mailbox.to_string().as_ref()));
-        self.from = Some(mailbox.address);
+        self.from = Some(mailbox.address.clone());
+        self.sender_header = Some(mailbox);
     }
 
     /// Adds a `Subject` header
@@ -544,6 +559,38 @@ impl EmailBuilder {
         if self.to.is_empty() {
             return Err(Error::MissingTo);
         }
+        // If there are multiple addresses in "From", the "Sender" is required.
+        if self.from_header.len() >= 2 && self.sender_header.is_none() {
+            // So, we must find something to put as Sender.
+            for possible_sender in self.from_header.iter() {
+                // Only a mailbox can be used as sender, not Address::Group.
+                if let &Address::Mailbox(ref mbx) = possible_sender {
+                    self.sender_header = Some(mbx.clone());
+                    break;
+                }
+            }
+            // Address::Group is not yet supported, so the line below will never panic.
+            // If groups are supported one day, add another Error for this case
+            //  and return it here, if sender_header is still None at this point.
+            assert!(self.sender_header.is_some());
+        }
+        // Add the sender header, if any.
+        if let Some(v) = self.sender_header {
+            self.message.add_header(("Sender", v.to_string().as_ref()));
+        }
+        // Add the collected addresses as mailbox-list all at once.
+        // The unwraps are fine because the conversions for Vec<Address> never errs.
+        self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+        self.message.add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+        if !self.cc_header.is_empty() {
+            self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
+        }
+        if !self.reply_to_header.is_empty() {
+            self.message.add_header(Header::new_with_value("Reply-To".into(),
+                                                           self.reply_to_header)
+                .unwrap());
+        }
+
 
         if !self.date_issued {
             self.message.add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
@@ -679,6 +726,27 @@ mod test {
     }
 
     #[test]
+    fn test_multiple_from() {
+        let email_builder = EmailBuilder::new();
+        let date_now = now();
+        let email = email_builder.to("anna@example.com")
+            .from("dieter@example.com")
+            .from("joachim@example.com")
+            .date(&date_now)
+            .subject("Invitation")
+            .body("We invite you!")
+            .build()
+            .unwrap();
+        assert_eq!(format!("{}", email),
+                   format!("Date: {}\r\nSubject: Invitation\r\nSender: \
+                            <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
+                            <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
+                            1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
+                           date_now.rfc822z(),
+                           email.message_id()));
+    }
+
+    #[test]
     fn test_simple_email_builder() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
@@ -696,10 +764,10 @@ mod test {
             .unwrap();
 
         assert_eq!(format!("{}", email),
-                   format!("To: <user@localhost>\r\nFrom: <user@localhost>\r\nCc: \"Alias\" \
-                            <cc@localhost>\r\nReply-To: <reply@localhost>\r\nSender: \
-                            <sender@localhost>\r\nDate: {}\r\nSubject: Hello\r\nX-test: \
-                            value\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                   format!("Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
+                            <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
+                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                            <reply@localhost>\r\nMIME-Version: 1.0\r\nMessage-ID: \
                             <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                            date_now.rfc822z(),
                            email.message_id()));
