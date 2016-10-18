@@ -9,7 +9,7 @@ fi
 cargo clean
 cargo doc --no-deps
 
-git clone --branch gh-pages "https://$TOKEN@github.com/${TRAVIS_REPO_SLUG}.git" deploy_docs
+git clone --branch gh-pages "https://$GH_TOKEN@github.com/${TRAVIS_REPO_SLUG}.git" deploy_docs
 cd deploy_docs
 
 git config user.email "contact@amousset.me"
