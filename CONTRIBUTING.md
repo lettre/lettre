@@ -10,7 +10,9 @@ All code must be formatted using `rustfmt`.
 
 Each commit message consists of a header, a body and a footer. The header has a special format that includes a type, a scope and a subject:
 
+```text
 <type>(<scope>): <subject> <BLANK LINE> <body> <BLANK LINE> <footer>
+```
 
 Any line of the commit message cannot be longer 72 characters.
 
