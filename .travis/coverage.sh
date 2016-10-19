@@ -6,6 +6,8 @@ if [ "$TRAVIS_RUST_VERSION" != "stable" ]; then
     exit 0
 fi
 
+cargo test --no-run
+
 wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz
 tar xzf master.tar.gz
 mkdir kcov-master/build
