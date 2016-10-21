@@ -16,7 +16,7 @@ pub struct SendmailTransport;
 impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
         // Spawn the `wc` command
-        let process = try!(Command::new("/usr/bin/sendmail")
+        let process = try!(Command::new("/usr/sbin/sendmail")
             .args(&email.to_addresses())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
