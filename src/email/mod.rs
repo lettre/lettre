@@ -247,10 +247,8 @@ pub struct EmailBuilder {
     reply_to_header: Vec<Address>,
     /// The sender address for the mail header
     sender_header: Option<Mailbox>,
-    /// The envelope recipients' addresses
-    to: Vec<String>,
-    /// The envelope sender address
-    from: Option<String>,
+    /// The envelope
+    envelope: Option<Envelope>,
     /// Date issued
     date_issued: bool,
 }
@@ -262,6 +260,34 @@ pub struct Envelope {
     to: Vec<String>,
     /// The envelope sender address
     from: String,
+}
+
+impl Envelope {
+    /// Constructs an envelope with no receivers and an empty sender
+    pub fn new() -> Self {
+        Envelope {
+            to: vec![],
+            from: String::new(),
+        }
+    }
+    /// Adds a receiver
+    pub fn to<S: Into<String>>(mut self, address: S) -> Self {
+        self.add_to(address);
+        self
+    }
+    /// Adds a receiver
+    pub fn add_to<S: Into<String>>(&mut self, address: S) {
+        self.to.push(address.into());
+    }
+    /// Sets the sender
+    pub fn from<S: Into<String>>(mut self, address: S) -> Self {
+        self.set_from(address);
+        self
+    }
+    /// Sets the sender
+    pub fn set_from<S: Into<String>>(&mut self, address: S) {
+        self.from = address.into();
+    }
 }
 
 /// Simple email representation
@@ -360,8 +386,7 @@ impl EmailBuilder {
             cc_header: vec![],
             reply_to_header: vec![],
             sender_header: None,
-            to: vec![],
-            from: None,
+            envelope: None,
             date_issued: false,
         }
     }
@@ -397,7 +422,6 @@ impl EmailBuilder {
     /// Adds a `From` header and stores the sender address
     pub fn add_from<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.from = Some(mailbox.address.clone());
         self.from_header.push(Address::Mailbox(mailbox));
     }
 
@@ -410,7 +434,6 @@ impl EmailBuilder {
     /// Adds a `To` header and stores the recipient address
     pub fn add_to<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.to.push(mailbox.address.clone());
         self.to_header.push(Address::Mailbox(mailbox));
     }
 
@@ -423,7 +446,6 @@ impl EmailBuilder {
     /// Adds a `Cc` header and stores the recipient address
     pub fn add_cc<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.to.push(mailbox.address.clone());
         self.cc_header.push(Address::Mailbox(mailbox));
     }
 
@@ -448,7 +470,6 @@ impl EmailBuilder {
     /// Adds a `Sender` header
     pub fn set_sender<A: ToMailbox>(&mut self, address: A) {
         let mailbox = address.to_mailbox();
-        self.from = Some(mailbox.address.clone());
         self.sender_header = Some(mailbox);
     }
 
@@ -551,14 +572,23 @@ impl EmailBuilder {
         self.add_child(alternate.build());
     }
 
+    /// Sets the envelope for manual destination control
+    /// If this function is not called, the envelope will be calculated
+    /// from the "to" and "cc" addresses you set.
+    pub fn envelope(mut self, envelope: Envelope) -> EmailBuilder {
+        self.set_envelope(envelope);
+        self
+    }
+
+    /// Sets the envelope for manual destination control
+    /// If this function is not called, the envelope will be calculated
+    /// from the "to" and "cc" addresses you set.
+    pub fn set_envelope(&mut self, envelope: Envelope) {
+        self.envelope = Some(envelope);
+    }
+
     /// Builds the Email
     pub fn build(mut self) -> Result<Email, Error> {
-        if self.from.is_none() {
-            return Err(Error::MissingFrom);
-        }
-        if self.to.is_empty() {
-            return Err(Error::MissingTo);
-        }
         // If there are multiple addresses in "From", the "Sender" is required.
         if self.from_header.len() >= 2 && self.sender_header.is_none() {
             // So, we must find something to put as Sender.
@@ -575,13 +605,64 @@ impl EmailBuilder {
             assert!(self.sender_header.is_some());
         }
         // Add the sender header, if any.
-        if let Some(v) = self.sender_header {
+        if let Some(ref v) = self.sender_header {
             self.message.add_header(("Sender", v.to_string().as_ref()));
         }
+        // Calculate the envelope
+        let envelope = match self.envelope {
+            Some(e) => e,
+            None => {
+                // we need to generate the envelope
+                let mut e = Envelope::new();
+                // add all receivers in to_header and cc_header
+                for receiver in self.to_header.iter().chain(self.cc_header.iter()) {
+                    match *receiver {
+                        Address::Mailbox(ref m) => e.add_to(m.address.clone()),
+                        Address::Group(_, ref ms) => {
+                            for m in ms.iter() {
+                                e.add_to(m.address.clone());
+                            }
+                        }
+                    }
+                }
+                if e.to.is_empty() {
+                    return Err(Error::MissingTo);
+                }
+                e.set_from(match self.sender_header {
+                    Some(x) => x.address.clone(), // if we have a sender_header, use it
+                    None => {
+                        // use a from header
+                        debug_assert!(self.from_header.len()<=1); // else we'd have sender_header
+                        match self.from_header.first() {
+                            Some(a) => match *a {
+                                // if we have a from header
+                                Address::Mailbox(ref mailbox) => mailbox.address.clone(), // use it
+                                Address::Group(_,ref mailbox_list) => match mailbox_list.first() {
+                                    // if it's an author group, use the first author
+                                    Some(mailbox) => mailbox.address.clone(),
+                                    // for an empty author group (the rarest of the rare cases)
+                                    None => return Err(Error::MissingFrom), // empty envelope sender
+                                },
+                            },
+                            // if we don't have a from header
+                            None => return Err(Error::MissingFrom), // empty envelope sender
+                        }
+                    }
+                });
+                e
+            }
+        };
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
-        self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
-        self.message.add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+        if !self.to_header.is_empty() {
+            self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+        }
+        if !self.from_header.is_empty() {
+            self.message
+                .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+        } else {
+            return Err(Error::MissingFrom);
+        }
         if !self.cc_header.is_empty() {
             self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
@@ -607,10 +688,7 @@ impl EmailBuilder {
 
         Ok(Email {
             message: self.message.build(),
-            envelope: Envelope {
-                to: self.to,
-                from: self.from.unwrap(),
-            },
+            envelope: envelope,
             message_id: message_id,
         })
     }
