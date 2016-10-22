@@ -46,7 +46,7 @@ pub const MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 pub const NUL: &'static str = "\0";
 
 /// TLS security level
-#[derive(Debug)]
+#[derive(PartialEq,Eq,Copy,Clone,Debug)]
 pub enum SecurityLevel {
     /// Use a TLS wrapped connection
     ///
