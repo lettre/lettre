@@ -1,12 +1,11 @@
 [package]
 
 name = "lettre"
-version = "0.6.0"
+version = "0.6.1"
 description = "Email client"
 readme = "README.md"
-documentation = "http://lettre.github.io/lettre/"
+documentation = "https://lettre.github.io/lettre/"
 repository = "https://github.com/lettre/lettre"
-homepage = "http://lettre.github.io/"
 license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
 keywords = ["email", "smtp", "mailer"]
