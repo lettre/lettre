@@ -271,22 +271,22 @@ impl Envelope {
         }
     }
     /// Adds a receiver
-    pub fn to<S: Into<String>>(mut self, adr: S) -> Self {
-        self.add_to(adr);
+    pub fn to<S: Into<String>>(mut self, address: S) -> Self {
+        self.add_to(address);
         self
     }
     /// Adds a receiver
-    pub fn add_to<S: Into<String>>(&mut self, adr: S) {
-        self.to.push(adr.into());
+    pub fn add_to<S: Into<String>>(&mut self, address: S) {
+        self.to.push(address.into());
     }
     /// Sets the sender
-    pub fn from<S: Into<String>>(mut self, adr: S) -> Self {
-        self.set_from(adr);
+    pub fn from<S: Into<String>>(mut self, address: S) -> Self {
+        self.set_from(address);
         self
     }
     /// Sets the sender
-    pub fn set_from<S: Into<String>>(&mut self, adr: S) {
-        self.from = adr.into();
+    pub fn set_from<S: Into<String>>(&mut self, address: S) {
+        self.from = address.into();
     }
 }
 
@@ -615,8 +615,8 @@ impl EmailBuilder {
                 // we need to generate the envelope
                 let mut e = Envelope::new();
                 // add all receivers in to_header and cc_header
-                for a in self.to_header.iter().chain(self.cc_header.iter()) {
-                    match *a {
+                for receiver in self.to_header.iter().chain(self.cc_header.iter()) {
+                    match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
                         Address::Group(_, ref ms) => {
                             for m in ms.iter() {
@@ -631,20 +631,21 @@ impl EmailBuilder {
                 e.set_from(match self.sender_header {
                     Some(x) => x.address.clone(), // if we have a sender_header, use it
                     None => {
+                        // use a from header
                         debug_assert!(self.from_header.len()<=1); // else we'd have sender_header
                         match self.from_header.first() {
                             Some(a) => match *a {
-                                // if we have a sender_header
-                                Address::Mailbox(ref m) => m.address.clone(), // use it
-                                Address::Group(_,ref ms) => match ms.first() {
+                                // if we have a from header
+                                Address::Mailbox(ref mailbox) => mailbox.address.clone(), // use it
+                                Address::Group(_,ref mailbox_list) => match mailbox_list.first() {
                                     // if it's an author group, use the first author
-                                    Some(m) => m.address.clone(),
+                                    Some(mailbox) => mailbox.address.clone(),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => String::new(), // empty envelope sender
+                                    None => return Err(Error::MissingFrom), // empty envelope sender
                                 },
                             },
-                            // if we don't have a sender_header
-                            None => String::new(), // empty envelope sender
+                            // if we don't have a from header
+                            None => return Err(Error::MissingFrom), // empty envelope sender
                         }
                     }
                 });
@@ -659,6 +660,8 @@ impl EmailBuilder {
         if !self.from_header.is_empty() {
             self.message
                 .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+        } else {
+            return Err(Error::MissingFrom);
         }
         if !self.cc_header.is_empty() {
             self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
