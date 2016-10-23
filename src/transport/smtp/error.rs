@@ -6,7 +6,6 @@ use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::io;
-
 use transport::smtp::response::{Response, Severity};
 
 /// An enum of all error kinds.

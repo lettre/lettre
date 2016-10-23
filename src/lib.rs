@@ -248,8 +248,7 @@
 //! Hello World!
 //! ```
 
-
-#![deny(missing_docs, unsafe_code, unstable_features)]
+#![deny(missing_docs, unsafe_code, unstable_features, warnings, missing_debug_implementations)]
 
 #[macro_use]
 extern crate log;

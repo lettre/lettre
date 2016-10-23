@@ -1,15 +1,13 @@
 //! This transport sends emails using the SMTP protocol
 
 use email::SendableEmail;
-
 use openssl::ssl::{SslContext, SslMethod};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::string::String;
 use transport::EmailTransport;
 use transport::smtp::authentication::Mechanism;
 use transport::smtp::client::Client;
-
-use transport::smtp::error::{SmtpResult, Error};
+use transport::smtp::error::{Error, SmtpResult};
 use transport::smtp::extension::{Extension, ServerInfo};
 
 pub mod extension;
@@ -65,6 +63,7 @@ pub enum SecurityLevel {
 }
 
 /// Contains client configuration
+#[derive(Debug)]
 pub struct SmtpTransportBuilder {
     /// Maximum connection reuse
     ///
@@ -152,8 +151,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the name used during HELO or EHLO
-    pub fn hello_name(mut self, name: &str) -> SmtpTransportBuilder {
-        self.hello_name = name.to_string();
+    pub fn hello_name<S: Into<String>>(mut self, name: S) -> SmtpTransportBuilder {
+        self.hello_name = name.into();
         self
     }
 
@@ -170,8 +169,11 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the client credentials
-    pub fn credentials(mut self, username: &str, password: &str) -> SmtpTransportBuilder {
-        self.credentials = Some((username.to_string(), password.to_string()));
+    pub fn credentials<S: Into<String>>(mut self,
+                                        username: S,
+                                        password: S)
+                                        -> SmtpTransportBuilder {
+        self.credentials = Some((username.into(), password.into()));
         self
     }
 
@@ -199,6 +201,7 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
+#[derive(Debug)]
 pub struct SmtpTransport {
     /// Information about the server
     /// Value is None before HELO/EHLO

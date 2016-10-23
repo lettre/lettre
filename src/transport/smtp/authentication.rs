@@ -3,12 +3,10 @@
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::md5::Md5;
-
 use rustc_serialize::base64::{self, FromBase64, ToBase64};
 use rustc_serialize::hex::ToHex;
 use std::fmt;
 use std::fmt::{Display, Formatter};
-
 use transport::smtp::NUL;
 use transport::smtp::error::Error;
 
