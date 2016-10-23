@@ -1,6 +1,5 @@
 //! Error and result type for file transport
 
-
 use self::Error::*;
 use std::error::Error as StdError;
 use std::fmt;

@@ -1,6 +1,5 @@
 //! A trait to represent a stream
 
-
 use openssl::ssl::{SslContext, SslStream};
 use std::fmt;
 use std::fmt::{Debug, Formatter};

@@ -1,4 +1,5 @@
 //! Represents an Email transport
+
 pub mod smtp;
 pub mod stub;
 pub mod file;
