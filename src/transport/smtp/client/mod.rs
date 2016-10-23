@@ -135,7 +135,7 @@ impl<S: Connector + Write + Read + Debug> Client<S> {
     /// Sends a MAIL command
     pub fn mail(&mut self, address: &str, options: Option<&str>) -> SmtpResult {
         match options {
-            Some(ref options) => self.command(&format!("MAIL FROM:<{}> {}", address, options)),
+            Some(options) => self.command(&format!("MAIL FROM:<{}> {}", address, options)),
             None => self.command(&format!("MAIL FROM:<{}>", address)),
         }
     }
@@ -163,7 +163,7 @@ impl<S: Connector + Write + Read + Debug> Client<S> {
     /// Sends a HELP command
     pub fn help(&mut self, argument: Option<&str>) -> SmtpResult {
         match argument {
-            Some(ref argument) => self.command(&format!("HELP {}", argument)),
+            Some(argument) => self.command(&format!("HELP {}", argument)),
             None => self.command("HELP"),
         }
     }

@@ -267,7 +267,7 @@ pub struct EmailBuilder {
 }
 
 /// Simple email enveloppe representation
-#[derive(PartialEq,Eq,Clone,Debug)]
+#[derive(PartialEq,Eq,Clone,Debug,Default)]
 pub struct Envelope {
     /// The envelope recipients' addresses
     to: Vec<String>,
@@ -622,7 +622,7 @@ impl EmailBuilder {
         // If there are multiple addresses in "From", the "Sender" is required.
         if self.from_header.len() >= 2 && self.sender_header.is_none() {
             // So, we must find something to put as Sender.
-            for possible_sender in self.from_header.iter() {
+            for possible_sender in &self.from_header {
                 // Only a mailbox can be used as sender, not Address::Group.
                 if let &Address::Mailbox(ref mbx) = possible_sender {
                     self.sender_header = Some(mbx.clone());

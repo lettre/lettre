@@ -42,7 +42,7 @@ lettre = "0.6"
 
 ## Testing
 
-The tests require an open mail server listening locally on port 25.
+The tests require an open mail server listening locally on port 25 and the `sendmail` command.
 
 ## License
 
