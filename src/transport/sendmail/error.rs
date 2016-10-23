@@ -50,5 +50,5 @@ impl From<&'static str> for Error {
     }
 }
 
-/// SendMail result type
+/// sendmail result type
 pub type SendmailResult = Result<(), Error>;
