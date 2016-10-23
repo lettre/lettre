@@ -7,6 +7,7 @@ use transport::EmailTransport;
 pub mod error;
 
 /// This transport does nothing except logging the message envelope
+#[derive(Debug)]
 pub struct StubEmailTransport;
 
 /// SMTP result type

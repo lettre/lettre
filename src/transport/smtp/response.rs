@@ -2,13 +2,11 @@
 //! message
 
 use self::Category::*;
-
 use self::Severity::*;
 use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::FromStr;
 use transport::smtp::error::{Error, SmtpResult};
-
 
 /// First digit indicates severity
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
