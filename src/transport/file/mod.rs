@@ -5,13 +5,13 @@ use email::SendableEmail;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-
 use transport::EmailTransport;
 use transport::file::error::FileResult;
 
 pub mod error;
 
 /// Writes the content and the envelope information to a file
+#[derive(Debug)]
 pub struct FileEmailTransport {
     path: PathBuf,
 }

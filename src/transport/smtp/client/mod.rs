@@ -1,6 +1,5 @@
 //! SMTP client
 
-
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
 use std::fmt::Debug;
@@ -11,8 +10,7 @@ use std::string::String;
 use transport::smtp::{CRLF, MESSAGE_ENDING};
 use transport::smtp::authentication::Mechanism;
 use transport::smtp::client::net::{Connector, NetworkStream};
-
-use transport::smtp::error::{SmtpResult, Error};
+use transport::smtp::error::{Error, SmtpResult};
 use transport::smtp::response::ResponseParser;
 
 pub mod net;

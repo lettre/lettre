@@ -5,7 +5,6 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::result::Result;
 use transport::smtp::authentication::Mechanism;
-
 use transport::smtp::error::Error;
 use transport::smtp::response::Response;
 
