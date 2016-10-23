@@ -1,24 +1,24 @@
 extern crate lettre;
 
+use lettre::email::{EmailBuilder, SendableEmail};
+use lettre::transport::EmailTransport;
+
+use lettre::transport::file::FileEmailTransport;
 use std::env::temp_dir;
 use std::fs::File;
 use std::fs::remove_file;
 use std::io::Read;
 
-use lettre::transport::file::FileEmailTransport;
-use lettre::transport::EmailTransport;
-use lettre::email::{EmailBuilder, SendableEmail};
-
 #[test]
 fn file_transport() {
     let mut sender = FileEmailTransport::new(temp_dir());
     let email = EmailBuilder::new()
-                    .to("root@localhost")
-                    .from("user@localhost")
-                    .body("Hello World!")
-                    .subject("Hello")
-                    .build()
-                    .unwrap();
+        .to("root@localhost")
+        .from("user@localhost")
+        .body("Hello World!")
+        .subject("Hello file")
+        .build()
+        .unwrap();
     let result = sender.send(email.clone());
     assert!(result.is_ok());
 

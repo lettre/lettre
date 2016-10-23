@@ -1,19 +1,20 @@
 extern crate lettre;
 
-use lettre::transport::sendmail::SendmailTransport;
-use lettre::transport::EmailTransport;
 use lettre::email::EmailBuilder;
+use lettre::transport::EmailTransport;
+use lettre::transport::sendmail::SendmailTransport;
 
 #[test]
 fn sendmail_transport_simple() {
-    let mut sender = SendmailTransport;
+    let mut sender = SendmailTransport::new();
     let email = EmailBuilder::new()
-                    .to("root@localhost")
-                    .from("user@localhost")
-                    .body("Hello World!")
-                    .subject("Hello")
-                    .build()
-                    .unwrap();
+        .to("root@localhost")
+        .from("user@localhost")
+        .body("Hello World!")
+        .subject("Hello sendmail")
+        .build()
+        .unwrap();
     let result = sender.send(email);
+    println!("{:?}", result);
     assert!(result.is_ok());
 }

@@ -1,7 +1,6 @@
 //! This transport uilizes the sendmail executable for each email.
 
 use email::SendableEmail;
-use std::error::Error;
 use std::io::prelude::*;
 use std::process::{Command, Stdio};
 
@@ -10,32 +9,49 @@ use transport::sendmail::error::SendmailResult;
 
 pub mod error;
 
-/// Writes the content and the envelope information to a file
-pub struct SendmailTransport;
+/// Sends an email using the `sendmail` command
+#[derive(Debug,Default)]
+pub struct SendmailTransport {
+    command: String,
+}
+
+impl SendmailTransport {
+    /// Creates a new transport with the default `/usr/sbin/sendmail` command
+    pub fn new() -> SendmailTransport {
+        SendmailTransport { command: "/usr/sbin/sendmail".to_string() }
+    }
+
+    /// Creates a new transport to the given sendmail command
+    pub fn new_with_command<S: Into<String>>(command: S) -> SendmailTransport {
+        SendmailTransport { command: command.into() }
+    }
+}
 
 impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
-        // Spawn the `wc` command
-        let process = try!(Command::new("/usr/sbin/sendmail")
-            .args(&email.to_addresses())
+        // Spawn the sendmail command
+        let mut process = try!(Command::new(&self.command)
+            .args(&["-i", "-f", &email.from_address(), &email.to_addresses().join(" ")])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn());
 
-        match process.stdin.unwrap().write_all(email.message().clone().as_bytes()) {
-            Err(why) => error!("couldn't write to sendmail stdin: {}",
-                               why.description()),
-            Ok(_) => info!("sent pangram to sendmail"),
+        match process.stdin.as_mut().unwrap().write_all(email.message().as_bytes()) {
+            Ok(_) => (),
+            Err(error) => return Err(From::from(error)),
         }
 
-        let mut s = String::new();
-        match process.stdout.unwrap().read_to_string(&mut s) {
-            Err(why) => error!("couldn't read sendmail stdout: {}",
-                               why.description()),
-            Ok(_) => info!("sendmail responded with:\n{}", s),
+        info!("Wrote message to stdin");
+
+        if let Ok(output) = process.wait_with_output() {
+            if output.status.success() {
+                Ok(())
+            } else {
+                Err(From::from("The message could not be sent"))
+            }
+        } else {
+            Err(From::from("The sendmail process stopped"))
         }
-        
-        Ok(())
     }
 
     fn close(&mut self) {

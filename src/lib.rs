@@ -180,6 +180,28 @@
 //! let _ = email_client.quit();
 //! ```
 //!
+//! ### Sendmail transport
+//!
+//! The sendmail transport sends the email using the local sendmail command.
+//!
+//! ```rust
+//! use lettre::transport::sendmail::SendmailTransport;
+//! use lettre::transport::EmailTransport;
+//! use lettre::email::EmailBuilder;
+//!
+//! let email = EmailBuilder::new()
+//!                     .to("root@localhost")
+//!                     .from("user@localhost")
+//!                     .body("Hello World!")
+//!                     .subject("Hello")
+//!                     .build()
+//!                     .unwrap();
+//!
+//! let mut sender = SendmailTransport::new();
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
+//!
 //! ### Stub transport
 //!
 //! The stub transport only logs message envelope and drops the content. It can be useful for
