@@ -82,8 +82,6 @@ impl IntoEmail for SimpleEmail {
             builder.add_cc(cc_address.into_mailbox());
         }
 
-        // No bcc for now
-
         if self.reply_to.is_some() {
             builder.add_reply_to(self.reply_to.unwrap().into_mailbox());
         }
