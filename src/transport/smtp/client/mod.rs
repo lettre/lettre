@@ -7,9 +7,10 @@ use std::io;
 use std::io::{BufRead, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
+use std::time::Duration;
 use transport::smtp::{CRLF, MESSAGE_ENDING};
 use transport::smtp::authentication::Mechanism;
-use transport::smtp::client::net::{Connector, NetworkStream};
+use transport::smtp::client::net::{Connector, NetworkStream, Timeout};
 use transport::smtp::error::{Error, SmtpResult};
 use transport::smtp::response::ResponseParser;
 
@@ -64,7 +65,7 @@ impl<S: Write + Read> Client<S> {
     }
 }
 
-impl<S: Connector + Write + Read + Debug> Client<S> {
+impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
@@ -89,6 +90,18 @@ impl<S: Connector + Write + Read + Debug> Client<S> {
         match self.stream {
             Some(ref stream) => stream.get_ref().is_encrypted(),
             None => false,
+        }
+    }
+
+    /// Set timeout
+    pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        match self.stream {
+            Some(ref mut stream) => {
+                try!(stream.get_mut().set_read_timeout(duration));
+                try!(stream.get_mut().set_read_timeout(duration));
+                Ok(())
+            }
+            None => Ok(()),
         }
     }
 

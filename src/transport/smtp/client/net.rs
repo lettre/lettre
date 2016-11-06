@@ -6,6 +6,7 @@ use std::fmt::{Debug, Formatter};
 use std::io;
 use std::io::{ErrorKind, Read, Write};
 use std::net::{SocketAddr, TcpStream};
+use std::time::Duration;
 
 /// A trait for the concept of opening a stream
 pub trait Connector: Sized {
@@ -94,6 +95,31 @@ impl Write for NetworkStream {
         match *self {
             NetworkStream::Plain(ref mut stream) => stream.flush(),
             NetworkStream::Ssl(ref mut stream) => stream.flush(),
+        }
+    }
+}
+
+/// A trait for read and write timeout support
+pub trait Timeout: Sized {
+    /// Set read timeout for IO calls
+    fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()>;
+    /// Set write timeout for IO calls
+    fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()>;
+}
+
+impl Timeout for NetworkStream {
+    fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        match *self {
+            NetworkStream::Plain(ref mut stream) => stream.set_read_timeout(duration),
+            NetworkStream::Ssl(ref mut stream) => stream.get_mut().set_read_timeout(duration),
+        }
+    }
+
+    /// Set write tiemout for IO calls
+    fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        match *self {
+            NetworkStream::Plain(ref mut stream) => stream.set_write_timeout(duration),
+            NetworkStream::Ssl(ref mut stream) => stream.get_mut().set_write_timeout(duration),
         }
     }
 }
