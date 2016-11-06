@@ -4,6 +4,7 @@ use email::SendableEmail;
 use openssl::ssl::{SslContext, SslMethod};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::string::String;
+use std::time::Duration;
 use transport::EmailTransport;
 use transport::smtp::authentication::Mechanism;
 use transport::smtp::client::Client;
@@ -85,6 +86,9 @@ pub struct SmtpTransportBuilder {
     smtp_utf8: bool,
     /// Optional enforced authentication mechanism
     authentication_mechanism: Option<Mechanism>,
+    /// Define network timeout
+    /// It can be changed later for specific needs (like a different timeout for each SMTP command)
+    timeout: Option<Duration>,
 }
 
 /// Builder for the SMTP `SmtpTransport`
@@ -105,6 +109,7 @@ impl SmtpTransportBuilder {
                     connection_reuse: false,
                     hello_name: "localhost".to_string(),
                     authentication_mechanism: None,
+                    timeout: Some(Duration::new(60, 0)),
                 })
             }
             None => Err(From::from("Could nor resolve hostname")),
@@ -180,6 +185,12 @@ impl SmtpTransportBuilder {
     /// Set the authentication mechanisms
     pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpTransportBuilder {
         self.authentication_mechanism = Some(mechanism);
+        self
+    }
+
+    /// Set the timeout duration
+    pub fn timeout(mut self, timeout: Option<Duration>) -> SmtpTransportBuilder {
+        self.timeout = timeout;
         self
     }
 
@@ -296,6 +307,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                                          }
                                          _ => None,
                                      }));
+
+            try!(self.client.set_timeout(self.client_info.timeout));
 
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
