@@ -20,9 +20,12 @@ rustc-serialize = "0.3"
 rust-crypto = "0.2"
 time = "0.1"
 uuid = { version = "0.3", features = ["v4"] }
+hyper = { version = "0.9", optional = true }
+serde_urlencoded = { version = "0.2", optional = true }
 
 [dev-dependencies]
 env_logger = "0.3"
 
 [features]
 unstable = []
+mailgun = ["hyper", "serde_urlencoded"]

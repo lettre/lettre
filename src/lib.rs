@@ -283,6 +283,8 @@ extern crate uuid;
 extern crate email as email_format;
 extern crate bufstream;
 extern crate openssl;
+#[cfg(feature = "mailgun")] extern crate hyper;
+#[cfg(feature = "mailgun")] extern crate serde_urlencoded;
 
 pub mod transport;
 pub mod email;
