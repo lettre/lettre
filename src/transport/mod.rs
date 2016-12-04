@@ -4,6 +4,7 @@ pub mod smtp;
 pub mod sendmail;
 pub mod stub;
 pub mod file;
+#[cfg(feature = "mailgun")] pub mod mailgun;
 
 use email::SendableEmail;
 
