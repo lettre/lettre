@@ -1,6 +1,6 @@
 //! A trait to represent a stream
 
-use openssl::ssl::{SslContext, SslStream};
+use openssl::ssl::{Ssl, SslContext, SslStream};
 use std::fmt;
 use std::fmt::{Debug, Formatter};
 use std::io;
@@ -24,9 +24,13 @@ impl Connector for NetworkStream {
 
         match ssl_context {
             Some(context) => {
-                match SslStream::connect(context, tcp_stream) {
-                    Ok(stream) => Ok(NetworkStream::Ssl(stream)),
-                    Err(err) => Err(io::Error::new(ErrorKind::Other, err)),
+                match Ssl::new(context) {
+                    Ok(ssl) => {
+                        ssl.connect(tcp_stream)
+                            .map(|s| NetworkStream::Ssl(s))
+                            .map_err(|e| io::Error::new(ErrorKind::Other, e))
+                    }
+                    Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
                 }
             }
             None => Ok(NetworkStream::Plain(tcp_stream)),
@@ -37,9 +41,14 @@ impl Connector for NetworkStream {
 
         *self = match *self {
             NetworkStream::Plain(ref mut stream) => {
-                match SslStream::connect(ssl_context, stream.try_clone().unwrap()) {
-                    Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
-                    Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
+                match Ssl::new(ssl_context) {
+                    Ok(ssl) => {
+                        match ssl.connect(stream.try_clone().unwrap()) {
+                            Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
+                            Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
+                        }
+                    }
+                    Err(e) => return Err(io::Error::new(ErrorKind::Other, e)),
                 }
             }
             NetworkStream::Ssl(_) => return Ok(()),
