@@ -101,7 +101,7 @@ impl SmtpTransportBuilder {
             Some(addr) => {
                 Ok(SmtpTransportBuilder {
                     server_addr: addr,
-                    ssl_context: SslContext::new(SslMethod::Tlsv1).unwrap(),
+                    ssl_context: SslContext::builder(SslMethod::tls()).unwrap().build(),
                     security_level: SecurityLevel::Opportunistic,
                     smtp_utf8: false,
                     credentials: None,
