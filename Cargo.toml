@@ -11,18 +11,18 @@ authors = ["Alexis Mousset <contact@amousset.me>"]
 keywords = ["email", "smtp", "mailer"]
 
 [dependencies]
-bufstream = "0.1"
-email = "0.0"
-log = "0.3"
-mime = "0.2"
-openssl = "0.8"
-rustc-serialize = "0.3"
-rust-crypto = "0.2"
-time = "0.1"
-uuid = { version = "0.3", features = ["v4"] }
+bufstream = "^0.1"
+email = "^0.0"
+log = "^0.3"
+mime = "^0.2"
+openssl = "^0.9"
+rustc-serialize = "^0.3"
+rust-crypto = "^0.2"
+time = "^0.1"
+uuid = { version = "^0.3", features = ["v4"] }
 
 [dev-dependencies]
-env_logger = "0.3"
+env_logger = "^0.3"
 
 [features]
 unstable = []
