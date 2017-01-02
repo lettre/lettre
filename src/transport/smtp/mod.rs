@@ -290,9 +290,6 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
         // Extract email information
         let message_id = email.message_id();
-        let from_address = email.from_address();
-        let to_addresses = email.to_addresses();
-        let message = email.message();
 
         // Check if the connection is still available
         if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
@@ -383,13 +380,13 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             (false, _) => None,
         };
 
-        try_smtp!(self.client.mail(&from_address, mail_options), self);
+        try_smtp!(self.client.mail(&email.envelope().from, mail_options), self);
 
         // Log the mail command
-        info!("{}: from=<{}>", message_id, from_address);
+        info!("{}: from=<{}>", message_id, email.envelope().from);
 
         // Recipient
-        for to_address in &to_addresses {
+        for to_address in &email.envelope().to {
             try_smtp!(self.client.rcpt(&to_address), self);
             // Log the rcpt command
             info!("{}: to=<{}>", message_id, to_address);
@@ -399,6 +396,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         try_smtp!(self.client.data(), self);
 
         // Message content
+        let message = email.message();
         let result = self.client.message(&message);
 
         if result.is_ok() {

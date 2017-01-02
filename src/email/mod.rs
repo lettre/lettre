@@ -270,9 +270,9 @@ pub struct EmailBuilder {
 #[derive(PartialEq,Eq,Clone,Debug,Default)]
 pub struct Envelope {
     /// The envelope recipients' addresses
-    to: Vec<String>,
+    pub to: Vec<String>,
     /// The envelope sender address
-    from: String,
+    pub from: String,
 }
 
 impl Envelope {
@@ -728,10 +728,8 @@ impl EmailBuilder {
 
 /// Email sendable by an SMTP client
 pub trait SendableEmail {
-    /// From address
-    fn from_address(&self) -> String;
-    /// To addresses
-    fn to_addresses(&self) -> Vec<String>;
+    /// Envelope
+    fn envelope(&self) -> &Envelope;
     /// Message ID
     fn message_id(&self) -> String;
     /// Message content
@@ -741,35 +739,31 @@ pub trait SendableEmail {
 /// Minimal email structure
 #[derive(Debug)]
 pub struct SimpleSendableEmail {
-    /// From address
-    from: String,
-    /// To addresses
-    to: Vec<String>,
-    /// Message
+    /// Message envelope
+    envelope: Envelope,
+    /// Message content
     message: String,
 }
 
 impl SimpleSendableEmail {
     /// Returns a new email
     pub fn new(from_address: String,
-               to_address: Vec<String>,
+               to_addresses: Vec<String>,
                message: String)
                -> SimpleSendableEmail {
         SimpleSendableEmail {
-            from: from_address,
-            to: to_address,
+            envelope: Envelope {
+                from: from_address,
+                to: to_addresses,
+            },
             message: message,
         }
     }
 }
 
 impl SendableEmail for SimpleSendableEmail {
-    fn from_address(&self) -> String {
-        self.from.clone()
-    }
-
-    fn to_addresses(&self) -> Vec<String> {
-        self.to.clone()
+    fn envelope(&self) -> &Envelope {
+        &self.envelope
     }
 
     fn message_id(&self) -> String {
@@ -782,12 +776,8 @@ impl SendableEmail for SimpleSendableEmail {
 }
 
 impl SendableEmail for Email {
-    fn to_addresses(&self) -> Vec<String> {
-        self.envelope.to.clone()
-    }
-
-    fn from_address(&self) -> String {
-        self.envelope.from.clone()
+    fn envelope(&self) -> &Envelope {
+        &self.envelope
     }
 
     fn message_id(&self) -> String {
@@ -798,6 +788,31 @@ impl SendableEmail for Email {
         self.to_string()
     }
 }
+
+/// Email sendable by any type of client, giving access to all fields
+pub trait ExtractableEmail {
+    /// From address
+    fn from_address(&self) -> Option<String>;
+    /// To addresses
+    fn to_addresses(&self) -> Vec<String>;
+    /// Cc addresses
+    fn cc_addresses(&self) -> Vec<String>;
+    /// Bcc addresses
+    fn bcc_addresses(&self) -> Vec<String>;
+    /// Replay-To addresses
+    fn reply_to_address(&self) -> String;
+    /// Subject
+    fn subject(&self) -> String;
+    /// Message ID
+    fn message_id(&self) -> String;
+    /// Other Headers
+    fn headers(&self) -> Vec<String>;
+    /// html content
+    fn html(self) -> String;
+    /// text content
+    fn text(self) -> String;
+}
+
 
 #[cfg(test)]
 mod test {
@@ -931,8 +946,8 @@ mod test {
             .build()
             .unwrap();
 
-        assert_eq!(email.from_address(), "sender@localhost".to_string());
-        assert_eq!(email.to_addresses(),
+        assert_eq!(email.envelope().from, "sender@localhost".to_string());
+        assert_eq!(email.envelope().to,
                    vec!["user@localhost".to_string(),
                         "cc@localhost".to_string(),
                         "bcc@localhost".to_string()]);

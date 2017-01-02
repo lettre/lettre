@@ -18,8 +18,8 @@ impl EmailTransport<StubResult> for StubEmailTransport {
 
         info!("{}: from=<{}> to=<{:?}>",
               email.message_id(),
-              email.from_address(),
-              email.to_addresses());
+              email.envelope().from,
+              email.envelope().to);
         Ok(())
     }
 

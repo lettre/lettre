@@ -34,8 +34,8 @@ impl EmailTransport<FileResult> for FileEmailTransport {
 
         let log_line = format!("{}: from=<{}> to=<{}>\n",
                                email.message_id(),
-                               email.from_address(),
-                               email.to_addresses().join("> to=<"));
+                               email.envelope().from,
+                               email.envelope().to.join("> to=<"));
 
         try!(f.write_all(log_line.as_bytes()));
         try!(f.write_all(email.message().as_bytes()));
