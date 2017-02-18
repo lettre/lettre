@@ -31,7 +31,7 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
         // Spawn the sendmail command
         let mut process = try!(Command::new(&self.command)
-            .args(&["-i", "-f", &email.from_address(), &email.to_addresses().join(" ")])
+            .args(&["-i", "-f", &email.envelope().from, &email.envelope().to.join(" ")])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn());
