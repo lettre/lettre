@@ -23,6 +23,7 @@ Lettre provides the following features:
 Released versions:
 
 * [latest](https://docs.rs/lettre/)
+* [v0.6.2](https://docs.rs/lettre/0.6.2/lettre/)
 * [v0.6.1](https://docs.rs/lettre/0.6.1/lettre/)
 * [v0.6.0](https://docs.rs/lettre/0.6.0/lettre/)
 * [v0.5.1](https://docs.rs/lettre/0.5.1/lettre/)
