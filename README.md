@@ -22,6 +22,7 @@ Lettre provides the following features:
 Released versions:
 
 * [latest](https://lettre.github.io/lettre/)
+* [v0.6.2](https://lettre.github.io/lettre/v0.6.2/lettre/)
 * [v0.6.1](https://lettre.github.io/lettre/v0.6.1/lettre/)
 * [v0.6.0](https://lettre.github.io/lettre/v0.6.0/lettre/)
 * [v0.5.1](https://lettre.github.io/lettre/v0.5.1/lettre/)

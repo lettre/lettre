@@ -1,3 +1,12 @@
+### v0.6.2 (2017-02-18)
+
+#### Features
+
+* **all**
+  * Update uuid crate to 0.4
+  * Update env-logger crate to 0.4
+  * Update openssl crate to 0.9
+
 ### v0.6.1 (2016-10-19)
 
 #### Features
