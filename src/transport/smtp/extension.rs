@@ -104,9 +104,9 @@ impl ServerInfo {
         }
 
         Ok(ServerInfo {
-            name: name,
-            features: features,
-        })
+               name: name,
+               features: features,
+           })
     }
 
     /// Checks if the server supports an ESMTP feature
@@ -122,9 +122,9 @@ impl ServerInfo {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
 
     use super::{Extension, ServerInfo};
+    use std::collections::HashSet;
     use transport::smtp::authentication::Mechanism;
     use transport::smtp::response::{Category, Code, Response, Severity};
 

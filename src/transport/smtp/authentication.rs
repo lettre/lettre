@@ -3,7 +3,6 @@
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::md5::Md5;
-use rustc_serialize::base64::{self, FromBase64, ToBase64};
 use rustc_serialize::hex::ToHex;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -16,6 +15,10 @@ pub enum Mechanism {
     /// PLAIN authentication mechanism
     /// RFC 4616: https://tools.ietf.org/html/rfc4616
     Plain,
+    /// LOGIN authentication mechanism
+    /// Obsolete but needed for some providers (like office365)
+    /// https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt
+    Login,
     /// CRAM-MD5 authentication mechanism
     /// RFC 2195: https://tools.ietf.org/html/rfc2195
     CramMd5,
@@ -27,6 +30,7 @@ impl Display for Mechanism {
                "{}",
                match *self {
                    Mechanism::Plain => "PLAIN",
+                   Mechanism::Login => "LOGIN",
                    Mechanism::CramMd5 => "CRAM-MD5",
                })
     }
@@ -37,6 +41,7 @@ impl Mechanism {
     pub fn supports_initial_response(&self) -> bool {
         match *self {
             Mechanism::Plain => true,
+            Mechanism::Login |
             Mechanism::CramMd5 => false,
         }
     }
@@ -52,30 +57,35 @@ impl Mechanism {
             Mechanism::Plain => {
                 match challenge {
                     Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
-                    None => {
-                        Ok(format!("{}{}{}{}", NUL, username, NUL, password)
-                            .as_bytes()
-                            .to_base64(base64::STANDARD))
-                    }
+                    None => Ok(format!("{}{}{}{}", NUL, username, NUL, password)),
                 }
             }
-            Mechanism::CramMd5 => {
-                let encoded_challenge = match challenge {
+            Mechanism::Login => {
+                let decoded_challenge = match challenge {
                     Some(challenge) => challenge,
                     None => return Err(Error::Client("This mechanism does expect a challenge")),
                 };
 
-                let decoded_challenge = match encoded_challenge.from_base64() {
-                    Ok(challenge) => challenge,
-                    Err(error) => return Err(Error::ChallengeParsing(error)),
+                if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
+                    return Ok(username.to_string());
+                }
+
+                if vec!["Password", "Password:"].contains(&decoded_challenge) {
+                    return Ok(password.to_string());
+                }
+
+                Err(Error::Client("Unrecognized challenge"))
+            }
+            Mechanism::CramMd5 => {
+                let decoded_challenge = match challenge {
+                    Some(challenge) => challenge,
+                    None => return Err(Error::Client("This mechanism does expect a challenge")),
                 };
 
                 let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
-                hmac.input(&decoded_challenge);
+                hmac.input(decoded_challenge.as_bytes());
 
-                Ok(format!("{} {}", username, hmac.result().code().to_hex())
-                    .as_bytes()
-                    .to_base64(base64::STANDARD))
+                Ok(format!("{} {}", username, hmac.result().code().to_hex()))
             }
         }
     }
@@ -90,8 +100,19 @@ mod test {
         let mechanism = Mechanism::Plain;
 
         assert_eq!(mechanism.response("username", "password", None).unwrap(),
-                   "AHVzZXJuYW1lAHBhc3N3b3Jk");
+                   "\u{0}username\u{0}password");
         assert!(mechanism.response("username", "password", Some("test")).is_err());
+    }
+
+    #[test]
+    fn test_login() {
+        let mechanism = Mechanism::Login;
+
+        assert_eq!(mechanism.response("alice", "wonderland", Some("Username")).unwrap(),
+                   "alice");
+        assert_eq!(mechanism.response("alice", "wonderland", Some("Password")).unwrap(),
+                   "wonderland");
+        assert!(mechanism.response("username", "password", None).is_err());
     }
 
     #[test]
@@ -99,11 +120,10 @@ mod test {
         let mechanism = Mechanism::CramMd5;
 
         assert_eq!(mechanism.response("alice",
-                                 "wonderland",
-                                 Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
+                                      "wonderland",
+                                      Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
                        .unwrap(),
-                   "YWxpY2UgNjRiMmE0M2MxZjZlZDY4MDZhOTgwOTE0ZTIzZTc1ZjA=");
-        assert!(mechanism.response("alice", "wonderland", Some("tést")).is_err());
+                   "alice a540ebe4ef2304070bbc3c456c1f64c0");
         assert!(mechanism.response("alice", "wonderland", None).is_err());
     }
 }

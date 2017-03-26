@@ -1,11 +1,12 @@
 //! Error and result type for SMTP clients
 
-use rustc_serialize::base64::FromBase64Error;
 use self::Error::*;
+use rustc_serialize::base64::FromBase64Error;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::io;
+use std::string::FromUtf8Error;
 use transport::smtp::response::{Response, Severity};
 
 /// An enum of all error kinds.
@@ -23,6 +24,8 @@ pub enum Error {
     ResponseParsing(&'static str),
     /// Error parsing a base64 string in response
     ChallengeParsing(FromBase64Error),
+    /// Error parsing UTF8in response
+    Utf8Parsing(FromUtf8Error),
     /// Internal client error
     Client(&'static str),
     /// DNS resolution error
@@ -43,7 +46,8 @@ impl StdError for Error {
             Transient(_) => "a transient error occured during the SMTP transaction",
             Permanent(_) => "a permanent error occured during the SMTP transaction",
             ResponseParsing(_) => "an error occured while parsing an SMTP response",
-            ChallengeParsing(_) => "an error occured while parsing a CRAM-MD5 challenge",
+            ChallengeParsing(_) => "an error occured while parsing an SMTP AUTH challenge",
+            Utf8Parsing(_) => "an error occured while parsing an SMTP response as UTF8",
             Resolution => "could not resolve hostname",
             Client(_) => "an unknown error occured",
             Io(_) => "an I/O error occured",

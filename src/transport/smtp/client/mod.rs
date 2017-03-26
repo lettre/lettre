@@ -2,6 +2,8 @@
 
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
+
+use rustc_serialize::base64::{self, FromBase64, ToBase64};
 use std::fmt::Debug;
 use std::io;
 use std::io::{BufRead, Read, Write};
@@ -202,20 +204,47 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         if mechanism.supports_initial_response() {
             self.command(&format!("AUTH {} {}",
                                   mechanism,
-                                  try!(mechanism.response(username, password, None))))
+                                  try!(mechanism.response(username, password, None))
+                                      .as_bytes()
+                                      .to_base64(base64::STANDARD)))
         } else {
-            let encoded_challenge = match try!(self.command("AUTH CRAM-MD5")).first_word() {
+            let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
+                      .first_word() {
                 Some(challenge) => challenge,
-                None => return Err(Error::ResponseParsing("Could not read CRAM challenge")),
+                None => return Err(Error::ResponseParsing("Could not read auth challenge")),
             };
 
-            debug!("CRAM challenge: {}", encoded_challenge);
+            debug!("auth encoded challenge: {}", encoded_challenge);
 
-            let cram_response = try!(mechanism.response(username,
-                                                        password,
-                                                        Some(&encoded_challenge)));
+            let decoded_challenge = match encoded_challenge.from_base64() {
+                Ok(challenge) => {
+                    match String::from_utf8(challenge) {
+                        Ok(value) => value,
+                        Err(error) => return Err(Error::Utf8Parsing(error)),
+                    }
+                }
+                Err(error) => return Err(Error::ChallengeParsing(error)),
+            };
 
-            self.command(&cram_response.clone())
+            debug!("auth decoded challenge: {}", decoded_challenge);
+
+            let mut challenge_expected = 3;
+
+            while challenge_expected > 0 {
+                let response = try!(self.command(&try!(mechanism.response(username,
+                                                                password,
+                                                                Some(&decoded_challenge)))
+                                                          .as_bytes()
+                                                          .to_base64(base64::STANDARD)));
+
+                if !response.has_code(334) {
+                    return Ok(response);
+                }
+
+                challenge_expected -= 1;
+            }
+
+            Err(Error::ResponseParsing("Unexpected number of challenges"))
         }
     }
 
@@ -236,7 +265,10 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         }
 
         try!(write!(self.stream.as_mut().unwrap(), "{}{}", string, end));
-        try!(self.stream.as_mut().unwrap().flush());
+        try!(self.stream
+                 .as_mut()
+                 .unwrap()
+                 .flush());
 
         debug!("Wrote: {}", escape_crlf(string));
 
@@ -249,13 +281,19 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         let mut parser = ResponseParser::default();
 
         let mut line = String::new();
-        try!(self.stream.as_mut().unwrap().read_line(&mut line));
+        try!(self.stream
+                 .as_mut()
+                 .unwrap()
+                 .read_line(&mut line));
 
         debug!("Read: {}", escape_crlf(line.as_ref()));
 
         while try!(parser.read_line(remove_crlf(line.as_ref()).as_ref())) {
             line.clear();
-            try!(self.stream.as_mut().unwrap().read_line(&mut line));
+            try!(self.stream
+                     .as_mut()
+                     .unwrap()
+                     .read_line(&mut line));
         }
 
         let response = try!(parser.response());
