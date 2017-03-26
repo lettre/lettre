@@ -102,7 +102,7 @@ impl SmtpTransportBuilder {
                 Ok(SmtpTransportBuilder {
                        server_addr: addr,
                        ssl_context: SslContext::builder(SslMethod::tls()).unwrap().build(),
-                       security_level: SecurityLevel::Opportunistic,
+                       security_level: SecurityLevel::AlwaysEncrypt,
                        smtp_utf8: false,
                        credentials: None,
                        connection_reuse_count_limit: 100,
