@@ -116,10 +116,10 @@ impl FromStr for Code {
                    s[2..3].parse::<u8>()) {
                 (Ok(severity), Ok(category), Ok(detail)) => {
                     Ok(Code {
-                        severity: severity,
-                        category: category,
-                        detail: detail,
-                    })
+                           severity: severity,
+                           category: category,
+                           detail: detail,
+                       })
                 }
                 _ => Err(Error::ResponseParsing("Could not parse response code")),
             }
@@ -217,8 +217,7 @@ impl Response {
     /// Tells if the response is positive
     pub fn is_positive(&self) -> bool {
         match self.code.severity {
-            PositiveCompletion => true,
-            PositiveIntermediate => true,
+            PositiveCompletion | PositiveIntermediate => true,
             _ => false,
         }
     }
@@ -401,7 +400,7 @@ mod test {
                               vec!["me".to_string(),
                                    "8BITMIME".to_string(),
                                    "SIZE 42".to_string()])
-            .is_positive());
+                        .is_positive());
         assert!(!Response::new(Code {
                                    severity: "5".parse::<Severity>().unwrap(),
                                    category: "4".parse::<Category>().unwrap(),
@@ -410,7 +409,7 @@ mod test {
                                vec!["me".to_string(),
                                     "8BITMIME".to_string(),
                                     "SIZE 42".to_string()])
-            .is_positive());
+                         .is_positive());
     }
 
     #[test]
@@ -423,7 +422,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .message(),
+                           .message(),
                    vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
         let empty_message: Vec<String> = vec![];
         assert_eq!(Response::new(Code {
@@ -432,7 +431,7 @@ mod test {
                                      detail: 1,
                                  },
                                  vec![])
-                       .message(),
+                           .message(),
                    empty_message);
     }
 
@@ -446,7 +445,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .severity(),
+                           .severity(),
                    Severity::PositiveCompletion);
         assert_eq!(Response::new(Code {
                                      severity: "5".parse::<Severity>().unwrap(),
@@ -456,7 +455,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .severity(),
+                           .severity(),
                    Severity::PermanentNegativeCompletion);
     }
 
@@ -470,7 +469,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .category(),
+                           .category(),
                    Category::Unspecified4);
     }
 
@@ -484,7 +483,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .detail(),
+                           .detail(),
                    1);
     }
 
@@ -498,7 +497,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .code(),
+                           .code(),
                    "241");
     }
 
@@ -512,7 +511,7 @@ mod test {
                               vec!["me".to_string(),
                                    "8BITMIME".to_string(),
                                    "SIZE 42".to_string()])
-            .has_code(241));
+                        .has_code(241));
         assert!(!Response::new(Code {
                                    severity: "2".parse::<Severity>().unwrap(),
                                    category: "4".parse::<Category>().unwrap(),
@@ -521,7 +520,7 @@ mod test {
                                vec!["me".to_string(),
                                     "8BITMIME".to_string(),
                                     "SIZE 42".to_string()])
-            .has_code(251));
+                         .has_code(251));
     }
 
     #[test]
@@ -534,7 +533,7 @@ mod test {
                                  vec!["me".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .first_word(),
+                           .first_word(),
                    Some("me".to_string()));
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),
@@ -544,7 +543,7 @@ mod test {
                                  vec!["me mo".to_string(),
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
-                       .first_word(),
+                           .first_word(),
                    Some("me".to_string()));
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),
@@ -552,7 +551,7 @@ mod test {
                                      detail: 1,
                                  },
                                  vec![])
-                       .first_word(),
+                           .first_word(),
                    None);
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),
@@ -560,7 +559,7 @@ mod test {
                                      detail: 1,
                                  },
                                  vec![" ".to_string()])
-                       .first_word(),
+                           .first_word(),
                    None);
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),
@@ -568,7 +567,7 @@ mod test {
                                      detail: 1,
                                  },
                                  vec!["  ".to_string()])
-                       .first_word(),
+                           .first_word(),
                    None);
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),
@@ -576,7 +575,7 @@ mod test {
                                      detail: 1,
                                  },
                                  vec!["".to_string()])
-                       .first_word(),
+                           .first_word(),
                    None);
     }
 }

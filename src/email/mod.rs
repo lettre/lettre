@@ -552,8 +552,8 @@ impl EmailBuilder {
     /// Sets the email body to plain text content
     pub fn set_text<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message
-            .add_header(("Content-Type", format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
+        self.message.add_header(("Content-Type",
+                                 format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
     }
 
     /// Sets the email body to HTML content
@@ -565,8 +565,8 @@ impl EmailBuilder {
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message
-            .add_header(("Content-Type", format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
+        self.message.add_header(("Content-Type",
+                                 format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
     }
 
     /// Sets the email content
@@ -646,9 +646,9 @@ impl EmailBuilder {
                 let mut e = Envelope::new();
                 // add all receivers in to_header and cc_header
                 for receiver in self.to_header
-                    .iter()
-                    .chain(self.cc_header.iter())
-                    .chain(self.bcc_header.iter()) {
+                        .iter()
+                        .chain(self.cc_header.iter())
+                        .chain(self.bcc_header.iter()) {
                     match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
                         Address::Group(_, ref ms) => {
@@ -691,8 +691,8 @@ impl EmailBuilder {
             self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
         }
         if !self.from_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+            self.message.add_header(Header::new_with_value("From".into(), self.from_header)
+                                        .unwrap());
         } else {
             return Err(Error::MissingFrom);
         }
@@ -700,9 +700,9 @@ impl EmailBuilder {
             self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
         if !self.reply_to_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Reply-To".into(), self.reply_to_header)
-                    .unwrap());
+            self.message.add_header(Header::new_with_value("Reply-To".into(),
+                                                           self.reply_to_header)
+                                            .unwrap());
         }
 
         if !self.date_issued {
@@ -719,10 +719,10 @@ impl EmailBuilder {
         }
 
         Ok(Email {
-            message: self.message.build(),
-            envelope: envelope,
-            message_id: message_id,
-        })
+               message: self.message.build(),
+               envelope: envelope,
+               message_id: message_id,
+           })
     }
 }
 
@@ -816,9 +816,9 @@ pub trait ExtractableEmail {
 
 #[cfg(test)]
 mod test {
-    use email_format::{Header, MimeMessage};
 
     use super::{Email, EmailBuilder, Envelope, IntoEmail, SendableEmail, SimpleEmail};
+    use email_format::{Header, MimeMessage};
     use time::now;
 
     use uuid::Uuid;
@@ -865,12 +865,11 @@ mod test {
         email.message.headers.insert(Header::new_with_value("Message-ID".to_string(),
                                                             format!("<{}@rust-smtp>",
                                                                     current_message))
-            .unwrap());
+                                             .unwrap());
 
-        email.message
-            .headers
-            .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
-                .unwrap());
+        email.message.headers.insert(Header::new_with_value("To".to_string(),
+                                                            "to@example.com".to_string())
+                                             .unwrap());
 
         email.message.body = "body".to_string();
 

@@ -100,17 +100,17 @@ impl SmtpTransportBuilder {
         match addresses.next() {
             Some(addr) => {
                 Ok(SmtpTransportBuilder {
-                    server_addr: addr,
-                    ssl_context: SslContext::builder(SslMethod::tls()).unwrap().build(),
-                    security_level: SecurityLevel::Opportunistic,
-                    smtp_utf8: false,
-                    credentials: None,
-                    connection_reuse_count_limit: 100,
-                    connection_reuse: false,
-                    hello_name: "localhost".to_string(),
-                    authentication_mechanism: None,
-                    timeout: Some(Duration::new(60, 0)),
-                })
+                       server_addr: addr,
+                       ssl_context: SslContext::builder(SslMethod::tls()).unwrap().build(),
+                       security_level: SecurityLevel::Opportunistic,
+                       smtp_utf8: false,
+                       credentials: None,
+                       connection_reuse_count_limit: 100,
+                       connection_reuse: false,
+                       hello_name: "localhost".to_string(),
+                       authentication_mechanism: None,
+                       timeout: Some(Duration::new(60, 0)),
+                   })
             }
             None => Err(From::from("Could nor resolve hostname")),
         }
@@ -313,10 +313,11 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             try!(self.get_ehlo());
 
             match (&self.client_info.security_level,
-                   self.server_info.as_ref().unwrap().supports_feature(&Extension::StartTls)) {
-                (&SecurityLevel::AlwaysEncrypt, false) => {
-                    return Err(From::from("Could not encrypt connection, aborting"))
-                }
+                   self.server_info
+                       .as_ref()
+                       .unwrap()
+                       .supports_feature(&Extension::StartTls)) {
+                (&SecurityLevel::AlwaysEncrypt, false) => return Err(From::from("Could not encrypt connection, aborting")),
                 (&SecurityLevel::Opportunistic, false) => (),
                 (&SecurityLevel::NeverEncrypt, _) => (),
                 (&SecurityLevel::EncryptedWrapper, _) => (),
@@ -333,7 +334,10 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             }
 
             if self.client_info.credentials.is_some() {
-                let (username, password) = self.client_info.credentials.clone().unwrap();
+                let (username, password) = self.client_info
+                    .credentials
+                    .clone()
+                    .unwrap();
 
                 let mut found = false;
 
@@ -344,7 +348,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                         if self.client.is_encrypted() {
                             // If encrypted, allow all mechanisms, with a preference for the
                             // simplest
-                            vec![Mechanism::Plain, Mechanism::CramMd5]
+                            // Login is obsolete so try it last
+                            vec![Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login]
                         } else {
                             // If not encrypted, do not allow clear-text passwords
                             vec![Mechanism::CramMd5]
@@ -353,7 +358,10 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 };
 
                 for mechanism in accepted_mechanisms {
-                    if self.server_info.as_ref().unwrap().supports_auth_mechanism(mechanism) {
+                    if self.server_info
+                           .as_ref()
+                           .unwrap()
+                           .supports_auth_mechanism(mechanism) {
                         found = true;
                         try_smtp!(self.client.auth(mechanism, &username, &password), self);
                         break;
@@ -368,13 +376,13 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
         // Mail
         let mail_options = match (self.server_info
-            .as_ref()
-            .unwrap()
-            .supports_feature(&Extension::EightBitMime),
-                                  self.server_info
-            .as_ref()
-            .unwrap()
-            .supports_feature(&Extension::SmtpUtfEight)) {
+                   .as_ref()
+                   .unwrap()
+                   .supports_feature(&Extension::EightBitMime),
+               self.server_info
+                   .as_ref()
+                   .unwrap()
+                   .supports_feature(&Extension::SmtpUtfEight)) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
             (true, false) => Some("BODY=8BITMIME"),
             (false, _) => None,
@@ -409,12 +417,12 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                   self.state.connection_reuse_count,
                   message.len(),
                   result.as_ref()
-                        .ok()
-                        .unwrap()
-                        .message()
-                        .iter()
-                        .next()
-                        .unwrap_or(&"no response".to_string()));
+                      .ok()
+                      .unwrap()
+                      .message()
+                      .iter()
+                      .next()
+                      .unwrap_or(&"no response".to_string()));
         }
 
         // Test if we can reuse the existing connection

@@ -31,12 +31,18 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
         // Spawn the sendmail command
         let mut process = try!(Command::new(&self.command)
-            .args(&["-i", "-f", &email.envelope().from, &email.envelope().to.join(" ")])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn());
+                                   .args(&["-i",
+                                           "-f",
+                                           &email.envelope().from,
+                                           &email.envelope().to.join(" ")])
+                                   .stdin(Stdio::piped())
+                                   .stdout(Stdio::piped())
+                                   .spawn());
 
-        match process.stdin.as_mut().unwrap().write_all(email.message().as_bytes()) {
+        match process.stdin
+                  .as_mut()
+                  .unwrap()
+                  .write_all(email.message().as_bytes()) {
             Ok(_) => (),
             Err(error) => return Err(From::from(error)),
         }
