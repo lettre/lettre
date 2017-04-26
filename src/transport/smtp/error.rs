@@ -1,7 +1,7 @@
 //! Error and result type for SMTP clients
 
 use self::Error::*;
-use rustc_serialize::base64::FromBase64Error;
+use base64::DecodeError;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -23,7 +23,7 @@ pub enum Error {
     /// Error parsing a response
     ResponseParsing(&'static str),
     /// Error parsing a base64 string in response
-    ChallengeParsing(FromBase64Error),
+    ChallengeParsing(DecodeError),
     /// Error parsing UTF8in response
     Utf8Parsing(FromUtf8Error),
     /// Internal client error
