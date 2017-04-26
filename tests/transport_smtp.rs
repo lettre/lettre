@@ -15,6 +15,5 @@ fn smtp_transport_simple() {
         .build()
         .unwrap();
     let result = sender.send(email);
-    println!("{:?}", result);
     assert!(result.is_ok());
 }
