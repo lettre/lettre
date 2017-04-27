@@ -265,10 +265,7 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         }
 
         try!(write!(self.stream.as_mut().unwrap(), "{}{}", string, end));
-        try!(self.stream
-                 .as_mut()
-                 .unwrap()
-                 .flush());
+        try!(self.stream.as_mut().unwrap().flush());
 
         debug!("Wrote: {}", escape_crlf(string));
 
@@ -281,19 +278,13 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         let mut parser = ResponseParser::default();
 
         let mut line = String::new();
-        try!(self.stream
-                 .as_mut()
-                 .unwrap()
-                 .read_line(&mut line));
+        try!(self.stream.as_mut().unwrap().read_line(&mut line));
 
         debug!("Read: {}", escape_crlf(line.as_ref()));
 
         while try!(parser.read_line(remove_crlf(line.as_ref()).as_ref())) {
             line.clear();
-            try!(self.stream
-                     .as_mut()
-                     .unwrap()
-                     .read_line(&mut line));
+            try!(self.stream.as_mut().unwrap().read_line(&mut line));
         }
 
         let response = try!(parser.response());

@@ -19,7 +19,7 @@ openssl = "^0.9"
 rustc-serialize = "^0.3"
 rust-crypto = "^0.2"
 time = "^0.1"
-uuid = { version = "^0.4", features = ["v4"] }
+uuid = { version = "^0.5", features = ["v4"] }
 
 [dev-dependencies]
 env_logger = "^0.4"
