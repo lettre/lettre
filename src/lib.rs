@@ -276,7 +276,8 @@
 extern crate log;
 #[macro_use]
 extern crate mime;
-extern crate rustc_serialize;
+extern crate base64;
+extern crate hex;
 extern crate crypto;
 extern crate time;
 extern crate uuid;
