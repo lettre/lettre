@@ -20,7 +20,7 @@ base64 = "~0.5.0"
 hex = "^0.2.0"
 rust-crypto = "^0.2"
 time = "^0.1"
-uuid = { version = "^0.5", features = ["v4"] }
+uuid = { version = ">=0.4, <0.6", features = ["v4"] }
 
 [dev-dependencies]
 env_logger = "^0.4"
