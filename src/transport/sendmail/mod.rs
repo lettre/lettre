@@ -39,7 +39,8 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
                                    .stdout(Stdio::piped())
                                    .spawn());
 
-        match process.stdin
+        match process
+                  .stdin
                   .as_mut()
                   .unwrap()
                   .write_all(email.message().as_bytes()) {
