@@ -3,7 +3,7 @@
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::md5::Md5;
-use rustc_serialize::hex::ToHex;
+use hex::ToHex;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use transport::smtp::NUL;

@@ -3,7 +3,7 @@
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
 
-use rustc_serialize::base64::{self, FromBase64, ToBase64};
+use base64;
 use std::fmt::Debug;
 use std::io;
 use std::io::{BufRead, Read, Write};
@@ -204,9 +204,7 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
         if mechanism.supports_initial_response() {
             self.command(&format!("AUTH {} {}",
                                   mechanism,
-                                  try!(mechanism.response(username, password, None))
-                                      .as_bytes()
-                                      .to_base64(base64::STANDARD)))
+                                  base64::encode_config(try!(mechanism.response(username, password, None)).as_bytes(), base64::STANDARD)))
         } else {
             let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
                       .first_word() {
@@ -216,7 +214,7 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
 
             debug!("auth encoded challenge: {}", encoded_challenge);
 
-            let decoded_challenge = match encoded_challenge.from_base64() {
+            let decoded_challenge = match base64::decode(&encoded_challenge) {
                 Ok(challenge) => {
                     match String::from_utf8(challenge) {
                         Ok(value) => value,
@@ -231,11 +229,10 @@ impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
             let mut challenge_expected = 3;
 
             while challenge_expected > 0 {
-                let response = try!(self.command(&try!(mechanism.response(username,
+                let response = try!(self.command(&base64::encode_config(&try!(mechanism.response(username,
                                                                 password,
                                                                 Some(&decoded_challenge)))
-                                                          .as_bytes()
-                                                          .to_base64(base64::STANDARD)));
+                                                          .as_bytes(), base64::STANDARD)));
 
                 if !response.has_code(334) {
                     return Ok(response);
