@@ -506,7 +506,8 @@ impl EmailBuilder {
 
     /// Adds a `Subject` header
     pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.message.add_header(("Subject".to_string(), subject.into()));
+        self.message
+            .add_header(("Subject".to_string(), subject.into()));
     }
 
     /// Adds a `Date` header with the given date
@@ -517,7 +518,8 @@ impl EmailBuilder {
 
     /// Adds a `Date` header with the given date
     pub fn set_date(&mut self, date: &Tm) {
-        self.message.add_header(("Date", Tm::rfc822z(date).to_string()));
+        self.message
+            .add_header(("Date", Tm::rfc822z(date).to_string()));
         self.date_issued = true;
     }
 
@@ -552,8 +554,8 @@ impl EmailBuilder {
     /// Sets the email body to plain text content
     pub fn set_text<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message.add_header(("Content-Type",
-                                 format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
+        self.message
+            .add_header(("Content-Type", format!("{}", mime!(Text/Plain; Charset=Utf8)).as_ref()));
     }
 
     /// Sets the email body to HTML content
@@ -565,8 +567,8 @@ impl EmailBuilder {
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message.add_header(("Content-Type",
-                                 format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
+        self.message
+            .add_header(("Content-Type", format!("{}", mime!(Text/Html; Charset=Utf8)).as_ref()));
     }
 
     /// Sets the email content
@@ -636,7 +638,8 @@ impl EmailBuilder {
         }
         // Add the sender header, if any.
         if let Some(ref v) = self.sender_header {
-            self.message.add_header(("Sender", v.to_string().as_ref()));
+            self.message
+                .add_header(("Sender", v.to_string().as_ref()));
         }
         // Calculate the envelope
         let envelope = match self.envelope {
@@ -688,25 +691,28 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to_header.is_empty() {
-            self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+            self.message
+                .add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
         }
         if !self.from_header.is_empty() {
-            self.message.add_header(Header::new_with_value("From".into(), self.from_header)
-                                        .unwrap());
+            self.message
+                .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
         } else {
             return Err(Error::MissingFrom);
         }
         if !self.cc_header.is_empty() {
-            self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
+            self.message
+                .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
         if !self.reply_to_header.is_empty() {
-            self.message.add_header(Header::new_with_value("Reply-To".into(),
-                                                           self.reply_to_header)
-                                            .unwrap());
+            self.message
+                .add_header(Header::new_with_value("Reply-To".into(), self.reply_to_header)
+                                .unwrap());
         }
 
         if !self.date_issued {
-            self.message.add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            self.message
+                .add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
         self.message.add_header(("MIME-Version", "1.0"));
@@ -828,7 +834,8 @@ mod test {
         let email_builder = SimpleEmail::default();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
+        let email = email_builder
+            .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
             .reply_to("reply@localhost")
@@ -862,14 +869,18 @@ mod test {
             message_id: current_message,
         };
 
-        email.message.headers.insert(Header::new_with_value("Message-ID".to_string(),
-                                                            format!("<{}@rust-smtp>",
-                                                                    current_message))
-                                             .unwrap());
+        email
+            .message
+            .headers
+            .insert(Header::new_with_value("Message-ID".to_string(),
+                                           format!("<{}@rust-smtp>", current_message))
+                            .unwrap());
 
-        email.message.headers.insert(Header::new_with_value("To".to_string(),
-                                                            "to@example.com".to_string())
-                                             .unwrap());
+        email
+            .message
+            .headers
+            .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
+                        .unwrap());
 
         email.message.body = "body".to_string();
 
@@ -883,7 +894,8 @@ mod test {
     fn test_multiple_from() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
-        let email = email_builder.to("anna@example.com")
+        let email = email_builder
+            .to("anna@example.com")
             .from("dieter@example.com")
             .from("joachim@example.com")
             .date(&date_now)
@@ -905,7 +917,8 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
+        let email = email_builder
+            .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
             .reply_to("reply@localhost")
@@ -932,7 +945,8 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
+        let email = email_builder
+            .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
             .bcc("bcc@localhost")

@@ -423,7 +423,9 @@ mod test {
                                       "8BITMIME".to_string(),
                                       "SIZE 42".to_string()])
                            .message(),
-                   vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
+                   vec!["me".to_string(),
+                        "8BITMIME".to_string(),
+                        "SIZE 42".to_string()]);
         let empty_message: Vec<String> = vec![];
         assert_eq!(Response::new(Code {
                                      severity: "2".parse::<Severity>().unwrap(),

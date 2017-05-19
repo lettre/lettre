@@ -92,10 +92,11 @@
 //!
 //! This is the most basic example of usage:
 //!
-//! ```rust
-//! use lettre::transport::smtp::{SmtpTransport, SmtpTransportBuilder};
+//! ```rust,no_run
+//! use lettre::transport::smtp::SmtpTransportBuilder;
 //! use lettre::email::EmailBuilder;
 //! use lettre::transport::EmailTransport;
+//! use lettre::transport::smtp::SecurityLevel;
 //!
 //! let email = EmailBuilder::new()
 //!                     .to("root@localhost")
@@ -107,7 +108,7 @@
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
-//! SmtpTransportBuilder::localhost().unwrap().build();
+//! SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
 //! // Send the email
 //! let result = mailer.send(email);
 //!
