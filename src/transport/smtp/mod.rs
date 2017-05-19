@@ -297,13 +297,14 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         if self.state.connection_reuse_count == 0 {
-            try!(self.client.connect(&self.client_info.server_addr,
-                                     match &self.client_info.security_level {
-                                         &SecurityLevel::EncryptedWrapper => {
-                                             Some(&self.client_info.ssl_context)
-                                         }
-                                         _ => None,
-                                     }));
+            try!(self.client
+                     .connect(&self.client_info.server_addr,
+                              match &self.client_info.security_level {
+                                  &SecurityLevel::EncryptedWrapper => {
+                                      Some(&self.client_info.ssl_context)
+                                  }
+                                  _ => None,
+                              }));
 
             try!(self.client.set_timeout(self.client_info.timeout));
 
@@ -323,7 +324,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 (&SecurityLevel::EncryptedWrapper, _) => (),
                 (_, true) => {
                     try_smtp!(self.client.starttls(), self);
-                    try_smtp!(self.client.upgrade_tls_stream(&self.client_info.ssl_context),
+                    try_smtp!(self.client
+                                  .upgrade_tls_stream(&self.client_info.ssl_context),
                               self);
 
                     debug!("connection encrypted");
@@ -334,10 +336,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             }
 
             if self.client_info.credentials.is_some() {
-                let (username, password) = self.client_info
-                    .credentials
-                    .clone()
-                    .unwrap();
+                let (username, password) = self.client_info.credentials.clone().unwrap();
 
                 let mut found = false;
 
@@ -376,13 +375,13 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
         // Mail
         let mail_options = match (self.server_info
-                   .as_ref()
-                   .unwrap()
-                   .supports_feature(&Extension::EightBitMime),
-               self.server_info
-                   .as_ref()
-                   .unwrap()
-                   .supports_feature(&Extension::SmtpUtfEight)) {
+                                      .as_ref()
+                                      .unwrap()
+                                      .supports_feature(&Extension::EightBitMime),
+                                  self.server_info
+                                      .as_ref()
+                                      .unwrap()
+                                      .supports_feature(&Extension::SmtpUtfEight)) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
             (true, false) => Some("BODY=8BITMIME"),
             (false, _) => None,
@@ -416,7 +415,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                   message_id,
                   self.state.connection_reuse_count,
                   message.len(),
-                  result.as_ref()
+                  result
+                      .as_ref()
                       .ok()
                       .unwrap()
                       .message()

@@ -3,7 +3,7 @@
 use crypto::hmac::Hmac;
 use crypto::mac::Mac;
 use crypto::md5::Md5;
-use rustc_serialize::hex::ToHex;
+use hex::ToHex;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use transport::smtp::NUL;
@@ -101,16 +101,22 @@ mod test {
 
         assert_eq!(mechanism.response("username", "password", None).unwrap(),
                    "\u{0}username\u{0}password");
-        assert!(mechanism.response("username", "password", Some("test")).is_err());
+        assert!(mechanism
+                    .response("username", "password", Some("test"))
+                    .is_err());
     }
 
     #[test]
     fn test_login() {
         let mechanism = Mechanism::Login;
 
-        assert_eq!(mechanism.response("alice", "wonderland", Some("Username")).unwrap(),
+        assert_eq!(mechanism
+                       .response("alice", "wonderland", Some("Username"))
+                       .unwrap(),
                    "alice");
-        assert_eq!(mechanism.response("alice", "wonderland", Some("Password")).unwrap(),
+        assert_eq!(mechanism
+                       .response("alice", "wonderland", Some("Password"))
+                       .unwrap(),
                    "wonderland");
         assert!(mechanism.response("username", "password", None).is_err());
     }
@@ -119,9 +125,10 @@ mod test {
     fn test_cram_md5() {
         let mechanism = Mechanism::CramMd5;
 
-        assert_eq!(mechanism.response("alice",
-                                      "wonderland",
-                                      Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
+        assert_eq!(mechanism
+                       .response("alice",
+                                 "wonderland",
+                                 Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
                        .unwrap(),
                    "alice a540ebe4ef2304070bbc3c456c1f64c0");
         assert!(mechanism.response("alice", "wonderland", None).is_err());

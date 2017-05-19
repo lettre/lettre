@@ -116,7 +116,8 @@ impl ServerInfo {
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
-        self.features.contains(&Extension::Authentication(mechanism))
+        self.features
+            .contains(&Extension::Authentication(mechanism))
     }
 }
 
@@ -172,7 +173,9 @@ mod test {
     fn test_serverinfo() {
         let response =
             Response::new(Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
-                          vec!["me".to_string(), "8BITMIME".to_string(), "SIZE 42".to_string()]);
+                          vec!["me".to_string(),
+                               "8BITMIME".to_string(),
+                               "SIZE 42".to_string()]);
 
         let mut features = HashSet::new();
         assert!(features.insert(Extension::EightBitMime));
