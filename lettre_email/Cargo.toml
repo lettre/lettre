@@ -1,0 +1,22 @@
+[package]
+
+name = "lettre_email"
+version = "0.7.0"
+description = "Email builder"
+readme = "README.md"
+documentation = "https://docs.rs/lettre_email/"
+repository = "https://github.com/lettre/lettre"
+license = "MIT"
+authors = ["Alexis Mousset <contact@amousset.me>"]
+categories = ["email"]
+keywords = ["email", "mailer"]
+
+[badges]
+travis-ci = { repository = "lettre/lettre_email" }
+
+[dependencies]
+email = "^0.0"
+mime = "^0.2"
+time = "^0.1"
+uuid = { version = ">=0.4, <0.6", features = ["v4"] }
+lettre = { path = "../lettre" }

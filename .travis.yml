@@ -4,6 +4,7 @@ rust:
 - stable
 - beta
 - nightly
+- 1.13.0
 
 matrix:
   allow_failures:
@@ -12,39 +13,25 @@ matrix:
 sudo: required
 
 cache:
-  apt: true
-  pip: true
   directories:
   - target/debug/deps
   - target/debug/build
   - target/release/deps
   - target/release/build
 
-install:
-- pip install 'travis-cargo<0.2' --user
-- export PATH=$HOME/.local/bin:$PATH
-
 addons:
   apt:
     packages:
     - postfix
-    - libcurl4-openssl-dev
-    - libelf-dev
-    - libdw-dev
 
 before_script:
-- smtp-sink 2525 1000&
-- sudo chgrp -R postdrop /var/spool/postfix/maildrop
+  - smtp-sink 2525 1000&
+  - sudo chgrp -R postdrop /var/spool/postfix/maildrop
 
 script:
-- travis-cargo build
-- travis-cargo test
-- travis-cargo doc
-
-after_success:
-- ./.travis/doc.sh
-- ./.travis/coverage.sh
-- travis-cargo --only nightly bench
+  - |
+      cd lettre && cargo build && cargo test
+      cd ../lettre_email && cargo build && cargo test
 
 env:
   global:

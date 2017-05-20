@@ -1,0 +1,29 @@
+[package]
+
+name = "lettre"
+version = "0.7.0"
+description = "Email client"
+readme = "README.md"
+documentation = "https://docs.rs/lettre/"
+repository = "https://github.com/lettre/lettre"
+license = "MIT"
+authors = ["Alexis Mousset <contact@amousset.me>"]
+categories = ["email"]
+keywords = ["email", "smtp", "mailer"]
+
+[badges]
+travis-ci = { repository = "lettre/lettre" }
+
+[dependencies]
+bufstream = "^0.1"
+log = "^0.3"
+openssl = "^0.9"
+base64 = "^0.5"
+hex = "^0.2"
+rust-crypto = "^0.2"
+
+[dev-dependencies]
+env_logger = "^0.4"
+
+[features]
+unstable = []
