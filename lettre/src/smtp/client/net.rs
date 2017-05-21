@@ -27,7 +27,7 @@ impl Connector for NetworkStream {
                 match Ssl::new(context) {
                     Ok(ssl) => {
                         ssl.connect(tcp_stream)
-                            .map(|s| NetworkStream::Ssl(s))
+                            .map(NetworkStream::Ssl)
                             .map_err(|e| io::Error::new(ErrorKind::Other, e))
                     }
                     Err(e) => Err(io::Error::new(ErrorKind::Other, e)),

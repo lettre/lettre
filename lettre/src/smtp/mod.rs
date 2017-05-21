@@ -286,6 +286,7 @@ impl SmtpTransport {
 
 impl EmailTransport<SmtpResult> for SmtpTransport {
     /// Sends an email
+    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
     fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
 
         // Extract email information
@@ -299,8 +300,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         if self.state.connection_reuse_count == 0 {
             try!(self.client
                      .connect(&self.client_info.server_addr,
-                              match &self.client_info.security_level {
-                                  &SecurityLevel::EncryptedWrapper => {
+                              match self.client_info.security_level {
+                                  SecurityLevel::EncryptedWrapper => {
                                       Some(&self.client_info.ssl_context)
                                   }
                                   _ => None,
@@ -396,7 +397,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
         // Recipient
         for to_address in &email.to() {
-            try_smtp!(self.client.rcpt(&to_address), self);
+            try_smtp!(self.client.rcpt(to_address), self);
             // Log the rcpt command
             info!("{}: to=<{}>", message_id, to_address);
         }
