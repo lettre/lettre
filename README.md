@@ -1,7 +1,6 @@
 # lettre
 [![Build Status](https://travis-ci.org/lettre/lettre.svg?branch=master)](https://travis-ci.org/lettre/lettre)
 [![Build status](https://ci.appveyor.com/api/projects/status/mpwglemugjtkps2d/branch/master?svg=true)](https://ci.appveyor.com/project/amousset/lettre/branch/master)
-[![Coverage Status](https://coveralls.io/repos/github/lettre/lettre/badge.svg?branch=master)](https://coveralls.io/github/lettre/lettre?branch=master)
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
 [![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
@@ -43,7 +42,7 @@ lettre = "0.6"
 
 ## Testing
 
-The tests require an open mail server listening locally on port 25 and the `sendmail` command.
+The tests require an open mail server listening locally on port 2525 and the `sendmail` command.
 
 ## License
 
