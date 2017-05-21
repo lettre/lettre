@@ -53,10 +53,14 @@ pub struct ServerInfo {
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{} with {}", self.name, match self.features.is_empty() {
-            true => "no supported features".to_string(),
-            false => format!("{:?}", self.features),
-        })
+        write!(f,
+               "{} with {}",
+               self.name,
+               if self.features.is_empty() {
+                   "no supported features".to_string()
+               } else {
+                   format!("{:?}", self.features)
+               })
     }
 }
 

@@ -1,13 +1,13 @@
 //! Simple email representation
 
-use error::Error;
 use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
+use error::Error;
+use lettre::SendableEmail;
 use mime::Mime;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use time::{Tm, now};
 use uuid::Uuid;
-use lettre::SendableEmail;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait IntoHeader {
@@ -776,9 +776,9 @@ pub trait ExtractableEmail {
 #[cfg(test)]
 mod test {
 
-    use lettre::SendableEmail;
     use super::{Email, EmailBuilder, Envelope, IntoEmail, SimpleEmail};
     use email_format::{Header, MimeMessage};
+    use lettre::SendableEmail;
     use time::now;
 
     use uuid::Uuid;
