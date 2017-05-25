@@ -1,4 +1,107 @@
-//! This transport sends emails using the SMTP protocol
+//! The SMTP transport sends emails using the SMTP protocol.
+//!
+//! This SMTP client follows [RFC
+//! 5321](https://tools.ietf.org/html/rfc5321), and is designed to efficiently send emails from an
+//! application to a relay email server, as it relies as much as possible on the relay server
+//! for sanity and RFC compliance checks.
+//!
+//! It implements the following extensions:
+//!
+//! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN and
+//! CRAM-MD5 mechanisms
+//! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
+//! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
+//!
+//! #### Simple example
+//!
+//! This is the most basic example of usage:
+//!
+//! ```rust,no_run
+//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::smtp::SmtpTransportBuilder;
+//! use lettre::smtp::SecurityLevel;
+//!
+//! let email = SimpleSendableEmail::new(
+//!                 "user@localhost",
+//!                 vec!["root@localhost"],
+//!                 "message_id",
+//!                 "Hello world"
+//!             );
+//!
+//! // Open a local connection on port 25
+//! let mut mailer =
+//! SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
+//! // Send the email
+//! let result = mailer.send(email);
+//!
+//! assert!(result.is_ok());
+//! ```
+//!
+//! #### Complete example
+//!
+//! ```rust,no_run
+//! use lettre::smtp::{SecurityLevel, SmtpTransport,
+//! SmtpTransportBuilder};
+//! use lettre::smtp::authentication::Mechanism;
+//! use lettre::smtp::SUBMISSION_PORT;
+//! use lettre::{SimpleSendableEmail, EmailTransport};
+//!
+//! let email = SimpleSendableEmail::new(
+//!                 "user@localhost",
+//!                 vec!["root@localhost"],
+//!                 "message_id",
+//!                 "Hello world"
+//!             );
+//!
+//! // Connect to a remote server on a custom port
+//! let mut mailer = SmtpTransportBuilder::new(("server.tld",
+//! SUBMISSION_PORT)).unwrap()
+//!     // Set the name sent during EHLO/HELO, default is `localhost`
+//!     .hello_name("my.hostname.tld")
+//!     // Add credentials for authentication
+//!     .credentials("username", "password")
+//!     // Specify a TLS security level. You can also specify an SslContext with
+//!     // .ssl_context(SslContext::Ssl23)
+//!     .security_level(SecurityLevel::AlwaysEncrypt)
+//!     // Enable SMTPUTF8 if the server supports it
+//!     .smtp_utf8(true)
+//!     // Configure expected authentication mechanism
+//!     .authentication_mechanism(Mechanism::CramMd5)
+//!     // Enable connection reuse
+//!     .connection_reuse(true).build();
+//!
+//! let result_1 = mailer.send(email.clone());
+//! assert!(result_1.is_ok());
+//!
+//! // The second email will use the same connection
+//! let result_2 = mailer.send(email);
+//! assert!(result_2.is_ok());
+//!
+//! // Explicitly close the SMTP transaction as we enabled connection reuse
+//! mailer.close();
+//! ```
+//!
+//! #### Lower level
+//!
+//! You can also send commands, here is a simple email transaction without
+//! error handling:
+//!
+//! ```rust
+//! use lettre::smtp::SMTP_PORT;
+//! use lettre::smtp::client::Client;
+//! use lettre::smtp::client::net::NetworkStream;
+//!
+//! let mut email_client: Client<NetworkStream> = Client::new();
+//! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
+//! let _ = email_client.ehlo("my_hostname");
+//! let _ = email_client.mail("user@example.com", None);
+//! let _ = email_client.rcpt("user@example.org");
+//! let _ = email_client.data();
+//! let _ = email_client.message("Test email");
+//! let _ = email_client.quit();
+//! ```
+
 
 use EmailTransport;
 use SendableEmail;

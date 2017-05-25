@@ -1,0 +1,56 @@
+[
+    {
+        "uri": "/content/basics/_index",
+        "title": "Some Chapter title",
+        "content": "\nChapter X\n\n Some Chapter title\n\nLorem ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/basics/first-content",
+        "title": "Some Title",
+        "content": "\nLorem Ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/creating-messages/_index",
+        "title": "Creating messages",
+        "content": "\nCreating messages\n\n test2\n\nLorem ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/creating-messages/first-content",
+        "title": "Some Title",
+        "content": "\nLorem Ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/sending-messages/_index",
+        "title": "Sending messages",
+        "content": "\nSending messages\n\n test\n\nLorem ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/sending-messages/file",
+        "title": "File transport",
+        "content": "\nLorem Ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/sending-messages/sendmail",
+        "title": "Sendmail transport",
+        "content": "\nLorem Ipsum\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/sending-messages/smtp",
+        "title": "SMTP transport",
+        "content": "\nThis transport uses the SMTP protocol to send emails over the network (locally or remotely).\n\nIt is desinged to be:\n\nSecured: email are encrypted by default\nModern: Unicode support for email content and sender/recipient adresses when compatible\nFast: supports tcp connection reuse\n\nThis client is designed to send emails to a relay server, and should not be used to send\nemails directly to the destination.\n\nThe relay server can be the local email server, a specific host or a third-party service.\n\nSimple example\n\nThis is the most basic example of usage:\n\n{{ highlight rust }}\nuse lettre::{SimpleSendableEmail, EmailTransport};\nuse lettre::smtp::SmtpTransportBuilder;\nuse lettre::smtp::SecurityLevel;\n\nlet email = SimpleSendableEmail::new(\n                \"user@localhost\",\n                vec![\"root@localhost\"],\n                \"message_id\",\n                \"Hello world\"\n            );\n\n// Open a local connection on port 25\nlet mut mailer =\nSmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();\n// Send the email\nlet result = mailer.send(email);\n\nassert!(result.is_ok());\n{{ /highlight }}\n\n Complete example\n\n{{ highlight rust }}\nuse lettre::smtp::{SecurityLevel, SmtpTransport,\nSmtpTransportBuilder};\nuse lettre::smtp::authentication::Mechanism;\nuse lettre::smtp::SUBMISSION_PORT;\nuse lettre::{SimpleSendableEmail, EmailTransport};\n\nlet email = SimpleSendableEmail::new(\n                \"user@localhost\",\n                vec![\"root@localhost\"],\n                \"message_id\",\n                \"Hello world\"\n            );\n\n// Connect to a remote server on a custom port\nlet mut mailer = SmtpTransportBuilder::new((\"server.tld\",\nSUBMISSION_PORT)).unwrap()\n    // Set the name sent during EHLO/HELO, default is localhost\n    .hello_name(\"my.hostname.tld\")\n    // Add credentials for authentication\n    .credentials(\"username\", \"password\")\n    // Specify a TLS security level. You can also specify an SslContext with\n    // .ssl_context(SslContext::Ssl23)\n    .security_level(SecurityLevel::AlwaysEncrypt)\n    // Enable SMTPUTF8 if the server supports it\n    .smtp_utf8(true)\n    // Configure expected authentication mechanism\n    .authentication_mechanism(Mechanism::CramMd5)\n    // Enable connection reuse\n    .connection_reuse(true).build();\n\nlet result_1 = mailer.send(email.clone());\nassert!(result1.isok());\n\n// The second email will use the same connection\nlet result_2 = mailer.send(email);\nassert!(result2.isok());\n\n// Explicitly close the SMTP transaction as we enabled connection reuse\nmailer.close();\n{{ /highlight }}\n\nLower level\n\nYou can also send commands, here is a simple email transaction without\nerror handling:\n\n{{ highlight rust }}\nuse lettre::smtp::SMTP_PORT;\nuse lettre::smtp::client::Client;\nuse lettre::smtp::client::net::NetworkStream;\n\nlet mut email_client: ClientNetworkStream = Client::new();\nlet _ = emailclient.connect(&(\"localhost\", SMTPPORT), None);\nlet _ = emailclient.ehlo(\"myhostname\");\nlet _ = email_client.mail(\"user@example.com\", None);\nlet _ = email_client.rcpt(\"user@example.org\");\nlet _ = email_client.data();\nlet _ = email_client.message(\"Test email\");\nlet _ = email_client.quit();\n{{ /highlight }}\n\n",
+        "tags": []
+    },
+    {
+        "uri": "/content/sending-messages/stub",
+        "title": "Stub transport",
+        "content": "\nLorem Ipsum\n",
+        "tags": []
+    }
+]

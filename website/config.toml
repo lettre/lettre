@@ -1,0 +1,7 @@
+baseURL = "https://lettre.github.io/"
+languageCode = "en-us"
+title = "Lettre site"
+theme = "hugo-theme-learn"
+search = true
+author = "Alexis Mousset"
+publishDir = "../docs"

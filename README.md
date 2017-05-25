@@ -33,6 +33,7 @@ Development version:
 
 ## Install
 
+This library requires rust 1.13 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml

@@ -1,5 +1,20 @@
-//! This transport uilizes the sendmail executable for each email.
-
+//! The sendmail transport sends the email using the local sendmail command.
+//!
+//! ```rust
+//! use lettre::sendmail::SendmailTransport;
+//! use lettre::{SimpleSendableEmail, EmailTransport};
+//!
+//! let email = SimpleSendableEmail::new(
+//!                 "user@localhost",
+//!                 vec!["root@localhost"],
+//!                 "message_id",
+//!                 "Hello world"
+//!             );
+//!
+//! let mut sender = SendmailTransport::new();
+//! let result = sender.send(email);
+//! assert!(result.is_ok());
+//! ```
 
 use EmailTransport;
 use SendableEmail;
