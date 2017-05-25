@@ -10,7 +10,7 @@ The file transport writes the emails to the given directory. The name of the fil
 `message_id.txt`.
 It can be useful for testing purposes, or if you want to keep track of sent messages.
 
-{{< highlight rust >}}
+``` rust
 use std::env::temp_dir;
 
 use lettre::file::FileEmailTransport;
@@ -27,7 +27,7 @@ let email = SimpleSendableEmail::new(
 
 let result = sender.send(email);
 assert!(result.is_ok());
-{{< /highlight >}}
+```
 
 Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
 

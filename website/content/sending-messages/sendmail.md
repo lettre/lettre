@@ -8,7 +8,7 @@ weight = 3
 
 The sendmail transport sends the email using the local sendmail command.
 
-{{< highlight rust >}}
+``` rust
 use lettre::sendmail::SendmailTransport;
 use lettre::{SimpleSendableEmail, EmailTransport};
 
@@ -22,4 +22,4 @@ let email = SimpleSendableEmail::new(
 let mut sender = SendmailTransport::new();
 let result = sender.send(email);
 assert!(result.is_ok());
-{{< /highlight >}}
+```

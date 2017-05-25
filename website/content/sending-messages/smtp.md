@@ -23,7 +23,7 @@ The relay server can be the local email server, a specific host or a third-party
 
 This is the most basic example of usage:
 
-{{< highlight rust >}}
+``` rust
 use lettre::{SimpleSendableEmail, EmailTransport};
 use lettre::smtp::SmtpTransportBuilder;
 use lettre::smtp::SecurityLevel;
@@ -42,11 +42,11 @@ SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportu
 let result = mailer.send(email);
 
 assert!(result.is_ok());
-{{< /highlight >}}
+```
 
 #### Complete example
 
-{{< highlight rust >}}
+``` rust
 use lettre::smtp::{SecurityLevel, SmtpTransport,
 SmtpTransportBuilder};
 use lettre::smtp::authentication::Mechanism;
@@ -86,14 +86,14 @@ assert!(result_2.is_ok());
 
 // Explicitly close the SMTP transaction as we enabled connection reuse
 mailer.close();
-{{< /highlight >}}
+```
 
 #### Lower level
 
 You can also send commands, here is a simple email transaction without
 error handling:
 
-{{< highlight rust >}}
+``` rust
 use lettre::smtp::SMTP_PORT;
 use lettre::smtp::client::Client;
 use lettre::smtp::client::net::NetworkStream;
@@ -106,5 +106,5 @@ let _ = email_client.rcpt("user@example.org");
 let _ = email_client.data();
 let _ = email_client.message("Test email");
 let _ = email_client.quit();
-{{< /highlight >}}
+```
 

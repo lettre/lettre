@@ -5,3 +5,4 @@ theme = "hugo-theme-learn"
 search = true
 author = "Alexis Mousset"
 publishDir = "../docs"
+PygmentsCodeFences = true
