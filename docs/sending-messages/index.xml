@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sending messages on Lettre site</title>
+    <link>https://lettre.github.io/lettre/sending-messages/</link>
+    <description>Recent content in Sending messages on Lettre site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 21 May 2017 23:46:01 +0200</lastBuildDate>
+    
+	<atom:link href="https://lettre.github.io/lettre/sending-messages/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Introduction</title>
+      <link>https://lettre.github.io/lettre/sending-messages/intro/</link>
+      <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
+      
+      <guid>https://lettre.github.io/lettre/sending-messages/intro/</guid>
+      <description>This mailer contains several different transports for your emails. To be sendable, the emails have to implement SendableEmail, which is the case for emails created with lettre_email.
+The following transports are available:
+ The SmtpTransport uses the SMTP protocol to send the message over the network. It is the prefered way of sending emails. The SendmailTransport uses the sendmail command to send messages. It is an alternative to the SMTP transport.</description>
+    </item>
+    
+    <item>
+      <title>SMTP transport</title>
+      <link>https://lettre.github.io/lettre/sending-messages/smtp/</link>
+      <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
+      
+      <guid>https://lettre.github.io/lettre/sending-messages/smtp/</guid>
+      <description>This transport uses the SMTP protocol to send emails over the network (locally or remotely).
+It is desinged to be:
+ Secured: email are encrypted by default Modern: Unicode support for email content and sender/recipient adresses when compatible Fast: supports tcp connection reuse  This client is designed to send emails to a relay server, and should not be used to send emails directly to the destination.
+The relay server can be the local email server, a specific host or a third-party service.</description>
+    </item>
+    
+    <item>
+      <title>Sendmail transport</title>
+      <link>https://lettre.github.io/lettre/sending-messages/sendmail/</link>
+      <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
+      
+      <guid>https://lettre.github.io/lettre/sending-messages/sendmail/</guid>
+      <description>The sendmail transport sends the email using the local sendmail command.
+uselettre::sendmail::SendmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letmutsender =SendmailTransport::new(); letresult =sender.send(email); assert!(result.is_ok());  </description>
+    </item>
+    
+    <item>
+      <title>File transport</title>
+      <link>https://lettre.github.io/lettre/sending-messages/file/</link>
+      <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
+      
+      <guid>https://lettre.github.io/lettre/sending-messages/file/</guid>
+      <description>The file transport writes the emails to the given directory. The name of the file will be message_id.txt. It can be useful for testing purposes, or if you want to keep track of sent messages.
+usestd::env::temp_dir; uselettre::file::FileEmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; // Write to the local temp directory letmutsender =FileEmailTransport::new(temp_dir()); letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letresult =sender.send(email); assert!(result.is_ok());  Example result in /tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt:
+b7c211bc-9811-45ce-8cd9-68eab575d695: from=&amp;lt;user@localhost&amp;gt; to=&amp;lt;root@localhost&amp;gt; To: &amp;lt;root@localhost&amp;gt; From: &amp;lt;user@localhost&amp;gt; Subject: Hello Date: Sat, 31 Oct 2015 13:42:19 +0100 Message-ID: &amp;lt;b7c211bc-9811-45ce-8cd9-68eab575d695.</description>
+    </item>
+    
+    <item>
+      <title>Stub transport</title>
+      <link>https://lettre.github.io/lettre/sending-messages/stub/</link>
+      <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
+      
+      <guid>https://lettre.github.io/lettre/sending-messages/stub/</guid>
+      <description>The stub transport only logs message envelope and drops the content. It can be useful for testing purposes.
+uselettre::stub::StubEmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letmutsender =StubEmailTransport; letresult =sender.send(email); assert!(result.is_ok());  Will log the line:
+b7c211bc-9811-45ce-8cd9-68eab575d695: from=&amp;lt;user@localhost&amp;gt; to=&amp;lt;root@localhost&amp;gt;  </description>
+    </item>
+    
+  </channel>
+</rss>
