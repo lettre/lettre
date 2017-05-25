@@ -265,7 +265,6 @@
 <p>The file transport writes the emails to the given directory. The name of the file will be
 <code>message_id.txt</code>.
 It can be useful for testing purposes, or if you want to keep track of sent messages.</p>
-
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> std</span>::<span style="color: #f8f8f2">env</span>::<span style="color: #f8f8f2">temp_dir;</span>
 
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">file</span>::<span style="color: #f8f8f2">FileEmailTransport;</span>
@@ -284,10 +283,8 @@ It can be useful for testing purposes, or if you want to keep track of sent mess
 <span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
 </pre></div>
 
-
 <p>Example result in <code>/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt</code>:</p>
-
-<pre><code class="language-text">b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
 To: &lt;root@localhost&gt;
 From: &lt;user@localhost&gt;
 Subject: Hello
@@ -295,7 +292,7 @@ Date: Sat, 31 Oct 2015 13:42:19 +0100
 Message-ID: &lt;b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost&gt;
 
 Hello World!
-</code></pre>
+</pre></div>
 
 
       

@@ -264,7 +264,6 @@
 
 <p>The stub transport only logs message envelope and drops the content. It can be useful for
 testing purposes.</p>
-
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">stub</span>::<span style="color: #f8f8f2">StubEmailTransport;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
 
@@ -280,11 +279,9 @@ testing purposes.</p>
 <span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
 </pre></div>
 
-
 <p>Will log the line:</p>
-
-<pre><code class="language-text">b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
-</code></pre>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
+</pre></div>
 
 
       

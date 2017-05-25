@@ -297,7 +297,6 @@ emails directly to the destination.</p>
 <h4 id="simple-example">Simple example</h4>
 
 <p>This is the most basic example of usage:</p>
-
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SmtpTransportBuilder;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SecurityLevel;</span>
@@ -318,10 +317,8 @@ emails directly to the destination.</p>
 <span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
 </pre></div>
 
-
 <h4 id="complete-example">Complete example</h4>
-
-<p><div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">{SecurityLevel, SmtpTransport,</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">{SecurityLevel, SmtpTransport,</span>
 <span style="color: #f8f8f2">SmtpTransportBuilder};</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">authentication</span>::<span style="color: #f8f8f2">Mechanism;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SUBMISSION_PORT;</span>
@@ -361,14 +358,12 @@ emails directly to the destination.</p>
 <span style="color: #75715e">// Explicitly close the SMTP transaction as we enabled connection reuse</span>
 <span style="color: #f8f8f2">mailer.close();</span>
 </pre></div>
-</p>
 
 <h4 id="lower-level">Lower level</h4>
 
 <p>You can also send commands, here is a simple email transaction without
 error handling:</p>
-
-<p><div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SMTP_PORT;</span>
+<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SMTP_PORT;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">client</span>::<span style="color: #f8f8f2">Client;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">client</span>::<span style="color: #f8f8f2">net</span>::<span style="color: #f8f8f2">NetworkStream;</span>
 
@@ -381,7 +376,6 @@ error handling:</p>
 <span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.message(</span><span style="color: #e6db74">&quot;Test email&quot;</span><span style="color: #f8f8f2">);</span>
 <span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.quit();</span>
 </pre></div>
-</p>
 
 
       
