@@ -2,7 +2,12 @@ baseURL = "https://lettre.github.io/lettre/"
 languageCode = "en-us"
 title = "Lettre site"
 theme = "hugo-theme-learn"
-search = true
-author = "Alexis Mousset"
 publishDir = "../docs"
 PygmentsCodeFences = true
+
+[params]
+  editURL = "https://github.com/lettre/lettre/edit/master/website/content/"
+  description = "Documentation for the Lettre mailer in Rust"
+  author = "Alexis Mousset"
+  autoNav = true
+  search = true
