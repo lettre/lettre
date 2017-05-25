@@ -9,7 +9,7 @@ weight = 5
 The stub transport only logs message envelope and drops the content. It can be useful for
 testing purposes.
 
-{{< highlight rust >}}
+``` rust
 use lettre::stub::StubEmailTransport;
 use lettre::{SimpleSendableEmail, EmailTransport};
 
@@ -23,7 +23,7 @@ let email = SimpleSendableEmail::new(
 let mut sender = StubEmailTransport;
 let result = sender.send(email);
 assert!(result.is_ok());
-{{< /highlight >}}
+```
 
 Will log the line:
 
