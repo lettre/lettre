@@ -263,7 +263,6 @@
                 
 
 <p>The sendmail transport sends the email using the local sendmail command.</p>
-
 <div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">sendmail</span>::<span style="color: #f8f8f2">SendmailTransport;</span>
 <span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
 
@@ -278,7 +277,6 @@
 <span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> sender.send(email);</span>
 <span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
 </pre></div>
-
 
 
       
