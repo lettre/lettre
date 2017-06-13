@@ -1,12 +1,73 @@
 //! A trait to represent a stream
 
 use openssl::ssl::{Ssl, SslContext, SslStream};
-use std::fmt;
-use std::fmt::{Debug, Formatter};
+
+use smtp::client::mock::MockStream;
 use std::io;
 use std::io::{ErrorKind, Read, Write};
-use std::net::{SocketAddr, TcpStream};
+use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::Duration;
+
+#[derive(Debug)]
+/// Represents the different types of underlying network streams
+pub enum NetworkStream {
+    /// Plain TCP stream
+    Tcp(TcpStream),
+    /// Encrypted TCP stream
+    Ssl(SslStream<TcpStream>),
+    /// Mock stream
+    Mock(MockStream),
+}
+
+impl NetworkStream {
+    /// Returns peer's address
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        match *self {
+            NetworkStream::Tcp(ref s) => s.peer_addr(),
+            NetworkStream::Ssl(ref s) => s.get_ref().peer_addr(),
+            NetworkStream::Mock(_) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80)))
+            }
+        }
+    }
+
+    /// Shutdowns the connection
+    pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
+        match *self {
+            NetworkStream::Tcp(ref s) => s.shutdown(how),
+            NetworkStream::Ssl(ref s) => s.get_ref().shutdown(how),
+            NetworkStream::Mock(_) => Ok(()),
+        }
+    }
+}
+
+impl Read for NetworkStream {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match *self {
+            NetworkStream::Tcp(ref mut s) => s.read(buf),
+            NetworkStream::Ssl(ref mut s) => s.read(buf),
+            NetworkStream::Mock(ref mut s) => s.read(buf),
+        }
+    }
+}
+
+impl Write for NetworkStream {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match *self {
+            NetworkStream::Tcp(ref mut s) => s.write(buf),
+            NetworkStream::Ssl(ref mut s) => s.write(buf),
+            NetworkStream::Mock(ref mut s) => s.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        match *self {
+            NetworkStream::Tcp(ref mut s) => s.flush(),
+            NetworkStream::Ssl(ref mut s) => s.flush(),
+            NetworkStream::Mock(ref mut s) => s.flush(),
+        }
+    }
+}
 
 /// A trait for the concept of opening a stream
 pub trait Connector: Sized {
@@ -33,14 +94,14 @@ impl Connector for NetworkStream {
                     Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
                 }
             }
-            None => Ok(NetworkStream::Plain(tcp_stream)),
+            None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
     }
 
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
 
         *self = match *self {
-            NetworkStream::Plain(ref mut stream) => {
+            NetworkStream::Tcp(ref mut stream) => {
                 match Ssl::new(ssl_context) {
                     Ok(ssl) => {
                         match ssl.connect(stream.try_clone().unwrap()) {
@@ -52,6 +113,7 @@ impl Connector for NetworkStream {
                 }
             }
             NetworkStream::Ssl(_) => return Ok(()),
+            NetworkStream::Mock(_) => return Ok(()),
         };
 
         Ok(())
@@ -60,50 +122,9 @@ impl Connector for NetworkStream {
 
     fn is_encrypted(&self) -> bool {
         match *self {
-            NetworkStream::Plain(_) => false,
+            NetworkStream::Tcp(_) => false,
             NetworkStream::Ssl(_) => true,
-        }
-    }
-}
-
-
-/// Represents the different types of underlying network streams
-pub enum NetworkStream {
-    /// Plain TCP
-    Plain(TcpStream),
-    /// SSL over TCP
-    Ssl(SslStream<TcpStream>),
-}
-
-impl Debug for NetworkStream {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("NetworkStream(_)")
-    }
-}
-
-impl Read for NetworkStream {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        match *self {
-            NetworkStream::Plain(ref mut stream) => stream.read(buf),
-            NetworkStream::Ssl(ref mut stream) => stream.read(buf),
-        }
-    }
-}
-
-impl Write for NetworkStream {
-    #[inline]
-    fn write(&mut self, msg: &[u8]) -> io::Result<usize> {
-        match *self {
-            NetworkStream::Plain(ref mut stream) => stream.write(msg),
-            NetworkStream::Ssl(ref mut stream) => stream.write(msg),
-        }
-    }
-    #[inline]
-    fn flush(&mut self) -> io::Result<()> {
-        match *self {
-            NetworkStream::Plain(ref mut stream) => stream.flush(),
-            NetworkStream::Ssl(ref mut stream) => stream.flush(),
+            NetworkStream::Mock(_) => false,
         }
     }
 }
@@ -119,16 +140,18 @@ pub trait Timeout: Sized {
 impl Timeout for NetworkStream {
     fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
-            NetworkStream::Plain(ref mut stream) => stream.set_read_timeout(duration),
-            NetworkStream::Ssl(ref mut stream) => stream.get_mut().set_read_timeout(duration),
+            NetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
+            NetworkStream::Ssl(ref mut stream) => stream.get_ref().set_read_timeout(duration),
+            NetworkStream::Mock(_) => Ok(()),
         }
     }
 
     /// Set write tiemout for IO calls
     fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
-            NetworkStream::Plain(ref mut stream) => stream.set_write_timeout(duration),
-            NetworkStream::Ssl(ref mut stream) => stream.get_mut().set_write_timeout(duration),
+            NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
+            NetworkStream::Ssl(ref mut stream) => stream.get_ref().set_write_timeout(duration),
+            NetworkStream::Mock(_) => Ok(()),
         }
     }
 }
