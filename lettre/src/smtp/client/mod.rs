@@ -1,6 +1,5 @@
 //! SMTP client
 
-
 use base64;
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
@@ -17,6 +16,7 @@ use std::string::String;
 use std::time::Duration;
 
 pub mod net;
+pub mod mock;
 
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
 ///
@@ -67,7 +67,7 @@ impl<S: Write + Read> Client<S> {
     }
 }
 
-impl<S: Connector + Timeout + Write + Read + Debug> Client<S> {
+impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.quit();
