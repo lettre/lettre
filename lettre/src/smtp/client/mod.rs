@@ -24,11 +24,10 @@ pub mod mock;
 #[inline]
 fn escape_dot(string: &str) -> String {
     if string.starts_with('.') {
-            format!(".{}", string)
-        } else {
-            string.to_string()
-        }
-        .replace("\r.", "\r..")
+        format!(".{}", string)
+    } else {
+        string.to_string()
+    }.replace("\r.", "\r..")
         .replace("\n.", "\n..")
 }
 
@@ -204,12 +203,12 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
         if mechanism.supports_initial_response() {
             self.command(&format!("AUTH {} {}",
-                                 mechanism,
-                                 base64::encode_config(try!(mechanism.response(username,
+                                  mechanism,
+                                  base64::encode_config(try!(mechanism.response(username,
                                                                                password,
                                                                                None))
-                                                               .as_bytes(),
-                                                       base64::STANDARD)))
+                                                            .as_bytes(),
+                                                        base64::STANDARD)))
         } else {
             let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
                       .first_word() {
@@ -234,10 +233,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             let mut challenge_expected = 3;
 
             while challenge_expected > 0 {
-                let response = try!(self.command(&base64::encode_config(&try!(mechanism.response(username,
+                let response =
+                    try!(self.command(&base64::encode_config(&try!(mechanism.response(username,
                                                                 password,
                                                                 Some(&decoded_challenge)))
-                                                                      .as_bytes(),
+                                                                 .as_bytes(),
                                                              base64::STANDARD)));
 
                 if !response.has_code(334) {

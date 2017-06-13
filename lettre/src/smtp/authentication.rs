@@ -10,7 +10,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 
 /// Represents authentication mechanisms
-#[derive(PartialEq,Eq,Copy,Clone,Hash,Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 pub enum Mechanism {
     /// PLAIN authentication mechanism
     /// RFC 4616: https://tools.ietf.org/html/rfc4616

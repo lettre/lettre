@@ -40,7 +40,7 @@ pub trait EmailTransport<U> {
 }
 
 /// Minimal email structure
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct SimpleSendableEmail {
     /// To
     to: Vec<String>,
