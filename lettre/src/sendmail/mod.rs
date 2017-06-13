@@ -25,7 +25,7 @@ use std::process::{Command, Stdio};
 pub mod error;
 
 /// Sends an email using the `sendmail` command
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct SendmailTransport {
     command: String,
 }

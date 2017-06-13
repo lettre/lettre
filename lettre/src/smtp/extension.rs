@@ -9,7 +9,7 @@ use std::fmt::{Display, Formatter};
 use std::result::Result;
 
 /// Supported ESMTP keywords
-#[derive(PartialEq,Eq,Hash,Clone,Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -39,7 +39,7 @@ impl Display for Extension {
 }
 
 /// Contains information about an SMTP server
-#[derive(Clone,Debug,Eq,PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ServerInfo {
     /// Server name
     ///

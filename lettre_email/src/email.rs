@@ -108,7 +108,7 @@ impl IntoEmail for SimpleEmail {
 
 
 /// Simple representation of an email, useful for some transports
-#[derive(PartialEq,Eq,Clone,Debug,Default)]
+#[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct SimpleEmail {
     from: Option<Mailbox>,
     to: Vec<Mailbox>,
@@ -236,14 +236,14 @@ impl SimpleEmail {
 }
 
 /// Builds a `MimeMessage` structure
-#[derive(PartialEq,Eq,Clone,Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PartBuilder {
     /// Message
     message: MimeMessage,
 }
 
 /// Builds an `Email` structure
-#[derive(PartialEq,Eq,Clone,Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct EmailBuilder {
     /// Message
     message: PartBuilder,
@@ -266,7 +266,7 @@ pub struct EmailBuilder {
 }
 
 /// Simple email enveloppe representation
-#[derive(PartialEq,Eq,Clone,Debug,Default)]
+#[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct Envelope {
     /// The envelope recipients' addresses
     pub to: Vec<String>,
@@ -303,7 +303,7 @@ impl Envelope {
 }
 
 /// Simple email representation
-#[derive(PartialEq,Eq,Clone,Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Email {
     /// Message
     message: MimeMessage,
@@ -828,7 +828,7 @@ mod test {
             .headers
             .insert(Header::new_with_value("Message-ID".to_string(),
                                            format!("<{}@rust-smtp>", current_message))
-                            .unwrap());
+                        .unwrap());
 
         email
             .message

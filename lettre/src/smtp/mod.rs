@@ -148,7 +148,7 @@ pub const MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 pub const NUL: &'static str = "\0";
 
 /// TLS security level
-#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum SecurityLevel {
     /// Use a TLS wrapped connection
     ///
@@ -401,14 +401,13 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         if self.state.connection_reuse_count == 0 {
-            try!(self.client
-                     .connect(&self.client_info.server_addr,
-                              match self.client_info.security_level {
-                                  SecurityLevel::EncryptedWrapper => {
-                                      Some(&self.client_info.ssl_context)
-                                  }
-                                  _ => None,
-                              }));
+            try!(self.client.connect(
+                &self.client_info.server_addr,
+                match self.client_info.security_level {
+                    SecurityLevel::EncryptedWrapper => Some(&self.client_info.ssl_context),
+                    _ => None,
+                },
+            ));
 
             try!(self.client.set_timeout(self.client_info.timeout));
 

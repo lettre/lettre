@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 pub type MockCursor = Cursor<Vec<u8>>;
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub struct MockStream {
     reader: Arc<Mutex<MockCursor>>,
     writer: Arc<Mutex<MockCursor>>,
