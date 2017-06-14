@@ -54,7 +54,6 @@
 
 #![deny(missing_docs, unsafe_code, unstable_features, warnings, missing_debug_implementations)]
 
-#[macro_use]
 extern crate mime;
 extern crate time;
 extern crate uuid;
