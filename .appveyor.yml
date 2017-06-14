@@ -18,6 +18,6 @@ install:
   - cargo -vV
 build: false
 test_script:
-  - cargo test --verbose --manifest-path lettre/Cargo.toml
+  - cargo build --verbose --manifest-path lettre/Cargo.toml
   - cargo test --verbose --manifest-path lettre_email/Cargo.toml
   
