@@ -29,9 +29,8 @@ before_script:
   - sudo chgrp -R postdrop /var/spool/postfix/maildrop
 
 script:
-  - |
-      cd lettre && cargo build && cargo test
-      cd ../lettre_email && cargo build && cargo test
+  - cargo test --verbose --manifest-path lettre/Cargo.toml
+  - cargo test --verbose --manifest-path lettre_email/Cargo.toml
 
 env:
   global:
