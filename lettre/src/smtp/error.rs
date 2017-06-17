@@ -46,29 +46,31 @@ impl StdError for Error {
         match *self {
             // Try to display the first line of the server's response that usually
             // contains a short humanly readable error message
-            Transient(ref e) => {
-                match e.first_line() {
+            Transient(ref err) => {
+                match err.first_line() {
                     Some(line) => line,
                     None => "undetailed transient error during SMTP transaction",
                 }
             }
-            Permanent(ref e) => {
-                match e.first_line() {
+            Permanent(ref err) => {
+                match err.first_line() {
                     Some(line) => line,
                     None => "undetailed permanent error during SMTP transaction",
                 }
             }
-            ResponseParsing(e) => e,
-            ChallengeParsing(ref e) => e.description(),
-            Utf8Parsing(ref e) => e.description(),
+            ResponseParsing(err) => err,
+            ChallengeParsing(ref err) => err.description(),
+            Utf8Parsing(ref err) => err.description(),
             Resolution => "could not resolve hostname",
-            Client(e) => e,
-            Io(ref e) => e.description(),
+            Client(err) => err,
+            Io(ref err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
+            ChallengeParsing(ref err) => Some(&*err as &StdError),
+            Utf8Parsing(ref err) => Some(&*err as &StdError),
             Io(ref err) => Some(&*err as &StdError),
             _ => None,
         }

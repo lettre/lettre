@@ -25,8 +25,8 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            Client(_) => "an unknown error occured",
-            Io(_) => "an I/O error occured",
+            Client(err) => err,
+            Io(ref err) => err.description(),
         }
     }
 
