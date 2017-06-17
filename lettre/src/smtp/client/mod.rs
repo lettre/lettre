@@ -44,7 +44,7 @@ fn remove_crlf(string: &str) -> String {
 }
 
 /// Structure that implements the SMTP client
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Client<S: Write + Read = NetworkStream> {
     /// TCP stream between client and server
     /// Value is None before connection

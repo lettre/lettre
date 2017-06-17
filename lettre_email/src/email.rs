@@ -243,8 +243,15 @@ pub struct PartBuilder {
     message: MimeMessage,
 }
 
+impl Default for PartBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
 /// Builds an `Email` structure
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct EmailBuilder {
     /// Message
     message: PartBuilder,
@@ -506,8 +513,9 @@ impl EmailBuilder {
 
     /// Adds a `Subject` header
     pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.message
-            .add_header(("Subject".to_string(), subject.into()));
+        self.message.add_header(
+            ("Subject".to_string(), subject.into()),
+        );
     }
 
     /// Adds a `Date` header with the given date
@@ -518,8 +526,9 @@ impl EmailBuilder {
 
     /// Adds a `Date` header with the given date
     pub fn set_date(&mut self, date: &Tm) {
-        self.message
-            .add_header(("Date", Tm::rfc822z(date).to_string()));
+        self.message.add_header(
+            ("Date", Tm::rfc822z(date).to_string()),
+        );
         self.date_issued = true;
     }
 
@@ -554,8 +563,10 @@ impl EmailBuilder {
     /// Sets the email body to plain text content
     pub fn set_text<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message
-            .add_header(("Content-Type", format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref()));
+        self.message.add_header((
+            "Content-Type",
+            format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
+        ));
     }
 
     /// Sets the email body to HTML content
@@ -567,29 +578,37 @@ impl EmailBuilder {
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message
-            .add_header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()));
+        self.message.add_header((
+            "Content-Type",
+            format!("{}", mime::TEXT_HTML).as_ref(),
+        ));
     }
 
     /// Sets the email content
-    pub fn alternative<S: Into<String>, T: Into<String>>(mut self,
-                                                         body_html: S,
-                                                         body_text: T)
-                                                         -> EmailBuilder {
+    pub fn alternative<S: Into<String>, T: Into<String>>(
+        mut self,
+        body_html: S,
+        body_text: T,
+    ) -> EmailBuilder {
         self.set_alternative(body_html, body_text);
         self
     }
 
     /// Sets the email content
-    pub fn set_alternative<S: Into<String>, T: Into<String>>(&mut self,
-                                                             body_html: S,
-                                                             body_text: T) {
+    pub fn set_alternative<S: Into<String>, T: Into<String>>(
+        &mut self,
+        body_html: S,
+        body_text: T,
+    ) {
         let mut alternate = PartBuilder::new();
         alternate.set_message_type(MimeMultipartType::Alternative);
 
         let text = PartBuilder::new()
             .body(body_text)
-            .header(("Content-Type", format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref()))
+            .header((
+                "Content-Type",
+                format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
+            ))
             .build();
 
         let html = PartBuilder::new()
@@ -626,7 +645,7 @@ impl EmailBuilder {
             // So, we must find something to put as Sender.
             for possible_sender in &self.from_header {
                 // Only a mailbox can be used as sender, not Address::Group.
-                if let &Address::Mailbox(ref mbx) = possible_sender {
+                if let Address::Mailbox(ref mbx) = *possible_sender {
                     self.sender_header = Some(mbx.clone());
                     break;
                 }
@@ -647,10 +666,10 @@ impl EmailBuilder {
                 // we need to generate the envelope
                 let mut e = Envelope::new();
                 // add all receivers in to_header and cc_header
-                for receiver in self.to_header
-                        .iter()
-                        .chain(self.cc_header.iter())
-                        .chain(self.bcc_header.iter()) {
+                for receiver in self.to_header.iter().chain(self.cc_header.iter()).chain(
+                    self.bcc_header.iter(),
+                )
+                {
                     match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
                         Address::Group(_, ref ms) => {
@@ -690,44 +709,58 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+            self.message.add_header(
+                Header::new_with_value(
+                    "To".into(),
+                    self.to_header,
+                ).unwrap(),
+            );
         }
         if !self.from_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+            self.message.add_header(
+                Header::new_with_value("From".into(), self.from_header).unwrap(),
+            );
         } else {
             return Err(Error::MissingFrom);
         }
         if !self.cc_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
+            self.message.add_header(
+                Header::new_with_value(
+                    "Cc".into(),
+                    self.cc_header,
+                ).unwrap(),
+            );
         }
         if !self.reply_to_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Reply-To".into(), self.reply_to_header)
-                                .unwrap());
+            self.message.add_header(
+                Header::new_with_value("Reply-To".into(), self.reply_to_header).unwrap(),
+            );
         }
 
         if !self.date_issued {
-            self.message
-                .add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            self.message.add_header((
+                "Date",
+                Tm::rfc822z(&now()).to_string().as_ref(),
+            ));
         }
 
         self.message.add_header(("MIME-Version", "1.0"));
 
         let message_id = Uuid::new_v4();
 
-        if let Ok(header) = Header::new_with_value("Message-ID".to_string(),
-                                                   format!("<{}.lettre@localhost>", message_id)) {
+        if let Ok(header) = Header::new_with_value(
+            "Message-ID".to_string(),
+            format!("<{}.lettre@localhost>", message_id),
+        )
+        {
             self.message.add_header(header)
         }
 
         Ok(Email {
-               message: self.message.build(),
-               envelope: envelope,
-               message_id: message_id,
-           })
+            message: self.message.build(),
+            envelope: envelope,
+            message_id: message_id,
+        })
     }
 }
 
@@ -801,14 +834,18 @@ mod test {
             .into_email()
             .unwrap();
 
-        assert_eq!(format!("{}", email),
-                   format!("Subject: Hello\r\nContent-Type: text/plain; \
+        assert_eq!(
+            format!("{}", email),
+            format!(
+                "Subject: Hello\r\nContent-Type: text/plain; \
                             charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
                             <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
                             <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
                             <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
@@ -824,24 +861,27 @@ mod test {
             message_id: current_message,
         };
 
-        email
-            .message
-            .headers
-            .insert(Header::new_with_value("Message-ID".to_string(),
-                                           format!("<{}@rust-smtp>", current_message))
-                        .unwrap());
+        email.message.headers.insert(
+            Header::new_with_value(
+                "Message-ID".to_string(),
+                format!("<{}@rust-smtp>", current_message),
+            ).unwrap(),
+        );
 
-        email
-            .message
-            .headers
-            .insert(Header::new_with_value("To".to_string(), "to@example.com".to_string())
-                        .unwrap());
+        email.message.headers.insert(
+            Header::new_with_value("To".to_string(), "to@example.com".to_string())
+                .unwrap(),
+        );
 
         email.message.body = "body".to_string();
 
-        assert_eq!(format!("{}", email),
-                   format!("Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n",
-                           current_message));
+        assert_eq!(
+            format!("{}", email),
+            format!(
+                "Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n",
+                current_message
+            )
+        );
         assert_eq!(current_message.to_string(), email.message_id());
     }
 
@@ -858,13 +898,17 @@ mod test {
             .body("We invite you!")
             .build()
             .unwrap();
-        assert_eq!(format!("{}", email),
-                   format!("Date: {}\r\nSubject: Invitation\r\nSender: \
+        assert_eq!(
+            format!("{}", email),
+            format!(
+                "Date: {}\r\nSubject: Invitation\r\nSender: \
                             <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
                             <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
                             1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
@@ -885,14 +929,18 @@ mod test {
             .build()
             .unwrap();
 
-        assert_eq!(format!("{}", email),
-                   format!("Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
+        assert_eq!(
+            format!("{}", email),
+            format!(
+                "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                             <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
                             <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
                             <reply@localhost>\r\nMIME-Version: 1.0\r\nMessage-ID: \
                             <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
@@ -915,10 +963,14 @@ mod test {
             .unwrap();
 
         assert_eq!(email.from(), "sender@localhost".to_string());
-        assert_eq!(email.to(),
-                   vec!["user@localhost".to_string(),
-                        "cc@localhost".to_string(),
-                        "bcc@localhost".to_string()]);
+        assert_eq!(
+            email.to(),
+            vec![
+                "user@localhost".to_string(),
+                "cc@localhost".to_string(),
+                "bcc@localhost".to_string(),
+            ]
+        );
         let content = format!("{}", email);
         assert_eq!(email.message(), content);
     }

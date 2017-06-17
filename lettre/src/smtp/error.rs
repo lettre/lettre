@@ -41,6 +41,7 @@ impl Display for Error {
 }
 
 impl StdError for Error {
+    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
     fn description(&self) -> &str {
         match *self {
             // Try to display the first line of the server's response that usually
@@ -57,11 +58,11 @@ impl StdError for Error {
                     None => "undetailed permanent error during SMTP transaction",
                 }
             }
-            ResponseParsing(ref e) => e,
+            ResponseParsing(e) => e,
             ChallengeParsing(ref e) => e.description(),
             Utf8Parsing(ref e) => e.description(),
             Resolution => "could not resolve hostname",
-            Client(ref e) => e,
+            Client(e) => e,
             Io(ref e) => e.description(),
         }
     }

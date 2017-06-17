@@ -102,8 +102,8 @@ impl Connector for NetworkStream {
         }
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
     fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
-
         *self = match *self {
             NetworkStream::Tcp(ref mut stream) => {
                 match Ssl::new(ssl_context) {
@@ -124,6 +124,7 @@ impl Connector for NetworkStream {
 
     }
 
+    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
     fn is_encrypted(&self) -> bool {
         match *self {
             NetworkStream::Tcp(_) => false,
