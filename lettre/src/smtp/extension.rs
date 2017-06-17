@@ -105,7 +105,7 @@ impl ServerInfo {
 
         let mut features: HashSet<Extension> = HashSet::new();
 
-        for line in response.message() {
+        for line in response.message.as_slice() {
             let splitted: Vec<&str> = line.split_whitespace().collect();
             match splitted[0] {
                 "8BITMIME" => {

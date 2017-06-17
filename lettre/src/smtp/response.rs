@@ -128,11 +128,11 @@ impl Display for Detail {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Code {
     /// First digit of the response code
-    severity: Severity,
+    pub severity: Severity,
     /// Second digit of the response code
-    category: Category,
+    pub category: Category,
     /// Third digit
-    detail: Detail,
+    pub detail: Detail,
 }
 
 impl Display for Code {
@@ -244,10 +244,10 @@ impl ResponseParser {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Response {
     /// Response code
-    code: Code,
+    pub code: Code,
     /// Server response string (optional)
     /// Handle multiline responses
-    message: Vec<String>,
+    pub message: Vec<String>,
 }
 
 impl Response {
@@ -265,31 +265,6 @@ impl Response {
             PositiveCompletion | PositiveIntermediate => true,
             _ => false,
         }
-    }
-
-    /// Returns the message
-    pub fn message(&self) -> Vec<String> {
-        self.message.clone()
-    }
-
-    /// Returns the response code
-    pub fn code(&self) -> Code {
-        self.code
-    }
-
-    /// Returns the severity (i.e. 1st digit)
-    pub fn severity(&self) -> Severity {
-        self.code.severity
-    }
-
-    /// Returns the category (i.e. 2nd digit)
-    pub fn category(&self) -> Category {
-        self.code.category
-    }
-
-    /// Returns the detail (i.e. 3rd digit)
-    pub fn detail(&self) -> Detail {
-        self.code.detail
     }
 
     /// Tests code equality
@@ -505,133 +480,6 @@ mod test {
                 "SIZE 42".to_string(),
             ],
         ).is_positive());
-    }
-
-    #[test]
-    fn test_response_message() {
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).message(),
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ]
-        );
-        let empty_message: Vec<String> = vec![];
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![],
-            ).message(),
-            empty_message
-        );
-    }
-
-    #[test]
-    fn test_response_severity() {
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).severity(),
-            Severity::PositiveCompletion
-        );
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "5".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).severity(),
-            Severity::PermanentNegativeCompletion
-        );
-    }
-
-    #[test]
-    fn test_response_category() {
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).category(),
-            Category::Unspecified4
-        );
-    }
-
-    #[test]
-    fn test_response_detail() {
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).detail(),
-            Detail(1)
-        );
-    }
-
-    #[test]
-    fn test_response_code() {
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).code()
-                .to_string(),
-            "241"
-        );
     }
 
     #[test]
