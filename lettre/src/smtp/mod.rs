@@ -156,13 +156,13 @@ pub enum SecurityLevel {
     EncryptedWrapper,
     /// Only send an email on encrypted connection (with STARTTLS)
     ///
-    /// Recommended mode, prevents MITM when used with verified certificates.
+    /// Default mode, prevents MITM when used with verified certificates.
     AlwaysEncrypt,
     /// Use TLS when available (with STARTTLS)
     ///
-    /// Default mode.
+    /// Should be used when not possible to always encrypt the connection
     Opportunistic,
-    /// Never use TLS
+    /// Never use encryption
     NeverEncrypt,
 }
 
@@ -460,7 +460,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                             // Login is obsolete so try it last
                             vec![Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login]
                         } else {
-                            // If not encrypted, do not allow clear-text passwords
+                            // If not encrypted, do not allow clear-text passwords by default
                             vec![Mechanism::CramMd5]
                         }
                     }

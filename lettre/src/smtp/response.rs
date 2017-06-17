@@ -150,6 +150,10 @@ impl FromStr for Code {
 impl Code {
     /// Creates a new `Code` structure
     pub fn new(severity: Severity, category: Category, detail: u8) -> Code {
+        if detail > 9 {
+            panic!("The detail code must be between 0 and 9");
+        }
+
         Code {
             severity: severity,
             category: category,
@@ -174,7 +178,7 @@ impl ResponseParser {
 
         if line.len() < 3 {
             return Err(Error::ResponseParsing(
-                "Wrong code length (should be 3 digit)",
+                "Incorrect response code (should be 3 digits)",
             ));
         }
 
@@ -283,13 +287,9 @@ impl Response {
         }
     }
 
-    /// Returns only the line word of the message if possible
+    /// Returns only the line of the message if possible
     pub fn first_line(&self) -> Option<&str> {
-        if self.message.is_empty() {
-            None
-        } else {
-            Some(&self.message[0])
-        }
+        self.message.first().map(String::as_str)
     }
 }
 
@@ -308,6 +308,7 @@ mod test {
             Severity::TransientNegativeCompletion
         );
         assert!("1".parse::<Severity>().is_err());
+        assert!("51".parse::<Severity>().is_err());
     }
 
     #[test]
@@ -344,6 +345,16 @@ mod test {
     }
 
     #[test]
+    #[should_panic]
+    fn test_code_new_panic() {
+        let _ = Code::new(
+            Severity::TransientNegativeCompletion,
+            Category::Connections,
+            11,
+        );
+    }
+
+    #[test]
     fn test_code_from_str() {
         assert_eq!(
             "421".parse::<Code>().unwrap(),
@@ -353,6 +364,12 @@ mod test {
                 detail: 1,
             }
         );
+        assert!("2222".parse::<Code>().is_err());
+        assert!("aaa".parse::<Code>().is_err());
+        assert!("-32".parse::<Code>().is_err());
+        assert!("-333".parse::<Code>().is_err());
+        assert!("".parse::<Code>().is_err());
+        assert!("292".parse::<Code>().is_err());
     }
 
     #[test]
@@ -705,6 +722,84 @@ mod test {
                 vec!["".to_string()],
             ).first_word(),
             None
+        );
+    }
+
+    #[test]
+    fn test_response_first_line() {
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec![
+                    "me".to_string(),
+                    "8BITMIME".to_string(),
+                    "SIZE 42".to_string(),
+                ],
+            ).first_line(),
+            Some("me")
+        );
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec![
+                    "me mo".to_string(),
+                    "8BITMIME".to_string(),
+                    "SIZE 42".to_string(),
+                ],
+            ).first_line(),
+            Some("me mo")
+        );
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec![],
+            ).first_line(),
+            None
+        );
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec![" ".to_string()],
+            ).first_line(),
+            Some(" ")
+        );
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec!["  ".to_string()],
+            ).first_line(),
+            Some("  ")
+        );
+        assert_eq!(
+            Response::new(
+                Code {
+                    severity: "2".parse::<Severity>().unwrap(),
+                    category: "4".parse::<Category>().unwrap(),
+                    detail: 1,
+                },
+                vec!["".to_string()],
+            ).first_line(),
+            Some("")
         );
     }
 }

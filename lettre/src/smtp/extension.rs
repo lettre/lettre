@@ -67,7 +67,7 @@ impl Display for ServerInfo {
 }
 
 impl ServerInfo {
-    /// Parses a response to create a `ServerInfo`
+    /// Parses a EHLO response to create a `ServerInfo`
     pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
         let name = match response.first_word() {
             Some(name) => name,
@@ -77,7 +77,6 @@ impl ServerInfo {
         let mut features: HashSet<Extension> = HashSet::new();
 
         for line in response.message() {
-
             let splitted: Vec<&str> = line.split_whitespace().collect();
             match splitted[0] {
                 "8BITMIME" => {
@@ -94,6 +93,9 @@ impl ServerInfo {
                         match mechanism {
                             "PLAIN" => {
                                 features.insert(Extension::Authentication(Mechanism::Plain));
+                            }
+                            "LOGIN" => {
+                                features.insert(Extension::Authentication(Mechanism::Login));
                             }
                             "CRAM-MD5" => {
                                 features.insert(Extension::Authentication(Mechanism::CramMd5));
