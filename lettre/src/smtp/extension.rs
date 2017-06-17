@@ -38,7 +38,7 @@ impl ClientId {
 }
 
 /// Supported ESMTP keywords
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -144,8 +144,8 @@ impl ServerInfo {
     }
 
     /// Checks if the server supports an ESMTP feature
-    pub fn supports_feature(&self, keyword: &Extension) -> bool {
-        self.features.contains(keyword)
+    pub fn supports_feature(&self, keyword: Extension) -> bool {
+        self.features.contains(&keyword)
     }
 
     /// Checks if the server supports an ESMTP feature
@@ -245,8 +245,8 @@ mod test {
 
         assert_eq!(ServerInfo::from_response(&response).unwrap(), server_info);
 
-        assert!(server_info.supports_feature(&Extension::EightBitMime));
-        assert!(!server_info.supports_feature(&Extension::StartTls));
+        assert!(server_info.supports_feature(Extension::EightBitMime));
+        assert!(!server_info.supports_feature(Extension::StartTls));
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
         let response2 = Response::new(
@@ -279,9 +279,9 @@ mod test {
 
         assert_eq!(ServerInfo::from_response(&response2).unwrap(), server_info2);
 
-        assert!(server_info2.supports_feature(&Extension::EightBitMime));
+        assert!(server_info2.supports_feature(Extension::EightBitMime));
         assert!(server_info2.supports_auth_mechanism(Mechanism::Plain));
         assert!(server_info2.supports_auth_mechanism(Mechanism::CramMd5));
-        assert!(!server_info2.supports_feature(&Extension::StartTls));
+        assert!(!server_info2.supports_feature(Extension::StartTls));
     }
 }
