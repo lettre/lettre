@@ -46,6 +46,7 @@
 //! use lettre::smtp::authentication::Mechanism;
 //! use lettre::smtp::SUBMISSION_PORT;
 //! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::smtp::extension::ClientId;
 //!
 //! let email = SimpleSendableEmail::new(
 //!                 "user@localhost",
@@ -58,7 +59,7 @@
 //! let mut mailer = SmtpTransportBuilder::new(("server.tld",
 //! SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
-//!     .hello_name("my.hostname.tld")
+//!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
 //!     .credentials("username", "password")
 //!     // Specify a TLS security level. You can also specify an SslContext with
@@ -109,7 +110,7 @@ use openssl::ssl::{SslContext, SslMethod};
 use smtp::authentication::Mechanism;
 use smtp::client::Client;
 use smtp::error::{Error, SmtpResult};
-use smtp::extension::{Extension, ServerInfo};
+use smtp::extension::{ClientId, Extension, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::string::String;
 use std::time::Duration;
@@ -176,7 +177,7 @@ pub struct SmtpTransportBuilder {
     /// Enable connection reuse
     connection_reuse: bool,
     /// Name sent during HELO or EHLO
-    hello_name: String,
+    hello_name: ClientId,
     /// Credentials
     credentials: Option<(String, String)>,
     /// Socket we are connecting to
@@ -210,7 +211,7 @@ impl SmtpTransportBuilder {
                     credentials: None,
                     connection_reuse_count_limit: 100,
                     connection_reuse: false,
-                    hello_name: "localhost".to_string(),
+                    hello_name: ClientId::Domain("localhost".to_string()),
                     authentication_mechanism: None,
                     timeout: Some(Duration::new(60, 0)),
                 })
@@ -259,8 +260,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the name used during HELO or EHLO
-    pub fn hello_name<S: Into<String>>(mut self, name: S) -> SmtpTransportBuilder {
-        self.hello_name = name.into();
+    pub fn hello_name(mut self, name: ClientId) -> SmtpTransportBuilder {
+        self.hello_name = name;
         self
     }
 
@@ -377,7 +378,10 @@ impl SmtpTransport {
     /// Gets the EHLO response and updates server information
     pub fn get_ehlo(&mut self) -> SmtpResult {
         // Extended Hello
-        let ehlo_response = try_smtp!(self.client.ehlo(&self.client_info.hello_name), self);
+        let ehlo_response = try_smtp!(
+            self.client.ehlo(&self.client_info.hello_name.to_string()),
+            self
+        );
 
         self.server_info = Some(try_smtp!(ServerInfo::from_response(&ehlo_response), self));
 

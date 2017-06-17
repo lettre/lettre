@@ -102,6 +102,28 @@ impl Display for Category {
     }
 }
 
+/// The detail digit of a response code (third digit)
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
+pub struct Detail(pub u8);
+
+impl FromStr for Detail {
+    type Err = Error;
+    fn from_str(s: &str) -> result::Result<Detail, Error> {
+        match s.parse::<u8>() {
+            Ok(d) if d < 10 => Ok(Detail(d)),
+            _ => Err(Error::ResponseParsing(
+                "Third digit must be between 0 and 9",
+            )),
+        }
+    }
+}
+
+impl Display for Detail {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}", self.0)
+    }
+}
+
 /// Represents a 3 digit SMTP response code
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Code {
@@ -110,7 +132,7 @@ pub struct Code {
     /// Second digit of the response code
     category: Category,
     /// Third digit
-    detail: u8,
+    detail: Detail,
 }
 
 impl Display for Code {
@@ -128,7 +150,7 @@ impl FromStr for Code {
             match (
                 s[0..1].parse::<Severity>(),
                 s[1..2].parse::<Category>(),
-                s[2..3].parse::<u8>(),
+                s[2..3].parse::<Detail>(),
             ) {
                 (Ok(severity), Ok(category), Ok(detail)) => {
                     Ok(Code {
@@ -149,8 +171,8 @@ impl FromStr for Code {
 
 impl Code {
     /// Creates a new `Code` structure
-    pub fn new(severity: Severity, category: Category, detail: u8) -> Code {
-        if detail > 9 {
+    pub fn new(severity: Severity, category: Category, detail: Detail) -> Code {
+        if detail.0 > 9 {
             panic!("The detail code must be between 0 and 9");
         }
 
@@ -266,7 +288,7 @@ impl Response {
     }
 
     /// Returns the detail (i.e. 3rd digit)
-    pub fn detail(&self) -> u8 {
+    pub fn detail(&self) -> Detail {
         self.code.detail
     }
 
@@ -276,15 +298,10 @@ impl Response {
     }
 
     /// Returns only the first word of the message if possible
-    pub fn first_word(&self) -> Option<String> {
-        if self.message.is_empty() {
-            None
-        } else {
-            match self.message[0].split_whitespace().next() {
-                Some(word) => Some(word.to_string()),
-                None => None,
-            }
-        }
+    pub fn first_word(&self) -> Option<&str> {
+        self.message.get(0).and_then(
+            |line| line.split_whitespace().next(),
+        )
     }
 
     /// Returns only the line of the message if possible
@@ -295,7 +312,7 @@ impl Response {
 
 #[cfg(test)]
 mod test {
-    use super::{Category, Code, Response, ResponseParser, Severity};
+    use super::{Category, Code, Detail, Response, ResponseParser, Severity};
 
     #[test]
     fn test_severity_from_str() {
@@ -334,12 +351,12 @@ mod test {
             Code::new(
                 Severity::TransientNegativeCompletion,
                 Category::Connections,
-                0,
+                Detail(0),
             ),
             Code {
                 severity: Severity::TransientNegativeCompletion,
                 category: Category::Connections,
-                detail: 0,
+                detail: Detail(0),
             }
         );
     }
@@ -350,7 +367,7 @@ mod test {
         let _ = Code::new(
             Severity::TransientNegativeCompletion,
             Category::Connections,
-            11,
+            Detail(11),
         );
     }
 
@@ -361,7 +378,7 @@ mod test {
             Code {
                 severity: Severity::TransientNegativeCompletion,
                 category: Category::Connections,
-                detail: 1,
+                detail: "1".parse::<Detail>().unwrap(),
             }
         );
         assert!("2222".parse::<Code>().is_err());
@@ -377,7 +394,7 @@ mod test {
         let code = Code {
             severity: Severity::TransientNegativeCompletion,
             category: Category::Connections,
-            detail: 1,
+            detail: Detail(1),
         };
 
         assert_eq!(code.to_string(), "421");
@@ -390,7 +407,7 @@ mod test {
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
                     category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -402,7 +419,7 @@ mod test {
                 code: Code {
                     severity: Severity::PositiveCompletion,
                     category: Category::Unspecified4,
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 message: vec![
                     "me".to_string(),
@@ -416,7 +433,7 @@ mod test {
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
                     category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![],
             ),
@@ -424,7 +441,7 @@ mod test {
                 code: Code {
                     severity: Severity::PositiveCompletion,
                     category: Category::Unspecified4,
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 message: vec![],
             }
@@ -448,7 +465,7 @@ mod test {
                 code: Code {
                     severity: Severity::PositiveCompletion,
                     category: Category::MailSystem,
-                    detail: 0,
+                    detail: Detail(0),
                 },
                 message: vec![
                     "me".to_string(),
@@ -466,8 +483,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -479,8 +496,8 @@ mod test {
         assert!(!Response::new(
             Code {
                 severity: "5".parse::<Severity>().unwrap(),
-                category: "4".parse::<Category>().unwrap(),
-                detail: 1,
+                category: "3".parse::<Category>().unwrap(),
+                detail: "1".parse::<Detail>().unwrap(),
             },
             vec![
                 "me".to_string(),
@@ -496,8 +513,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -516,8 +533,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![],
             ).message(),
@@ -531,8 +548,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -546,8 +563,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "5".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -566,7 +583,7 @@ mod test {
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
                     category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -584,8 +601,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -593,7 +610,7 @@ mod test {
                     "SIZE 42".to_string(),
                 ],
             ).detail(),
-            1
+            Detail(1)
         );
     }
 
@@ -604,7 +621,7 @@ mod test {
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
                     category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -624,7 +641,7 @@ mod test {
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
                     category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -636,15 +653,15 @@ mod test {
         assert!(!Response::new(
             Code {
                 severity: "2".parse::<Severity>().unwrap(),
-                category: "4".parse::<Category>().unwrap(),
-                detail: 1,
+                category: "5".parse::<Category>().unwrap(),
+                detail: "1".parse::<Detail>().unwrap(),
             },
             vec![
                 "me".to_string(),
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).has_code(251));
+        ).has_code(241));
     }
 
     #[test]
@@ -653,8 +670,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -662,14 +679,14 @@ mod test {
                     "SIZE 42".to_string(),
                 ],
             ).first_word(),
-            Some("me".to_string())
+            Some("me")
         );
         assert_eq!(
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me mo".to_string(),
@@ -677,14 +694,14 @@ mod test {
                     "SIZE 42".to_string(),
                 ],
             ).first_word(),
-            Some("me".to_string())
+            Some("me")
         );
         assert_eq!(
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![],
             ).first_word(),
@@ -694,8 +711,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![" ".to_string()],
             ).first_word(),
@@ -705,8 +722,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec!["  ".to_string()],
             ).first_word(),
@@ -716,8 +733,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec!["".to_string()],
             ).first_word(),
@@ -731,8 +748,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me".to_string(),
@@ -746,8 +763,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![
                     "me mo".to_string(),
@@ -761,8 +778,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![],
             ).first_line(),
@@ -772,8 +789,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec![" ".to_string()],
             ).first_line(),
@@ -783,8 +800,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec!["  ".to_string()],
             ).first_line(),
@@ -794,8 +811,8 @@ mod test {
             Response::new(
                 Code {
                     severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: 1,
+                    category: "3".parse::<Category>().unwrap(),
+                    detail: "1".parse::<Detail>().unwrap(),
                 },
                 vec!["".to_string()],
             ).first_line(),

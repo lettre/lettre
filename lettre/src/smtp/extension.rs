@@ -6,7 +6,36 @@ use smtp::response::Response;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::net::{Ipv4Addr, Ipv6Addr};
 use std::result::Result;
+
+/// Client identifier, the parameter to `EHLO`
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum ClientId {
+    /// A fully-qualified domain name
+    Domain(String),
+    /// An IPv4 address
+    Ipv4(Ipv4Addr),
+    /// An IPv6 address
+    Ipv6(Ipv6Addr),
+}
+
+impl Display for ClientId {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            ClientId::Domain(ref value) => f.write_str(value),
+            ClientId::Ipv4(ref value) => write!(f, "{}", value),
+            ClientId::Ipv6(ref value) => write!(f, "{}", value),
+        }
+    }
+}
+
+impl ClientId {
+    /// Creates a new `ClientId` from a fully qualified domain name
+    pub fn new(domain: String) -> ClientId {
+        ClientId::Domain(domain)
+    }
+}
 
 /// Supported ESMTP keywords
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -109,7 +138,7 @@ impl ServerInfo {
         }
 
         Ok(ServerInfo {
-            name: name,
+            name: name.to_string(),
             features: features,
         })
     }
@@ -132,7 +161,7 @@ mod test {
 
     use super::{Extension, ServerInfo};
     use smtp::authentication::Mechanism;
-    use smtp::response::{Category, Code, Response, Severity};
+    use smtp::response::{Category, Code, Detail, Response, Severity};
     use std::collections::HashSet;
 
     #[test]
@@ -194,7 +223,11 @@ mod test {
     #[test]
     fn test_serverinfo() {
         let response = Response::new(
-            Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+            Code::new(
+                Severity::PositiveCompletion,
+                Category::Unspecified4,
+                Detail(1),
+            ),
             vec![
                 "me".to_string(),
                 "8BITMIME".to_string(),
@@ -217,7 +250,11 @@ mod test {
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
         let response2 = Response::new(
-            Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+            Code::new(
+                Severity::PositiveCompletion,
+                Category::Unspecified4,
+                Detail(1),
+            ),
             vec![
                 "me".to_string(),
                 "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
