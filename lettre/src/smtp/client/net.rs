@@ -26,7 +26,9 @@ impl NetworkStream {
             NetworkStream::Tcp(ref s) => s.peer_addr(),
             NetworkStream::Ssl(ref s) => s.get_ref().peer_addr(),
             NetworkStream::Mock(_) => {
-                Ok(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80)))
+                Ok(SocketAddr::V4(
+                    SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80),
+                ))
             }
         }
     }
@@ -87,9 +89,11 @@ impl Connector for NetworkStream {
             Some(context) => {
                 match Ssl::new(context) {
                     Ok(ssl) => {
-                        ssl.connect(tcp_stream)
-                            .map(NetworkStream::Ssl)
-                            .map_err(|e| io::Error::new(ErrorKind::Other, e))
+                        ssl.connect(tcp_stream).map(NetworkStream::Ssl).map_err(
+                            |e| {
+                                io::Error::new(ErrorKind::Other, e)
+                            },
+                        )
                     }
                     Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
                 }

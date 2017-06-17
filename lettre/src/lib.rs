@@ -54,11 +54,12 @@ pub struct SimpleSendableEmail {
 
 impl SimpleSendableEmail {
     /// Returns a new email
-    pub fn new(from_address: &str,
-               to_addresses: Vec<&str>,
-               message_id: &str,
-               message: &str)
-               -> SimpleSendableEmail {
+    pub fn new(
+        from_address: &str,
+        to_addresses: Vec<&str>,
+        message_id: &str,
+        message: &str,
+    ) -> SimpleSendableEmail {
         SimpleSendableEmail {
             from: from_address.to_string(),
             to: to_addresses.iter().map(|s| s.to_string()).collect(),

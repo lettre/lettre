@@ -38,10 +38,12 @@ pub type StubResult = Result<(), error::Error>;
 impl EmailTransport<StubResult> for StubEmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> StubResult {
 
-        info!("{}: from=<{}> to=<{:?}>",
-              email.message_id(),
-              email.from(),
-              email.to());
+        info!(
+            "{}: from=<{}> to=<{:?}>",
+            email.message_id(),
+            email.from(),
+            email.to()
+        );
         Ok(())
     }
 

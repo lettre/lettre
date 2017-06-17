@@ -53,14 +53,16 @@ pub struct ServerInfo {
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f,
-               "{} with {}",
-               self.name,
-               if self.features.is_empty() {
-                   "no supported features".to_string()
-               } else {
-                   format!("{:?}", self.features)
-               })
+        write!(
+            f,
+            "{} with {}",
+            self.name,
+            if self.features.is_empty() {
+                "no supported features".to_string()
+            } else {
+                format!("{:?}", self.features)
+            }
+        )
     }
 }
 
@@ -105,9 +107,9 @@ impl ServerInfo {
         }
 
         Ok(ServerInfo {
-               name: name,
-               features: features,
-           })
+            name: name,
+            features: features,
+        })
     }
 
     /// Checks if the server supports an ESMTP feature
@@ -117,8 +119,9 @@ impl ServerInfo {
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
-        self.features
-            .contains(&Extension::Authentication(mechanism))
+        self.features.contains(
+            &Extension::Authentication(mechanism),
+        )
     }
 }
 
@@ -132,10 +135,14 @@ mod test {
 
     #[test]
     fn test_extension_fmt() {
-        assert_eq!(format!("{}", Extension::EightBitMime),
-                   "8BITMIME".to_string());
-        assert_eq!(format!("{}", Extension::Authentication(Mechanism::Plain)),
-                   "AUTH PLAIN".to_string());
+        assert_eq!(
+            format!("{}", Extension::EightBitMime),
+            "8BITMIME".to_string()
+        );
+        assert_eq!(
+            format!("{}", Extension::Authentication(Mechanism::Plain)),
+            "AUTH PLAIN".to_string()
+        );
     }
 
     #[test]
@@ -143,40 +150,55 @@ mod test {
         let mut eightbitmime = HashSet::new();
         assert!(eightbitmime.insert(Extension::EightBitMime));
 
-        assert_eq!(format!("{}",
-                           ServerInfo {
-                               name: "name".to_string(),
-                               features: eightbitmime.clone(),
-                           }),
-                   "name with {EightBitMime}".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: eightbitmime.clone(),
+                }
+            ),
+            "name with {EightBitMime}".to_string()
+        );
 
         let empty = HashSet::new();
 
-        assert_eq!(format!("{}",
-                           ServerInfo {
-                               name: "name".to_string(),
-                               features: empty,
-                           }),
-                   "name with no supported features".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: empty,
+                }
+            ),
+            "name with no supported features".to_string()
+        );
 
         let mut plain = HashSet::new();
         assert!(plain.insert(Extension::Authentication(Mechanism::Plain)));
 
-        assert_eq!(format!("{}",
-                           ServerInfo {
-                               name: "name".to_string(),
-                               features: plain.clone(),
-                           }),
-                   "name with {Authentication(Plain)}".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: plain.clone(),
+                }
+            ),
+            "name with {Authentication(Plain)}".to_string()
+        );
     }
 
     #[test]
     fn test_serverinfo() {
-        let response =
-            Response::new(Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
-                          vec!["me".to_string(),
-                               "8BITMIME".to_string(),
-                               "SIZE 42".to_string()]);
+        let response = Response::new(
+            Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        );
 
         let mut features = HashSet::new();
         assert!(features.insert(Extension::EightBitMime));
@@ -192,17 +214,24 @@ mod test {
         assert!(!server_info.supports_feature(&Extension::StartTls));
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
-        let response2 =
-            Response::new(Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
-                          vec!["me".to_string(),
-                               "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
-                               "8BITMIME".to_string(),
-                               "SIZE 42".to_string()]);
+        let response2 = Response::new(
+            Code::new(Severity::PositiveCompletion, Category::Unspecified4, 1),
+            vec![
+                "me".to_string(),
+                "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        );
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
-        assert!(features2.insert(Extension::Authentication(Mechanism::Plain)));
-        assert!(features2.insert(Extension::Authentication(Mechanism::CramMd5)));
+        assert!(features2.insert(
+            Extension::Authentication(Mechanism::Plain),
+        ));
+        assert!(features2.insert(
+            Extension::Authentication(Mechanism::CramMd5),
+        ));
 
         let server_info2 = ServerInfo {
             name: "me".to_string(),
