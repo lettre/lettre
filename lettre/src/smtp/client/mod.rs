@@ -215,7 +215,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         } else {
             let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
                 .first_word() {
-                Some(challenge) => challenge,
+                Some(challenge) => challenge.to_string(),
                 None => return Err(Error::ResponseParsing("Could not read auth challenge")),
             };
 
