@@ -1,6 +1,7 @@
 //! Error and result type for file transport
 
 use self::Error::*;
+use serde_json;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -13,6 +14,8 @@ pub enum Error {
     Client(&'static str),
     /// IO error
     Io(io::Error),
+    /// JSON serialization error
+    JsonSerialization(serde_json::Error),
 }
 
 impl Display for Error {
@@ -26,6 +29,7 @@ impl StdError for Error {
         match *self {
             Client(_) => "an unknown error occured",
             Io(_) => "an I/O error occured",
+            JsonSerialization(_) => "a JSON serialization error occured",
         }
     }
 
@@ -40,6 +44,12 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Io(err)
+    }
+}
+
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Error {
+        JsonSerialization(err)
     }
 }
 

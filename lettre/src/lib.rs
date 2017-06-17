@@ -13,6 +13,10 @@ extern crate hex;
 extern crate crypto;
 extern crate bufstream;
 extern crate openssl;
+extern crate serde_json;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 
 pub mod smtp;
 pub mod sendmail;
@@ -40,7 +44,7 @@ pub trait EmailTransport<U> {
 }
 
 /// Minimal email structure
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimpleSendableEmail {
     /// To
     to: Vec<String>,
