@@ -1,18 +1,18 @@
 extern crate lettre;
 
 use lettre::{EmailTransport, SimpleSendableEmail};
-use lettre::smtp::SmtpTransportBuilder;
+use lettre::smtp::{SecurityLevel, SmtpTransportBuilder};
 
 fn main() {
     let email = SimpleSendableEmail::new(
         "user@localhost",
         vec!["root@localhost"],
         "file_id",
-        "Hello file",
+        "Hello ß☺ example",
     );
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransportBuilder::localhost().unwrap().build();
+    let mut mailer = SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
     // Send the email
     let result = mailer.send(email);
 
