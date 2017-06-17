@@ -215,7 +215,7 @@ impl SmtpTransportBuilder {
                     timeout: Some(Duration::new(60, 0)),
                 })
             }
-            None => Err(From::from("Could not resolve hostname")),
+            None => Err(Error::Resolution),
         }
     }
 

@@ -27,15 +27,16 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            Client(_) => "an unknown error occured",
-            Io(_) => "an I/O error occured",
-            JsonSerialization(_) => "a JSON serialization error occured",
+            Client(err) => err,
+            Io(ref err) => err.description(),
+            JsonSerialization(ref err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
             Io(ref err) => Some(&*err as &StdError),
+            JsonSerialization(ref err) => Some(&*err as &StdError),
             _ => None,
         }
     }
