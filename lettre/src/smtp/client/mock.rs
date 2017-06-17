@@ -12,6 +12,12 @@ pub struct MockStream {
     writer: Arc<Mutex<MockCursor>>,
 }
 
+impl Default for MockStream {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MockStream {
     pub fn new() -> MockStream {
         MockStream {
