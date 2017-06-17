@@ -64,10 +64,12 @@ impl EmailTransport<FileResult> for FileEmailTransport {
 
         let mut f = try!(File::create(file.as_path()));
 
-        let log_line = format!("{}: from=<{}> to=<{}>\n",
-                               email.message_id(),
-                               email.from(),
-                               email.to().join("> to=<"));
+        let log_line = format!(
+            "{}: from=<{}> to=<{}>\n",
+            email.message_id(),
+            email.from(),
+            email.to().join("> to=<")
+        );
 
         try!(f.write_all(log_line.as_bytes()));
         try!(f.write_all(email.message().as_bytes()));

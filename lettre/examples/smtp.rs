@@ -4,10 +4,12 @@ use lettre::{EmailTransport, SimpleSendableEmail};
 use lettre::smtp::SmtpTransportBuilder;
 
 fn main() {
-    let email = SimpleSendableEmail::new("user@localhost",
-                                         vec!["root@localhost"],
-                                         "file_id",
-                                         "Hello file");
+    let email = SimpleSendableEmail::new(
+        "user@localhost",
+        vec!["root@localhost"],
+        "file_id",
+        "Hello file",
+    );
 
     // Open a local connection on port 25
     let mut mailer = SmtpTransportBuilder::localhost().unwrap().build();

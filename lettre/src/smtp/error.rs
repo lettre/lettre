@@ -43,14 +43,26 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            Transient(_) => "a transient error occured during the SMTP transaction",
-            Permanent(_) => "a permanent error occured during the SMTP transaction",
-            ResponseParsing(_) => "an error occured while parsing an SMTP response",
-            ChallengeParsing(_) => "an error occured while parsing an SMTP AUTH challenge",
-            Utf8Parsing(_) => "an error occured while parsing an SMTP response as UTF8",
+            // Try to display the first line of the server's response that usually
+            // contains a short humanly readable error message
+            Transient(ref e) => {
+                match e.first_line() {
+                    Some(line) => line,
+                    None => "undetailed transient error during SMTP transaction",
+                }
+            }
+            Permanent(ref e) => {
+                match e.first_line() {
+                    Some(line) => line,
+                    None => "undetailed permanent error during SMTP transaction",
+                }
+            }
+            ResponseParsing(ref e) => e,
+            ChallengeParsing(ref e) => e.description(),
+            Utf8Parsing(ref e) => e.description(),
             Resolution => "could not resolve hostname",
-            Client(_) => "an unknown error occured",
-            Io(_) => "an I/O error occured",
+            Client(ref e) => e,
+            Io(ref e) => e.description(),
         }
     }
 

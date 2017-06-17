@@ -26,11 +26,15 @@ pub enum Mechanism {
 
 impl Display for Mechanism {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            Mechanism::Plain => "PLAIN",
-            Mechanism::Login => "LOGIN",
-            Mechanism::CramMd5 => "CRAM-MD5",
-        })
+        write!(
+            f,
+            "{}",
+            match *self {
+                Mechanism::Plain => "PLAIN",
+                Mechanism::Login => "LOGIN",
+                Mechanism::CramMd5 => "CRAM-MD5",
+            }
+        )
     }
 }
 
@@ -46,11 +50,12 @@ impl Mechanism {
 
     /// Returns the string to send to the server, using the provided username, password and
     /// challenge in some cases
-    pub fn response(&self,
-                    username: &str,
-                    password: &str,
-                    challenge: Option<&str>)
-                    -> Result<String, Error> {
+    pub fn response(
+        &self,
+        username: &str,
+        password: &str,
+        challenge: Option<&str>,
+    ) -> Result<String, Error> {
         match *self {
             Mechanism::Plain => {
                 match challenge {
@@ -97,25 +102,33 @@ mod test {
     fn test_plain() {
         let mechanism = Mechanism::Plain;
 
-        assert_eq!(mechanism.response("username", "password", None).unwrap(),
-                   "\u{0}username\u{0}password");
-        assert!(mechanism
-                    .response("username", "password", Some("test"))
-                    .is_err());
+        assert_eq!(
+            mechanism.response("username", "password", None).unwrap(),
+            "\u{0}username\u{0}password"
+        );
+        assert!(
+            mechanism
+                .response("username", "password", Some("test"))
+                .is_err()
+        );
     }
 
     #[test]
     fn test_login() {
         let mechanism = Mechanism::Login;
 
-        assert_eq!(mechanism
-                       .response("alice", "wonderland", Some("Username"))
-                       .unwrap(),
-                   "alice");
-        assert_eq!(mechanism
-                       .response("alice", "wonderland", Some("Password"))
-                       .unwrap(),
-                   "wonderland");
+        assert_eq!(
+            mechanism
+                .response("alice", "wonderland", Some("Username"))
+                .unwrap(),
+            "alice"
+        );
+        assert_eq!(
+            mechanism
+                .response("alice", "wonderland", Some("Password"))
+                .unwrap(),
+            "wonderland"
+        );
         assert!(mechanism.response("username", "password", None).is_err());
     }
 
@@ -123,12 +136,16 @@ mod test {
     fn test_cram_md5() {
         let mechanism = Mechanism::CramMd5;
 
-        assert_eq!(mechanism
-                       .response("alice",
-                                 "wonderland",
-                                 Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="))
-                       .unwrap(),
-                   "alice a540ebe4ef2304070bbc3c456c1f64c0");
+        assert_eq!(
+            mechanism
+                .response(
+                    "alice",
+                    "wonderland",
+                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
+                )
+                .unwrap(),
+            "alice a540ebe4ef2304070bbc3c456c1f64c0"
+        );
         assert!(mechanism.response("alice", "wonderland", None).is_err());
     }
 }

@@ -10,10 +10,12 @@ fn smtp_transport_simple() {
         .unwrap()
         .security_level(SecurityLevel::Opportunistic)
         .build();
-    let email = SimpleSendableEmail::new("user@localhost",
-                                         vec!["root@localhost"],
-                                         "smtp_id",
-                                         "Hello smtp");
+    let email = SimpleSendableEmail::new(
+        "user@localhost",
+        vec!["root@localhost"],
+        "smtp_id",
+        "Hello smtp",
+    );
 
     let result = sender.send(email);
     assert!(result.is_ok());

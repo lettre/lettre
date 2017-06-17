@@ -107,10 +107,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(&mut self,
-                                     addr: &A,
-                                     ssl_context: Option<&SslContext>)
-                                     -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(
+        &mut self,
+        addr: &A,
+        ssl_context: Option<&SslContext>,
+    ) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -202,16 +203,18 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     pub fn auth(&mut self, mechanism: Mechanism, username: &str, password: &str) -> SmtpResult {
 
         if mechanism.supports_initial_response() {
-            self.command(&format!("AUTH {} {}",
-                                  mechanism,
-                                  base64::encode_config(try!(mechanism.response(username,
-                                                                               password,
-                                                                               None))
-                                                            .as_bytes(),
-                                                        base64::STANDARD)))
+            self.command(&format!(
+                "AUTH {} {}",
+                mechanism,
+                base64::encode_config(
+                    try!(mechanism.response(username, password, None))
+                        .as_bytes(),
+                    base64::STANDARD,
+                )
+            ))
         } else {
             let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
-                      .first_word() {
+                .first_word() {
                 Some(challenge) => challenge,
                 None => return Err(Error::ResponseParsing("Could not read auth challenge")),
             };
@@ -233,12 +236,16 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             let mut challenge_expected = 3;
 
             while challenge_expected > 0 {
-                let response =
-                    try!(self.command(&base64::encode_config(&try!(mechanism.response(username,
-                                                                password,
-                                                                Some(&decoded_challenge)))
-                                                                 .as_bytes(),
-                                                             base64::STANDARD)));
+                let response = try!(
+                    self.command(&base64::encode_config(
+                        &try!(mechanism.response(
+                            username,
+                            password,
+                            Some(&decoded_challenge),
+                        )).as_bytes(),
+                        base64::STANDARD,
+                    ))
+                );
 
                 if !response.has_code(334) {
                     return Ok(response);
@@ -317,15 +324,19 @@ mod test {
     fn test_remove_crlf() {
         assert_eq!(remove_crlf("\r\n"), "");
         assert_eq!(remove_crlf("EHLO my_name\r\n"), "EHLO my_name");
-        assert_eq!(remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-                   "EHLO my_nameSIZE 42");
+        assert_eq!(
+            remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+            "EHLO my_nameSIZE 42"
+        );
     }
 
     #[test]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CR><LF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CR><LF>");
-        assert_eq!(escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-                   "EHLO my_name<CR><LF>SIZE 42<CR><LF>");
+        assert_eq!(
+            escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+            "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
+        );
     }
 }

@@ -11,10 +11,12 @@ use std::io::Read;
 #[test]
 fn file_transport() {
     let mut sender = FileEmailTransport::new(temp_dir());
-    let email = SimpleSendableEmail::new("user@localhost",
-                                         vec!["root@localhost"],
-                                         "file_id",
-                                         "Hello file");
+    let email = SimpleSendableEmail::new(
+        "user@localhost",
+        vec!["root@localhost"],
+        "file_id",
+        "Hello file",
+    );
     let result = sender.send(email.clone());
     assert!(result.is_ok());
 
@@ -24,10 +26,14 @@ fn file_transport() {
     let mut buffer = String::new();
     let _ = f.read_to_string(&mut buffer);
 
-    assert_eq!(buffer,
-               format!("{}: from=<user@localhost> to=<root@localhost>\n{}",
-                       message_id,
-                       email.message()));
+    assert_eq!(
+        buffer,
+        format!(
+            "{}: from=<user@localhost> to=<root@localhost>\n{}",
+            message_id,
+            email.message()
+        )
+    );
 
     remove_file(file).unwrap();
 }
