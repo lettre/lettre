@@ -424,7 +424,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             match (
                 &self.client_info.security_level,
                 self.server_info.as_ref().unwrap().supports_feature(
-                    &Extension::StartTls,
+                    Extension::StartTls,
                 ),
             ) {
                 (&SecurityLevel::AlwaysEncrypt, false) => {
@@ -490,10 +490,10 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         // Mail
         let mail_options = match (
             self.server_info.as_ref().unwrap().supports_feature(
-                &Extension::EightBitMime,
+                Extension::EightBitMime,
             ),
             self.server_info.as_ref().unwrap().supports_feature(
-                &Extension::SmtpUtfEight,
+                Extension::SmtpUtfEight,
             ),
         ) {
             (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
