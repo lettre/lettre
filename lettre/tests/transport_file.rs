@@ -28,11 +28,8 @@ fn file_transport() {
 
     assert_eq!(
         buffer,
-        format!(
-            "{}: from=<user@localhost> to=<root@localhost>\n{}",
-            message_id,
-            email.message()
-        )
+        "{\"to\":[\"root@localhost\"],\"from\":\"user@localhost\",\
+        \"message_id\":\"file_id\",\"message\":\"Hello file\"}"
     );
 
     remove_file(file).unwrap();

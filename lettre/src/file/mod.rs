@@ -35,7 +35,10 @@
 
 use EmailTransport;
 use SendableEmail;
+use SimpleSendableEmail;
 use file::error::FileResult;
+
+use serde_json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -64,17 +67,16 @@ impl EmailTransport<FileResult> for FileEmailTransport {
 
         let mut f = try!(File::create(file.as_path()));
 
-        let log_line = format!(
-            "{}: from=<{}> to=<{}>\n",
-            email.message_id(),
-            email.from(),
-            email.to().join("> to=<")
+        let simple_email = SimpleSendableEmail::new(
+            &email.from(),
+            email.to().iter().map(String::as_str).collect(),
+            &email.message_id(),
+            &email.message(),
         );
 
-        try!(f.write_all(log_line.as_bytes()));
-        try!(f.write_all(email.message().as_bytes()));
-
-        info!("{} status=<written>", log_line);
+        try!(f.write_all(
+            serde_json::to_string(&simple_email)?.as_bytes(),
+        ));
 
         Ok(())
     }
