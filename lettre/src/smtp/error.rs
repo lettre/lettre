@@ -85,7 +85,7 @@ impl From<io::Error> for Error {
 
 impl From<Response> for Error {
     fn from(response: Response) -> Error {
-        match response.severity() {
+        match response.code.severity {
             Severity::TransientNegativeCompletion => Transient(response),
             Severity::PermanentNegativeCompletion => Permanent(response),
             _ => Client("Unknown error code"),

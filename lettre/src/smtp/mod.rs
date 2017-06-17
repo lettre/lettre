@@ -534,7 +534,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                     .as_ref()
                     .ok()
                     .unwrap()
-                    .message()
+                    .message
                     .iter()
                     .next()
                     .unwrap_or(&"no response".to_string())
