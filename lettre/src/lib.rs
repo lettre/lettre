@@ -13,6 +13,7 @@ extern crate hex;
 extern crate crypto;
 extern crate bufstream;
 extern crate openssl;
+extern crate emailaddress;
 extern crate serde_json;
 extern crate serde;
 #[macro_use]
