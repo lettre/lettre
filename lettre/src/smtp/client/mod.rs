@@ -1,7 +1,7 @@
 //! SMTP client
 
 use bufstream::BufStream;
-use openssl::ssl::SslContext;
+use native_tls::TlsConnector;
 use smtp::{CRLF, MESSAGE_ENDING};
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::net::{Connector, NetworkStream, Timeout};
@@ -82,9 +82,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Upgrades the underlying connection to SSL/TLS
-    pub fn upgrade_tls_stream(&mut self, ssl_context: &SslContext) -> io::Result<()> {
+    pub fn upgrade_tls_stream(&mut self, tls_connector: &TlsConnector) -> io::Result<()> {
         match self.stream {
-            Some(ref mut stream) => stream.get_mut().upgrade_tls(ssl_context),
+            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_connector),
             None => Ok(()),
         }
     }
@@ -113,7 +113,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     pub fn connect<A: ToSocketAddrs>(
         &mut self,
         addr: &A,
-        ssl_context: Option<&SslContext>,
+        tls_connector: Option<&TlsConnector>,
     ) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
@@ -130,7 +130,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(try!(Connector::connect(&server_addr, ssl_context)));
+        self.set_stream(try!(Connector::connect(&server_addr, tls_connector)));
 
         self.get_reply()
     }

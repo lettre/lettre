@@ -1,7 +1,6 @@
 //! A trait to represent a stream
 
-use openssl::ssl::{Ssl, SslContext, SslStream};
-
+use native_tls::{TlsConnector, TlsStream};
 use smtp::client::mock::MockStream;
 use std::io;
 use std::io::{ErrorKind, Read, Write};
@@ -14,7 +13,7 @@ pub enum NetworkStream {
     /// Plain TCP stream
     Tcp(TcpStream),
     /// Encrypted TCP stream
-    Ssl(SslStream<TcpStream>),
+    Ssl(TlsStream<TcpStream>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -74,46 +73,38 @@ impl Write for NetworkStream {
 /// A trait for the concept of opening a stream
 pub trait Connector: Sized {
     /// Opens a connection to the given IP socket
-    fn connect(addr: &SocketAddr, ssl_context: Option<&SslContext>) -> io::Result<Self>;
+    fn connect(addr: &SocketAddr, tls_connector: Option<&TlsConnector>) -> io::Result<Self>;
     /// Upgrades to TLS connection
-    fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()>;
+    fn upgrade_tls(&mut self, tls_connector: &TlsConnector) -> io::Result<()>;
     /// Is the NetworkStream encrypted
     fn is_encrypted(&self) -> bool;
 }
 
 impl Connector for NetworkStream {
-    fn connect(addr: &SocketAddr, ssl_context: Option<&SslContext>) -> io::Result<NetworkStream> {
+    fn connect(
+        addr: &SocketAddr,
+        tls_connector: Option<&TlsConnector>,
+    ) -> io::Result<NetworkStream> {
         let tcp_stream = try!(TcpStream::connect(addr));
 
-        match ssl_context {
+        match tls_connector {
             Some(context) => {
-                match Ssl::new(context) {
-                    Ok(ssl) => {
-                        ssl.connect(tcp_stream).map(NetworkStream::Ssl).map_err(
-                            |e| {
-                                io::Error::new(ErrorKind::Other, e)
-                            },
-                        )
-                    }
-                    Err(e) => Err(io::Error::new(ErrorKind::Other, e)),
-                }
+                context
+                    .danger_connect_without_providing_domain_for_certificate_verification_and_server_name_indication(tcp_stream)
+                    .map(NetworkStream::Ssl)
+                    .map_err(|e| io::Error::new(ErrorKind::Other, e))
             }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
     }
 
     #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
-    fn upgrade_tls(&mut self, ssl_context: &SslContext) -> io::Result<()> {
+    fn upgrade_tls(&mut self, tls_connector: &TlsConnector) -> io::Result<()> {
         *self = match *self {
             NetworkStream::Tcp(ref mut stream) => {
-                match Ssl::new(ssl_context) {
-                    Ok(ssl) => {
-                        match ssl.connect(stream.try_clone().unwrap()) {
-                            Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
-                            Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
-                        }
-                    }
-                    Err(e) => return Err(io::Error::new(ErrorKind::Other, e)),
+                match tls_connector.danger_connect_without_providing_domain_for_certificate_verification_and_server_name_indication(stream.try_clone().unwrap()) {
+                    Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
+                    Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
                 }
             }
             NetworkStream::Ssl(_) => return Ok(()),

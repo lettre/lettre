@@ -4,7 +4,7 @@
 //! emails have to implement `SendableEmail`.
 //!
 
-#![deny(missing_docs, unsafe_code, unstable_features, warnings, missing_debug_implementations)]
+#![deny(missing_docs, unsafe_code, unstable_features, warnings)]
 
 #[macro_use]
 extern crate log;
@@ -12,7 +12,7 @@ extern crate base64;
 extern crate hex;
 extern crate crypto;
 extern crate bufstream;
-extern crate openssl;
+extern crate native_tls;
 extern crate emailaddress;
 extern crate serde_json;
 extern crate serde;
