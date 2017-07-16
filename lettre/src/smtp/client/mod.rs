@@ -1,19 +1,21 @@
 //! SMTP client
 
-use base64;
 use bufstream::BufStream;
 use openssl::ssl::SslContext;
 use smtp::{CRLF, MESSAGE_ENDING};
-use smtp::authentication::Mechanism;
+use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::net::{Connector, NetworkStream, Timeout};
+use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::ResponseParser;
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::io;
 use std::io::{BufRead, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
+
 
 pub mod net;
 pub mod mock;
@@ -69,7 +71,7 @@ impl<S: Write + Read> Client<S> {
 impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
-        let _ = self.quit();
+        let _ = self.smtp_command(QuitCommand);
         self.stream = None;
     }
 
@@ -135,7 +137,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     /// Checks if the server is connected using the NOOP SMTP command
     #[cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
     pub fn is_connected(&mut self) -> bool {
-        self.noop().is_ok()
+        self.smtp_command(NoopCommand).is_ok()
     }
 
     /// Sends an SMTP command
@@ -143,9 +145,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.send_server(command, CRLF)
     }
 
-    /// Sends a EHLO command
-    pub fn ehlo(&mut self, hostname: &str) -> SmtpResult {
-        self.command(&format!("EHLO {}", hostname))
+    /// Sends an SMTP command
+    pub fn smtp_command<C: Display>(&mut self, command: C) -> SmtpResult {
+        self.send_server(&command.to_string(), "")
     }
 
     /// Sends a MAIL command
@@ -161,106 +163,29 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.command(&format!("RCPT TO:<{}>", address))
     }
 
-    /// Sends a DATA command
-    pub fn data(&mut self) -> SmtpResult {
-        self.command("DATA")
-    }
+    /// Sends an AUTH command with the given mechanism, and handles challenge if needed
+    pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
 
-    /// Sends a QUIT command
-    pub fn quit(&mut self) -> SmtpResult {
-        self.command("QUIT")
-    }
+        // TODO
+        let mut challenges = 10;
+        let mut response = self.smtp_command(
+            AuthCommand::new(mechanism, credentials.clone(), None)?,
+        )?;
 
-    /// Sends a NOOP command
-    pub fn noop(&mut self) -> SmtpResult {
-        self.command("NOOP")
-    }
-
-    /// Sends a HELP command
-    pub fn help(&mut self, argument: Option<&str>) -> SmtpResult {
-        match argument {
-            Some(argument) => self.command(&format!("HELP {}", argument)),
-            None => self.command("HELP"),
-        }
-    }
-
-    /// Sends a VRFY command
-    pub fn vrfy(&mut self, address: &str) -> SmtpResult {
-        self.command(&format!("VRFY {}", address))
-    }
-
-    /// Sends a EXPN command
-    pub fn expn(&mut self, address: &str) -> SmtpResult {
-        self.command(&format!("EXPN {}", address))
-    }
-
-    /// Sends a RSET command
-    pub fn rset(&mut self) -> SmtpResult {
-        self.command("RSET")
-    }
-
-    /// Sends an AUTH command with the given mechanism
-    pub fn auth(&mut self, mechanism: Mechanism, username: &str, password: &str) -> SmtpResult {
-
-        if mechanism.supports_initial_response() {
-            self.command(&format!(
-                "AUTH {} {}",
+        while challenges > 0 && response.has_code(334) {
+            challenges -= 1;
+            response = self.smtp_command(AuthCommand::new_from_response(
                 mechanism,
-                base64::encode_config(
-                    try!(mechanism.response(username, password, None))
-                        .as_bytes(),
-                    base64::STANDARD,
-                )
-            ))
-        } else {
-            let encoded_challenge = match try!(self.command(&format!("AUTH {}", mechanism)))
-                .first_word() {
-                Some(challenge) => challenge.to_string(),
-                None => return Err(Error::ResponseParsing("Could not read auth challenge")),
-            };
-
-            debug!("auth encoded challenge: {}", encoded_challenge);
-
-            let decoded_challenge = match base64::decode(&encoded_challenge) {
-                Ok(challenge) => {
-                    match String::from_utf8(challenge) {
-                        Ok(value) => value,
-                        Err(error) => return Err(Error::Utf8Parsing(error)),
-                    }
-                }
-                Err(error) => return Err(Error::ChallengeParsing(error)),
-            };
-
-            debug!("auth decoded challenge: {}", decoded_challenge);
-
-            let mut challenge_expected = 3;
-
-            while challenge_expected > 0 {
-                let response = try!(
-                    self.command(&base64::encode_config(
-                        &try!(mechanism.response(
-                            username,
-                            password,
-                            Some(&decoded_challenge),
-                        )).as_bytes(),
-                        base64::STANDARD,
-                    ))
-                );
-
-                if !response.has_code(334) {
-                    return Ok(response);
-                }
-
-                challenge_expected -= 1;
-            }
-
-            Err(Error::ResponseParsing("Unexpected number of challenges"))
+                credentials.clone(),
+                response,
+            )?)?;
         }
-    }
 
-    /// Sends a STARTTLS command
-    pub fn starttls(&mut self) -> SmtpResult {
-        self.command("STARTTLS")
+        if challenges == 0 {
+            Err(Error::ResponseParsing("Unexpected number of challenges"))
+        } else {
+            Ok(response)
+        }
     }
 
     /// Sends the message content

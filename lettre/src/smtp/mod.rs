@@ -43,7 +43,7 @@
 //! ```rust,no_run
 //! use lettre::smtp::{SecurityLevel, SmtpTransport,
 //! SmtpTransportBuilder};
-//! use lettre::smtp::authentication::Mechanism;
+//! use lettre::smtp::authentication::{Credentials, Mechanism};
 //! use lettre::smtp::SUBMISSION_PORT;
 //! use lettre::{SimpleSendableEmail, EmailTransport};
 //! use lettre::smtp::extension::ClientId;
@@ -61,7 +61,7 @@
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
-//!     .credentials("username", "password")
+//!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
 //!     // Specify a TLS security level. You can also specify an SslContext with
 //!     // .ssl_context(SslContext::Ssl23)
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
@@ -92,34 +92,38 @@
 //! use lettre::smtp::SMTP_PORT;
 //! use lettre::smtp::client::Client;
 //! use lettre::smtp::client::net::NetworkStream;
+//! use lettre::smtp::extension::ClientId;
+//! use lettre::smtp::commands::*;
 //!
 //! let mut email_client: Client<NetworkStream> = Client::new();
 //! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
-//! let _ = email_client.ehlo("my_hostname");
+//! let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
 //! let _ = email_client.mail("user@example.com", None);
 //! let _ = email_client.rcpt("user@example.org");
-//! let _ = email_client.data();
+//! let _ = email_client.smtp_command(DataCommand);
 //! let _ = email_client.message("Test email");
-//! let _ = email_client.quit();
+//! let _ = email_client.smtp_command(QuitCommand);
 //! ```
 
 
 use EmailTransport;
 use SendableEmail;
 use openssl::ssl::{SslContext, SslMethod};
-use smtp::authentication::Mechanism;
+use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::Client;
+use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::string::String;
 use std::time::Duration;
 
 pub mod extension;
+pub mod commands;
 pub mod authentication;
 pub mod response;
 pub mod client;
 pub mod error;
+pub mod util;
 
 // Registrated port numbers:
 // https://www.iana.
@@ -179,7 +183,7 @@ pub struct SmtpTransportBuilder {
     /// Name sent during HELO or EHLO
     hello_name: ClientId,
     /// Credentials
-    credentials: Option<(String, String)>,
+    credentials: Option<Credentials>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
     /// SSL context to use
@@ -278,12 +282,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the client credentials
-    pub fn credentials<S: Into<String>>(
-        mut self,
-        username: S,
-        password: S,
-    ) -> SmtpTransportBuilder {
-        self.credentials = Some((username.into(), password.into()));
+    pub fn credentials<S: Into<Credentials>>(mut self, credentials: S) -> SmtpTransportBuilder {
+        self.credentials = Some(credentials.into());
         self
     }
 
@@ -379,7 +379,9 @@ impl SmtpTransport {
     pub fn get_ehlo(&mut self) -> SmtpResult {
         // Extended Hello
         let ehlo_response = try_smtp!(
-            self.client.ehlo(&self.client_info.hello_name.to_string()),
+            self.client.smtp_command(EhloCommand::new(
+                ClientId::new(self.client_info.hello_name.to_string()),
+            )),
             self
         );
 
@@ -434,7 +436,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 (&SecurityLevel::NeverEncrypt, _) => (),
                 (&SecurityLevel::EncryptedWrapper, _) => (),
                 (_, true) => {
-                    try_smtp!(self.client.starttls(), self);
+                    try_smtp!(self.client.smtp_command(StarttlsCommand), self);
                     try_smtp!(
                         self.client.upgrade_tls_stream(
                             &self.client_info.ssl_context,
@@ -450,8 +452,6 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             }
 
             if self.client_info.credentials.is_some() {
-                let (username, password) = self.client_info.credentials.clone().unwrap();
-
                 let mut found = false;
 
                 // Compute accepted mechanism
@@ -476,7 +476,13 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                     )
                     {
                         found = true;
-                        try_smtp!(self.client.auth(mechanism, &username, &password), self);
+                        try_smtp!(
+                            self.client.auth(
+                                mechanism,
+                                &self.client_info.credentials.as_ref().unwrap(),
+                            ),
+                            self
+                        );
                         break;
                     }
                 }
@@ -514,7 +520,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         // Data
-        try_smtp!(self.client.data(), self);
+        try_smtp!(self.client.smtp_command(DataCommand), self);
 
         // Message content
         let message = email.message();

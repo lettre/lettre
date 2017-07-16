@@ -12,7 +12,10 @@ fn main() {
     );
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
+    let mut mailer = SmtpTransportBuilder::localhost()
+        .unwrap()
+        .security_level(SecurityLevel::Opportunistic)
+        .build();
     // Send the email
     let result = mailer.send(email);
 

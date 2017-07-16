@@ -3,11 +3,13 @@
 use smtp::authentication::Mechanism;
 use smtp::error::Error;
 use smtp::response::Response;
+use smtp::util::XText;
 use std::collections::HashSet;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::result::Result;
+
 
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -153,6 +155,84 @@ impl ServerInfo {
         self.features.contains(
             &Extension::Authentication(mechanism),
         )
+    }
+}
+
+/// A `MAIL FROM` extension parameter
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum MailParameter {
+    /// `BODY` parameter
+    Body(MailBodyParameter),
+    /// `SIZE` parameter
+    Size(usize),
+    /// Custom parameter
+    Other {
+        /// Parameter keyword
+        keyword: String,
+        /// Parameter value
+        value: Option<String>,
+    },
+}
+
+impl Display for MailParameter {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            MailParameter::Body(ref value) => write!(f, "BODY={}", value),
+            MailParameter::Size(size) => write!(f, "SIZE={}", size),
+            MailParameter::Other {
+                ref keyword,
+                value: Some(ref value),
+            } => write!(f, "{}={}", keyword, XText(value)),
+            MailParameter::Other {
+                ref keyword,
+                value: None,
+            } => f.write_str(keyword),
+        }
+    }
+}
+
+/// Values for the `BODY` parameter to `MAIL FROM`
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum MailBodyParameter {
+    /// `7BIT`
+    SevenBit,
+    /// `8BITMIME`
+    EightBitMime,
+}
+
+impl Display for MailBodyParameter {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            MailBodyParameter::SevenBit => f.write_str("7BIT"),
+            MailBodyParameter::EightBitMime => f.write_str("8BITMIME"),
+        }
+    }
+}
+
+/// A `RCPT TO` extension parameter
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum RcptParameter {
+    /// Custom parameter
+    Other {
+        /// Parameter keyword
+        keyword: String,
+        /// Parameter value
+        value: Option<String>,
+    },
+}
+
+impl Display for RcptParameter {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            RcptParameter::Other {
+                ref keyword,
+                value: Some(ref value),
+            } => write!(f, "{}={}", keyword, XText(value)),
+            RcptParameter::Other {
+                ref keyword,
+                value: None,
+            } => f.write_str(keyword),
+        }
     }
 }
 

@@ -9,6 +9,42 @@ use smtp::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+/// Convertable to user credentials
+pub trait IntoCredentials {
+    /// Converts to a `Credentials` struct
+    fn into_credentials(self) -> Credentials;
+}
+
+impl IntoCredentials for Credentials {
+    fn into_credentials(self) -> Credentials {
+        self
+    }
+}
+
+impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
+    fn into_credentials(self) -> Credentials {
+        let (username, password) = self;
+        Credentials::new(username.into(), password.into())
+    }
+}
+
+/// Contains user credentials
+#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+pub struct Credentials {
+    username: String,
+    password: String,
+}
+
+impl Credentials {
+    /// Create a `Credentials` struct from username and password
+    pub fn new(username: String, password: String) -> Credentials {
+        Credentials {
+            username: username,
+            password: password,
+        }
+    }
+}
+
 /// Represents authentication mechanisms
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 pub enum Mechanism {
@@ -52,15 +88,20 @@ impl Mechanism {
     /// challenge in some cases
     pub fn response(
         &self,
-        username: &str,
-        password: &str,
+        credentials: &Credentials,
         challenge: Option<&str>,
     ) -> Result<String, Error> {
         match *self {
             Mechanism::Plain => {
                 match challenge {
                     Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
-                    None => Ok(format!("{}{}{}{}", NUL, username, NUL, password)),
+                    None => Ok(format!(
+                        "{}{}{}{}",
+                        NUL,
+                        credentials.username,
+                        NUL,
+                        credentials.password
+                    )),
                 }
             }
             Mechanism::Login => {
@@ -70,11 +111,11 @@ impl Mechanism {
                 };
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
-                    return Ok(username.to_string());
+                    return Ok(credentials.username.to_string());
                 }
 
                 if vec!["Password", "Password:"].contains(&decoded_challenge) {
-                    return Ok(password.to_string());
+                    return Ok(credentials.password.to_string());
                 }
 
                 Err(Error::Client("Unrecognized challenge"))
@@ -85,10 +126,14 @@ impl Mechanism {
                     None => return Err(Error::Client("This mechanism does expect a challenge")),
                 };
 
-                let mut hmac = Hmac::new(Md5::new(), password.as_bytes());
+                let mut hmac = Hmac::new(Md5::new(), credentials.password.as_bytes());
                 hmac.input(decoded_challenge.as_bytes());
 
-                Ok(format!("{} {}", username, hmac.result().code().to_hex()))
+                Ok(format!(
+                    "{} {}",
+                    credentials.username,
+                    hmac.result().code().to_hex()
+                ))
             }
         }
     }
@@ -96,56 +141,53 @@ impl Mechanism {
 
 #[cfg(test)]
 mod test {
-    use super::Mechanism;
+    use super::{Credentials, Mechanism};
 
     #[test]
     fn test_plain() {
         let mechanism = Mechanism::Plain;
 
+        let credentials = Credentials::new("username".to_string(), "password".to_string());
+
         assert_eq!(
-            mechanism.response("username", "password", None).unwrap(),
+            mechanism.response(&credentials, None).unwrap(),
             "\u{0}username\u{0}password"
         );
-        assert!(
-            mechanism
-                .response("username", "password", Some("test"))
-                .is_err()
-        );
+        assert!(mechanism.response(&credentials, Some("test")).is_err());
     }
 
     #[test]
     fn test_login() {
         let mechanism = Mechanism::Login;
 
+        let credentials = Credentials::new("alice".to_string(), "wonderland".to_string());
+
         assert_eq!(
-            mechanism
-                .response("alice", "wonderland", Some("Username"))
-                .unwrap(),
+            mechanism.response(&credentials, Some("Username")).unwrap(),
             "alice"
         );
         assert_eq!(
-            mechanism
-                .response("alice", "wonderland", Some("Password"))
-                .unwrap(),
+            mechanism.response(&credentials, Some("Password")).unwrap(),
             "wonderland"
         );
-        assert!(mechanism.response("username", "password", None).is_err());
+        assert!(mechanism.response(&credentials, None).is_err());
     }
 
     #[test]
     fn test_cram_md5() {
         let mechanism = Mechanism::CramMd5;
 
+        let credentials = Credentials::new("alice".to_string(), "wonderland".to_string());
+
         assert_eq!(
             mechanism
                 .response(
-                    "alice",
-                    "wonderland",
+                    &credentials,
                     Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
                 )
                 .unwrap(),
             "alice a540ebe4ef2304070bbc3c456c1f64c0"
         );
-        assert!(mechanism.response("alice", "wonderland", None).is_err());
+        assert!(mechanism.response(&credentials, None).is_err());
     }
 }
