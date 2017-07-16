@@ -62,8 +62,8 @@
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
-//!     // Specify a TLS security level. You can also specify an SslContext with
-//!     // .ssl_context(SslContext::Ssl23)
+//!     // Specify a TLS security level. You can also specify an TlsConnector with
+//!     // .tls_connector(TlsConnector::Ssl23)
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
@@ -108,7 +108,7 @@
 
 use EmailTransport;
 use SendableEmail;
-use openssl::ssl::{SslContext, SslMethod};
+use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::Client;
 use smtp::commands::*;
@@ -172,7 +172,6 @@ pub enum SecurityLevel {
 }
 
 /// Contains client configuration
-#[derive(Debug)]
 pub struct SmtpTransportBuilder {
     /// Maximum connection reuse
     ///
@@ -187,7 +186,7 @@ pub struct SmtpTransportBuilder {
     /// Socket we are connecting to
     server_addr: SocketAddr,
     /// SSL context to use
-    ssl_context: SslContext,
+    tls_connector: TlsConnector,
     /// TLS security level
     security_level: SecurityLevel,
     /// Enable UTF8 mailboxes in envelope or headers
@@ -209,7 +208,7 @@ impl SmtpTransportBuilder {
             Some(addr) => {
                 Ok(SmtpTransportBuilder {
                     server_addr: addr,
-                    ssl_context: SslContext::builder(SslMethod::tls()).unwrap().build(),
+                    tls_connector: TlsConnector::builder().unwrap().build().unwrap(),
                     security_level: SecurityLevel::AlwaysEncrypt,
                     smtp_utf8: false,
                     credentials: None,
@@ -230,8 +229,8 @@ impl SmtpTransportBuilder {
     }
 
     /// Use STARTTLS with a specific context
-    pub fn ssl_context(mut self, ssl_context: SslContext) -> SmtpTransportBuilder {
-        self.ssl_context = ssl_context;
+    pub fn tls_connector(mut self, ssl_context: TlsConnector) -> SmtpTransportBuilder {
+        self.tls_connector = ssl_context;
         self
     }
 
@@ -317,7 +316,6 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
-#[derive(Debug)]
 pub struct SmtpTransport {
     /// Information about the server
     /// Value is None before HELO/EHLO
@@ -411,7 +409,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             try!(self.client.connect(
                 &self.client_info.server_addr,
                 match self.client_info.security_level {
-                    SecurityLevel::EncryptedWrapper => Some(&self.client_info.ssl_context),
+                    SecurityLevel::EncryptedWrapper => Some(&self.client_info.tls_connector),
                     _ => None,
                 },
             ));
@@ -439,7 +437,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                     try_smtp!(self.client.smtp_command(StarttlsCommand), self);
                     try_smtp!(
                         self.client.upgrade_tls_stream(
-                            &self.client_info.ssl_context,
+                            &self.client_info.tls_connector,
                         ),
                         self
                     );
