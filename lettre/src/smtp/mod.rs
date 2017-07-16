@@ -479,7 +479,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                         try_smtp!(
                             self.client.auth(
                                 mechanism,
-                                &self.client_info.credentials.as_ref().unwrap(),
+                                self.client_info.credentials.as_ref().unwrap(),
                             ),
                             self
                         );
