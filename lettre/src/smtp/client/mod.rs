@@ -59,6 +59,7 @@ macro_rules! return_err (
     })
 );
 
+#[cfg_attr(feature = "cargo-clippy", allow(new_without_default_derive))]
 impl<S: Write + Read> Client<S> {
     /// Creates a new SMTP client
     ///
