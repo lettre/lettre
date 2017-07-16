@@ -12,7 +12,7 @@
 //!                 "Hello world"
 //!             );
 //!
-//! let mut sender = StubEmailTransport;
+//! let mut sender = StubEmailTransport::new_positive();
 //! let result = sender.send(email);
 //! assert!(result.is_ok());
 //! ```
@@ -25,15 +25,34 @@
 
 use EmailTransport;
 use SendableEmail;
+use smtp::response::{Code, Response};
+use smtp::error::{Error, SmtpResult};
+use std::str::FromStr;
 
-pub mod error;
-
-/// This transport does nothing except logging the message envelope
+/// This transport logs the message envelope and returns the given response
 #[derive(Debug)]
-pub struct StubEmailTransport;
+pub struct StubEmailTransport {
+    response: Response,
+}
+
+impl StubEmailTransport {
+    /// Creates a new transport that always returns the given response
+    pub fn new(response: Response) -> StubEmailTransport {
+        StubEmailTransport {
+            response: response,
+        }
+    }
+
+    /// Creates a new transport that always returns a success response
+    pub fn new_positive() -> StubEmailTransport {
+        StubEmailTransport {
+            response: Response::new(Code::from_str("200").unwrap(), vec!["ok".to_string()])
+        }
+    }
+}
 
 /// SMTP result type
-pub type StubResult = Result<(), error::Error>;
+pub type StubResult = SmtpResult;
 
 impl EmailTransport<StubResult> for StubEmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> StubResult {
@@ -44,7 +63,11 @@ impl EmailTransport<StubResult> for StubEmailTransport {
             email.from(),
             email.to()
         );
-        Ok(())
+        if self.response.is_positive() {
+            Ok(self.response.clone())
+        } else {
+            Err(Error::from(self.response.clone()))
+        }
     }
 
     fn close(&mut self) {
