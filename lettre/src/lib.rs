@@ -13,20 +13,25 @@ extern crate hex;
 extern crate crypto;
 extern crate bufstream;
 extern crate native_tls;
+#[cfg(feature = "file-transport")]
 extern crate serde_json;
+#[cfg(feature = "serde-impls")]
 extern crate serde;
+#[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
 
 pub mod smtp;
 pub mod sendmail;
 pub mod stub;
+#[cfg(feature = "file-transport")]
 pub mod file;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
 /// Email address
-#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct EmailAddress(pub String);
 
 impl Display for EmailAddress {
@@ -63,7 +68,8 @@ pub trait EmailTransport<U> {
 }
 
 /// Minimal email structure
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct SimpleSendableEmail {
     /// To
     to: Vec<EmailAddress>,
