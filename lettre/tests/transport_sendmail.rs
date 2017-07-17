@@ -1,16 +1,16 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SimpleSendableEmail};
+use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
 use lettre::sendmail::SendmailTransport;
 
 #[test]
 fn sendmail_transport_simple() {
     let mut sender = SendmailTransport::new();
     let email = SimpleSendableEmail::new(
-        "user@localhost",
-        vec!["root@localhost"],
-        "sendmail_id",
-        "Hello sendmail",
+        EmailAddress::new("user@localhost".to_string()),
+        vec![EmailAddress::new("root@localhost".to_string())],
+        "sendmail_id".to_string(),
+        "Hello sendmail".to_string(),
     );
 
     let result = sender.send(email);

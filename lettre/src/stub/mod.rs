@@ -3,13 +3,13 @@
 //!
 //! ```rust
 //! use lettre::stub::StubEmailTransport;
-//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 //!
 //! let email = SimpleSendableEmail::new(
-//!                 "user@localhost",
-//!                 vec!["root@localhost"],
-//!                 "message_id",
-//!                 "Hello world"
+//!                 EmailAddress::new("user@localhost".to_string()),
+//!                 vec![EmailAddress::new("root@localhost".to_string())],
+//!                 "message_id".to_string(),
+//!                 "Hello world".to_string(),
 //!             );
 //!
 //! let mut sender = StubEmailTransport::new_positive();
@@ -25,8 +25,8 @@
 
 use EmailTransport;
 use SendableEmail;
-use smtp::response::{Code, Response};
 use smtp::error::{Error, SmtpResult};
+use smtp::response::{Code, Response};
 use std::str::FromStr;
 
 /// This transport logs the message envelope and returns the given response
@@ -38,15 +38,13 @@ pub struct StubEmailTransport {
 impl StubEmailTransport {
     /// Creates a new transport that always returns the given response
     pub fn new(response: Response) -> StubEmailTransport {
-        StubEmailTransport {
-            response: response,
-        }
+        StubEmailTransport { response: response }
     }
 
     /// Creates a new transport that always returns a success response
     pub fn new_positive() -> StubEmailTransport {
         StubEmailTransport {
-            response: Response::new(Code::from_str("200").unwrap(), vec!["ok".to_string()])
+            response: Response::new(Code::from_str("200").unwrap(), vec!["ok".to_string()]),
         }
     }
 }

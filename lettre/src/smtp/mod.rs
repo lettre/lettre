@@ -18,15 +18,15 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 //! use lettre::smtp::SmtpTransportBuilder;
 //! use lettre::smtp::SecurityLevel;
 //!
 //! let email = SimpleSendableEmail::new(
-//!                 "user@localhost",
-//!                 vec!["root@localhost"],
-//!                 "message_id",
-//!                 "Hello world"
+//!                 EmailAddress::new("user@localhost".to_string()),
+//!                 vec![EmailAddress::new("root@localhost".to_string())],
+//!                 "message_id".to_string(),
+//!                 "Hello world".to_string(),
 //!             );
 //!
 //! // Open a local connection on port 25
@@ -45,14 +45,14 @@
 //! SmtpTransportBuilder};
 //! use lettre::smtp::authentication::{Credentials, Mechanism};
 //! use lettre::smtp::SUBMISSION_PORT;
-//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 //! use lettre::smtp::extension::ClientId;
 //!
 //! let email = SimpleSendableEmail::new(
-//!                 "user@localhost",
-//!                 vec!["root@localhost"],
-//!                 "message_id",
-//!                 "Hello world"
+//!                 EmailAddress::new("user@localhost".to_string()),
+//!                 vec![EmailAddress::new("root@localhost".to_string())],
+//!                 "message_id".to_string(),
+//!                 "Hello world".to_string(),
 //!             );
 //!
 //! // Connect to a remote server on a custom port
@@ -89,6 +89,7 @@
 //! error handling:
 //!
 //! ```rust
+//! use lettre::EmailAddress;
 //! use lettre::smtp::SMTP_PORT;
 //! use lettre::smtp::client::Client;
 //! use lettre::smtp::client::net::NetworkStream;
@@ -98,8 +99,8 @@
 //! let mut email_client: Client<NetworkStream> = Client::new();
 //! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
 //! let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
-//! let _ = email_client.mail("user@example.com", None);
-//! let _ = email_client.rcpt("user@example.org");
+//! let _ = email_client.smtp_command(MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![]));
+//! let _ = email_client.smtp_command(RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![]));
 //! let _ = email_client.smtp_command(DataCommand);
 //! let _ = email_client.message("Test email");
 //! let _ = email_client.smtp_command(QuitCommand);
@@ -113,7 +114,7 @@ use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::Client;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
-use smtp::extension::{ClientId, Extension, ServerInfo};
+use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -492,27 +493,41 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         // Mail
-        let mail_options = match (
-            self.server_info.as_ref().unwrap().supports_feature(
-                Extension::EightBitMime,
-            ),
-            self.server_info.as_ref().unwrap().supports_feature(
-                Extension::SmtpUtfEight,
-            ),
-        ) {
-            (true, true) => Some("BODY=8BITMIME SMTPUTF8"),
-            (true, false) => Some("BODY=8BITMIME"),
-            (false, _) => None,
-        };
+        let mut mail_options = vec![];
 
-        try_smtp!(self.client.mail(&email.from(), mail_options), self);
+        if self.server_info.as_ref().unwrap().supports_feature(
+            Extension::EightBitMime,
+        )
+        {
+            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
+        }
+
+        if self.server_info.as_ref().unwrap().supports_feature(
+            Extension::SmtpUtfEight,
+        )
+        {
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        try_smtp!(
+            self.client.smtp_command(MailCommand::new(
+                Some(email.from().clone()),
+                mail_options,
+            )),
+            self
+        );
 
         // Log the mail command
         info!("{}: from=<{}>", message_id, email.from());
 
         // Recipient
         for to_address in &email.to() {
-            try_smtp!(self.client.rcpt(to_address), self);
+            try_smtp!(
+                self.client.smtp_command(
+                    RcptCommand::new(to_address.clone(), vec![]),
+                ),
+                self
+            );
             // Log the rcpt command
             info!("{}: to=<{}>", message_id, to_address);
         }

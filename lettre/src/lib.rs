@@ -13,7 +13,6 @@ extern crate hex;
 extern crate crypto;
 extern crate bufstream;
 extern crate native_tls;
-extern crate emailaddress;
 extern crate serde_json;
 extern crate serde;
 #[macro_use]
@@ -23,13 +22,32 @@ pub mod smtp;
 pub mod sendmail;
 pub mod stub;
 pub mod file;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+
+/// Email address
+#[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
+pub struct EmailAddress(pub String);
+
+impl Display for EmailAddress {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl EmailAddress {
+    /// Creates a new email address
+    pub fn new(address: String) -> EmailAddress {
+        EmailAddress(address)
+    }
+}
 
 /// Email sendable by an SMTP client
 pub trait SendableEmail {
     /// To
-    fn to(&self) -> Vec<String>;
+    fn to(&self) -> Vec<EmailAddress>;
     /// From
-    fn from(&self) -> String;
+    fn from(&self) -> EmailAddress;
     /// Message ID, used for logging
     fn message_id(&self) -> String;
     /// Message content
@@ -48,9 +66,9 @@ pub trait EmailTransport<U> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimpleSendableEmail {
     /// To
-    to: Vec<String>,
+    to: Vec<EmailAddress>,
     /// From
-    from: String,
+    from: EmailAddress,
     /// Message ID
     message_id: String,
     /// Message content
@@ -60,26 +78,26 @@ pub struct SimpleSendableEmail {
 impl SimpleSendableEmail {
     /// Returns a new email
     pub fn new(
-        from_address: &str,
-        to_addresses: Vec<&str>,
-        message_id: &str,
-        message: &str,
+        from_address: EmailAddress,
+        to_addresses: Vec<EmailAddress>,
+        message_id: String,
+        message: String,
     ) -> SimpleSendableEmail {
         SimpleSendableEmail {
-            from: from_address.to_string(),
-            to: to_addresses.iter().map(|s| s.to_string()).collect(),
-            message_id: message_id.to_string(),
-            message: message.to_string(),
+            from: from_address,
+            to: to_addresses,
+            message_id: message_id,
+            message: message,
         }
     }
 }
 
 impl SendableEmail for SimpleSendableEmail {
-    fn to(&self) -> Vec<String> {
+    fn to(&self) -> Vec<EmailAddress> {
         self.to.clone()
     }
 
-    fn from(&self) -> String {
+    fn from(&self) -> EmailAddress {
         self.from.clone()
     }
 

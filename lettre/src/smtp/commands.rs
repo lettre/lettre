@@ -1,7 +1,7 @@
 //! SMTP commands
 
+use EmailAddress;
 use base64;
-use emailaddress::EmailAddress;
 use smtp::CRLF;
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::error::Error;
@@ -323,7 +323,7 @@ mod test {
     #[test]
     fn test_display() {
         let id = ClientId::Domain("localhost".to_string());
-        let email = EmailAddress::new("test@example.com").unwrap();
+        let email = EmailAddress::new("test@example.com".to_string());
         let mail_parameter = MailParameter::Other {
             keyword: "TEST".to_string(),
             value: Some("value".to_string()),

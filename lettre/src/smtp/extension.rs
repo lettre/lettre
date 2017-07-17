@@ -165,6 +165,8 @@ pub enum MailParameter {
     Body(MailBodyParameter),
     /// `SIZE` parameter
     Size(usize),
+    /// `SMTPUTF8` parameter
+    SmtpUtfEight,
     /// Custom parameter
     Other {
         /// Parameter keyword
@@ -179,6 +181,7 @@ impl Display for MailParameter {
         match *self {
             MailParameter::Body(ref value) => write!(f, "BODY={}", value),
             MailParameter::Size(size) => write!(f, "SIZE={}", size),
+            MailParameter::SmtpUtfEight => f.write_str("SMTPUTF8"),
             MailParameter::Other {
                 ref keyword,
                 value: Some(ref value),

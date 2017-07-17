@@ -1,8 +1,8 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SimpleSendableEmail};
-use lettre::stub::StubEmailTransport;
+use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
 use lettre::smtp::response::{Code, Response};
+use lettre::stub::StubEmailTransport;
 use std::str::FromStr;
 
 #[test]
@@ -13,10 +13,10 @@ fn stub_transport() {
     let mut sender_ko = StubEmailTransport::new(response_ko);
 
     let email = SimpleSendableEmail::new(
-        "user@localhost",
-        vec!["root@localhost"],
-        "stub_id",
-        "Hello stub",
+        EmailAddress::new("user@localhost".to_string()),
+        vec![EmailAddress::new("root@localhost".to_string())],
+        "stub_id".to_string(),
+        "Hello stub".to_string(),
     );
 
     let result_ok = sender_ok.send(email.clone()).unwrap();
