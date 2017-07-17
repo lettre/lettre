@@ -19,8 +19,8 @@ bufstream = "^0.1"
 log = "^0.3"
 native-tls = "^0.1"
 base64 = "^0.6"
-hex = "^0.2"
-rust-crypto = "^0.2"
+hex = { version = "^0.2", optional = true }
+rust-crypto = { version = "^0.2", optional = true }
 serde = { version = "^1.0", optional = true }
 serde_json = { version = "^1.0", optional = true }
 serde_derive = { version = "^1.0", optional = true }
@@ -29,7 +29,8 @@ serde_derive = { version = "^1.0", optional = true }
 env_logger = "^0.4"
 
 [features]
-default = ["file-transport"]
+default = ["file-transport", "crammd5-auth"]
 unstable = []
 serde-impls = ["serde", "serde_derive"]
 file-transport = ["serde-impls", "serde_json"]
+crammd5-auth = ["rust-crypto", "hex"]
