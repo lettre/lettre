@@ -8,6 +8,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::io;
 use std::string::FromUtf8Error;
+use native_tls;
 
 /// An enum of all error kinds.
 #[derive(Debug)]
@@ -32,6 +33,8 @@ pub enum Error {
     Resolution,
     /// IO error
     Io(io::Error),
+    /// TLS error
+    Tls(native_tls::Error),
 }
 
 impl Display for Error {
@@ -64,6 +67,7 @@ impl StdError for Error {
             Resolution => "could not resolve hostname",
             Client(err) => err,
             Io(ref err) => err.description(),
+            Tls(ref err) => err.description(),
         }
     }
 
@@ -72,6 +76,7 @@ impl StdError for Error {
             ChallengeParsing(ref err) => Some(&*err as &StdError),
             Utf8Parsing(ref err) => Some(&*err as &StdError),
             Io(ref err) => Some(&*err as &StdError),
+            Tls(ref err) => Some(&*err as &StdError),
             _ => None,
         }
     }
@@ -80,6 +85,12 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Io(err)
+    }
+}
+
+impl From<native_tls::Error> for Error {
+    fn from(err: native_tls::Error) -> Error {
+        Tls(err)
     }
 }
 

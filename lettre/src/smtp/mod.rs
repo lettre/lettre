@@ -113,6 +113,7 @@ use smtp::client::Client;
 use smtp::client::net::ClientTlsParameters;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
+use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::io::Read;
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -322,9 +323,13 @@ impl<'a> SmtpTransport {
     /// Creates an encrypted transport over submission port, using the provided domain
     /// to validate TLS certificates.
     pub fn simple_builder(domain: String) -> Result<SmtpTransportBuilder, Error> {
+
+        let mut tls_builder = TlsConnector::builder()?;
+        tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
+
         let tls_parameters = ClientTlsParameters::new(
             domain.clone(),
-            TlsConnector::builder().unwrap().build().unwrap(),
+            tls_builder.build().unwrap(),
         );
 
         SmtpTransportBuilder::new(
