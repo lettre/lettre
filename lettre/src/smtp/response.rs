@@ -213,7 +213,7 @@ impl ResponseParser {
                     ));
                 }
             }
-            None => self.code = Some(try!(line[0..3].parse::<Code>())),
+            None => self.code = Some(line[0..3].parse::<Code>()?),
         }
 
         if line.len() > 4 {

@@ -101,8 +101,8 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match self.stream {
             Some(ref mut stream) => {
-                try!(stream.get_mut().set_read_timeout(duration));
-                try!(stream.get_mut().set_read_timeout(duration));
+                stream.get_mut().set_read_timeout(duration)?;
+                stream.get_mut().set_read_timeout(duration)?;
                 Ok(())
             }
             None => Ok(()),
@@ -120,7 +120,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             return_err!("The connection is already established", self);
         }
 
-        let mut addresses = try!(addr.to_socket_addrs());
+        let mut addresses = addr.to_socket_addrs()?;
 
         let server_addr = match addresses.next() {
             Some(addr) => addr,
@@ -130,7 +130,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(try!(Connector::connect(&server_addr, tls_connector)));
+        self.set_stream(Connector::connect(&server_addr, tls_connector)?);
 
         self.get_reply()
     }
@@ -187,8 +187,8 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             return Err(From::from("Connection closed"));
         }
 
-        try!(write!(self.stream.as_mut().unwrap(), "{}{}", string, end));
-        try!(self.stream.as_mut().unwrap().flush());
+        write!(self.stream.as_mut().unwrap(), "{}{}", string, end)?;
+        self.stream.as_mut().unwrap().flush()?;
 
         debug!("Wrote: {}", escape_crlf(string));
 
@@ -201,16 +201,16 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         let mut parser = ResponseParser::default();
 
         let mut line = String::new();
-        try!(self.stream.as_mut().unwrap().read_line(&mut line));
+        self.stream.as_mut().unwrap().read_line(&mut line)?;
 
         debug!("Read: {}", escape_crlf(line.as_ref()));
 
-        while try!(parser.read_line(remove_crlf(line.as_ref()).as_ref())) {
+        while parser.read_line(remove_crlf(line.as_ref()).as_ref())? {
             line.clear();
-            try!(self.stream.as_mut().unwrap().read_line(&mut line));
+            self.stream.as_mut().unwrap().read_line(&mut line)?;
         }
 
-        let response = try!(parser.response());
+        let response = parser.response()?;
 
         if response.is_positive() {
             Ok(response)

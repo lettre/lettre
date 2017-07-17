@@ -46,7 +46,7 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
         // Spawn the sendmail command
         let to_addresses: Vec<String> = email.to().iter().map(|x| x.to_string()).collect();
-        let mut process = try!(
+        let mut process = 
             Command::new(&self.command)
                 .args(
                     &[
@@ -59,7 +59,7 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .spawn()
-        );
+        ?;
 
         match process.stdin.as_mut().unwrap().write_all(
             email.message().as_bytes(),
