@@ -151,19 +151,6 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.send_server(&command.to_string(), "")
     }
 
-    /// Sends a MAIL command
-    pub fn mail(&mut self, address: &str, options: Option<&str>) -> SmtpResult {
-        match options {
-            Some(options) => self.command(&format!("MAIL FROM:<{}> {}", address, options)),
-            None => self.command(&format!("MAIL FROM:<{}>", address)),
-        }
-    }
-
-    /// Sends a RCPT command
-    pub fn rcpt(&mut self, address: &str) -> SmtpResult {
-        self.command(&format!("RCPT TO:<{}>", address))
-    }
-
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
     pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
 

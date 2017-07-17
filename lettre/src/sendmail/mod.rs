@@ -2,13 +2,13 @@
 //!
 //! ```rust
 //! use lettre::sendmail::SendmailTransport;
-//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 //!
 //! let email = SimpleSendableEmail::new(
-//!                 "user@localhost",
-//!                 vec!["root@localhost"],
-//!                 "message_id",
-//!                 "Hello world"
+//!                 EmailAddress::new("user@localhost".to_string()),
+//!                 vec![EmailAddress::new("root@localhost".to_string())],
+//!                 "message_id".to_string(),
+//!                 "Hello world".to_string(),
 //!             );
 //!
 //! let mut sender = SendmailTransport::new();
@@ -45,9 +45,17 @@ impl SendmailTransport {
 impl EmailTransport<SendmailResult> for SendmailTransport {
     fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
         // Spawn the sendmail command
+        let to_addresses: Vec<String> = email.to().iter().map(|x| x.to_string()).collect();
         let mut process = try!(
             Command::new(&self.command)
-                .args(&["-i", "-f", &email.from(), &email.to().join(" ")])
+                .args(
+                    &[
+                        "-i",
+                        "-f",
+                        &email.from().to_string(),
+                        &to_addresses.join(" "),
+                    ],
+                )
                 .stdin(Stdio::piped())
                 .stdout(Stdio::piped())
                 .spawn()

@@ -6,15 +6,15 @@
 //! use std::env::temp_dir;
 //!
 //! use lettre::file::FileEmailTransport;
-//! use lettre::{SimpleSendableEmail, EmailTransport};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 //!
 //! // Write to the local temp directory
 //! let mut sender = FileEmailTransport::new(temp_dir());
 //! let email = SimpleSendableEmail::new(
-//!                 "user@localhost",
-//!                 vec!["root@localhost"],
-//!                 "message_id",
-//!                 "Hello world"
+//!                 EmailAddress::new("user@localhost".to_string()),
+//!                 vec![EmailAddress::new("root@localhost".to_string())],
+//!                 "message_id".to_string(),
+//!                 "Hello world".to_string(),
 //!             );
 //!
 //! let result = sender.send(email);
@@ -68,10 +68,10 @@ impl EmailTransport<FileResult> for FileEmailTransport {
         let mut f = try!(File::create(file.as_path()));
 
         let simple_email = SimpleSendableEmail::new(
-            &email.from(),
-            email.to().iter().map(String::as_str).collect(),
-            &email.message_id(),
-            &email.message(),
+            email.from().clone(),
+            email.to().clone(),
+            email.message_id().clone(),
+            email.message(),
         );
 
         try!(f.write_all(

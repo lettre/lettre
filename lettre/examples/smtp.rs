@@ -1,14 +1,14 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SimpleSendableEmail};
+use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
 use lettre::smtp::{SecurityLevel, SmtpTransportBuilder};
 
 fn main() {
     let email = SimpleSendableEmail::new(
-        "user@localhost",
-        vec!["root@localhost"],
-        "file_id",
-        "Hello ß☺ example",
+        EmailAddress::new("user@localhost".to_string()),
+        vec![EmailAddress::new("root@localhost".to_string())],
+        "file_id".to_string(),
+        "Hello ß☺ example".to_string(),
     );
 
     // Open a local connection on port 25

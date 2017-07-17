@@ -2,7 +2,7 @@
 
 use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use error::Error;
-use lettre::SendableEmail;
+use lettre::{EmailAddress, SendableEmail};
 use mime;
 use mime::Mime;
 use std::fmt;
@@ -765,12 +765,12 @@ impl EmailBuilder {
 }
 
 impl SendableEmail for Email {
-    fn to(&self) -> Vec<String> {
-        self.envelope.to.clone()
+    fn to(&self) -> Vec<EmailAddress> {
+        self.envelope.to.iter().map(|x| EmailAddress::new(x.clone())).collect()
     }
 
-    fn from(&self) -> String {
-        self.envelope.from.clone()
+    fn from(&self) -> EmailAddress {
+        EmailAddress::new(self.envelope.from.clone())
     }
 
     fn message_id(&self) -> String {
@@ -812,7 +812,7 @@ mod test {
 
     use super::{Email, EmailBuilder, Envelope, IntoEmail, SimpleEmail};
     use email_format::{Header, MimeMessage};
-    use lettre::SendableEmail;
+    use lettre::{EmailAddress, SendableEmail};
     use time::now;
 
     use uuid::Uuid;
@@ -962,13 +962,13 @@ mod test {
             .build()
             .unwrap();
 
-        assert_eq!(email.from(), "sender@localhost".to_string());
+        assert_eq!(email.from().to_string(), "sender@localhost".to_string());
         assert_eq!(
             email.to(),
             vec![
-                "user@localhost".to_string(),
-                "cc@localhost".to_string(),
-                "bcc@localhost".to_string(),
+                EmailAddress::new("user@localhost".to_string()),
+                EmailAddress::new("cc@localhost".to_string()),
+                EmailAddress::new("bcc@localhost".to_string()),
             ]
         );
         let content = format!("{}", email);

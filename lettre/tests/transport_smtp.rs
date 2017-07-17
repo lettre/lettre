@@ -1,6 +1,6 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SimpleSendableEmail};
+use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
 use lettre::smtp::SecurityLevel;
 use lettre::smtp::SmtpTransportBuilder;
 
@@ -11,10 +11,10 @@ fn smtp_transport_simple() {
         .security_level(SecurityLevel::Opportunistic)
         .build();
     let email = SimpleSendableEmail::new(
-        "user@localhost",
-        vec!["root@localhost"],
-        "smtp_id",
-        "Hello smtp",
+        EmailAddress::new("user@localhost".to_string()),
+        vec![EmailAddress::new("root@localhost".to_string())],
+        "smtp_id".to_string(),
+        "Hello smtp".to_string(),
     );
 
     let result = sender.send(email);

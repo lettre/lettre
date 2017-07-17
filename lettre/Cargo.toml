@@ -24,7 +24,6 @@ rust-crypto = "^0.2"
 serde = "^1.0"
 serde_json = "^1.0"
 serde_derive = "^1.0"
-emailaddress = "^0.4"
 
 [dev-dependencies]
 env_logger = "^0.4"

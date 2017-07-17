@@ -1,6 +1,6 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SendableEmail, SimpleSendableEmail};
+use lettre::{EmailAddress, EmailTransport, SendableEmail, SimpleSendableEmail};
 
 use lettre::file::FileEmailTransport;
 use std::env::temp_dir;
@@ -12,10 +12,10 @@ use std::io::Read;
 fn file_transport() {
     let mut sender = FileEmailTransport::new(temp_dir());
     let email = SimpleSendableEmail::new(
-        "user@localhost",
-        vec!["root@localhost"],
-        "file_id",
-        "Hello file",
+        EmailAddress::new("user@localhost".to_string()),
+        vec![EmailAddress::new("root@localhost".to_string())],
+        "file_id".to_string(),
+        "Hello file".to_string(),
     );
     let result = sender.send(email.clone());
     assert!(result.is_ok());
