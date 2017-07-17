@@ -85,7 +85,7 @@ impl Connector for NetworkStream {
         addr: &SocketAddr,
         tls_connector: Option<&TlsConnector>,
     ) -> io::Result<NetworkStream> {
-        let tcp_stream = try!(TcpStream::connect(addr));
+        let tcp_stream = TcpStream::connect(addr)?;
 
         match tls_connector {
             Some(context) => {

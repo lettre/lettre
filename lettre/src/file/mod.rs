@@ -65,7 +65,7 @@ impl EmailTransport<FileResult> for FileEmailTransport {
         let mut file = self.path.clone();
         file.push(format!("{}.txt", email.message_id()));
 
-        let mut f = try!(File::create(file.as_path()));
+        let mut f = File::create(file.as_path())?;
 
         let simple_email = SimpleSendableEmail::new(
             email.from().clone(),
@@ -74,9 +74,9 @@ impl EmailTransport<FileResult> for FileEmailTransport {
             email.message(),
         );
 
-        try!(f.write_all(
+        f.write_all(
             serde_json::to_string(&simple_email)?.as_bytes(),
-        ));
+        )?;
 
         Ok(())
     }

@@ -203,7 +203,7 @@ pub struct SmtpTransportBuilder {
 impl SmtpTransportBuilder {
     /// Creates a new local SMTP client
     pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
-        let mut addresses = try!(addr.to_socket_addrs());
+        let mut addresses = addr.to_socket_addrs()?;
 
         match addresses.next() {
             Some(addr) => {
@@ -407,20 +407,20 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         if self.state.connection_reuse_count == 0 {
-            try!(self.client.connect(
+            self.client.connect(
                 &self.client_info.server_addr,
                 match self.client_info.security_level {
                     SecurityLevel::EncryptedWrapper => Some(&self.client_info.tls_connector),
                     _ => None,
                 },
-            ));
+            )?;
 
-            try!(self.client.set_timeout(self.client_info.timeout));
+            self.client.set_timeout(self.client_info.timeout)?;
 
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
 
-            try!(self.get_ehlo());
+            self.get_ehlo()?;
 
             match (
                 &self.client_info.security_level,
@@ -446,7 +446,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                     debug!("connection encrypted");
 
                     // Send EHLO again
-                    try!(self.get_ehlo());
+                    self.get_ehlo()?;
                 }
             }
 
