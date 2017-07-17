@@ -68,7 +68,7 @@
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
 //!     // Configure expected authentication mechanism
-//!     .authentication_mechanism(Mechanism::CramMd5)
+//!     .authentication_mechanism(Mechanism::Plain)
 //!     // Enable connection reuse
 //!     .connection_reuse(true).build();
 //!
@@ -110,7 +110,8 @@
 use EmailTransport;
 use SendableEmail;
 use native_tls::TlsConnector;
-use smtp::authentication::{Credentials, Mechanism};
+use smtp::authentication::{Credentials, DEFAULT_ENCRYPTED_MECHANISMS,
+                           DEFAULT_UNENCRYPTED_MECHANISMS, Mechanism};
 use smtp::client::Client;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
@@ -458,13 +459,9 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                     Some(mechanism) => vec![mechanism],
                     None => {
                         if self.client.is_encrypted() {
-                            // If encrypted, allow all mechanisms, with a preference for the
-                            // simplest
-                            // Login is obsolete so try it last
-                            vec![Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login]
+                            DEFAULT_ENCRYPTED_MECHANISMS.to_vec()
                         } else {
-                            // If not encrypted, do not allow clear-text passwords by default
-                            vec![Mechanism::CramMd5]
+                            DEFAULT_UNENCRYPTED_MECHANISMS.to_vec()
                         }
                     }
                 };

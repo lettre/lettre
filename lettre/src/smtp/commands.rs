@@ -317,7 +317,9 @@ impl AuthCommand {
 mod test {
     use super::*;
     use smtp::extension::MailBodyParameter;
+    #[cfg(feature = "crammd5-auth")]
     use smtp::response::Code;
+    #[cfg(feature = "crammd5-auth")]
     use std::str::FromStr;
 
     #[test]
@@ -395,6 +397,7 @@ mod test {
             ),
             "AUTH PLAIN AHVzZXIAcGFzc3dvcmQ=\r\n"
         );
+        #[cfg(feature = "crammd5-auth")]
         assert_eq!(
             format!(
                 "{}",
@@ -413,6 +416,7 @@ mod test {
             ),
             "AUTH LOGIN\r\n"
         );
+        #[cfg(feature = "crammd5-auth")]
         assert_eq!(
             format!(
                 "{}",

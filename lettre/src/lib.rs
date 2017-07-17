@@ -9,7 +9,9 @@
 #[macro_use]
 extern crate log;
 extern crate base64;
+#[cfg(feature = "crammd5-auth")]
 extern crate hex;
+#[cfg(feature = "crammd5-auth")]
 extern crate crypto;
 extern crate bufstream;
 extern crate native_tls;

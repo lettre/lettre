@@ -1,13 +1,36 @@
 //! Provides authentication mechanisms
 
+#[cfg(feature = "crammd5-auth")]
 use crypto::hmac::Hmac;
+#[cfg(feature = "crammd5-auth")]
 use crypto::mac::Mac;
+#[cfg(feature = "crammd5-auth")]
 use crypto::md5::Md5;
+#[cfg(feature = "crammd5-auth")]
 use hex::ToHex;
 use smtp::NUL;
 use smtp::error::Error;
 use std::fmt;
 use std::fmt::{Display, Formatter};
+
+/// Accepted authentication mecanisms on an encrypted connection
+/// Trying LOGIN last as it is deprecated.
+#[cfg(feature = "crammd5-auth")]
+pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] =
+    &[Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login];
+/// Accepted authentication mecanisms on an encrypted connection
+/// Trying LOGIN last as it is deprecated.
+#[cfg(not(feature = "crammd5-auth"))]
+pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] = &[Mechanism::Plain, Mechanism::Login];
+
+/// Accepted authentication mecanisms on an unencrypted connection
+#[cfg(feature = "crammd5-auth")]
+pub const DEFAULT_UNENCRYPTED_MECHANISMS: &'static [Mechanism] = &[Mechanism::CramMd5];
+/// Accepted authentication mecanisms on an unencrypted connection
+/// When CRAMMD5 support is not enabled, no mechanisms are allowed.
+#[cfg(not(feature = "crammd5-auth"))]
+pub const DEFAULT_UNENCRYPTED_MECHANISMS: &'static [Mechanism] = &[];
+
 
 /// Convertable to user credentials
 pub trait IntoCredentials {
@@ -57,6 +80,7 @@ pub enum Mechanism {
     Login,
     /// CRAM-MD5 authentication mechanism
     /// RFC 2195: https://tools.ietf.org/html/rfc2195
+    #[cfg(feature = "crammd5-auth")]
     CramMd5,
 }
 
@@ -68,6 +92,7 @@ impl Display for Mechanism {
             match *self {
                 Mechanism::Plain => "PLAIN",
                 Mechanism::Login => "LOGIN",
+                #[cfg(feature = "crammd5-auth")]
                 Mechanism::CramMd5 => "CRAM-MD5",
             }
         )
@@ -76,10 +101,12 @@ impl Display for Mechanism {
 
 impl Mechanism {
     /// Does the mechanism supports initial response
+    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
     pub fn supports_initial_response(&self) -> bool {
         match *self {
             Mechanism::Plain => true,
-            Mechanism::Login |
+            Mechanism::Login => false,
+            #[cfg(feature = "crammd5-auth")]
             Mechanism::CramMd5 => false,
         }
     }
@@ -120,6 +147,7 @@ impl Mechanism {
 
                 Err(Error::Client("Unrecognized challenge"))
             }
+            #[cfg(feature = "crammd5-auth")]
             Mechanism::CramMd5 => {
                 let decoded_challenge = match challenge {
                     Some(challenge) => challenge,
@@ -174,6 +202,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "crammd5-auth")]
     fn test_cram_md5() {
         let mechanism = Mechanism::CramMd5;
 

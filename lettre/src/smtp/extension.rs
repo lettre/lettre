@@ -128,6 +128,7 @@ impl ServerInfo {
                             "LOGIN" => {
                                 features.insert(Extension::Authentication(Mechanism::Login));
                             }
+                            #[cfg(feature = "crammd5-auth")]
                             "CRAM-MD5" => {
                                 features.insert(Extension::Authentication(Mechanism::CramMd5));
                             }
@@ -330,6 +331,7 @@ mod test {
 
         assert!(server_info.supports_feature(Extension::EightBitMime));
         assert!(!server_info.supports_feature(Extension::StartTls));
+        #[cfg(feature = "crammd5-auth")]
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
         let response2 = Response::new(
@@ -351,6 +353,7 @@ mod test {
         assert!(features2.insert(
             Extension::Authentication(Mechanism::Plain),
         ));
+        #[cfg(feature = "crammd5-auth")]
         assert!(features2.insert(
             Extension::Authentication(Mechanism::CramMd5),
         ));
@@ -364,6 +367,7 @@ mod test {
 
         assert!(server_info2.supports_feature(Extension::EightBitMime));
         assert!(server_info2.supports_auth_mechanism(Mechanism::Plain));
+        #[cfg(feature = "crammd5-auth")]
         assert!(server_info2.supports_auth_mechanism(Mechanism::CramMd5));
         assert!(!server_info2.supports_feature(Extension::StartTls));
     }
