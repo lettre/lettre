@@ -13,7 +13,7 @@ pub enum NetworkStream {
     /// Plain TCP stream
     Tcp(TcpStream),
     /// Encrypted TCP stream
-    Ssl(TlsStream<TcpStream>),
+    Tls(TlsStream<TcpStream>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -23,7 +23,7 @@ impl NetworkStream {
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         match *self {
             NetworkStream::Tcp(ref s) => s.peer_addr(),
-            NetworkStream::Ssl(ref s) => s.get_ref().peer_addr(),
+            NetworkStream::Tls(ref s) => s.get_ref().peer_addr(),
             NetworkStream::Mock(_) => {
                 Ok(SocketAddr::V4(
                     SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80),
@@ -36,7 +36,7 @@ impl NetworkStream {
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref s) => s.shutdown(how),
-            NetworkStream::Ssl(ref s) => s.get_ref().shutdown(how),
+            NetworkStream::Tls(ref s) => s.get_ref().shutdown(how),
             NetworkStream::Mock(_) => Ok(()),
         }
     }
@@ -46,7 +46,7 @@ impl Read for NetworkStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.read(buf),
-            NetworkStream::Ssl(ref mut s) => s.read(buf),
+            NetworkStream::Tls(ref mut s) => s.read(buf),
             NetworkStream::Mock(ref mut s) => s.read(buf),
         }
     }
@@ -56,7 +56,7 @@ impl Write for NetworkStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.write(buf),
-            NetworkStream::Ssl(ref mut s) => s.write(buf),
+            NetworkStream::Tls(ref mut s) => s.write(buf),
             NetworkStream::Mock(ref mut s) => s.write(buf),
         }
     }
@@ -64,7 +64,7 @@ impl Write for NetworkStream {
     fn flush(&mut self) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.flush(),
-            NetworkStream::Ssl(ref mut s) => s.flush(),
+            NetworkStream::Tls(ref mut s) => s.flush(),
             NetworkStream::Mock(ref mut s) => s.flush(),
         }
     }
@@ -91,7 +91,7 @@ impl Connector for NetworkStream {
             Some(context) => {
                 context
                     .danger_connect_without_providing_domain_for_certificate_verification_and_server_name_indication(tcp_stream)
-                    .map(NetworkStream::Ssl)
+                    .map(NetworkStream::Tls)
                     .map_err(|e| io::Error::new(ErrorKind::Other, e))
             }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
@@ -103,11 +103,11 @@ impl Connector for NetworkStream {
         *self = match *self {
             NetworkStream::Tcp(ref mut stream) => {
                 match tls_connector.danger_connect_without_providing_domain_for_certificate_verification_and_server_name_indication(stream.try_clone().unwrap()) {
-                    Ok(ssl_stream) => NetworkStream::Ssl(ssl_stream),
+                    Ok(tls_stream) => NetworkStream::Tls(tls_stream),
                     Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
                 }
             }
-            NetworkStream::Ssl(_) => return Ok(()),
+            NetworkStream::Tls(_) => return Ok(()),
             NetworkStream::Mock(_) => return Ok(()),
         };
 
@@ -119,7 +119,7 @@ impl Connector for NetworkStream {
     fn is_encrypted(&self) -> bool {
         match *self {
             NetworkStream::Tcp(_) => false,
-            NetworkStream::Ssl(_) => true,
+            NetworkStream::Tls(_) => true,
             NetworkStream::Mock(_) => false,
         }
     }
@@ -137,7 +137,7 @@ impl Timeout for NetworkStream {
     fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
-            NetworkStream::Ssl(ref mut stream) => stream.get_ref().set_read_timeout(duration),
+            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_read_timeout(duration),
             NetworkStream::Mock(_) => Ok(()),
         }
     }
@@ -146,7 +146,7 @@ impl Timeout for NetworkStream {
     fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
-            NetworkStream::Ssl(ref mut stream) => stream.get_ref().set_write_timeout(duration),
+            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_write_timeout(duration),
             NetworkStream::Mock(_) => Ok(()),
         }
     }

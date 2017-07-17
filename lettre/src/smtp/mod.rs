@@ -63,7 +63,7 @@
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
 //!     // Specify a TLS security level. You can also specify an TlsConnector with
-//!     // .tls_connector(TlsConnector::Ssl23)
+//!     // .tls_connector(TlsConnector::builder().unwrap().supported_protocols(vec![Protocol::Tlsv12]).build().unwrap())
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
@@ -231,29 +231,29 @@ impl SmtpTransportBuilder {
     }
 
     /// Use STARTTLS with a specific context
-    pub fn tls_connector(mut self, ssl_context: TlsConnector) -> SmtpTransportBuilder {
-        self.tls_connector = ssl_context;
+    pub fn tls_connector(mut self, tls_context: TlsConnector) -> SmtpTransportBuilder {
+        self.tls_connector = tls_context;
         self
     }
 
-    /// Set the security level for SSL/TLS
+    /// Set the security level for TLS
     pub fn security_level(mut self, level: SecurityLevel) -> SmtpTransportBuilder {
         self.security_level = level;
         self
     }
 
-    /// Require SSL/TLS using STARTTLS
+    /// Require TLS using STARTTLS
     ///
-    /// Incompatible with `ssl_wrapper()``
+    /// Incompatible with `tls_wrapper()``
     pub fn encrypt(mut self) -> SmtpTransportBuilder {
         self.security_level = SecurityLevel::AlwaysEncrypt;
         self
     }
 
-    /// Require SSL/TLS using SMTPS
+    /// Require TLS using SMTPS
     ///
     /// Incompatible with `encrypt()`
-    pub fn ssl_wrapper(mut self) -> SmtpTransportBuilder {
+    pub fn tls_wrapper(mut self) -> SmtpTransportBuilder {
         self.security_level = SecurityLevel::EncryptedWrapper;
         self
     }
