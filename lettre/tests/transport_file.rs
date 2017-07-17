@@ -1,7 +1,7 @@
 extern crate lettre;
 
 use lettre::{EmailAddress, EmailTransport, SendableEmail, SimpleSendableEmail};
-
+#[cfg(feature = "file-transport")]
 use lettre::file::FileEmailTransport;
 use std::env::temp_dir;
 use std::fs::File;
@@ -9,6 +9,7 @@ use std::fs::remove_file;
 use std::io::Read;
 
 #[test]
+#[cfg(feature = "file-transport")]
 fn file_transport() {
     let mut sender = FileEmailTransport::new(temp_dir());
     let email = SimpleSendableEmail::new(
