@@ -156,9 +156,8 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
         // TODO
         let mut challenges = 10;
-        let mut response = self.smtp_command(
-            AuthCommand::new(mechanism, credentials.clone(), None)?,
-        )?;
+        let mut response =
+            self.smtp_command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;

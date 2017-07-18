@@ -29,15 +29,15 @@ pub mod stub;
 #[cfg(feature = "file-transport")]
 pub mod file;
 
-pub use smtp::SmtpTransport;
-pub use smtp::SecurityLevel;
 #[cfg(feature = "file-transport")]
 pub use file::FileEmailTransport;
-pub use stub::StubEmailTransport;
 pub use sendmail::SendmailTransport;
+pub use smtp::SecurityLevel;
+pub use smtp::SmtpTransport;
 
 use std::fmt;
 use std::fmt::{Display, Formatter};
+pub use stub::StubEmailTransport;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]

@@ -153,9 +153,8 @@ impl ServerInfo {
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
-        self.features.contains(
-            &Extension::Authentication(mechanism),
-        )
+        self.features
+            .contains(&Extension::Authentication(mechanism))
     }
 }
 
@@ -350,13 +349,9 @@ mod test {
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
-        assert!(features2.insert(
-            Extension::Authentication(Mechanism::Plain),
-        ));
+        assert!(features2.insert(Extension::Authentication(Mechanism::Plain),));
         #[cfg(feature = "crammd5-auth")]
-        assert!(features2.insert(
-            Extension::Authentication(Mechanism::CramMd5),
-        ));
+        assert!(features2.insert(Extension::Authentication(Mechanism::CramMd5),));
 
         let server_info2 = ServerInfo {
             name: "me".to_string(),

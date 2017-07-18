@@ -330,7 +330,9 @@ impl Display for Email {
 impl PartBuilder {
     /// Creates a new empty part
     pub fn new() -> PartBuilder {
-        PartBuilder { message: MimeMessage::new_blank_message() }
+        PartBuilder {
+            message: MimeMessage::new_blank_message(),
+        }
     }
 
     /// Adds a generic header
@@ -513,9 +515,8 @@ impl EmailBuilder {
 
     /// Adds a `Subject` header
     pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.message.add_header(
-            ("Subject".to_string(), subject.into()),
-        );
+        self.message
+            .add_header(("Subject".to_string(), subject.into()));
     }
 
     /// Adds a `Date` header with the given date
@@ -526,9 +527,8 @@ impl EmailBuilder {
 
     /// Adds a `Date` header with the given date
     pub fn set_date(&mut self, date: &Tm) {
-        self.message.add_header(
-            ("Date", Tm::rfc822z(date).to_string()),
-        );
+        self.message
+            .add_header(("Date", Tm::rfc822z(date).to_string()));
         self.date_issued = true;
     }
 
@@ -578,10 +578,8 @@ impl EmailBuilder {
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message.add_header((
-            "Content-Type",
-            format!("{}", mime::TEXT_HTML).as_ref(),
-        ));
+        self.message
+            .add_header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()));
     }
 
     /// Sets the email content
@@ -666,9 +664,10 @@ impl EmailBuilder {
                 // we need to generate the envelope
                 let mut e = Envelope::new();
                 // add all receivers in to_header and cc_header
-                for receiver in self.to_header.iter().chain(self.cc_header.iter()).chain(
-                    self.bcc_header.iter(),
-                )
+                for receiver in self.to_header
+                    .iter()
+                    .chain(self.cc_header.iter())
+                    .chain(self.bcc_header.iter())
                 {
                     match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
@@ -709,12 +708,8 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to_header.is_empty() {
-            self.message.add_header(
-                Header::new_with_value(
-                    "To".into(),
-                    self.to_header,
-                ).unwrap(),
-            );
+            self.message
+                .add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
         }
         if !self.from_header.is_empty() {
             self.message.add_header(
@@ -724,12 +719,8 @@ impl EmailBuilder {
             return Err(Error::MissingFrom);
         }
         if !self.cc_header.is_empty() {
-            self.message.add_header(
-                Header::new_with_value(
-                    "Cc".into(),
-                    self.cc_header,
-                ).unwrap(),
-            );
+            self.message
+                .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
         if !self.reply_to_header.is_empty() {
             self.message.add_header(
@@ -738,10 +729,8 @@ impl EmailBuilder {
         }
 
         if !self.date_issued {
-            self.message.add_header((
-                "Date",
-                Tm::rfc822z(&now()).to_string().as_ref(),
-            ));
+            self.message
+                .add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
         self.message.add_header(("MIME-Version", "1.0"));
@@ -751,8 +740,7 @@ impl EmailBuilder {
         if let Ok(header) = Header::new_with_value(
             "Message-ID".to_string(),
             format!("<{}.lettre@localhost>", message_id),
-        )
-        {
+        ) {
             self.message.add_header(header)
         }
 
@@ -766,7 +754,11 @@ impl EmailBuilder {
 
 impl SendableEmail for Email {
     fn to(&self) -> Vec<EmailAddress> {
-        self.envelope.to.iter().map(|x| EmailAddress::new(x.clone())).collect()
+        self.envelope
+            .to
+            .iter()
+            .map(|x| EmailAddress::new(x.clone()))
+            .collect()
     }
 
     fn from(&self) -> EmailAddress {
@@ -838,10 +830,10 @@ mod test {
             format!("{}", email),
             format!(
                 "Subject: Hello\r\nContent-Type: text/plain; \
-                            charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                            <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
-                            <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                 charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                 <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                 <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
                 email.message_id()
             )
@@ -869,8 +861,7 @@ mod test {
         );
 
         email.message.headers.insert(
-            Header::new_with_value("To".to_string(), "to@example.com".to_string())
-                .unwrap(),
+            Header::new_with_value("To".to_string(), "to@example.com".to_string()).unwrap(),
         );
 
         email.message.body = "body".to_string();
@@ -902,9 +893,9 @@ mod test {
             format!("{}", email),
             format!(
                 "Date: {}\r\nSubject: Invitation\r\nSender: \
-                            <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
-                            <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
-                            1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
+                 <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
+                 <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
+                 1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
                 date_now.rfc822z(),
                 email.message_id()
             )
@@ -933,10 +924,10 @@ mod test {
             format!("{}", email),
             format!(
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
-                            <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                            <reply@localhost>\r\nMIME-Version: 1.0\r\nMessage-ID: \
-                            <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                 <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                 <reply@localhost>\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                 <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
                 email.message_id()
             )

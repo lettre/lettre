@@ -34,7 +34,7 @@ mod test {
         assert_eq!(
             buffer,
             "{\"to\":[\"root@localhost\"],\"from\":\"user@localhost\",\
-            \"message_id\":\"file_id\",\"message\":\"Hello file\"}"
+             \"message_id\":\"file_id\",\"message\":\"Hello file\"}"
         );
 
         remove_file(file).unwrap();

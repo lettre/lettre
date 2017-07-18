@@ -1,6 +1,6 @@
 extern crate lettre;
 
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail, SecurityLevel, SmtpTransport};
+use lettre::{EmailAddress, EmailTransport, SecurityLevel, SimpleSendableEmail, SmtpTransport};
 
 fn main() {
     let email = SimpleSendableEmail::new(

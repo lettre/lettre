@@ -209,7 +209,7 @@ impl ResponseParser {
                 if code.to_string() != line[0..3] {
                     return Err(Error::ResponseParsing(
                         "Response code has changed during a \
-                                                            reponse",
+                         reponse",
                     ));
                 }
             }
@@ -231,7 +231,7 @@ impl ResponseParser {
             None => {
                 Err(Error::ResponseParsing(
                     "Incomplete response, could not read response \
-                                                 code",
+                     code",
                 ))
             }
         }
@@ -274,9 +274,9 @@ impl Response {
 
     /// Returns only the first word of the message if possible
     pub fn first_word(&self) -> Option<&str> {
-        self.message.get(0).and_then(
-            |line| line.split_whitespace().next(),
-        )
+        self.message
+            .get(0)
+            .and_then(|line| line.split_whitespace().next())
     }
 
     /// Returns only the line of the message if possible

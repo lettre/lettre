@@ -39,8 +39,7 @@ mod tests {
             ("bjørn", "bjørn"),
             ("Ø+= ❤️‰", "Ø+2B+3D+20❤️‰"),
             ("+", "+2B"),
-        ]
-        {
+        ] {
             assert_eq!(format!("{}", XText(input)), expect);
         }
     }

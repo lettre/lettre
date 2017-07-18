@@ -29,7 +29,8 @@
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
-//! SmtpTransport::builder_localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
+//! SmtpTransport::builder_localhost().unwrap()
+//!                                   .security_level(SecurityLevel::Opportunistic).build();
 //! // Send the email
 //! let result = mailer.send(email);
 //!
@@ -59,7 +60,9 @@
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
 //!     // Specify a TLS security level. You can also specify an TlsConnector with
-//!     // .tls_connector(TlsConnector::builder().unwrap().supported_protocols(vec![Protocol::Tlsv12]).build().unwrap())
+//!     // .tls_connector(TlsConnector::builder().unwrap()
+//!     //                                       .supported_protocols(&vec![Protocol::Tlsv12])
+//!     //                                       .build().unwrap())
 //!     .security_level(SecurityLevel::AlwaysEncrypt)
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
@@ -95,8 +98,12 @@
 //! let mut email_client: Client<NetworkStream> = Client::new();
 //! let _ = email_client.connect(&("localhost", SMTP_PORT), None);
 //! let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
-//! let _ = email_client.smtp_command(MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![]));
-//! let _ = email_client.smtp_command(RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![]));
+//! let _ = email_client.smtp_command(
+//!             MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
+//!         );
+//! let _ = email_client.smtp_command(
+//!             RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
+//!         );
 //! let _ = email_client.smtp_command(DataCommand);
 //! let _ = email_client.message("Test email");
 //! let _ = email_client.smtp_command(QuitCommand);
@@ -341,7 +348,7 @@ impl SmtpTransport {
     pub fn builder<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
         SmtpTransportBuilder::new(addr)
     }
-        /// Creates a new local SMTP client to port 25
+    /// Creates a new local SMTP client to port 25
     pub fn builder_localhost() -> Result<SmtpTransportBuilder, Error> {
         SmtpTransportBuilder::new(("localhost", SMTP_PORT))
     }
@@ -381,7 +388,7 @@ impl SmtpTransport {
         let ehlo_response = try_smtp!(
             self.client.smtp_command(EhloCommand::new(
                 ClientId::new(self.client_info.hello_name.to_string()),
-            )),
+            ),),
             self
         );
 
@@ -425,9 +432,10 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
             match (
                 &self.client_info.security_level,
-                self.server_info.as_ref().unwrap().supports_feature(
-                    Extension::StartTls,
-                ),
+                self.server_info
+                    .as_ref()
+                    .unwrap()
+                    .supports_feature(Extension::StartTls),
             ) {
                 (&SecurityLevel::AlwaysEncrypt, false) => {
                     return Err(From::from("Could not encrypt connection, aborting"))
@@ -438,9 +446,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 (_, true) => {
                     try_smtp!(self.client.smtp_command(StarttlsCommand), self);
                     try_smtp!(
-                        self.client.upgrade_tls_stream(
-                            &self.client_info.tls_connector,
-                        ),
+                        self.client
+                            .upgrade_tls_stream(&self.client_info.tls_connector,),
                         self
                     );
 
@@ -467,16 +474,15 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 };
 
                 for mechanism in accepted_mechanisms {
-                    if self.server_info.as_ref().unwrap().supports_auth_mechanism(
-                        mechanism,
-                    )
+                    if self.server_info
+                        .as_ref()
+                        .unwrap()
+                        .supports_auth_mechanism(mechanism)
                     {
                         found = true;
                         try_smtp!(
-                            self.client.auth(
-                                mechanism,
-                                self.client_info.credentials.as_ref().unwrap(),
-                            ),
+                            self.client
+                                .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
                             self
                         );
                         break;
@@ -492,25 +498,25 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info.as_ref().unwrap().supports_feature(
-            Extension::EightBitMime,
-        )
+        if self.server_info
+            .as_ref()
+            .unwrap()
+            .supports_feature(Extension::EightBitMime)
         {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
-        if self.server_info.as_ref().unwrap().supports_feature(
-            Extension::SmtpUtfEight,
-        )
+        if self.server_info
+            .as_ref()
+            .unwrap()
+            .supports_feature(Extension::SmtpUtfEight)
         {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 
         try_smtp!(
-            self.client.smtp_command(MailCommand::new(
-                Some(email.from().clone()),
-                mail_options,
-            )),
+            self.client
+                .smtp_command(MailCommand::new(Some(email.from().clone()), mail_options,),),
             self
         );
 
@@ -520,9 +526,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         // Recipient
         for to_address in &email.to() {
             try_smtp!(
-                self.client.smtp_command(
-                    RcptCommand::new(to_address.clone(), vec![]),
-                ),
+                self.client
+                    .smtp_command(RcptCommand::new(to_address.clone(), vec![]),),
                 self
             );
             // Log the rcpt command
