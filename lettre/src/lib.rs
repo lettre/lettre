@@ -28,6 +28,14 @@ pub mod sendmail;
 pub mod stub;
 #[cfg(feature = "file-transport")]
 pub mod file;
+
+pub use smtp::SmtpTransport;
+pub use smtp::SecurityLevel;
+#[cfg(feature = "file-transport")]
+pub use file::FileEmailTransport;
+pub use stub::StubEmailTransport;
+pub use sendmail::SendmailTransport;
+
 use std::fmt;
 use std::fmt::{Display, Formatter};
 

@@ -18,9 +18,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
-//! use lettre::smtp::SmtpTransportBuilder;
-//! use lettre::smtp::SecurityLevel;
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport, SecurityLevel};
 //!
 //! let email = SimpleSendableEmail::new(
 //!                 EmailAddress::new("user@localhost".to_string()),
@@ -31,7 +29,7 @@
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
-//! SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
+//! SmtpTransport::builder_localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
 //! // Send the email
 //! let result = mailer.send(email);
 //!
@@ -41,11 +39,9 @@
 //! #### Complete example
 //!
 //! ```rust,no_run
-//! use lettre::smtp::{SecurityLevel, SmtpTransport,
-//! SmtpTransportBuilder};
 //! use lettre::smtp::authentication::{Credentials, Mechanism};
 //! use lettre::smtp::SUBMISSION_PORT;
-//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport, SecurityLevel};
 //! use lettre::smtp::extension::ClientId;
 //!
 //! let email = SimpleSendableEmail::new(
@@ -56,7 +52,7 @@
 //!             );
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = SmtpTransportBuilder::new(("server.tld",
+//! let mut mailer = SmtpTransport::builder(("server.tld",
 //! SUBMISSION_PORT)).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
@@ -225,11 +221,6 @@ impl SmtpTransportBuilder {
         }
     }
 
-    /// Creates a new local SMTP client to port 25
-    pub fn localhost() -> Result<SmtpTransportBuilder, Error> {
-        SmtpTransportBuilder::new(("localhost", SMTP_PORT))
-    }
-
     /// Use STARTTLS with a specific context
     pub fn tls_connector(mut self, tls_context: TlsConnector) -> SmtpTransportBuilder {
         self.tls_connector = tls_context;
@@ -346,6 +337,15 @@ macro_rules! try_smtp (
 );
 
 impl SmtpTransport {
+    /// TODO
+    pub fn builder<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
+        SmtpTransportBuilder::new(addr)
+    }
+        /// Creates a new local SMTP client to port 25
+    pub fn builder_localhost() -> Result<SmtpTransportBuilder, Error> {
+        SmtpTransportBuilder::new(("localhost", SMTP_PORT))
+    }
+
     /// Creates a new SMTP client
     ///
     /// It does not connect to the server, but only creates the `SmtpTransport`

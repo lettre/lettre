@@ -1,8 +1,7 @@
 extern crate lettre;
 extern crate lettre_email;
 
-use lettre::EmailTransport;
-use lettre::smtp::SmtpTransportBuilder;
+use lettre::{SmtpTransport, EmailTransport};
 use lettre_email::email::EmailBuilder;
 
 fn main() {
@@ -17,7 +16,7 @@ fn main() {
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransportBuilder::localhost().unwrap().build();
+    let mut mailer = SmtpTransport::builder_localhost().unwrap().build();
     // Send the email
     let result = mailer.send(email);
 
