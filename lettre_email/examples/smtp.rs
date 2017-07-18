@@ -1,7 +1,7 @@
 extern crate lettre;
 extern crate lettre_email;
 
-use lettre::{SmtpTransport, EmailTransport};
+use lettre::{EmailTransport, SmtpTransport};
 use lettre_email::email::EmailBuilder;
 
 fn main() {

@@ -21,7 +21,8 @@ pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] =
 /// Accepted authentication mecanisms on an encrypted connection
 /// Trying LOGIN last as it is deprecated.
 #[cfg(not(feature = "crammd5-auth"))]
-pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] = &[Mechanism::Plain, Mechanism::Login];
+pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] =
+    &[Mechanism::Plain, Mechanism::Login];
 
 /// Accepted authentication mecanisms on an unencrypted connection
 #[cfg(feature = "crammd5-auth")]
@@ -212,7 +213,7 @@ mod test {
             mechanism
                 .response(
                     &credentials,
-                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
+                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==")
                 )
                 .unwrap(),
             "alice a540ebe4ef2304070bbc3c456c1f64c0"
