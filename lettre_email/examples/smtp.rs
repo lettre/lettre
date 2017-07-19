@@ -2,7 +2,7 @@ extern crate lettre;
 extern crate lettre_email;
 
 use lettre::{EmailTransport, SmtpTransport};
-use lettre_email::email::EmailBuilder;
+use lettre_email::EmailBuilder;
 
 fn main() {
     let email = EmailBuilder::new()
