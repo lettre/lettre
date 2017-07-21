@@ -27,9 +27,7 @@ impl Display for EhloCommand {
 impl EhloCommand {
     /// Creates a EHLO command
     pub fn new(client_id: ClientId) -> EhloCommand {
-        EhloCommand {
-            client_id: client_id,
-        }
+        EhloCommand { client_id: client_id }
     }
 }
 
@@ -252,10 +250,10 @@ impl AuthCommand {
         challenge: Option<String>,
     ) -> Result<AuthCommand, Error> {
         let response = if mechanism.supports_initial_response() || challenge.is_some() {
-            Some(
-                mechanism
-                    .response(&credentials, challenge.as_ref().map(String::as_str))?,
-            )
+            Some(mechanism.response(
+                &credentials,
+                challenge.as_ref().map(String::as_str),
+            )?)
         } else {
             None
         };
@@ -297,10 +295,10 @@ impl AuthCommand {
 
         debug!("auth decoded challenge: {}", decoded_challenge);
 
-        let response = Some(
-            mechanism
-                .response(&credentials, Some(decoded_challenge.as_ref()))?,
-        );
+        let response = Some(mechanism.response(
+            &credentials,
+            Some(decoded_challenge.as_ref()),
+        )?);
 
         Ok(AuthCommand {
             mechanism: mechanism,

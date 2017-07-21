@@ -74,7 +74,9 @@ impl EmailTransport<FileResult> for FileEmailTransport {
             email.message(),
         );
 
-        f.write_all(serde_json::to_string(&simple_email)?.as_bytes())?;
+        f.write_all(
+            serde_json::to_string(&simple_email)?.as_bytes(),
+        )?;
 
         Ok(())
     }

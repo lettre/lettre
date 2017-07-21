@@ -3,12 +3,15 @@
 extern crate lettre;
 extern crate test;
 
+use lettre::{ClientSecurity, SmtpTransport};
 use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
-use lettre::smtp::SmtpTransportBuilder;
+use lettre::smtp::ConnectionReuseParameters;
 
 #[bench]
 fn bench_simple_send(b: &mut test::Bencher) {
-    let mut sender = SmtpTransportBuilder::new("127.0.0.1:2525").unwrap().build();
+    let mut sender = SmtpTransport::builder("127.0.0.1:2525", ClientSecurity::None)
+        .unwrap()
+        .build();
     b.iter(|| {
         let email = SimpleSendableEmail::new(
             EmailAddress::new("user@localhost".to_string()),
@@ -23,9 +26,9 @@ fn bench_simple_send(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_reuse_send(b: &mut test::Bencher) {
-    let mut sender = SmtpTransportBuilder::new("127.0.0.1:2525")
+    let mut sender = SmtpTransport::builder("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
-        .connection_reuse(true)
+        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
         .build();
     b.iter(|| {
         let email = SimpleSendableEmail::new(

@@ -33,16 +33,12 @@ pub struct SendmailTransport {
 impl SendmailTransport {
     /// Creates a new transport with the default `/usr/sbin/sendmail` command
     pub fn new() -> SendmailTransport {
-        SendmailTransport {
-            command: "/usr/sbin/sendmail".to_string(),
-        }
+        SendmailTransport { command: "/usr/sbin/sendmail".to_string() }
     }
 
     /// Creates a new transport to the given sendmail command
     pub fn new_with_command<S: Into<String>>(command: S) -> SendmailTransport {
-        SendmailTransport {
-            command: command.into(),
-        }
+        SendmailTransport { command: command.into() }
     }
 }
 
@@ -51,21 +47,21 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
         // Spawn the sendmail command
         let to_addresses: Vec<String> = email.to().iter().map(|x| x.to_string()).collect();
         let mut process = Command::new(&self.command)
-            .args(&[
-                "-i",
-                "-f",
-                &email.from().to_string(),
-                &to_addresses.join(" "),
-            ])
+            .args(
+                &[
+                    "-i",
+                    "-f",
+                    &email.from().to_string(),
+                    &to_addresses.join(" "),
+                ],
+            )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
 
-        match process
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(email.message().as_bytes()) {
+        match process.stdin.as_mut().unwrap().write_all(
+            email.message().as_bytes(),
+        ) {
             Ok(_) => (),
             Err(error) => return Err(From::from(error)),
         }

@@ -1,10 +1,9 @@
 //! SMTP client
 
 use bufstream::BufStream;
-use native_tls::TlsConnector;
 use smtp::{CRLF, MESSAGE_ENDING};
 use smtp::authentication::{Credentials, Mechanism};
-use smtp::client::net::{Connector, NetworkStream, Timeout};
+use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::ResponseParser;
@@ -82,9 +81,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Upgrades the underlying connection to SSL/TLS
-    pub fn upgrade_tls_stream(&mut self, tls_connector: &TlsConnector) -> io::Result<()> {
+    pub fn upgrade_tls_stream(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
         match self.stream {
-            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_connector),
+            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_parameters),
             None => Ok(()),
         }
     }
@@ -113,7 +112,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     pub fn connect<A: ToSocketAddrs>(
         &mut self,
         addr: &A,
-        tls_connector: Option<&TlsConnector>,
+        tls_parameters: Option<&ClientTlsParameters>,
     ) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
@@ -130,7 +129,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(Connector::connect(&server_addr, tls_connector)?);
+        self.set_stream(Connector::connect(&server_addr, tls_parameters)?);
 
         self.get_reply()
     }
@@ -156,8 +155,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
         // TODO
         let mut challenges = 10;
-        let mut response =
-            self.smtp_command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
+        let mut response = self.smtp_command(
+            AuthCommand::new(mechanism, credentials.clone(), None)?,
+        )?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;

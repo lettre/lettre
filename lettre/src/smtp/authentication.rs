@@ -213,7 +213,7 @@ mod test {
             mechanism
                 .response(
                     &credentials,
-                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==")
+                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
                 )
                 .unwrap(),
             "alice a540ebe4ef2304070bbc3c456c1f64c0"
