@@ -1,10 +1,9 @@
 //! SMTP client
 
 use bufstream::BufStream;
-use native_tls::TlsConnector;
 use smtp::{CRLF, MESSAGE_ENDING};
 use smtp::authentication::{Credentials, Mechanism};
-use smtp::client::net::{Connector, NetworkStream, Timeout};
+use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::ResponseParser;
@@ -20,6 +19,67 @@ use std::time::Duration;
 pub mod net;
 pub mod mock;
 
+
+/*
+/// The codec used to encode client requests and decode server responses
+#[derive(Default)]
+pub struct ClientCodec {
+    escape_count: u8,
+}
+
+impl ClientCodec {
+    pub fn new() -> Self {
+        ClientCodec::default()
+    }
+}
+
+impl Codec for ClientCodec {
+    type Out = Frame<Request, Vec<u8>, IoError>;
+    type In = Frame<Response, (), IoError>;
+
+    fn encode(&mut self, frame: Self::Out, buf: &mut Vec<u8>) -> IoResult<()> {
+        match frame {
+            Frame::Message { message, .. } => {
+                buf.write_all(message.to_string().as_bytes())
+            },
+            Frame::Body { chunk: Some(chunk) } => {
+                // Escape lines starting with a '.'
+                // FIXME: additional encoding for non-ASCII?
+                let mut start = 0;
+                for (idx, byte) in chunk.iter().enumerate() {
+                    match self.escape_count {
+                        0 => self.escape_count = if *byte == b'\r' { 1 } else { 0 },
+                        1 => self.escape_count = if *byte == b'\n' { 2 } else { 0 },
+                        2 => self.escape_count = if *byte == b'.'  { 3 } else { 0 },
+                        _ => unreachable!(),
+                    }
+                    if self.escape_count == 3 {
+                        self.escape_count = 0;
+                        buf.write_all(&chunk[start..idx])?;
+                        buf.write_all(b".")?;
+                        start = idx;
+                    }
+                }
+                buf.write_all(&chunk[start..])
+            },
+            Frame::Body { chunk: None } => {
+                match self.escape_count {
+                    0 => buf.write_all(b"\r\n.\r\n")?,
+                    1 => buf.write_all(b"\n.\r\n")?,
+                    2 => buf.write_all(b".\r\n")?,
+                    _ => unreachable!(),
+                }
+                self.escape_count = 0;
+                Ok(())
+            },
+            Frame::Error { error } => {
+                panic!("unimplemented error handling: {:?}", error);
+            },
+        }
+    }
+*/
+
+
 /// Returns the string after adding a dot at the beginning of each line starting with a dot
 ///
 /// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
@@ -29,14 +89,13 @@ fn escape_dot(string: &str) -> String {
         format!(".{}", string)
     } else {
         string.to_string()
-    }.replace("\r.", "\r..")
-        .replace("\n.", "\n..")
+    }.replace("\r\n.", "\r\n..")
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
 #[inline]
 fn escape_crlf(string: &str) -> String {
-    string.replace(CRLF, "<CR><LF>")
+    string.replace(CRLF, "<CRLF>")
 }
 
 /// Returns the string removing all the CRLF
@@ -82,9 +141,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Upgrades the underlying connection to SSL/TLS
-    pub fn upgrade_tls_stream(&mut self, tls_connector: &TlsConnector) -> io::Result<()> {
+    pub fn upgrade_tls_stream(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
         match self.stream {
-            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_connector),
+            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_parameters),
             None => Ok(()),
         }
     }
@@ -113,7 +172,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     pub fn connect<A: ToSocketAddrs>(
         &mut self,
         addr: &A,
-        tls_connector: Option<&TlsConnector>,
+        tls_parameters: Option<&ClientTlsParameters>,
     ) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
@@ -130,7 +189,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(Connector::connect(&server_addr, tls_connector)?);
+        self.set_stream(Connector::connect(&server_addr, tls_parameters)?);
 
         self.get_reply()
     }
@@ -156,8 +215,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
         // TODO
         let mut challenges = 10;
-        let mut response =
-            self.smtp_command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
+        let mut response = self.smtp_command(
+            AuthCommand::new(mechanism, credentials.clone(), None)?,
+        )?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
@@ -227,7 +287,6 @@ mod test {
     #[test]
     fn test_escape_dot() {
         assert_eq!(escape_dot(".test"), "..test");
-        assert_eq!(escape_dot("\r.\n.\r\n"), "\r..\n..\r\n");
         assert_eq!(escape_dot("test\r\n.test\r\n"), "test\r\n..test\r\n");
         assert_eq!(escape_dot("test\r\n.\r\ntest"), "test\r\n..\r\ntest");
     }
@@ -244,11 +303,11 @@ mod test {
 
     #[test]
     fn test_escape_crlf() {
-        assert_eq!(escape_crlf("\r\n"), "<CR><LF>");
-        assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CR><LF>");
+        assert_eq!(escape_crlf("\r\n"), "<CRLF>");
+        assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CRLF>");
         assert_eq!(
             escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-            "EHLO my_name<CR><LF>SIZE 42<CR><LF>"
+            "EHLO my_name<CRLF>SIZE 42<CRLF>"
         );
     }
 }

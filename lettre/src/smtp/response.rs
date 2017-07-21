@@ -274,9 +274,9 @@ impl Response {
 
     /// Returns only the first word of the message if possible
     pub fn first_word(&self) -> Option<&str> {
-        self.message
-            .get(0)
-            .and_then(|line| line.split_whitespace().next())
+        self.message.get(0).and_then(
+            |line| line.split_whitespace().next(),
+        )
     }
 
     /// Returns only the line of the message if possible

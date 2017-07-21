@@ -32,9 +32,11 @@ pub mod file;
 #[cfg(feature = "file-transport")]
 pub use file::FileEmailTransport;
 pub use sendmail::SendmailTransport;
-pub use smtp::SecurityLevel;
+pub use smtp::ClientSecurity;
 pub use smtp::SmtpTransport;
+pub use smtp::client::net::ClientTlsParameters;
 
+use std::io::Read;
 use std::fmt;
 use std::fmt::{Display, Formatter};
 pub use stub::StubEmailTransport;
@@ -66,7 +68,7 @@ pub trait SendableEmail {
     /// Message ID, used for logging
     fn message_id(&self) -> String;
     /// Message content
-    fn message(self) -> String;
+    fn message<T: Read>(self) -> T;
 }
 
 /// Transport method for emails
@@ -109,6 +111,8 @@ impl SimpleSendableEmail {
 }
 
 impl SendableEmail for SimpleSendableEmail {
+    //type T = &[u8];
+
     fn to(&self) -> Vec<EmailAddress> {
         self.to.clone()
     }
@@ -121,7 +125,7 @@ impl SendableEmail for SimpleSendableEmail {
         self.message_id.clone()
     }
 
-    fn message(self) -> String {
-        self.message
+    fn message<T: Read>(self) -> T {
+        self.message.as_bytes()
     }
 }

@@ -18,7 +18,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport, SecurityLevel};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 //!
 //! let email = SimpleSendableEmail::new(
 //!                 EmailAddress::new("user@localhost".to_string()),
@@ -29,8 +29,7 @@
 //!
 //! // Open a local connection on port 25
 //! let mut mailer =
-//! SmtpTransport::builder_localhost().unwrap()
-//!                                   .security_level(SecurityLevel::Opportunistic).build();
+//! SmtpTransport::builder_unencrypted_localhost().unwrap().build();
 //! // Send the email
 //! let result = mailer.send(email);
 //!
@@ -42,8 +41,10 @@
 //! ```rust,no_run
 //! use lettre::smtp::authentication::{Credentials, Mechanism};
 //! use lettre::smtp::SUBMISSION_PORT;
-//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport, SecurityLevel};
+//! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 //! use lettre::smtp::extension::ClientId;
+//! use lettre::smtp::ConnectionReuseParameters;
+//!
 //!
 //! let email = SimpleSendableEmail::new(
 //!                 EmailAddress::new("user@localhost".to_string()),
@@ -53,23 +54,18 @@
 //!             );
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = SmtpTransport::builder(("server.tld",
-//! SUBMISSION_PORT)).unwrap()
+//! let mut mailer = SmtpTransport::simple_builder("server.tld".to_string()).unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
-//!     // Specify a TLS security level. You can also specify an TlsConnector with
-//!     // .tls_connector(TlsConnector::builder().unwrap()
-//!     //                                       .supported_protocols(&vec![Protocol::Tlsv12])
-//!     //                                       .build().unwrap())
-//!     .security_level(SecurityLevel::AlwaysEncrypt)
+//!     // FIXME security doc
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
 //!     // Configure expected authentication mechanism
 //!     .authentication_mechanism(Mechanism::Plain)
 //!     // Enable connection reuse
-//!     .connection_reuse(true).build();
+//!     .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
 //!
 //! let result_1 = mailer.send(email.clone());
 //! assert!(result_1.is_ok());
@@ -116,6 +112,7 @@ use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS, Mechanism};
 use smtp::client::Client;
+use smtp::client::net::ClientTlsParameters;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
@@ -157,43 +154,43 @@ pub const MESSAGE_ENDING: &'static str = "\r\n.\r\n";
 /// NUL unicode character
 pub const NUL: &'static str = "\0";
 
-/// TLS security level
-#[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub enum SecurityLevel {
-    /// Use a TLS wrapped connection
-    ///
+/// How to apply TLS to a client connection
+#[derive(Clone)]
+pub enum ClientSecurity {
+    /// Insecure connection
+    None,
+    /// Use `STARTTLS` when available
+    Opportunistic(ClientTlsParameters),
+    /// Always use `STARTTLS`
+    Required(ClientTlsParameters),
+    /// Use TLS wrapped connection without negotation
     /// Non RFC-compliant, should only be used if the server does not support STARTTLS.
-    EncryptedWrapper,
-    /// Only send an email on encrypted connection (with STARTTLS)
-    ///
-    /// Default mode, prevents MITM when used with verified certificates.
-    AlwaysEncrypt,
-    /// Use TLS when available (with STARTTLS)
-    ///
-    /// Should be used when not possible to always encrypt the connection
-    Opportunistic,
-    /// Never use encryption
-    NeverEncrypt,
+    Wrapper(ClientTlsParameters),
+}
+
+/// Configures connection reuse behavior
+#[derive(Clone, Debug)]
+pub enum ConnectionReuseParameters {
+    /// Unlimitied connection reuse
+    ReuseUnlimited,
+    /// Maximum number of connection reuse
+    ReuseLimited(u16),
+    /// Disable connection reuse, close connection after each transaction
+    NoReuse,
 }
 
 /// Contains client configuration
 pub struct SmtpTransportBuilder {
-    /// Maximum connection reuse
-    ///
-    /// Zero means no limitation
-    connection_reuse_count_limit: u16,
     /// Enable connection reuse
-    connection_reuse: bool,
-    /// Name sent during HELO or EHLO
+    connection_reuse: ConnectionReuseParameters,
+    /// Name sent during EHLO
     hello_name: ClientId,
     /// Credentials
     credentials: Option<Credentials>,
     /// Socket we are connecting to
     server_addr: SocketAddr,
-    /// SSL context to use
-    tls_connector: TlsConnector,
-    /// TLS security level
-    security_level: SecurityLevel,
+    /// TLS security configuration
+    security: ClientSecurity,
     /// Enable UTF8 mailboxes in envelope or headers
     smtp_utf8: bool,
     /// Optional enforced authentication mechanism
@@ -205,20 +202,29 @@ pub struct SmtpTransportBuilder {
 
 /// Builder for the SMTP `SmtpTransport`
 impl SmtpTransportBuilder {
-    /// Creates a new local SMTP client
-    pub fn new<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
+    /// Creates a new SMTP client
+    ///
+    /// Defaults are:
+    ///
+    /// * No connection reuse
+    /// * "localhost" as EHLO name
+    /// * No authentication
+    /// * No SMTPUTF8 support
+    /// * A 60 seconds timeout for smtp commands
+    pub fn new<A: ToSocketAddrs>(
+        addr: A,
+        security: ClientSecurity,
+    ) -> Result<SmtpTransportBuilder, Error> {
         let mut addresses = addr.to_socket_addrs()?;
 
         match addresses.next() {
             Some(addr) => {
                 Ok(SmtpTransportBuilder {
                     server_addr: addr,
-                    tls_connector: TlsConnector::builder().unwrap().build().unwrap(),
-                    security_level: SecurityLevel::AlwaysEncrypt,
+                    security: security,
                     smtp_utf8: false,
                     credentials: None,
-                    connection_reuse_count_limit: 100,
-                    connection_reuse: false,
+                    connection_reuse: ConnectionReuseParameters::NoReuse,
                     hello_name: ClientId::Domain("localhost".to_string()),
                     authentication_mechanism: None,
                     timeout: Some(Duration::new(60, 0)),
@@ -228,55 +234,24 @@ impl SmtpTransportBuilder {
         }
     }
 
-    /// Use STARTTLS with a specific context
-    pub fn tls_connector(mut self, tls_context: TlsConnector) -> SmtpTransportBuilder {
-        self.tls_connector = tls_context;
-        self
-    }
-
-    /// Set the security level for TLS
-    pub fn security_level(mut self, level: SecurityLevel) -> SmtpTransportBuilder {
-        self.security_level = level;
-        self
-    }
-
-    /// Require TLS using STARTTLS
-    ///
-    /// Incompatible with `tls_wrapper()``
-    pub fn encrypt(mut self) -> SmtpTransportBuilder {
-        self.security_level = SecurityLevel::AlwaysEncrypt;
-        self
-    }
-
-    /// Require TLS using SMTPS
-    ///
-    /// Incompatible with `encrypt()`
-    pub fn tls_wrapper(mut self) -> SmtpTransportBuilder {
-        self.security_level = SecurityLevel::EncryptedWrapper;
-        self
-    }
-
     /// Enable SMTPUTF8 if the server supports it
     pub fn smtp_utf8(mut self, enabled: bool) -> SmtpTransportBuilder {
         self.smtp_utf8 = enabled;
         self
     }
 
-    /// Set the name used during HELO or EHLO
+    /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> SmtpTransportBuilder {
         self.hello_name = name;
         self
     }
 
     /// Enable connection reuse
-    pub fn connection_reuse(mut self, enable: bool) -> SmtpTransportBuilder {
-        self.connection_reuse = enable;
-        self
-    }
-
-    /// Set the maximum number of emails sent using one connection
-    pub fn connection_reuse_count_limit(mut self, limit: u16) -> SmtpTransportBuilder {
-        self.connection_reuse_count_limit = limit;
+    pub fn connection_reuse(
+        mut self,
+        parameters: ConnectionReuseParameters,
+    ) -> SmtpTransportBuilder {
+        self.connection_reuse = parameters;
         self
     }
 
@@ -286,7 +261,7 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Set the authentication mechanisms
+    /// Set the authentication mechanism to use
     pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpTransportBuilder {
         self.authentication_mechanism = Some(mechanism);
         self
@@ -344,13 +319,32 @@ macro_rules! try_smtp (
 );
 
 impl SmtpTransport {
-    /// TODO
-    pub fn builder<A: ToSocketAddrs>(addr: A) -> Result<SmtpTransportBuilder, Error> {
-        SmtpTransportBuilder::new(addr)
+    /// Simple and secure transport, should be used when possible.
+    /// Creates an encrypted transport over submission port, using the provided domain
+    /// to validate TLS certificates.
+    pub fn simple_builder(domain: String) -> Result<SmtpTransportBuilder, Error> {
+        let tls_parameters = ClientTlsParameters::new(
+            domain.clone(),
+            TlsConnector::builder().unwrap().build().unwrap(),
+        );
+
+        SmtpTransportBuilder::new(
+            (domain.as_ref(), SUBMISSION_PORT),
+            ClientSecurity::Required(tls_parameters),
+        )
     }
+
+    /// Creates a new configurable builder
+    pub fn builder<A: ToSocketAddrs>(
+        addr: A,
+        security: ClientSecurity,
+    ) -> Result<SmtpTransportBuilder, Error> {
+        SmtpTransportBuilder::new(addr, security)
+    }
+
     /// Creates a new local SMTP client to port 25
-    pub fn builder_localhost() -> Result<SmtpTransportBuilder, Error> {
-        SmtpTransportBuilder::new(("localhost", SMTP_PORT))
+    pub fn builder_unencrypted_localhost() -> Result<SmtpTransportBuilder, Error> {
+        SmtpTransportBuilder::new(("localhost", SMTP_PORT), ClientSecurity::None)
     }
 
     /// Creates a new SMTP client
@@ -388,7 +382,7 @@ impl SmtpTransport {
         let ehlo_response = try_smtp!(
             self.client.smtp_command(EhloCommand::new(
                 ClientId::new(self.client_info.hello_name.to_string()),
-            ),),
+            )),
             self
         );
 
@@ -417,8 +411,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         if self.state.connection_reuse_count == 0 {
             self.client.connect(
                 &self.client_info.server_addr,
-                match self.client_info.security_level {
-                    SecurityLevel::EncryptedWrapper => Some(&self.client_info.tls_connector),
+                match self.client_info.security {
+                    ClientSecurity::Wrapper(ref tls_parameters) => Some(tls_parameters),
                     _ => None,
                 },
             )?;
@@ -431,25 +425,21 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
             self.get_ehlo()?;
 
             match (
-                &self.client_info.security_level,
-                self.server_info
-                    .as_ref()
-                    .unwrap()
-                    .supports_feature(Extension::StartTls),
+                &self.client_info.security.clone(),
+                self.server_info.as_ref().unwrap().supports_feature(
+                    Extension::StartTls,
+                ),
             ) {
-                (&SecurityLevel::AlwaysEncrypt, false) => {
+                (&ClientSecurity::Required(_), false) => {
                     return Err(From::from("Could not encrypt connection, aborting"))
                 }
-                (&SecurityLevel::Opportunistic, false) => (),
-                (&SecurityLevel::NeverEncrypt, _) => (),
-                (&SecurityLevel::EncryptedWrapper, _) => (),
-                (_, true) => {
+                (&ClientSecurity::Opportunistic(_), false) => (),
+                (&ClientSecurity::None, _) => (),
+                (&ClientSecurity::Wrapper(_), _) => (),
+                (&ClientSecurity::Opportunistic(ref tls_parameters), true) |
+                (&ClientSecurity::Required(ref tls_parameters), true) => {
                     try_smtp!(self.client.smtp_command(StarttlsCommand), self);
-                    try_smtp!(
-                        self.client
-                            .upgrade_tls_stream(&self.client_info.tls_connector,),
-                        self
-                    );
+                    try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
 
                     debug!("connection encrypted");
 
@@ -474,15 +464,16 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 };
 
                 for mechanism in accepted_mechanisms {
-                    if self.server_info
-                        .as_ref()
-                        .unwrap()
-                        .supports_auth_mechanism(mechanism)
+                    if self.server_info.as_ref().unwrap().supports_auth_mechanism(
+                        mechanism,
+                    )
                     {
                         found = true;
                         try_smtp!(
-                            self.client
-                                .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
+                            self.client.auth(
+                                mechanism,
+                                self.client_info.credentials.as_ref().unwrap(),
+                            ),
                             self
                         );
                         break;
@@ -498,25 +489,25 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info
-            .as_ref()
-            .unwrap()
-            .supports_feature(Extension::EightBitMime)
+        if self.server_info.as_ref().unwrap().supports_feature(
+            Extension::EightBitMime,
+        )
         {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
-        if self.server_info
-            .as_ref()
-            .unwrap()
-            .supports_feature(Extension::SmtpUtfEight)
+        if self.server_info.as_ref().unwrap().supports_feature(
+            Extension::SmtpUtfEight,
+        ) && self.client_info.smtp_utf8
         {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 
         try_smtp!(
-            self.client
-                .smtp_command(MailCommand::new(Some(email.from().clone()), mail_options,),),
+            self.client.smtp_command(MailCommand::new(
+                Some(email.from().clone()),
+                mail_options,
+            )),
             self
         );
 
@@ -526,8 +517,9 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         // Recipient
         for to_address in &email.to() {
             try_smtp!(
-                self.client
-                    .smtp_command(RcptCommand::new(to_address.clone(), vec![]),),
+                self.client.smtp_command(
+                    RcptCommand::new(to_address.clone(), vec![]),
+                ),
                 self
             );
             // Log the rcpt command
@@ -563,10 +555,11 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         // Test if we can reuse the existing connection
-        if (!self.client_info.connection_reuse) ||
-            (self.state.connection_reuse_count >= self.client_info.connection_reuse_count_limit)
-        {
-            self.reset();
+        match self.client_info.connection_reuse {
+            ConnectionReuseParameters::ReuseLimited(limit)
+                if self.state.connection_reuse_count >= limit => self.reset(),
+            ConnectionReuseParameters::NoReuse => self.reset(),
+            _ => (),
         }
 
         result
