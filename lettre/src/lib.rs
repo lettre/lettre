@@ -32,8 +32,9 @@ pub mod file;
 #[cfg(feature = "file-transport")]
 pub use file::FileEmailTransport;
 pub use sendmail::SendmailTransport;
-pub use smtp::SecurityLevel;
+pub use smtp::ClientSecurity;
 pub use smtp::SmtpTransport;
+pub use smtp::client::net::ClientTlsParameters;
 
 use std::fmt;
 use std::fmt::{Display, Formatter};

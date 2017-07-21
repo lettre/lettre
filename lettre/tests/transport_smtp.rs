@@ -1,14 +1,11 @@
 extern crate lettre;
 
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
-use lettre::smtp::SecurityLevel;
-use lettre::smtp::SmtpTransportBuilder;
+use lettre::{ClientSecurity, EmailAddress, EmailTransport, SimpleSendableEmail, SmtpTransport};
 
 #[test]
 fn smtp_transport_simple() {
-    let mut sender = SmtpTransportBuilder::new("127.0.0.1:2525")
+    let mut sender = SmtpTransport::builder("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
-        .security_level(SecurityLevel::Opportunistic)
         .build();
     let email = SimpleSendableEmail::new(
         EmailAddress::new("user@localhost".to_string()),
