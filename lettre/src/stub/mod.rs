@@ -17,7 +17,7 @@
 //! assert!(result.is_ok());
 //! ```
 //!
-//! Will log the line:
+//! Will log (when using a logger like `env_logger`):
 //!
 //! ```text
 //! b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>

@@ -1,8 +1,11 @@
 extern crate lettre;
+extern crate env_logger;
 
 use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail, SmtpTransport};
 
 fn main() {
+    env_logger::init().unwrap();
+
     let email = SimpleSendableEmail::new(
         EmailAddress::new("user@localhost".to_string()),
         vec![EmailAddress::new("root@localhost".to_string())],
