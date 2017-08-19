@@ -21,6 +21,8 @@ use SendableEmail;
 use sendmail::error::SendmailResult;
 use std::io::prelude::*;
 use std::process::{Command, Stdio};
+use std::io::Read;
+
 
 pub mod error;
 
@@ -42,8 +44,8 @@ impl SendmailTransport {
     }
 }
 
-impl EmailTransport<SendmailResult> for SendmailTransport {
-    fn send<T: SendableEmail>(&mut self, email: T) -> SendmailResult {
+impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTransport {
+    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SendmailResult {
         // Spawn the sendmail command
         let to_addresses: Vec<String> = email.to().iter().map(|x| x.to_string()).collect();
         let mut process = Command::new(&self.command)
@@ -59,8 +61,11 @@ impl EmailTransport<SendmailResult> for SendmailTransport {
             .stdout(Stdio::piped())
             .spawn()?;
 
+        let mut message_content = String::new();
+        let _ = email.message().read_to_string(&mut message_content);
+
         match process.stdin.as_mut().unwrap().write_all(
-            email.message().as_bytes(),
+            message_content.as_bytes(),
         ) {
             Ok(_) => (),
             Err(error) => return Err(From::from(error)),

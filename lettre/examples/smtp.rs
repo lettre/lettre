@@ -15,7 +15,7 @@ fn main() {
         .unwrap()
         .build();
     // Send the email
-    let result = mailer.send(email);
+    let result = mailer.send(&email);
 
     if result.is_ok() {
         println!("Email sent");

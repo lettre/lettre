@@ -19,8 +19,8 @@ fn stub_transport() {
         "Hello stub".to_string(),
     );
 
-    let result_ok = sender_ok.send(email.clone()).unwrap();
-    let result_ko = sender_ko.send(email);
+    let result_ok = sender_ok.send(&email).unwrap();
+    let result_ko = sender_ko.send(&email);
 
     assert_eq!(result_ok, response_ok);
     assert!(result_ko.is_err());

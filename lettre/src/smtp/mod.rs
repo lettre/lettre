@@ -118,6 +118,7 @@ use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
+use std::io::Read;
 
 pub mod extension;
 pub mod commands;
@@ -368,7 +369,7 @@ impl SmtpTransport {
     /// Reset the client state
     fn reset(&mut self) {
         // Close the SMTP transaction if needed
-        self.close();
+        //self.close();
 
         // Reset the client state
         self.server_info = None;
@@ -395,10 +396,10 @@ impl SmtpTransport {
     }
 }
 
-impl EmailTransport<SmtpResult> for SmtpTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
     /// Sends an email
     #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
-    fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
+    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SmtpResult {
 
         // Extract email information
         let message_id = email.message_id();
@@ -530,8 +531,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         try_smtp!(self.client.smtp_command(DataCommand), self);
 
         // Message content
-        let message = email.message();
-        let result = self.client.message(&message);
+        let result = self.client.message(email.message());
 
         if result.is_ok() {
             // Increment the connection reuse counter
@@ -542,7 +542,8 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
                 "{}: conn_use={}, size={}, status=sent ({})",
                 message_id,
                 self.state.connection_reuse_count,
-                message.len(),
+                // TODO fix
+                0,
                 result
                     .as_ref()
                     .ok()

@@ -4,7 +4,7 @@
 //! emails have to implement `SendableEmail`.
 //!
 
-#![deny(missing_docs, unsafe_code, unstable_features, warnings)]
+#![deny(unsafe_code, unstable_features)]
 
 #[macro_use]
 extern crate log;
@@ -36,10 +36,9 @@ pub use smtp::ClientSecurity;
 pub use smtp::SmtpTransport;
 pub use smtp::client::net::ClientTlsParameters;
 
-use std::io::Read;
-use std::fmt;
-use std::fmt::{Display, Formatter};
-pub use stub::StubEmailTransport;
+use std::str;
+use std::fmt::{self, Display, Formatter};
+use std::io::{self, BufReader, Read};
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -60,7 +59,7 @@ impl EmailAddress {
 }
 
 /// Email sendable by an SMTP client
-pub trait SendableEmail {
+pub trait SendableEmail<'a, T: Read + 'a> {
     /// To
     fn to(&self) -> Vec<EmailAddress>;
     /// From
@@ -68,13 +67,13 @@ pub trait SendableEmail {
     /// Message ID, used for logging
     fn message_id(&self) -> String;
     /// Message content
-    fn message<T: Read>(self) -> T;
+    fn message(&'a self) -> Box<T>;
 }
 
 /// Transport method for emails
-pub trait EmailTransport<U> {
+pub trait EmailTransport<'a, U: Read + 'a, V> {
     /// Sends the email
-    fn send<T: SendableEmail>(&mut self, email: T) -> U;
+    fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> V;
     /// Close the transport explicitly
     fn close(&mut self);
 }
@@ -90,7 +89,7 @@ pub struct SimpleSendableEmail {
     /// Message ID
     message_id: String,
     /// Message content
-    message: String,
+    message: Vec<u8>,
 }
 
 impl SimpleSendableEmail {
@@ -105,14 +104,12 @@ impl SimpleSendableEmail {
             from: from_address,
             to: to_addresses,
             message_id: message_id,
-            message: message,
+            message: message.into_bytes(),
         }
     }
 }
 
-impl SendableEmail for SimpleSendableEmail {
-    //type T = &[u8];
-
+impl<'a> SendableEmail<'a, &'a [u8]> for SimpleSendableEmail {
     fn to(&self) -> Vec<EmailAddress> {
         self.to.clone()
     }
@@ -125,7 +122,7 @@ impl SendableEmail for SimpleSendableEmail {
         self.message_id.clone()
     }
 
-    fn message<T: Read>(self) -> T {
-        self.message.as_bytes()
+    fn message(&'a self) -> Box<&[u8]> {
+        Box::new(self.message.as_slice())
     }
 }

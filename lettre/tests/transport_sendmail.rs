@@ -13,7 +13,7 @@ fn sendmail_transport_simple() {
         "Hello sendmail".to_string(),
     );
 
-    let result = sender.send(email);
+    let result = sender.send(&email);
     println!("{:?}", result);
     assert!(result.is_ok());
 }
