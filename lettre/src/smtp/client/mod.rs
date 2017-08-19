@@ -7,33 +7,31 @@ use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::ResponseParser;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::io;
-use std::io::{BufRead, Read, Write};
+use std::fmt::{Debug, Display};
+use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
-use std::io::BufReader;
-
 
 pub mod net;
 pub mod mock;
 
-/// The codec used to encode client requests and decode server responses
-#[derive(Default,Debug)]
+/// The codec used for transparency
+#[derive(Default, Debug)]
 pub struct ClientCodec {
     escape_count: u8,
 }
 
 impl ClientCodec {
+    /// Creates a new client codec
     pub fn new() -> Self {
         ClientCodec::default()
     }
 }
 
 impl ClientCodec {
-    // TODO replace CR and LF by CRLF
+    /// Adds transparency
+    /// TODO: replace CR and LF by CRLF
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) -> Result<(), Error> {
         match frame.len() {
             0 => {
@@ -45,14 +43,14 @@ impl ClientCodec {
                 }
                 self.escape_count = 0;
                 Ok(())
-            },
+            }
             _ => {
                 let mut start = 0;
                 for (idx, byte) in frame.iter().enumerate() {
                     match self.escape_count {
                         0 => self.escape_count = if *byte == b'\r' { 1 } else { 0 },
                         1 => self.escape_count = if *byte == b'\n' { 2 } else { 0 },
-                        2 => self.escape_count = if *byte == b'.'  { 3 } else { 0 },
+                        2 => self.escape_count = if *byte == b'.' { 3 } else { 0 },
                         _ => unreachable!(),
                     }
                     if self.escape_count == 3 {
@@ -63,7 +61,7 @@ impl ClientCodec {
                     }
                 }
                 Ok(buf.write_all(&frame[start..])?)
-            },
+            }
 
         }
     }
@@ -239,7 +237,10 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.stream.as_mut().unwrap().write(string)?;
         self.stream.as_mut().unwrap().flush()?;
 
-        debug!("Wrote: {}", escape_crlf(String::from_utf8_lossy(string).as_ref()));
+        debug!(
+            "Wrote: {}",
+            escape_crlf(String::from_utf8_lossy(string).as_ref())
+        );
         Ok(())
     }
 
@@ -270,24 +271,27 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
 #[cfg(test)]
 mod test {
-    use super::{escape_crlf, remove_crlf, ClientCodec};
+    use super::{ClientCodec, escape_crlf, remove_crlf};
 
     #[test]
     fn test_codec() {
         let mut codec = ClientCodec::new();
-        let mut buf : Vec<u8> = vec![];
+        let mut buf: Vec<u8> = vec![];
 
-        codec.encode(b"test\r\n", &mut buf);
-        codec.encode(b".\r\n", &mut buf);
-        codec.encode(b"\r\ntest", &mut buf);
-        codec.encode(b"te\r\n.\r\nst", &mut buf);
-        codec.encode(b"test", &mut buf);
-        codec.encode(b"test.", &mut buf);
-        codec.encode(b"test\n", &mut buf);
-        codec.encode(b".test\n", &mut buf);
-        codec.encode(b"test", &mut buf);
-        assert_eq!(String::from_utf8(buf).unwrap(), "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest");
-    }  
+        assert!(codec.encode(b"test\r\n", &mut buf).is_ok());
+        assert!(codec.encode(b".\r\n", &mut buf).is_ok());
+        assert!(codec.encode(b"\r\ntest", &mut buf).is_ok());
+        assert!(codec.encode(b"te\r\n.\r\nst", &mut buf).is_ok());
+        assert!(codec.encode(b"test", &mut buf).is_ok());
+        assert!(codec.encode(b"test.", &mut buf).is_ok());
+        assert!(codec.encode(b"test\n", &mut buf).is_ok());
+        assert!(codec.encode(b".test\n", &mut buf).is_ok());
+        assert!(codec.encode(b"test", &mut buf).is_ok());
+        assert_eq!(
+            String::from_utf8(buf).unwrap(),
+            "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
+        );
+    }
 
     #[test]
     fn test_remove_crlf() {

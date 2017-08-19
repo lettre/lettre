@@ -5,11 +5,9 @@ use smtp::error::Error;
 use smtp::response::Response;
 use smtp::util::XText;
 use std::collections::HashSet;
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{self, Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::result::Result;
-
 
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]

@@ -8,8 +8,7 @@ use smtp::error::Error;
 use smtp::extension::{MailParameter, RcptParameter};
 use smtp::extension::ClientId;
 use smtp::response::Response;
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{self, Display, Formatter};
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]

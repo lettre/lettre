@@ -59,7 +59,6 @@
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
-//!     // FIXME security doc
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
 //!     // Configure expected authentication mechanism
@@ -101,10 +100,9 @@
 //!             RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
 //!         );
 //! let _ = email_client.smtp_command(DataCommand);
-//! let _ = email_client.message("Test email");
+//! let _ = email_client.message(Box::new("Test email".as_bytes()));
 //! let _ = email_client.smtp_command(QuitCommand);
 //! ```
-
 
 use EmailTransport;
 use SendableEmail;
@@ -116,9 +114,9 @@ use smtp::client::net::ClientTlsParameters;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
+use std::io::Read;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
-use std::io::Read;
 
 pub mod extension;
 pub mod commands;
@@ -383,6 +381,22 @@ impl<'a> SmtpTransport {
 
         Ok(ehlo_response)
     }
+
+    /// Closes the inner connection
+    pub fn close(&mut self) {
+        self.client.close();
+    }
+
+    /// Reset the client state
+    pub fn reset(&mut self) {
+        // Close the SMTP transaction if needed
+        self.close();
+
+        // Reset the client state
+        self.server_info = None;
+        self.state.panic = false;
+        self.state.connection_reuse_count = 0;
+    }
 }
 
 impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
@@ -528,11 +542,9 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
 
             // Log the message
             info!(
-                "{}: conn_use={}, size={}, status=sent ({})",
+                "{}: conn_use={}, status=sent ({})",
                 message_id,
                 self.state.connection_reuse_count,
-                // TODO fix
-                0,
                 result
                     .as_ref()
                     .ok()
@@ -553,21 +565,5 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
         }
 
         result
-    }
-
-    /// Closes the inner connection
-    fn close(&mut self) {
-        self.client.close();
-    }
-
-    /// Reset the client state
-    fn reset(&mut self) {
-        // Close the SMTP transaction if needed
-        self.close();
-
-        // Reset the client state
-        self.server_info = None;
-        self.state.panic = false;
-        self.state.connection_reuse_count = 0;
     }
 }

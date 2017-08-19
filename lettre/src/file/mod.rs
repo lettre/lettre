@@ -37,11 +37,9 @@ use EmailTransport;
 use SendableEmail;
 use SimpleSendableEmail;
 use file::error::FileResult;
-use std::io::Read;
-
-
 use serde_json;
 use std::fs::File;
+use std::io::Read;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
@@ -84,13 +82,5 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport 
         )?;
 
         Ok(())
-    }
-
-    fn close(&mut self) {
-        ()
-    }
-
-    fn reset(&mut self) {
-        ()
     }
 }

@@ -27,9 +27,8 @@ use EmailTransport;
 use SendableEmail;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::{Code, Response};
-use std::str::FromStr;
 use std::io::Read;
-
+use std::str::FromStr;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug)]
@@ -68,13 +67,5 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport 
         } else {
             Err(Error::from(self.response.clone()))
         }
-    }
-
-    fn close(&mut self) {
-        ()
-    }
-
-    fn reset(&mut self) {
-        ()
     }
 }

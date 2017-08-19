@@ -4,7 +4,7 @@
 //! emails have to implement `SendableEmail`.
 //!
 
-#![deny(unsafe_code, unstable_features)]
+#![deny(missing_docs, unsafe_code, unstable_features, warnings)]
 
 #[macro_use]
 extern crate log;
@@ -32,13 +32,10 @@ pub mod file;
 #[cfg(feature = "file-transport")]
 pub use file::FileEmailTransport;
 pub use sendmail::SendmailTransport;
-pub use smtp::ClientSecurity;
-pub use smtp::SmtpTransport;
+pub use smtp::{SmtpTransport, ClientSecurity};
 pub use smtp::client::net::ClientTlsParameters;
-
-use std::str;
 use std::fmt::{self, Display, Formatter};
-use std::io::{self, BufReader, Read};
+use std::io::Read;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -74,10 +71,6 @@ pub trait SendableEmail<'a, T: Read + 'a> {
 pub trait EmailTransport<'a, U: Read + 'a, V> {
     /// Sends the email
     fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> V;
-    /// Close the transport explicitly
-    fn close(&mut self);
-    /// Reset the transport state
-    fn reset(&mut self);
 }
 
 /// Minimal email structure

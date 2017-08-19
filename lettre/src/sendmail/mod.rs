@@ -16,13 +16,11 @@
 //! assert!(result.is_ok());
 //! ```
 
-use EmailTransport;
-use SendableEmail;
+use {EmailTransport, SendableEmail};
 use sendmail::error::SendmailResult;
+use std::io::Read;
 use std::io::prelude::*;
 use std::process::{Command, Stdio};
-use std::io::Read;
-
 
 pub mod error;
 
@@ -82,13 +80,5 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTranspo
         } else {
             Err(From::from("The sendmail process stopped"))
         }
-    }
-
-    fn close(&mut self) {
-        ()
-    }
-
-    fn reset(&mut self) {
-        ()
     }
 }
