@@ -16,72 +16,9 @@ use std::string::String;
 use std::time::Duration;
 use std::io::BufReader;
 
+
 pub mod net;
 pub mod mock;
-
-
-/*
-/// The codec used to encode client requests and decode server responses
-#[derive(Default)]
-pub struct ClientCodec {
-    escape_count: u8,
-}
-
-impl ClientCodec {
-    pub fn new() -> Self {
-        ClientCodec::default()
-    }
-}
-
-impl Codec for ClientCodec {
-    type Out = Frame<Request, Vec<u8>, IoError>;
-    type In = Frame<Response, (), IoError>;
-
-    fn encode(&mut self, frame: Self::Out, buf: &mut Vec<u8>) -> IoResult<()> {
-        match frame {
-            Frame::Message { message, .. } => {
-                buf.write_all(message.to_string().as_bytes())
-            },
-            Frame::Body { chunk: Some(chunk) } => {
-                // Escape lines starting with a '.'
-                // FIXME: additional encoding for non-ASCII?
-                let mut start = 0;
-                for (idx, byte) in chunk.iter().enumerate() {
-                    match self.escape_count {
-                        0 => self.escape_count = if *byte == b'\r' { 1 } else { 0 },
-                        1 => self.escape_count = if *byte == b'\n' { 2 } else { 0 },
-                        2 => self.escape_count = if *byte == b'.'  { 3 } else { 0 },
-                        _ => unreachable!(),
-                    }
-                    if self.escape_count == 3 {
-                        self.escape_count = 0;
-                        buf.write_all(&chunk[start..idx])?;
-                        buf.write_all(b".")?;
-                        start = idx;
-                    }
-                }
-                buf.write_all(&chunk[start..])
-            },
-            Frame::Body { chunk: None } => {
-                match self.escape_count {
-                    0 => buf.write_all(b"\r\n.\r\n")?,
-                    1 => buf.write_all(b"\n.\r\n")?,
-                    2 => buf.write_all(b".\r\n")?,
-                    _ => unreachable!(),
-                }
-                self.escape_count = 0;
-                Ok(())
-            },
-            Frame::Error { error } => {
-                panic!("unimplemented error handling: {:?}", error);
-            },
-        }
-    }
-}
-*/
-
-
-
 
 /// The codec used to encode client requests and decode server responses
 #[derive(Default,Debug)]
@@ -96,6 +33,7 @@ impl ClientCodec {
 }
 
 impl ClientCodec {
+    // TODO replace CR and LF by CRLF
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) -> Result<(), Error> {
         match frame.len() {
             0 => {
@@ -131,26 +69,14 @@ impl ClientCodec {
     }
 }
 
-/// Returns the string after adding a dot at the beginning of each line starting with a dot
-///
-/// Reference : https://tools.ietf.org/html/rfc5321#page-62 (4.5.2. Transparency)
-#[inline]
-fn escape_dot(string: &str) -> String {
-    if string.starts_with('.') {
-        format!(".{}", string)
-    } else {
-        string.to_string()
-    }.replace("\r\n.", "\r\n..")
-}
-
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
-#[inline]
+/// Used for debug displays
 fn escape_crlf(string: &str) -> String {
     string.replace(CRLF, "<CRLF>")
 }
 
 /// Returns the string removing all the CRLF
-#[inline]
+/// Used for debug displays
 fn remove_crlf(string: &str) -> String {
     string.replace(CRLF, "")
 }
@@ -251,19 +177,8 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.smtp_command(NoopCommand).is_ok()
     }
 
-    /// Sends an SMTP command
-    pub fn command(&mut self, command: &str) -> SmtpResult {
-        self.send_server(format!("{}{}", command, CRLF).as_bytes())
-    }
-
-    /// Sends an SMTP command
-    pub fn smtp_command<C: Display>(&mut self, command: C) -> SmtpResult {
-        self.send_server(command.to_string().as_bytes())
-    }
-
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
     pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
-
         // TODO
         let mut challenges = 10;
         let mut response = self.smtp_command(
@@ -288,18 +203,35 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
     /// Sends the message content
     pub fn message<T: Read>(&mut self, mut message: Box<T>) -> SmtpResult {
-        let buf: Vec<u8> = vec![];
+        let mut in_buf: Vec<u8> = vec![];
+        let mut out_buf: Vec<u8> = vec![];
 
-        let codec = ClientCodec::new();
-        let message_reader = BufReader::new(message.as_mut());
+        let mut codec = ClientCodec::new();
+        let mut message_reader = BufReader::new(message.as_mut());
 
-        //while 
+        loop {
+            in_buf.clear();
+            out_buf.clear();
+            match message_reader.read(&mut in_buf)? {
+                0 => break,
+                _ => codec.encode(in_buf.as_slice(), &mut out_buf)?,
+            };
 
-        self.send_server(b"TOTO\r\n.\r\n")
+            self.write_server(out_buf.as_slice())?;
+        }
+
+        self.write_server(MESSAGE_ENDING.as_bytes())?;
+        self.get_reply()
     }
 
-    /// Sends a string to the server and gets the response
-    fn send_server(&mut self, string: &[u8]) -> SmtpResult {
+    /// Sends an SMTP command
+    pub fn smtp_command<C: Display>(&mut self, command: C) -> SmtpResult {
+        self.write_server(command.to_string().as_bytes())?;
+        self.get_reply()
+    }
+
+    /// Writes a string to the server
+    fn write_server(&mut self, string: &[u8]) -> Result<(), Error> {
         if self.stream.is_none() {
             return Err(From::from("Connection closed"));
         }
@@ -308,8 +240,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.stream.as_mut().unwrap().flush()?;
 
         debug!("Wrote: {}", escape_crlf(String::from_utf8_lossy(string).as_ref()));
-
-        self.get_reply()
+        Ok(())
     }
 
     /// Gets the SMTP response
@@ -334,20 +265,29 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         } else {
             Err(From::from(response))
         }
-
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{escape_crlf, escape_dot, remove_crlf};
+    use super::{escape_crlf, remove_crlf, ClientCodec};
 
     #[test]
-    fn test_escape_dot() {
-        assert_eq!(escape_dot(".test"), "..test");
-        assert_eq!(escape_dot("test\r\n.test\r\n"), "test\r\n..test\r\n");
-        assert_eq!(escape_dot("test\r\n.\r\ntest"), "test\r\n..\r\ntest");
-    }
+    fn test_codec() {
+        let mut codec = ClientCodec::new();
+        let mut buf : Vec<u8> = vec![];
+
+        codec.encode(b"test\r\n", &mut buf);
+        codec.encode(b".\r\n", &mut buf);
+        codec.encode(b"\r\ntest", &mut buf);
+        codec.encode(b"te\r\n.\r\nst", &mut buf);
+        codec.encode(b"test", &mut buf);
+        codec.encode(b"test.", &mut buf);
+        codec.encode(b"test\n", &mut buf);
+        codec.encode(b".test\n", &mut buf);
+        codec.encode(b"test", &mut buf);
+        assert_eq!(String::from_utf8(buf).unwrap(), "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest");
+    }  
 
     #[test]
     fn test_remove_crlf() {

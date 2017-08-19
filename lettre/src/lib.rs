@@ -76,6 +76,8 @@ pub trait EmailTransport<'a, U: Read + 'a, V> {
     fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> V;
     /// Close the transport explicitly
     fn close(&mut self);
+    /// Reset the transport state
+    fn reset(&mut self);
 }
 
 /// Minimal email structure

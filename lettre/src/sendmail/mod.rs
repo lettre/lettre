@@ -12,7 +12,7 @@
 //!             );
 //!
 //! let mut sender = SendmailTransport::new();
-//! let result = sender.send(email);
+//! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 
@@ -85,6 +85,10 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTranspo
     }
 
     fn close(&mut self) {
+        ()
+    }
+
+    fn reset(&mut self) {
         ()
     }
 }

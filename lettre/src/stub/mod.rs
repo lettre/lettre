@@ -13,7 +13,7 @@
 //!             );
 //!
 //! let mut sender = StubEmailTransport::new_positive();
-//! let result = sender.send(email);
+//! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -71,6 +71,10 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport 
     }
 
     fn close(&mut self) {
+        ()
+    }
+
+    fn reset(&mut self) {
         ()
     }
 }

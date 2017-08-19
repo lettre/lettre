@@ -17,7 +17,7 @@
 //!                 "Hello world".to_string(),
 //!             );
 //!
-//! let result = sender.send(email);
+//! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 //! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
@@ -87,6 +87,10 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport 
     }
 
     fn close(&mut self) {
+        ()
+    }
+
+    fn reset(&mut self) {
         ()
     }
 }

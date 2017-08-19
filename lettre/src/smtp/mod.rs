@@ -31,7 +31,7 @@
 //! let mut mailer =
 //! SmtpTransport::builder_unencrypted_localhost().unwrap().build();
 //! // Send the email
-//! let result = mailer.send(email);
+//! let result = mailer.send(&email);
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -67,11 +67,11 @@
 //!     // Enable connection reuse
 //!     .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
 //!
-//! let result_1 = mailer.send(email.clone());
+//! let result_1 = mailer.send(&email);
 //! assert!(result_1.is_ok());
 //!
 //! // The second email will use the same connection
-//! let result_2 = mailer.send(email);
+//! let result_2 = mailer.send(&email);
 //! assert!(result_2.is_ok());
 //!
 //! // Explicitly close the SMTP transaction as we enabled connection reuse
@@ -319,7 +319,7 @@ macro_rules! try_smtp (
     })
 );
 
-impl SmtpTransport {
+impl<'a> SmtpTransport {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submission port, using the provided domain
     /// to validate TLS certificates.
@@ -364,17 +364,6 @@ impl SmtpTransport {
                 connection_reuse_count: 0,
             },
         }
-    }
-
-    /// Reset the client state
-    fn reset(&mut self) {
-        // Close the SMTP transaction if needed
-        //self.close();
-
-        // Reset the client state
-        self.server_info = None;
-        self.state.panic = false;
-        self.state.connection_reuse_count = 0;
     }
 
     /// Gets the EHLO response and updates server information
@@ -569,5 +558,16 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
     /// Closes the inner connection
     fn close(&mut self) {
         self.client.close();
+    }
+
+    /// Reset the client state
+    fn reset(&mut self) {
+        // Close the SMTP transaction if needed
+        self.close();
+
+        // Reset the client state
+        self.server_info = None;
+        self.state.panic = false;
+        self.state.connection_reuse_count = 0;
     }
 }
