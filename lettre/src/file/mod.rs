@@ -17,7 +17,7 @@
 //!                 "Hello world".to_string(),
 //!             );
 //!
-//! let result = sender.send(email);
+//! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 //! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
@@ -37,9 +37,9 @@ use EmailTransport;
 use SendableEmail;
 use SimpleSendableEmail;
 use file::error::FileResult;
-
 use serde_json;
 use std::fs::File;
+use std::io::Read;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
@@ -60,18 +60,21 @@ impl FileEmailTransport {
     }
 }
 
-impl EmailTransport<FileResult> for FileEmailTransport {
-    fn send<T: SendableEmail>(&mut self, email: T) -> FileResult {
+impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport {
+    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> FileResult {
         let mut file = self.path.clone();
         file.push(format!("{}.txt", email.message_id()));
 
         let mut f = File::create(file.as_path())?;
 
+        let mut message_content = String::new();
+        let _ = email.message().read_to_string(&mut message_content);
+
         let simple_email = SimpleSendableEmail::new(
             email.from().clone(),
             email.to().clone(),
             email.message_id().clone(),
-            email.message(),
+            message_content,
         );
 
         f.write_all(
@@ -79,9 +82,5 @@ impl EmailTransport<FileResult> for FileEmailTransport {
         )?;
 
         Ok(())
-    }
-
-    fn close(&mut self) {
-        ()
     }
 }

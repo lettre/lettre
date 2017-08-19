@@ -31,7 +31,7 @@
 //! let mut mailer =
 //! SmtpTransport::builder_unencrypted_localhost().unwrap().build();
 //! // Send the email
-//! let result = mailer.send(email);
+//! let result = mailer.send(&email);
 //!
 //! assert!(result.is_ok());
 //! ```
@@ -59,7 +59,6 @@
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
-//!     // FIXME security doc
 //!     // Enable SMTPUTF8 if the server supports it
 //!     .smtp_utf8(true)
 //!     // Configure expected authentication mechanism
@@ -67,11 +66,11 @@
 //!     // Enable connection reuse
 //!     .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
 //!
-//! let result_1 = mailer.send(email.clone());
+//! let result_1 = mailer.send(&email);
 //! assert!(result_1.is_ok());
 //!
 //! // The second email will use the same connection
-//! let result_2 = mailer.send(email);
+//! let result_2 = mailer.send(&email);
 //! assert!(result_2.is_ok());
 //!
 //! // Explicitly close the SMTP transaction as we enabled connection reuse
@@ -101,10 +100,9 @@
 //!             RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
 //!         );
 //! let _ = email_client.smtp_command(DataCommand);
-//! let _ = email_client.message("Test email");
+//! let _ = email_client.message(Box::new("Test email".as_bytes()));
 //! let _ = email_client.smtp_command(QuitCommand);
 //! ```
-
 
 use EmailTransport;
 use SendableEmail;
@@ -116,6 +114,7 @@ use smtp::client::net::ClientTlsParameters;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
+use std::io::Read;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -318,7 +317,7 @@ macro_rules! try_smtp (
     })
 );
 
-impl SmtpTransport {
+impl<'a> SmtpTransport {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submission port, using the provided domain
     /// to validate TLS certificates.
@@ -365,17 +364,6 @@ impl SmtpTransport {
         }
     }
 
-    /// Reset the client state
-    fn reset(&mut self) {
-        // Close the SMTP transaction if needed
-        self.close();
-
-        // Reset the client state
-        self.server_info = None;
-        self.state.panic = false;
-        self.state.connection_reuse_count = 0;
-    }
-
     /// Gets the EHLO response and updates server information
     pub fn get_ehlo(&mut self) -> SmtpResult {
         // Extended Hello
@@ -393,12 +381,28 @@ impl SmtpTransport {
 
         Ok(ehlo_response)
     }
+
+    /// Closes the inner connection
+    pub fn close(&mut self) {
+        self.client.close();
+    }
+
+    /// Reset the client state
+    pub fn reset(&mut self) {
+        // Close the SMTP transaction if needed
+        self.close();
+
+        // Reset the client state
+        self.server_info = None;
+        self.state.panic = false;
+        self.state.connection_reuse_count = 0;
+    }
 }
 
-impl EmailTransport<SmtpResult> for SmtpTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
     /// Sends an email
     #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
-    fn send<T: SendableEmail>(&mut self, email: T) -> SmtpResult {
+    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SmtpResult {
 
         // Extract email information
         let message_id = email.message_id();
@@ -530,8 +534,7 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         try_smtp!(self.client.smtp_command(DataCommand), self);
 
         // Message content
-        let message = email.message();
-        let result = self.client.message(&message);
+        let result = self.client.message(email.message());
 
         if result.is_ok() {
             // Increment the connection reuse counter
@@ -539,10 +542,9 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
 
             // Log the message
             info!(
-                "{}: conn_use={}, size={}, status=sent ({})",
+                "{}: conn_use={}, status=sent ({})",
                 message_id,
                 self.state.connection_reuse_count,
-                message.len(),
                 result
                     .as_ref()
                     .ok()
@@ -563,10 +565,5 @@ impl EmailTransport<SmtpResult> for SmtpTransport {
         }
 
         result
-    }
-
-    /// Closes the inner connection
-    fn close(&mut self) {
-        self.client.close();
     }
 }

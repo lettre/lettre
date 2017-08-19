@@ -66,8 +66,6 @@ pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType}
 use error::Error;
 use lettre::{EmailAddress, SendableEmail};
 use mime::Mime;
-use std::fmt;
-use std::fmt::{Display, Formatter};
 use time::{Tm, now};
 use uuid::Uuid;
 
@@ -375,17 +373,11 @@ impl Envelope {
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Email {
     /// Message
-    message: MimeMessage,
+    message: Vec<u8>,
     /// Envelope
     envelope: Envelope,
     /// Message-ID
     message_id: Uuid,
-}
-
-impl Display for Email {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "{}", self.message.as_string())
-    }
 }
 
 impl PartBuilder {
@@ -818,14 +810,14 @@ impl EmailBuilder {
         }
 
         Ok(Email {
-            message: self.message.build(),
+            message: self.message.build().as_string().into_bytes(),
             envelope: envelope,
             message_id: message_id,
         })
     }
 }
 
-impl SendableEmail for Email {
+impl<'a> SendableEmail<'a, &'a [u8]> for Email {
     fn to(&self) -> Vec<EmailAddress> {
         self.envelope
             .to
@@ -842,8 +834,8 @@ impl SendableEmail for Email {
         format!("{}", self.message_id)
     }
 
-    fn message(self) -> String {
-        self.to_string()
+    fn message(&'a self) -> Box<&[u8]> {
+        Box::new(self.message.as_slice())
     }
 }
 
@@ -875,12 +867,9 @@ pub trait ExtractableEmail {
 #[cfg(test)]
 mod test {
 
-    use super::{Email, EmailBuilder, Envelope, IntoEmail, SimpleEmail};
-    use email_format::{Header, MimeMessage};
+    use super::{EmailBuilder, IntoEmail, SimpleEmail};
     use lettre::{EmailAddress, SendableEmail};
     use time::now;
-
-    use uuid::Uuid;
 
     #[test]
     fn test_simple_email_builder() {
@@ -900,7 +889,7 @@ mod test {
             .unwrap();
 
         assert_eq!(
-            format!("{}", email),
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
             format!(
                 "Subject: Hello\r\nContent-Type: text/plain; \
                  charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
@@ -911,43 +900,6 @@ mod test {
                 email.message_id()
             )
         );
-    }
-
-    #[test]
-    fn test_email_display() {
-        let current_message = Uuid::new_v4();
-
-        let mut email = Email {
-            message: MimeMessage::new_blank_message(),
-            envelope: Envelope {
-                to: vec![],
-                from: "".to_string(),
-            },
-            message_id: current_message,
-        };
-
-        email.message.headers.insert(
-            Header::new_with_value(
-                "Message-ID".to_string(),
-                format!("<{}@rust-smtp>", current_message),
-            ).unwrap(),
-        );
-
-        email.message.headers.insert(
-            Header::new_with_value("To".to_string(), "to@example.com".to_string())
-                .unwrap(),
-        );
-
-        email.message.body = "body".to_string();
-
-        assert_eq!(
-            format!("{}", email),
-            format!(
-                "Message-ID: <{}@rust-smtp>\r\nTo: to@example.com\r\n\r\nbody\r\n",
-                current_message
-            )
-        );
-        assert_eq!(current_message.to_string(), email.message_id());
     }
 
     #[test]
@@ -964,7 +916,7 @@ mod test {
             .build()
             .unwrap();
         assert_eq!(
-            format!("{}", email),
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
             format!(
                 "Date: {}\r\nSubject: Invitation\r\nSender: \
                  <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
@@ -995,7 +947,7 @@ mod test {
             .unwrap();
 
         assert_eq!(
-            format!("{}", email),
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
             format!(
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
@@ -1036,8 +988,6 @@ mod test {
                 EmailAddress::new("bcc@localhost".to_string()),
             ]
         );
-        let content = format!("{}", email);
-        assert_eq!(email.message(), content);
     }
 
 }

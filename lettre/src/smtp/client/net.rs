@@ -2,8 +2,7 @@
 
 use native_tls::{TlsConnector, TlsStream};
 use smtp::client::mock::MockStream;
-use std::io;
-use std::io::{ErrorKind, Read, Write};
+use std::io::{self, ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::Duration;
 
@@ -17,7 +16,7 @@ pub struct ClientTlsParameters {
 }
 
 impl ClientTlsParameters {
-    /// TODO
+    /// Creates a `ClientTlsParameters`
     pub fn new(domain: String, connector: TlsConnector) -> ClientTlsParameters {
         ClientTlsParameters {
             connector: connector,

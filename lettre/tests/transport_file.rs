@@ -22,7 +22,7 @@ mod test {
             "file_id".to_string(),
             "Hello file".to_string(),
         );
-        let result = sender.send(email.clone());
+        let result = sender.send(&email);
         assert!(result.is_ok());
 
         let message_id = email.message_id();
@@ -33,8 +33,8 @@ mod test {
 
         assert_eq!(
             buffer,
-            "{\"to\":[\"root@localhost\"],\"from\":\"user@localhost\",\
-             \"message_id\":\"file_id\",\"message\":\"Hello file\"}"
+            "{\"to\":[\"root@localhost\"],\"from\":\"user@localhost\",\"message_id\":\
+            \"file_id\",\"message\":[72,101,108,108,111,32,102,105,108,101]}"
         );
 
         remove_file(file).unwrap();

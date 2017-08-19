@@ -14,6 +14,6 @@ fn smtp_transport_simple() {
         "Hello smtp".to_string(),
     );
 
-    let result = sender.send(email);
+    let result = sender.send(&email);
     assert!(result.is_ok());
 }

@@ -10,8 +10,7 @@ use crypto::md5::Md5;
 use hex::ToHex;
 use smtp::NUL;
 use smtp::error::Error;
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::fmt::{self, Display, Formatter};
 
 /// Accepted authentication mecanisms on an encrypted connection
 /// Trying LOGIN last as it is deprecated.

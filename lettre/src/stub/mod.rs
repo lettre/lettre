@@ -13,7 +13,7 @@
 //!             );
 //!
 //! let mut sender = StubEmailTransport::new_positive();
-//! let result = sender.send(email);
+//! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 //!
@@ -27,6 +27,7 @@ use EmailTransport;
 use SendableEmail;
 use smtp::error::{Error, SmtpResult};
 use smtp::response::{Code, Response};
+use std::io::Read;
 use std::str::FromStr;
 
 /// This transport logs the message envelope and returns the given response
@@ -52,8 +53,8 @@ impl StubEmailTransport {
 /// SMTP result type
 pub type StubResult = SmtpResult;
 
-impl EmailTransport<StubResult> for StubEmailTransport {
-    fn send<T: SendableEmail>(&mut self, email: T) -> StubResult {
+impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport {
+    fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
 
         info!(
             "{}: from=<{}> to=<{:?}>",
@@ -66,9 +67,5 @@ impl EmailTransport<StubResult> for StubEmailTransport {
         } else {
             Err(Error::from(self.response.clone()))
         }
-    }
-
-    fn close(&mut self) {
-        ()
     }
 }
