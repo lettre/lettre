@@ -6,6 +6,11 @@ weight = 1
 
 +++
 
+{{% notice note %}}
+This documentation is written for lettre 0.7, wich has not been released yet.
+Please use https://docs.rs/lettre/0.6.2/lettre/ for lettre 0.6.
+{{% /notice%}}
+
 Lettre is an email library that allows creating and sending messages. It provides:
 
 * An easy to use email builder

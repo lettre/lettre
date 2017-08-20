@@ -269,20 +269,19 @@
                 
 
 <p>The sendmail transport sends the email using the local sendmail command.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">sendmail</span>::<span style="color: #f8f8f2">SendmailTransport;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
+use lettre::sendmail::SendmailTransport;
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> email </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SimpleSendableEmail</span>::<span style="color: #f8f8f2">new(</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;user@localhost&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                vec</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&quot;root@localhost&quot;</span><span style="color: #f8f8f2">],</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;message_id&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;Hello world&quot;</span><span style="color: #f8f8f2"></span>
-<span style="color: #f8f8f2">            );</span>
+let email = SimpleSendableEmail::new(
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
+            );
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> </span><span style="color: #66d9ef">mut</span><span style="color: #f8f8f2"> sender </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SendmailTransport</span>::<span style="color: #f8f8f2">new();</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> sender.send(email);</span>
-<span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
-</pre></div>
+let mut sender = SendmailTransport::new();
+let result = sender.send(&email);
+assert!(result.is_ok());
 
 
       

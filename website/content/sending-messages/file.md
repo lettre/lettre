@@ -10,22 +10,22 @@ The file transport writes the emails to the given directory. The name of the fil
 `message_id.txt`.
 It can be useful for testing purposes, or if you want to keep track of sent messages.
 
-``` rust
+```rust
 use std::env::temp_dir;
 
 use lettre::file::FileEmailTransport;
-use lettre::{SimpleSendableEmail, EmailTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
 // Write to the local temp directory
 let mut sender = FileEmailTransport::new(temp_dir());
 let email = SimpleSendableEmail::new(
-                "user@localhost",
-                vec!["root@localhost"],
-                "message_id",
-                "Hello world"
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
             );
 
-let result = sender.send(email);
+let result = sender.send(&email);
 assert!(result.is_ok());
 ```
 
