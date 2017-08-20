@@ -24,22 +24,20 @@ The relay server can be the local email server, a specific host or a third-party
 This is the most basic example of usage:
 
 ``` rust
-use lettre::{SimpleSendableEmail, EmailTransport};
-use lettre::smtp::SmtpTransportBuilder;
-use lettre::smtp::SecurityLevel;
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 
 let email = SimpleSendableEmail::new(
-                "user@localhost",
-                vec!["root@localhost"],
-                "message_id",
-                "Hello world"
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
             );
 
 // Open a local connection on port 25
 let mut mailer =
-SmtpTransportBuilder::localhost().unwrap().security_level(SecurityLevel::Opportunistic).build();
+SmtpTransport::builder_unencrypted_localhost().unwrap().build();
 // Send the email
-let result = mailer.send(email);
+let result = mailer.send(&email);
 
 assert!(result.is_ok());
 ```
@@ -47,41 +45,38 @@ assert!(result.is_ok());
 #### Complete example
 
 ``` rust
-use lettre::smtp::{SecurityLevel, SmtpTransport,
-SmtpTransportBuilder};
-use lettre::smtp::authentication::Mechanism;
+use lettre::smtp::authentication::{Credentials, Mechanism};
 use lettre::smtp::SUBMISSION_PORT;
-use lettre::{SimpleSendableEmail, EmailTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::ConnectionReuseParameters;
+
 
 let email = SimpleSendableEmail::new(
-                "user@localhost",
-                vec!["root@localhost"],
-                "message_id",
-                "Hello world"
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
             );
 
 // Connect to a remote server on a custom port
-let mut mailer = SmtpTransportBuilder::new(("server.tld",
-SUBMISSION_PORT)).unwrap()
+let mut mailer = SmtpTransport::simple_builder("server.tld".to_string()).unwrap()
     // Set the name sent during EHLO/HELO, default is `localhost`
-    .hello_name("my.hostname.tld")
+    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
     // Add credentials for authentication
-    .credentials("username", "password")
-    // Specify a TLS security level. You can also specify an SslContext with
-    // .ssl_context(SslContext::Ssl23)
-    .security_level(SecurityLevel::AlwaysEncrypt)
+    .credentials(Credentials::new("username".to_string(), "password".to_string()))
     // Enable SMTPUTF8 if the server supports it
     .smtp_utf8(true)
     // Configure expected authentication mechanism
-    .authentication_mechanism(Mechanism::CramMd5)
+    .authentication_mechanism(Mechanism::Plain)
     // Enable connection reuse
-    .connection_reuse(true).build();
+    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
 
-let result_1 = mailer.send(email.clone());
+let result_1 = mailer.send(&email);
 assert!(result_1.is_ok());
 
 // The second email will use the same connection
-let result_2 = mailer.send(email);
+let result_2 = mailer.send(&email);
 assert!(result_2.is_ok());
 
 // Explicitly close the SMTP transaction as we enabled connection reuse
@@ -94,17 +89,24 @@ You can also send commands, here is a simple email transaction without
 error handling:
 
 ``` rust
+use lettre::EmailAddress;
 use lettre::smtp::SMTP_PORT;
 use lettre::smtp::client::Client;
 use lettre::smtp::client::net::NetworkStream;
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::commands::*;
 
 let mut email_client: Client<NetworkStream> = Client::new();
 let _ = email_client.connect(&("localhost", SMTP_PORT), None);
-let _ = email_client.ehlo("my_hostname");
-let _ = email_client.mail("user@example.com", None);
-let _ = email_client.rcpt("user@example.org");
-let _ = email_client.data();
-let _ = email_client.message("Test email");
-let _ = email_client.quit();
+let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
+let _ = email_client.smtp_command(
+            MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
+        );
+let _ = email_client.smtp_command(
+            RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
+        );
+let _ = email_client.smtp_command(DataCommand);
+let _ = email_client.message(Box::new("Test email".as_bytes()));
+let _ = email_client.smtp_command(QuitCommand);
 ```
 

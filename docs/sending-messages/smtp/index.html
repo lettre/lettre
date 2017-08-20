@@ -303,85 +303,84 @@ emails directly to the destination.</p>
 <h4 id="simple-example">Simple example</h4>
 
 <p>This is the most basic example of usage:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SmtpTransportBuilder;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SecurityLevel;</span>
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> email </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SimpleSendableEmail</span>::<span style="color: #f8f8f2">new(</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;user@localhost&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                vec</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&quot;root@localhost&quot;</span><span style="color: #f8f8f2">],</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;message_id&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;Hello world&quot;</span><span style="color: #f8f8f2"></span>
-<span style="color: #f8f8f2">            );</span>
+let email = SimpleSendableEmail::new(
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
+            );
 
-<span style="color: #75715e">// Open a local connection on port 25</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> </span><span style="color: #66d9ef">mut</span><span style="color: #f8f8f2"> mailer </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"></span>
-<span style="color: #f8f8f2">SmtpTransportBuilder</span>::<span style="color: #f8f8f2">localhost().unwrap().security_level(SecurityLevel</span>::<span style="color: #f8f8f2">Opportunistic).build();</span>
-<span style="color: #75715e">// Send the email</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> mailer.send(email);</span>
+// Open a local connection on port 25
+let mut mailer =
+SmtpTransport::builder_unencrypted_localhost().unwrap().build();
+// Send the email
+let result = mailer.send(&email);
 
-<span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
-</pre></div>
+assert!(result.is_ok());
 
 <h4 id="complete-example">Complete example</h4>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">{SecurityLevel, SmtpTransport,</span>
-<span style="color: #f8f8f2">SmtpTransportBuilder};</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">authentication</span>::<span style="color: #f8f8f2">Mechanism;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SUBMISSION_PORT;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
+use lettre::smtp::authentication::{Credentials, Mechanism};
+use lettre::smtp::SUBMISSION_PORT;
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::ConnectionReuseParameters;
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> email </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SimpleSendableEmail</span>::<span style="color: #f8f8f2">new(</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;user@localhost&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                vec</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&quot;root@localhost&quot;</span><span style="color: #f8f8f2">],</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;message_id&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;Hello world&quot;</span><span style="color: #f8f8f2"></span>
-<span style="color: #f8f8f2">            );</span>
 
-<span style="color: #75715e">// Connect to a remote server on a custom port</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> </span><span style="color: #66d9ef">mut</span><span style="color: #f8f8f2"> mailer </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SmtpTransportBuilder</span>::<span style="color: #f8f8f2">new((</span><span style="color: #e6db74">&quot;server.tld&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">SUBMISSION_PORT)).unwrap()</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Set the name sent during EHLO/HELO, default is `localhost`</span>
-<span style="color: #f8f8f2">    .hello_name(</span><span style="color: #e6db74">&quot;my.hostname.tld&quot;</span><span style="color: #f8f8f2">)</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Add credentials for authentication</span>
-<span style="color: #f8f8f2">    .credentials(</span><span style="color: #e6db74">&quot;username&quot;</span><span style="color: #f8f8f2">, </span><span style="color: #e6db74">&quot;password&quot;</span><span style="color: #f8f8f2">)</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Specify a TLS security level. You can also specify an SslContext with</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// .ssl_context(SslContext::Ssl23)</span>
-<span style="color: #f8f8f2">    .security_level(SecurityLevel</span>::<span style="color: #f8f8f2">AlwaysEncrypt)</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Enable SMTPUTF8 if the server supports it</span>
-<span style="color: #f8f8f2">    .smtp_utf8(</span><span style="color: #66d9ef">true</span><span style="color: #f8f8f2">)</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Configure expected authentication mechanism</span>
-<span style="color: #f8f8f2">    .authentication_mechanism(Mechanism</span>::<span style="color: #f8f8f2">CramMd5)</span>
-<span style="color: #f8f8f2">    </span><span style="color: #75715e">// Enable connection reuse</span>
-<span style="color: #f8f8f2">    .connection_reuse(</span><span style="color: #66d9ef">true</span><span style="color: #f8f8f2">).build();</span>
+let email = SimpleSendableEmail::new(
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
+            );
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result_1 </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> mailer.send(email.clone());</span>
-<span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result_1.is_ok());</span>
+// Connect to a remote server on a custom port
+let mut mailer = SmtpTransport::simple_builder("server.tld".to_string()).unwrap()
+    // Set the name sent during EHLO/HELO, default is `localhost`
+    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
+    // Add credentials for authentication
+    .credentials(Credentials::new("username".to_string(), "password".to_string()))
+    // Enable SMTPUTF8 if the server supports it
+    .smtp_utf8(true)
+    // Configure expected authentication mechanism
+    .authentication_mechanism(Mechanism::Plain)
+    // Enable connection reuse
+    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
 
-<span style="color: #75715e">// The second email will use the same connection</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result_2 </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> mailer.send(email);</span>
-<span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result_2.is_ok());</span>
+let result_1 = mailer.send(&email);
+assert!(result_1.is_ok());
 
-<span style="color: #75715e">// Explicitly close the SMTP transaction as we enabled connection reuse</span>
-<span style="color: #f8f8f2">mailer.close();</span>
-</pre></div>
+// The second email will use the same connection
+let result_2 = mailer.send(&email);
+assert!(result_2.is_ok());
+
+// Explicitly close the SMTP transaction as we enabled connection reuse
+mailer.close();
 
 <h4 id="lower-level">Lower level</h4>
 
 <p>You can also send commands, here is a simple email transaction without
 error handling:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">SMTP_PORT;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">client</span>::<span style="color: #f8f8f2">Client;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">smtp</span>::<span style="color: #f8f8f2">client</span>::<span style="color: #f8f8f2">net</span>::<span style="color: #f8f8f2">NetworkStream;</span>
+use lettre::EmailAddress;
+use lettre::smtp::SMTP_PORT;
+use lettre::smtp::client::Client;
+use lettre::smtp::client::net::NetworkStream;
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::commands::*;
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> </span><span style="color: #66d9ef">mut</span><span style="color: #f8f8f2"> email_client</span>: <span style="color: #a6e22e">Client</span><span style="color: #f92672">&lt;</span><span style="color: #f8f8f2">NetworkStream</span><span style="color: #f92672">&gt;</span><span style="color: #f8f8f2"> </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> Client</span>::<span style="color: #f8f8f2">new();</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.connect(</span><span style="color: #f92672">&amp;</span><span style="color: #f8f8f2">(</span><span style="color: #e6db74">&quot;localhost&quot;</span><span style="color: #f8f8f2">, SMTP_PORT), None);</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.ehlo(</span><span style="color: #e6db74">&quot;my_hostname&quot;</span><span style="color: #f8f8f2">);</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.mail(</span><span style="color: #e6db74">&quot;user@example.com&quot;</span><span style="color: #f8f8f2">, None);</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.rcpt(</span><span style="color: #e6db74">&quot;user@example.org&quot;</span><span style="color: #f8f8f2">);</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.data();</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.message(</span><span style="color: #e6db74">&quot;Test email&quot;</span><span style="color: #f8f8f2">);</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> _ </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> email_client.quit();</span>
-</pre></div>
+let mut email_client: Client<NetworkStream> = Client::new();
+let _ = email_client.connect(&("localhost", SMTP_PORT), None);
+let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
+let _ = email_client.smtp_command(
+            MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
+        );
+let _ = email_client.smtp_command(
+            RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
+        );
+let _ = email_client.smtp_command(DataCommand);
+let _ = email_client.message(Box::new("Test email".as_bytes()));
+let _ = email_client.smtp_command(QuitCommand);
 
 
       

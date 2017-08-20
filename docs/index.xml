@@ -17,7 +17,8 @@
       <pubDate>Sun, 21 May 2017 23:46:17 +0200</pubDate>
       
       <guid>https://lettre.github.io/lettre/getting-started/intro/</guid>
-      <description>Lettre is an email library that allows creating and sending messages. It provides:
+      <description>This documentation is written for lettre 0.7, wich has not been released yet. Please use https://docs.rs/lettre/0.6.2/lettre/ for lettre 0.6.
+ Lettre is an email library that allows creating and sending messages. It provides:
  An easy to use email builder Pluggable email transports Unicode support (for emails and transports, including for sender et recipient addresses when compatible) Secure defaults (emails are only sent encrypted by default)  </description>
     </item>
     
@@ -51,7 +52,7 @@ The relay server can be the local email server, a specific host or a third-party
       
       <guid>https://lettre.github.io/lettre/sending-messages/sendmail/</guid>
       <description>The sendmail transport sends the email using the local sendmail command.
-uselettre::sendmail::SendmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letmutsender =SendmailTransport::new(); letresult =sender.send(email); assert!(result.is_ok());  </description>
+use lettre::sendmail::SendmailTransport; use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress}; let email = SimpleSendableEmail::new( EmailAddress::new(&#34;user@localhost&#34;.to_string()), vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())], &#34;message_id&#34;.to_string(), &#34;Hello world&#34;.to_string(), ); let mut sender = SendmailTransport::new(); let result = sender.send(&amp;email); assert!(result.is_ok()); </description>
     </item>
     
     <item>
@@ -61,8 +62,7 @@ uselettre::sendmail::SendmailTransport; uselettre::{SimpleSendableEmail, EmailTr
       
       <guid>https://lettre.github.io/lettre/sending-messages/file/</guid>
       <description>The file transport writes the emails to the given directory. The name of the file will be message_id.txt. It can be useful for testing purposes, or if you want to keep track of sent messages.
-usestd::env::temp_dir; uselettre::file::FileEmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; // Write to the local temp directory letmutsender =FileEmailTransport::new(temp_dir()); letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letresult =sender.send(email); assert!(result.is_ok());  Example result in /tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt:
-b7c211bc-9811-45ce-8cd9-68eab575d695: from=&amp;lt;user@localhost&amp;gt; to=&amp;lt;root@localhost&amp;gt; To: &amp;lt;root@localhost&amp;gt; From: &amp;lt;user@localhost&amp;gt; Subject: Hello Date: Sat, 31 Oct 2015 13:42:19 +0100 Message-ID: &amp;lt;b7c211bc-9811-45ce-8cd9-68eab575d695.</description>
+use std::env::temp_dir; use lettre::file::FileEmailTransport; use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress}; // Write to the local temp directory let mut sender = FileEmailTransport::new(temp_dir()); let email = SimpleSendableEmail::new( EmailAddress::new(&#34;user@localhost&#34;.to_string()), vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())], &#34;message_id&#34;.to_string(), &#34;Hello world&#34;.to_string(), ); let result = sender.send(&amp;email); assert!(result.is_ok()); Example result in /tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.</description>
     </item>
     
     <item>
@@ -72,8 +72,8 @@ b7c211bc-9811-45ce-8cd9-68eab575d695: from=&amp;lt;user@localhost&amp;gt; to=&am
       
       <guid>https://lettre.github.io/lettre/sending-messages/stub/</guid>
       <description>The stub transport only logs message envelope and drops the content. It can be useful for testing purposes.
-uselettre::stub::StubEmailTransport; uselettre::{SimpleSendableEmail, EmailTransport}; letemail =SimpleSendableEmail::new( &amp;quot;user@localhost&amp;quot;, vec![&amp;quot;root@localhost&amp;quot;], &amp;quot;message_id&amp;quot;, &amp;quot;Hello world&amp;quot; ); letmutsender =StubEmailTransport; letresult =sender.send(email); assert!(result.is_ok());  Will log the line:
-b7c211bc-9811-45ce-8cd9-68eab575d695: from=&amp;lt;user@localhost&amp;gt; to=&amp;lt;root@localhost&amp;gt;  </description>
+use lettre::stub::StubEmailTransport; use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress}; let email = SimpleSendableEmail::new( EmailAddress::new(&#34;user@localhost&#34;.to_string()), vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())], &#34;message_id&#34;.to_string(), &#34;Hello world&#34;.to_string(), ); let mut sender = StubEmailTransport::new_positive(); let result = sender.send(&amp;email); assert!(result.is_ok()); Will log (when using a logger like env_logger):
+b7c211bc-9811-45ce-8cd9-68eab575d695: from= to= </description>
     </item>
     
   </channel>

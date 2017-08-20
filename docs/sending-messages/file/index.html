@@ -271,34 +271,32 @@
 <p>The file transport writes the emails to the given directory. The name of the file will be
 <code>message_id.txt</code>.
 It can be useful for testing purposes, or if you want to keep track of sent messages.</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span><span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> std</span>::<span style="color: #f8f8f2">env</span>::<span style="color: #f8f8f2">temp_dir;</span>
+use std::env::temp_dir;
 
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">file</span>::<span style="color: #f8f8f2">FileEmailTransport;</span>
-<span style="color: #66d9ef">use</span><span style="color: #f8f8f2"> lettre</span>::<span style="color: #f8f8f2">{SimpleSendableEmail, EmailTransport};</span>
+use lettre::file::FileEmailTransport;
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
-<span style="color: #75715e">// Write to the local temp directory</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> </span><span style="color: #66d9ef">mut</span><span style="color: #f8f8f2"> sender </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> FileEmailTransport</span>::<span style="color: #f8f8f2">new(temp_dir());</span>
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> email </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> SimpleSendableEmail</span>::<span style="color: #f8f8f2">new(</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;user@localhost&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                vec</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">[</span><span style="color: #e6db74">&quot;root@localhost&quot;</span><span style="color: #f8f8f2">],</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;message_id&quot;</span><span style="color: #f8f8f2">,</span>
-<span style="color: #f8f8f2">                </span><span style="color: #e6db74">&quot;Hello world&quot;</span><span style="color: #f8f8f2"></span>
-<span style="color: #f8f8f2">            );</span>
+// Write to the local temp directory
+let mut sender = FileEmailTransport::new(temp_dir());
+let email = SimpleSendableEmail::new(
+                EmailAddress::new("user@localhost".to_string()),
+                vec![EmailAddress::new("root@localhost".to_string())],
+                "message_id".to_string(),
+                "Hello world".to_string(),
+            );
 
-<span style="color: #66d9ef">let</span><span style="color: #f8f8f2"> result </span><span style="color: #f92672">=</span><span style="color: #f8f8f2"> sender.send(email);</span>
-<span style="color: #f8f8f2">assert</span><span style="color: #f92672">!</span><span style="color: #f8f8f2">(result.is_ok());</span>
-</pre></div>
+let result = sender.send(&email);
+assert!(result.is_ok());
 
 <p>Example result in <code>/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt</code>:</p>
-<div class="highlight" style="background: #272822"><pre style="line-height: 125%"><span></span>b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
-To: &lt;root@localhost&gt;
-From: &lt;user@localhost&gt;
+b7c211bc-9811-45ce-8cd9-68eab575d695: from=<user@localhost> to=<root@localhost>
+To: <root@localhost>
+From: <user@localhost>
 Subject: Hello
 Date: Sat, 31 Oct 2015 13:42:19 +0100
-Message-ID: &lt;b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost&gt;
+Message-ID: <b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost>
 
 Hello World!
-</pre></div>
 
 
       

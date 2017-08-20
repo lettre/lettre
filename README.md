@@ -27,10 +27,6 @@ Released versions:
 * [v0.6.0](https://docs.rs/lettre/0.6.0/lettre/)
 * [v0.5.1](https://docs.rs/lettre/0.5.1/lettre/)
 
-Development version:
-
-* [master](https://lettre.github.io/lettre/master/lettre/)
-
 ## Install
 
 This library requires rust 1.18 or newer.
