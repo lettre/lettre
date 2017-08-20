@@ -68,6 +68,9 @@ use lettre::{EmailAddress, SendableEmail};
 use mime::Mime;
 use time::{Tm, now};
 use uuid::Uuid;
+use std::fs::File;
+use std::path::Path;
+use std::io::Read;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait IntoHeader {
@@ -179,7 +182,7 @@ pub struct SimpleEmail {
     date: Option<Tm>,
     html: Option<String>,
     text: Option<String>,
-    // attachments: Vec<String>,
+    attachments: Vec<String>,
     headers: Vec<Header>,
 }
 
@@ -270,6 +273,17 @@ impl SimpleEmail {
     /// Adds a `Date` header with the given date
     pub fn set_date(&mut self, date: Tm) {
         self.date = Some(date);
+    }
+
+    /// Adds an attachment to the message
+    pub fn attachment<S: Into<String>>(mut self, path: S) -> SimpleEmail {
+        self.add_attachment(path);
+        self
+    }
+
+    /// Adds an attachment to the message
+    pub fn add_attachment<S: Into<String>>(&mut self, path: S) {
+        self.attachments.push(path.into());
     }
 
     /// Sets the email body to plain text content
@@ -583,6 +597,55 @@ impl EmailBuilder {
             ("Date", Tm::rfc822z(date).to_string()),
         );
         self.date_issued = true;
+    }
+
+    /// Adds an attachment to the email
+    pub fn attachment(mut self, path: &Path, filename: Option<&str>, content_type: Mime) -> Result<EmailBuilder, Error> {
+        self.set_attachment(path, filename, content_type)?;
+        Ok(self)
+    }
+
+    /// Adds an attachment to the email
+    /// If filename is not provided, the name of the file will be used.
+    pub fn set_attachment(&mut self, path: &Path, filename: Option<&str>, content_type: Mime) -> Result<(), Error> {
+       let file = File::open(path);
+        let body = match file {
+            Ok(mut f) => {
+                let mut data = String::new();
+                let read = f.read_to_string(&mut data);
+                match read {
+                    Ok(_) => data,
+                    Err(e) => {
+                        return Err(From::from(e));
+                    }
+                }
+            }
+            Err(e) => {
+                return Err(From::from(e));
+            }
+        };
+
+        let actual_filename = match filename {
+            Some(name) => name,
+            None => match path.file_name() {
+                Some(name) => match name.to_str() {
+                    Some(name) => name,
+                    None => return Err(Error::CannotParseFilename),
+                },
+                None => return Err(Error::CannotParseFilename),
+            },
+        };
+
+        let content = PartBuilder::new()
+            .body(body)
+            .header(("Content-Disposition", format!("attachment; filename=\"{}\"", actual_filename)))
+            .header(("Content-Type", content_type.to_string()))
+            .build();
+
+        self.set_message_type(MimeMultipartType::Mixed);
+        self.add_child(content);
+
+        Ok(())
     }
 
     /// Set the message type

@@ -1,8 +1,10 @@
 extern crate lettre;
 extern crate lettre_email;
+extern crate mime;
 
 use lettre::{EmailTransport, SmtpTransport};
 use lettre_email::EmailBuilder;
+use std::path::Path;
 
 fn main() {
     let email = EmailBuilder::new()
@@ -12,6 +14,7 @@ fn main() {
         .from("user@example.com")
         .subject("Hi, Hello world")
         .text("Hello world.")
+        .attachment(Path::new("Cargo.toml"), None, mime::TEXT_PLAIN).unwrap()
         .build()
         .unwrap();
 

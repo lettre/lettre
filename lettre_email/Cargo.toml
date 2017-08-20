@@ -14,6 +14,9 @@ keywords = ["email", "mailer"]
 [badges]
 travis-ci = { repository = "lettre/lettre_email" }
 
+[dev-dependencies]
+env_logger = "*"
+
 [dependencies]
 email = "^0.0"
 mime = "^0.3"

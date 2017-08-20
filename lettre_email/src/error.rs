@@ -2,16 +2,20 @@
 
 use self::Error::*;
 use std::error::Error as StdError;
-use std::fmt;
-use std::fmt::{Display, Formatter};
+use std::io;
+use std::fmt::{self, Display, Formatter};
 
 /// An enum of all error kinds.
 #[derive(Debug)]
 pub enum Error {
-    /// Missinf sender
+    /// Missing sender
     MissingFrom,
     /// Missing recipient
     MissingTo,
+    /// Unparseable filename for attachment
+    CannotParseFilename,
+    /// IO error
+    Io(io::Error),
 }
 
 impl Display for Error {
@@ -25,6 +29,15 @@ impl StdError for Error {
         match *self {
             MissingFrom => "the sender is missing",
             MissingTo => "the recipient is missing",
+            CannotParseFilename => "the attachment filename could not be parsed",
+            Io(ref err) => err.description(),
         }
     }
 }
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Io(err)
+    }
+}
+
