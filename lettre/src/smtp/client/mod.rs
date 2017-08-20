@@ -201,19 +201,22 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
     /// Sends the message content
     pub fn message<T: Read>(&mut self, mut message: Box<T>) -> SmtpResult {
-        let mut in_buf: Vec<u8> = vec![];
         let mut out_buf: Vec<u8> = vec![];
-
         let mut codec = ClientCodec::new();
         let mut message_reader = BufReader::new(message.as_mut());
 
         loop {
-            in_buf.clear();
             out_buf.clear();
-            match message_reader.read(&mut in_buf)? {
-                0 => break,
-                _ => codec.encode(in_buf.as_slice(), &mut out_buf)?,
+
+            let consumed = match message_reader.fill_buf() {
+                Ok(bytes) => { codec.encode(bytes, &mut out_buf)?; bytes.len() },
+                Err(ref err) => panic!("Failed with: {}", err)
             };
+            message_reader.consume(consumed);
+
+            if consumed == 0 {
+                break;
+            }
 
             self.write_server(out_buf.as_slice())?;
         }
