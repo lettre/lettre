@@ -19,7 +19,7 @@ fn bench_simple_send(b: &mut test::Bencher) {
             "id".to_string(),
             "Hello world".to_string(),
         );
-        let result = sender.send(email);
+        let result = sender.send(&email);
         assert!(result.is_ok());
     });
 }
@@ -37,7 +37,7 @@ fn bench_reuse_send(b: &mut test::Bencher) {
             "id".to_string(),
             "Hello world".to_string(),
         );
-        let result = sender.send(email);
+        let result = sender.send(&email);
         assert!(result.is_ok());
     });
     sender.close()
