@@ -237,7 +237,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             return Err(From::from("Connection closed"));
         }
 
-        self.stream.as_mut().unwrap().write(string)?;
+        self.stream.as_mut().unwrap().write_all(string)?;
         self.stream.as_mut().unwrap().flush()?;
 
         debug!(
