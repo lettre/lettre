@@ -25,33 +25,30 @@
 
 use EmailTransport;
 use SendableEmail;
-use smtp::error::{Error, SmtpResult};
-use smtp::response::{Code, Response};
 use std::io::Read;
-use std::str::FromStr;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug)]
 pub struct StubEmailTransport {
-    response: Response,
+    response: StubResult,
 }
 
 impl StubEmailTransport {
     /// Creates a new transport that always returns the given response
-    pub fn new(response: Response) -> StubEmailTransport {
+    pub fn new(response: StubResult) -> StubEmailTransport {
         StubEmailTransport { response: response }
     }
 
     /// Creates a new transport that always returns a success response
     pub fn new_positive() -> StubEmailTransport {
         StubEmailTransport {
-            response: Response::new(Code::from_str("200").unwrap(), vec!["ok".to_string()]),
+            response: Ok(()),
         }
     }
 }
 
 /// SMTP result type
-pub type StubResult = SmtpResult;
+pub type StubResult = Result<(), ()>;
 
 impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport {
     fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
@@ -62,10 +59,6 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport 
             email.from(),
             email.to()
         );
-        if self.response.is_positive() {
-            Ok(self.response.clone())
-        } else {
-            Err(Error::from(self.response.clone()))
-        }
+        self.response
     }
 }
