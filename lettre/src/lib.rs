@@ -18,8 +18,6 @@ extern crate native_tls;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
 #[cfg(feature = "serde-impls")]
-extern crate serde;
-#[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
 
