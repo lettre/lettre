@@ -16,10 +16,11 @@ travis-ci = { repository = "lettre/lettre_email" }
 
 [dev-dependencies]
 env_logger = "*"
+lettre = { path = "../lettre", features = ["smtp-transport"] }
 
 [dependencies]
 email = "^0.0"
 mime = "^0.3"
 time = "^0.1"
 uuid = { version = ">=0.4, <0.6", features = ["v4"] }
-lettre = { path = "../lettre" }
+lettre = { path = "../lettre", default-features = false }

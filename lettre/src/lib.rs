@@ -8,12 +8,15 @@
 
 #[macro_use]
 extern crate log;
-extern crate base64;
 #[cfg(feature = "crammd5-auth")]
 extern crate hex;
 #[cfg(feature = "crammd5-auth")]
 extern crate crypto;
+#[cfg(feature = "smtp-transport")]
+extern crate base64;
+#[cfg(feature = "smtp-transport")]
 extern crate bufstream;
+#[cfg(feature = "smtp-transport")]
 extern crate native_tls;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
@@ -21,7 +24,9 @@ extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
 
+#[cfg(feature = "smtp-transport")]
 pub mod smtp;
+#[cfg(feature = "sendmail-transport")]
 pub mod sendmail;
 pub mod stub;
 #[cfg(feature = "file-transport")]
@@ -29,8 +34,11 @@ pub mod file;
 
 #[cfg(feature = "file-transport")]
 pub use file::FileEmailTransport;
+#[cfg(feature = "sendmail-transport")]
 pub use sendmail::SendmailTransport;
+#[cfg(feature = "smtp-transport")]
 pub use smtp::{SmtpTransport, ClientSecurity};
+#[cfg(feature = "smtp-transport")]
 pub use smtp::client::net::ClientTlsParameters;
 use std::fmt::{self, Display, Formatter};
 use std::io::Read;

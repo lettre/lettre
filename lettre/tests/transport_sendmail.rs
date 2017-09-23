@@ -1,19 +1,25 @@
 extern crate lettre;
 
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
-use lettre::sendmail::SendmailTransport;
+#[cfg(test)]
+#[cfg(feature = "sendmail-transport")]
+mod test {
 
-#[test]
-fn sendmail_transport_simple() {
-    let mut sender = SendmailTransport::new();
-    let email = SimpleSendableEmail::new(
-        EmailAddress::new("user@localhost".to_string()),
-        vec![EmailAddress::new("root@localhost".to_string())],
-        "sendmail_id".to_string(),
-        "Hello sendmail".to_string(),
-    );
+    use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
+    use lettre::sendmail::SendmailTransport;
 
-    let result = sender.send(&email);
-    println!("{:?}", result);
-    assert!(result.is_ok());
+    #[test]
+    fn sendmail_transport_simple() {
+        let mut sender = SendmailTransport::new();
+        let email = SimpleSendableEmail::new(
+            EmailAddress::new("user@localhost".to_string()),
+            vec![EmailAddress::new("root@localhost".to_string())],
+            "sendmail_id".to_string(),
+            "Hello sendmail".to_string(),
+        );
+
+        let result = sender.send(&email);
+        println!("{:?}", result);
+        assert!(result.is_ok());
+    }
+
 }

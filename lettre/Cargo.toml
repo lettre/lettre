@@ -15,10 +15,10 @@ keywords = ["email", "smtp", "mailer"]
 travis-ci = { repository = "lettre/lettre" }
 
 [dependencies]
-bufstream = "^0.1"
 log = "^0.3"
-native-tls = "^0.1"
-base64 = "^0.6"
+bufstream = { version = "^0.1", optional = true }
+native-tls = { version = "^0.1", optional = true }
+base64 = { version = "^0.6", optional = true }
 hex = { version = "^0.2", optional = true }
 rust-crypto = { version = "^0.2", optional = true }
 serde = { version = "^1.0", optional = true }
@@ -29,8 +29,14 @@ serde_derive = { version = "^1.0", optional = true }
 env_logger = "^0.4"
 
 [features]
-default = ["file-transport", "crammd5-auth"]
+default = ["file-transport", "crammd5-auth", "smtp-transport", "sendmail-transport"]
 unstable = []
 serde-impls = ["serde", "serde_derive"]
 file-transport = ["serde-impls", "serde_json"]
 crammd5-auth = ["rust-crypto", "hex"]
+smtp-transport = ["bufstream", "native-tls", "base64"]
+sendmail-transport = []
+
+[[example]]
+name = "smtp"
+required-features = ["smtp-transport"]
