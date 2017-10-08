@@ -1,3 +1,14 @@
+### v0.7.0 (2017-10-08)
+
+#### Features
+
+* **all**
+  * Split into the *lettre* and *lettre_email* crates
+  * A lot of small improvements
+
+* **email**
+  * Initial (incomplete) attachments support
+
 ### v0.6.2 (2017-02-18)
 
 #### Features
