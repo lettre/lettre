@@ -1,3 +1,4 @@
+.vscode/
 .project
 target/
 /Cargo.lock
