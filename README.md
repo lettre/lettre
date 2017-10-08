@@ -22,6 +22,7 @@ Lettre provides the following features:
 Released versions:
 
 * [latest](https://docs.rs/lettre/)
+* [v0.7.0](https://docs.rs/lettre/0.7.0/lettre/)
 * [v0.6.2](https://docs.rs/lettre/0.6.2/lettre/)
 * [v0.6.1](https://docs.rs/lettre/0.6.1/lettre/)
 * [v0.6.0](https://docs.rs/lettre/0.6.0/lettre/)
@@ -34,7 +35,7 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.6"
+lettre = "0.7"
 ```
 
 ## Testing
