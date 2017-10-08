@@ -23,6 +23,9 @@ extern crate serde_json;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
+#[cfg(feature = "smtp-transport")]
+#[macro_use]
+extern crate nom;
 
 #[cfg(feature = "smtp-transport")]
 pub mod smtp;

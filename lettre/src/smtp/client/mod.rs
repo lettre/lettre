@@ -1,17 +1,19 @@
 //! SMTP client
 
 use bufstream::BufStream;
+use nom::ErrorKind as NomErrorKind;
 use smtp::{CRLF, MESSAGE_ENDING};
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
-use smtp::response::ResponseParser;
+use smtp::response::Response;
 use std::fmt::{Debug, Display};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
+
 
 pub mod net;
 pub mod mock;
@@ -71,12 +73,6 @@ impl ClientCodec {
 /// Used for debug displays
 fn escape_crlf(string: &str) -> String {
     string.replace(CRLF, "<CRLF>")
-}
-
-/// Returns the string removing all the CRLF
-/// Used for debug displays
-fn remove_crlf(string: &str) -> String {
-    string.replace(CRLF, "")
 }
 
 /// Structure that implements the SMTP client
@@ -253,31 +249,33 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     /// Gets the SMTP response
     fn get_reply(&mut self) -> SmtpResult {
 
-        let mut parser = ResponseParser::default();
+        let mut raw_response = String::new();
+        let mut response = raw_response.parse::<Response>();
 
-        let mut line = String::new();
-        self.stream.as_mut().unwrap().read_line(&mut line)?;
-
-        debug!("Read: {}", escape_crlf(line.as_ref()));
-
-        while parser.read_line(remove_crlf(line.as_ref()).as_ref())? {
-            line.clear();
-            self.stream.as_mut().unwrap().read_line(&mut line)?;
+        while response.is_err() {
+            if response.as_ref().err().unwrap() != &NomErrorKind::Complete {
+                break;
+            }
+            // TODO read more than one line
+            self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+            response = raw_response.parse::<Response>();
         }
 
-        let response = parser.response()?;
+        debug!("Read: {}", escape_crlf(raw_response.as_ref()));
 
-        if response.is_positive() {
-            Ok(response)
+        let final_response = response?;
+
+        if final_response.is_positive() {
+            Ok(final_response)
         } else {
-            Err(From::from(response))
+            Err(From::from(final_response))
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{ClientCodec, escape_crlf, remove_crlf};
+    use super::{ClientCodec, escape_crlf};
 
     #[test]
     fn test_codec() {
@@ -296,16 +294,6 @@ mod test {
         assert_eq!(
             String::from_utf8(buf).unwrap(),
             "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
-        );
-    }
-
-    #[test]
-    fn test_remove_crlf() {
-        assert_eq!(remove_crlf("\r\n"), "");
-        assert_eq!(remove_crlf("EHLO my_name\r\n"), "EHLO my_name");
-        assert_eq!(
-            remove_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-            "EHLO my_nameSIZE 42"
         );
     }
 

@@ -3,6 +3,7 @@
 use self::Error::*;
 use base64::DecodeError;
 use native_tls;
+use nom;
 use smtp::response::{Response, Severity};
 use std::error::Error as StdError;
 use std::fmt;
@@ -35,6 +36,8 @@ pub enum Error {
     Io(io::Error),
     /// TLS error
     Tls(native_tls::Error),
+    /// Parsing error
+    Parsing(nom::simple_errors::Err),
 }
 
 impl Display for Error {
@@ -68,6 +71,7 @@ impl StdError for Error {
             Client(err) => err,
             Io(ref err) => err.description(),
             Tls(ref err) => err.description(),
+            Parsing(ref err) => err.description(),
         }
     }
 
@@ -77,6 +81,7 @@ impl StdError for Error {
             Utf8Parsing(ref err) => Some(&*err as &StdError),
             Io(ref err) => Some(&*err as &StdError),
             Tls(ref err) => Some(&*err as &StdError),
+            Parsing(ref err) => Some(&*err as &StdError),
             _ => None,
         }
     }
@@ -91,6 +96,12 @@ impl From<io::Error> for Error {
 impl From<native_tls::Error> for Error {
     fn from(err: native_tls::Error) -> Error {
         Tls(err)
+    }
+}
+
+impl From<nom::simple_errors::Err> for Error {
+    fn from(err: nom::simple_errors::Err) -> Error {
+        Parsing(err)
     }
 }
 
