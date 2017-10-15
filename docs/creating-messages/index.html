@@ -1,212 +1,278 @@
-
 <!DOCTYPE html>
 <html lang="en" class="js csstransforms3d">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="generator" content="Hugo 0.20.7" />
+    <meta name="generator" content="Hugo 0.29" />
     <meta name="description" content="Documentation for the Lettre mailer in Rust">
 <meta name="author" content="Alexis Mousset">
 
-    <link rel="shortcut icon" href="https://lettre.github.io/lettre//images/favicon.png" type="image/x-icon" />
+    <link rel="shortcut icon" href="https://lettre.github.io/lettre/images/favicon.png" type="image/x-icon" />
 
+    <title>Creating messages :: Lettre site</title>
     
-    <title>Creating messages</title>
-    <link href="https://lettre.github.io/lettre//css/nucleus.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/hybrid.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/featherlight.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/perfect-scrollbar.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/horsey.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/theme.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/hugo-theme.css" rel="stylesheet">
-    <script src="https://lettre.github.io/lettre//js/jquery-2.x.min.js"></script>
-    <style type="text/css">:root #header + #content > #left > #rlblock_left
-    {display:none !important;}</style>
+    
+    <link href="/lettre/css/nucleus.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1508105428" rel="stylesheet">
     
 
+    <script src="/lettre/js/jquery-2.x.min.js?1508105428"></script>
+    
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{ 
+          display:none !important;
+      }
+      
+    </style>
+    
   </head>
   <body class="" data-url="/lettre/creating-messages/">
-    
-    <nav id="sidebar">
+    <nav id="sidebar" class="">
+
+
+
   <div id="header-wrapper">
     <div id="header">
-      <a href="https://lettre.github.io/lettre//getting-started/intro/"><img src="https://lettre.github.io/lettre//images/logo50.png" /></a>
+      <a href="https://lettre.github.io/lettre/getting-started/intro/"><img src="https://lettre.github.io/lettre/images/logo50.png" /></a>
 
     </div>
     
         <div class="searchbox">
     <label for="search-by"><i class="fa fa-search"></i></label>
-    <input data-search-input id="search-by" type="text" placeholder="Search">
+    <input data-search-input id="search-by" type="text" placeholder="Search...">
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/lunr.min.js"></script>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/horsey.js"></script>
+
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1508105428"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1508105428"></script>
 <script type="text/javascript">
-    var baseurl = "https:\/\/lettre.github.io\/lettre\/";
+    
+        var baseurl = "https:\/\/lettre.github.io\/lettre";
+    
 </script>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/search.js"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1508105428"></script>
 
     
-</div>
+  </div>
 
-
-  <div class="highlightable">
+    <div class="highlightable">
     <ul class="topics">
-      
-        
-        
-          
-          
-            
-          
-        
-          
-          
-            
-          
-        
-          
-          
-            
-          
-        
-        
-        
-          
-        
-          
-        
-          
-        
-      
-      
-      
-      
 
-      
-      
-      
         
           
-        
-      
-      
-      
+          
 
-      <li class="dd-item  " data-nav-id="/lettre/getting-started/">
-        <a href="/lettre/getting-started/">
-          <span>
-            
-              <b>1. </b>
-            
-             Getting started
-            
-           </span>
-        </a>
+
+ 
+  
+    
+    <li data-nav-id="/lettre/getting-started/" title="Getting started" class="dd-item 
         
+        
+        
+        ">
+      <a href="/lettre/getting-started/">
+          Getting started
+          
+      </a>
+      
+      
         <ul>
           
-            <li class="dd-item " data-nav-id="/lettre/getting-started/intro/">
-              <a href="/lettre/getting-started/intro/">
-                <span>Introduction     </i></span>
-              </a>
-            </li>
           
-        </ul>
-        
-      </li>
-      
-      
-      
-
-      
-      
-      
-        
+          
           
         
-      
-      
-      
+          
+            
+            
 
-      <li class="dd-item active parent" data-nav-id="/lettre/creating-messages/">
-        <a href="/lettre/creating-messages/">
-          <span>
-            
-              <b>2. </b>
-            
-             Creating messages
-            
-           </span>
+
+ 
+  
+    
+      <li data-nav-id="/lettre/getting-started/intro/" title="Introduction" class="dd-item ">
+        <a href="/lettre/getting-started/intro/">
+        Introduction
+        
         </a>
-        
-      </li>
-      
-      
-      
-
-      
-      
-      
-        
-          
-        
-      
-      
-      
-
-      <li class="dd-item  " data-nav-id="/lettre/sending-messages/">
-        <a href="/lettre/sending-messages/">
-          <span>
-            
-              <b>3. </b>
-            
-             Sending messages
-            
-           </span>
-        </a>
-        
-        <ul>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/intro/">
-              <a href="/lettre/sending-messages/intro/">
-                <span>Introduction     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/smtp/">
-              <a href="/lettre/sending-messages/smtp/">
-                <span>SMTP transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/sendmail/">
-              <a href="/lettre/sending-messages/sendmail/">
-                <span>Sendmail transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/file/">
-              <a href="/lettre/sending-messages/file/">
-                <span>File transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/stub/">
-              <a href="/lettre/sending-messages/stub/">
-                <span>Stub transport     </i></span>
-              </a>
-            </li>
-          
-        </ul>
-        
-      </li>
-      
-      
-    </ul>
-    <hr>
+    </li>
      
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/lettre/creating-messages/" title="Creating messages" class="dd-item 
+        parent
+        active
+        
+        ">
+      <a href="/lettre/creating-messages/">
+          Creating messages
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/lettre/sending-messages/" title="Sending messages" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/lettre/sending-messages/">
+          Sending messages
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/intro/" title="Introduction" class="dd-item ">
+        <a href="/lettre/sending-messages/intro/">
+        Introduction
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/smtp/" title="SMTP transport" class="dd-item ">
+        <a href="/lettre/sending-messages/smtp/">
+        SMTP transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item ">
+        <a href="/lettre/sending-messages/sendmail/">
+        Sendmail transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/file/" title="File transport" class="dd-item ">
+        <a href="/lettre/sending-messages/file/">
+        File transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/stub/" title="Stub transport" class="dd-item ">
+        <a href="/lettre/sending-messages/stub/">
+        Stub transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
     <section id="footer">
       <p>Built with <a href="https://github.com/matcornic/hugo-theme-learn"><i class="fa fa-heart"></i></a> from <a href="http://getgrav.org">Grav</a> and <a href="http://gohugo.io/">Hugo</a></p>
 
@@ -214,150 +280,305 @@
   </div>
 </nav>
 
+
+
+
+
         <section id="body">
         <div id="overlay"></div>
-
-        <div class="padding highlightable">
-
-            <div id="top-bar">
+        <div class="padding highlightable sticky-parent">
               
-              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
-                  <span id="sidebar-toggle-span">
-                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
-                        <i class="fa fa-bars"></i>
-                      </a>
+              <div class="sticky-spacer">
+                <div id="top-bar">
+                
+                  
+                  
+                  
+                  <div id="top-github-link">
+                    <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/creating-messages/_index.md" target="blank">
+                      <i class="fa fa-code-fork"></i>
+                      Edit this page
+                    </a>
+                  </div>
+                  
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fa fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fa fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                    
+          
+          
+            
+            
+          
+          
+            <a href='/lettre/'>Lettre site</a> > Creating messages
+          
+         
+          
+           
                   </span>
+                </div>
                 
-                
-                  
-                  
-                  
-                    
-                    
-                  
-                
-                <span itemprop="title"> Creating messages</span>
-              </div>
-              
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#creating-messages">Creating messages</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
 
+                
+              </div>
             </div>
             
-              <div id="chapter">
-            
-              <div id="body-inner">
-                
+
+        
+        <div id="body-inner">
+          
+            <h1>Creating messages</h1>
+          
+
+        
+
 
 
 
 <h3 id="creating-messages">Creating messages</h3>
 
 
-      
-      
-        </div> 
-      
-      </div>
-    </div>
+<footer class=" footline" >
+	
+</footer>
 
-    
-    
-    
-      
         
-      
-        
-      
-        
-      
-      
-    
-    
-    
-      
-        
-      
-      
-        
-      
-    
-      
-        
-      
-      
-    
-      
-        
-      
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
+        </div> 
+      </div>
 
     <div id="navigation">
         
         
         
-          
         
-          
-        
-          
-            
-              
-                <a class="nav nav-prev" href="/lettre/getting-started/intro/"> <i class="fa fa-chevron-left"></i></a>
-              
             
             
-              
-                <a class="nav nav-next" href="/lettre/sending-messages/" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
-              
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
             
-          
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
         
         
         
+
+
+        
+            <a class="nav nav-prev" href="/lettre/getting-started/intro/" title="Introduction"> <i class="fa fa-chevron-left"></i></a>
+        
+        
+            <a class="nav nav-next" href="/lettre/sending-messages/" title="Sending messages" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
         
     </div>
 
     </section>
+    
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://lettre.github.io/lettre//js/clipboard.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/perfect-scrollbar.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/perfect-scrollbar.jquery.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/jquery.sticky-kit.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/featherlight.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/html5shiv-printshiv.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/highlight.pack.js"></script>
+    <script src="/lettre/js/clipboard.min.js?1508105428"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1508105428"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1508105428"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1508105428"></script>
+    <script src="/lettre/js/featherlight.min.js?1508105428"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1508105428"></script>
+    <script src="/lettre/js/highlight.pack.js?1508105428"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://lettre.github.io/lettre//js/modernizr.custom.71422.js"></script>
-    <script src="https://lettre.github.io/lettre//js/learn.js"></script>
-    <script src="https://lettre.github.io/lettre//js/hugo-learn.js"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1508105428"></script>
+    <script src="/lettre/js/learn.js?1508105428"></script>
+    <script src="/lettre/js/hugo-learn.js?1508105428"></script>
+
+    <link href="/lettre/mermaid/mermaid.css?1508105428" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1508105428"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
     
 
   </body>
 </html>
-
-

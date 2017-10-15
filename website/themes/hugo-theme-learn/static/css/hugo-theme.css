@@ -172,7 +172,6 @@ h2 {
   font-size: 2.5rem;
   line-height: 110% !important;
   margin: 2.5rem 0 1.5rem 0;
-  text-transform: capitalize;
 }
 
 h3 {
@@ -209,4 +208,45 @@ figcaption h4 {
     font-size: 1em;
     text-align: center;
     margin-top: -1.5em;
+}
+
+.select-style {
+    border: 0;
+    width: 150px;
+    border-radius: 0px;
+    overflow: hidden;
+    display: inline-flex;
+}
+
+.select-style svg {
+    fill: #ccc;
+    width: 14px;
+    height: 14px;
+    pointer-events: none;
+    margin: auto;
+}
+
+.select-style svg:hover {
+  fill: #e6e6e6;
+}
+
+.select-style select {
+    padding: 0;
+    width: 130%;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    background-image: none;
+    -webkit-appearance: none;
+    margin: auto;
+    margin-left: 0px;
+    margin-right: -20px;
+}
+
+.select-style select:focus {
+    outline: none;
+}
+
+.select-style :hover {
+    cursor:  pointer;
 }

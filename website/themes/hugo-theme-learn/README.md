@@ -2,48 +2,52 @@
 
 This repository contains a theme for [Hugo](https://gohugo.io/), based on great [Grav Learn Theme](http://learn.getgrav.org/).
 
-Visit the [theme documentation](https://matcornic.github.io/hugo-learn-doc/basics/what-is-this-hugo-theme/) to see what is going on. It is actually built with this theme.
+Visit the [theme documentation](https://learn.netlify.com/en/) to see what is going on. It is actually built with this theme.
+
+## Main features
+
+- Automatic Search
+- Multilingual mode
+- Unlimited menu levels
+- Automatic next/prev buttons to navigate through menu entries
+- Image resizing, shadow…
+- Attachments files
+- List child pages
+- Mermaid diagram (flowchart, sequence, gantt)
+- Customizable look and feel and themes variants
+- Buttons, Tip/Note/Info/Warning boxes, Expand
 
 ## Installation
+
 Navigate to your themes folder in your Hugo site and use the following commands:
+
 ```
 $ cd themes
 $ git clone https://github.com/matcornic/hugo-theme-learn.git
 ```
 
-Check that your Hugo version is minimum `0.19` with `hugo version`.
+Check that your Hugo version is minimum `0.25` with `hugo version`.
 
 ![Overview](https://github.com/matcornic/hugo-theme-learn/raw/master/images/tn.png)
 
 ## Usage
 
-- [Visit the documentation](https://matcornic.github.io/hugo-learn-doc/basics/what-is-this-hugo-theme/)
+- [Visit the documentation](https://learn.netlify.com/en/)
 
-# Main functionalities
+## Download old versions (prior to 2.0.0)
 
-- Handle two levels of documentation
-- Tip/Note/Info and Warning boxes
-- Resize images
-- Preview of original image size
-- Add shadow or border on images
-- Automatic table of contents
-- Create buttons (typically used to provide a link to a demo)
-- Search using `lunr` index
-- Automatic next/prev buttons to navigate through pages
+If you need old version for compatibility purpose, either download [theme source code from releases](https://github.com/matcornic/hugo-theme-learn/releases) or use the right git tag. For example, with `1.1.0` 
 
-# TODO
-
-- [Handling more than 2 levels in documentation](https://github.com/matcornic/hugo-theme-learn/issues/11)
-- [Handling videos](https://github.com/matcornic/hugo-theme-learn/issues/13)
-- [Add optional button to create doc issue (like github)](https://github.com/matcornic/hugo-theme-learn/issues/14)
-
-# Troubleshooting
-
-Changes have been made for automatically creating previous and next arrows. These changes restructured the theme and you might have compatibility problems when updating to the latest version of the theme. Please read [PR#36](https://github.com/matcornic/hugo-theme-learn/pull/36) to update your documentation with latest guidelines.
-
-If you don't want to update your documentation, use the git tag `1.0.0` 
+- Direct download way: https://github.com/matcornic/hugo-theme-learn/archive/1.1.0.zip
+- Git way:
 
 ```shell
 cd themes/hugo-theme-learn
-git checkout tags/1.0.0
+git checkout tags/1.1.0
 ```
+
+For both solutions, the documentation is available at https://github.com/matcornic/hugo-theme-learn/releases/download/1.1.0/hugo-learn-doc-1.1.0.zip
+
+## Credits
+
+Many thanks to [@vjeantet](https://github.com/vjeantet/) for the fork [docdock](https://github.com/vjeantet/hugo-theme-docdock). The v2 of this theme is mainly based on his work !
