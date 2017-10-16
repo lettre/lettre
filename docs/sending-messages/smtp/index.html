@@ -3,209 +3,276 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="generator" content="Hugo 0.20.7" />
+    <meta name="generator" content="Hugo 0.29" />
     <meta name="description" content="Documentation for the Lettre mailer in Rust">
 <meta name="author" content="Alexis Mousset">
 
-    <link rel="shortcut icon" href="https://lettre.github.io/lettre//images/favicon.png" type="image/x-icon" />
+    <link rel="shortcut icon" href="https://lettre.github.io/lettre/images/favicon.png" type="image/x-icon" />
 
+    <title>SMTP transport :: Lettre site</title>
     
-    <title>SMTP transport</title>
-    <link href="https://lettre.github.io/lettre//css/nucleus.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/font-awesome.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/hybrid.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/featherlight.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/perfect-scrollbar.min.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/horsey.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/theme.css" rel="stylesheet">
-    <link href="https://lettre.github.io/lettre//css/hugo-theme.css" rel="stylesheet">
-    <script src="https://lettre.github.io/lettre//js/jquery-2.x.min.js"></script>
-    <style type="text/css">:root #header + #content > #left > #rlblock_left
-    {display:none !important;}</style>
+    
+    <link href="/lettre/css/nucleus.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1508105428" rel="stylesheet">
     
 
+    <script src="/lettre/js/jquery-2.x.min.js?1508105428"></script>
+    
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left{ 
+          display:none !important;
+      }
+      
+    </style>
+    
   </head>
   <body class="" data-url="/lettre/sending-messages/smtp/">
-    
-    <nav id="sidebar">
+    <nav id="sidebar" class="">
+
+
+
   <div id="header-wrapper">
     <div id="header">
-      <a href="https://lettre.github.io/lettre//getting-started/intro/"><img src="https://lettre.github.io/lettre//images/logo50.png" /></a>
+      <a href="https://lettre.github.io/lettre/getting-started/intro/"><img src="https://lettre.github.io/lettre/images/logo50.png" /></a>
 
     </div>
     
         <div class="searchbox">
     <label for="search-by"><i class="fa fa-search"></i></label>
-    <input data-search-input id="search-by" type="text" placeholder="Search">
+    <input data-search-input id="search-by" type="text" placeholder="Search...">
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/lunr.min.js"></script>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/horsey.js"></script>
+
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1508105428"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1508105428"></script>
 <script type="text/javascript">
-    var baseurl = "https:\/\/lettre.github.io\/lettre\/";
+    
+        var baseurl = "https:\/\/lettre.github.io\/lettre";
+    
 </script>
-<script type="text/javascript" src="https://lettre.github.io/lettre//js/search.js"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1508105428"></script>
 
     
-</div>
+  </div>
 
-
-  <div class="highlightable">
+    <div class="highlightable">
     <ul class="topics">
-      
-        
-        
-          
-          
-            
-          
-        
-          
-          
-            
-          
-        
-          
-          
-            
-          
-        
-        
-        
-          
-        
-          
-        
-          
-        
-      
-      
-      
-      
 
-      
-      
-      
         
           
-        
-      
-      
-      
+          
 
-      <li class="dd-item  " data-nav-id="/lettre/getting-started/">
-        <a href="/lettre/getting-started/">
-          <span>
-            
-              <b>1. </b>
-            
-             Getting started
-            
-           </span>
-        </a>
+
+ 
+  
+    
+    <li data-nav-id="/lettre/getting-started/" title="Getting started" class="dd-item 
         
+        
+        
+        ">
+      <a href="/lettre/getting-started/">
+          Getting started
+          
+      </a>
+      
+      
         <ul>
           
-            <li class="dd-item " data-nav-id="/lettre/getting-started/intro/">
-              <a href="/lettre/getting-started/intro/">
-                <span>Introduction     </i></span>
-              </a>
-            </li>
           
-        </ul>
-        
-      </li>
-      
-      
-      
-
-      
-      
-      
-        
+          
           
         
-      
-      
-      
+          
+            
+            
 
-      <li class="dd-item  " data-nav-id="/lettre/creating-messages/">
-        <a href="/lettre/creating-messages/">
-          <span>
-            
-              <b>2. </b>
-            
-             Creating messages
-            
-           </span>
+
+ 
+  
+    
+      <li data-nav-id="/lettre/getting-started/intro/" title="Introduction" class="dd-item ">
+        <a href="/lettre/getting-started/intro/">
+        Introduction
+        
         </a>
-        
-      </li>
-      
-      
-      
-
-      
-      
-      
-        
-          
-        
-      
-      
-      
-
-      <li class="dd-item  parent" data-nav-id="/lettre/sending-messages/">
-        <a href="/lettre/sending-messages/">
-          <span>
-            
-              <b>3. </b>
-            
-             Sending messages
-            
-           </span>
-        </a>
-        
-        <ul>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/intro/">
-              <a href="/lettre/sending-messages/intro/">
-                <span>Introduction     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item active" data-nav-id="/lettre/sending-messages/smtp/">
-              <a href="/lettre/sending-messages/smtp/">
-                <span>SMTP transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/sendmail/">
-              <a href="/lettre/sending-messages/sendmail/">
-                <span>Sendmail transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/file/">
-              <a href="/lettre/sending-messages/file/">
-                <span>File transport     </i></span>
-              </a>
-            </li>
-          
-            <li class="dd-item " data-nav-id="/lettre/sending-messages/stub/">
-              <a href="/lettre/sending-messages/stub/">
-                <span>Stub transport     </i></span>
-              </a>
-            </li>
-          
-        </ul>
-        
-      </li>
-      
-      
-    </ul>
-    <hr>
+    </li>
      
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/lettre/creating-messages/" title="Creating messages" class="dd-item 
+        
+        
+        
+        ">
+      <a href="/lettre/creating-messages/">
+          Creating messages
+          
+      </a>
+      
+              
+    </li>
+  
+ 
+
+          
+          
+
+
+ 
+  
+    
+    <li data-nav-id="/lettre/sending-messages/" title="Sending messages" class="dd-item 
+        parent
+        
+        
+        ">
+      <a href="/lettre/sending-messages/">
+          Sending messages
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/intro/" title="Introduction" class="dd-item ">
+        <a href="/lettre/sending-messages/intro/">
+        Introduction
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/smtp/" title="SMTP transport" class="dd-item active">
+        <a href="/lettre/sending-messages/smtp/">
+        SMTP transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item ">
+        <a href="/lettre/sending-messages/sendmail/">
+        Sendmail transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/file/" title="File transport" class="dd-item ">
+        <a href="/lettre/sending-messages/file/">
+        File transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/sending-messages/stub/" title="Stub transport" class="dd-item ">
+        <a href="/lettre/sending-messages/stub/">
+        Stub transport
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+              
+    </li>
+  
+ 
+
+          
+         
+    </ul>
+
+    
+    
+
+    
     <section id="footer">
       <p>Built with <a href="https://github.com/matcornic/hugo-theme-learn"><i class="fa fa-heart"></i></a> from <a href="http://getgrav.org">Grav</a> and <a href="http://gohugo.io/">Hugo</a></p>
 
@@ -213,47 +280,61 @@
   </div>
 </nav>
 
+
+
+
+
         <section id="body">
         <div id="overlay"></div>
-
-        <div class="padding highlightable">
-
-            <div id="top-bar">
+        <div class="padding highlightable sticky-parent">
               
+              <div class="sticky-spacer">
+                <div id="top-bar">
+                
+                  
+                  
+                  
+                  <div id="top-github-link">
+                    <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/sending-messages/smtp.md" target="blank">
+                      <i class="fa fa-code-fork"></i>
+                      Edit this page
+                    </a>
+                  </div>
+                  
                 
                 
-                
-              <div id="top-github-link">
-                  <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/sending-messages/smtp.md" target="blank">
-                    <i class="fa fa-code-fork"></i>
-                    Edit this page
-                  </a>
-              </div>
-                
-              
-              <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
-                  <span id="sidebar-toggle-span">
-                      <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
-                        <i class="fa fa-bars"></i>
-                      </a>
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fa fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fa fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/lettre/'>Lettre site</a> > <a href='/lettre/sending-messages/'>Sending messages</a> > SMTP transport
+          
+         
+          
+         
+          
+           
                   </span>
+                </div>
                 
-                <span id="toc-menu"><a href=""><i class="fa fa-list-alt"></i></a></span>
-                
-                
-                  
-                  
-                  
-                    
-                    
-                <a href="/lettre/sending-messages/" itemprop="url"><span itemprop="title">Sending messages</span></a> <i class="fa fa-angle-right"></i>
-                    
-                  
-                
-                <span itemprop="title"> SMTP transport</span>
-              </div>
-              
-                  <div class="progress">
+                    <div class="progress">
     <div class="wrapper">
 <nav id="TableOfContents">
 <ul>
@@ -274,14 +355,19 @@
     </div>
 </div>
 
-              
-
+                
+              </div>
             </div>
             
-              <div id="body-inner">
-                
-                <h1>SMTP transport</h1>
-                
+
+        
+        <div id="body-inner">
+          
+            <h1>SMTP transport</h1>
+          
+
+        
+
 
 
 
@@ -303,187 +389,306 @@ emails directly to the destination.</p>
 <h4 id="simple-example">Simple example</h4>
 
 <p>This is the most basic example of usage:</p>
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
-
-let email = SimpleSendableEmail::new(
-                EmailAddress::new("user@localhost".to_string()),
-                vec![EmailAddress::new("root@localhost".to_string())],
-                "message_id".to_string(),
-                "Hello world".to_string(),
-            );
-
-// Open a local connection on port 25
-let mut mailer =
-SmtpTransport::builder_unencrypted_localhost().unwrap().build();
-// Send the email
-let result = mailer.send(&email);
-
-assert!(result.is_ok());
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">{</span><span style="">SimpleSendableEmail</span><span style="">,</span><span style=""> </span><span style="">EmailTransport</span><span style="">,</span><span style=""> </span><span style="">EmailAddress</span><span style="">,</span><span style=""> </span><span style="">SmtpTransport</span><span style="">};</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">email</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">SimpleSendableEmail</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">
+</span><span style="">                </span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;user@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()),</span><span style="">
+</span><span style="">                </span><span style="">vec</span><span style="color:#f92672">!</span><span style="">[</span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;root@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">())],</span><span style="">
+</span><span style="">                </span><span style="color:#e6db74">&#34;message_id&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
+</span><span style="">                </span><span style="color:#e6db74">&#34;Hello world&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
+</span><span style="">            </span><span style="">);</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#75715e">// Open a local connection on port 25
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="color:#66d9ef">mut</span><span style=""> </span><span style="">mailer</span><span style=""> </span><span style="color:#f92672">=</span><span style="">
+</span><span style=""></span><span style="">SmtpTransport</span><span style="">::</span><span style="">builder_unencrypted_localhost</span><span style="">().</span><span style="">unwrap</span><span style="">().</span><span style="">build</span><span style="">();</span><span style="">
+</span><span style=""></span><span style="color:#75715e">// Send the email
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">result</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">mailer</span><span style="">.</span><span style="">send</span><span style="">(</span><span style="color:#f92672">&amp;</span><span style="">email</span><span style="">);</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="">assert</span><span style="color:#f92672">!</span><span style="">(</span><span style="">result</span><span style="">.</span><span style="">is_ok</span><span style="">());</span></code></pre>
+</div>
 <h4 id="complete-example">Complete example</h4>
-use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::smtp::SUBMISSION_PORT;
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::ConnectionReuseParameters;
-
-
-let email = SimpleSendableEmail::new(
-                EmailAddress::new("user@localhost".to_string()),
-                vec![EmailAddress::new("root@localhost".to_string())],
-                "message_id".to_string(),
-                "Hello world".to_string(),
-            );
-
-// Connect to a remote server on a custom port
-let mut mailer = SmtpTransport::simple_builder("server.tld".to_string()).unwrap()
-    // Set the name sent during EHLO/HELO, default is `localhost`
-    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
-    // Add credentials for authentication
-    .credentials(Credentials::new("username".to_string(), "password".to_string()))
-    // Enable SMTPUTF8 if the server supports it
-    .smtp_utf8(true)
-    // Configure expected authentication mechanism
-    .authentication_mechanism(Mechanism::Plain)
-    // Enable connection reuse
-    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
-
-let result_1 = mailer.send(&email);
-assert!(result_1.is_ok());
-
-// The second email will use the same connection
-let result_2 = mailer.send(&email);
-assert!(result_2.is_ok());
-
-// Explicitly close the SMTP transaction as we enabled connection reuse
-mailer.close();
-
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">authentication</span><span style="">::</span><span style="">{</span><span style="">Credentials</span><span style="">,</span><span style=""> </span><span style="">Mechanism</span><span style="">};</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">SUBMISSION_PORT</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">{</span><span style="">SimpleSendableEmail</span><span style="">,</span><span style=""> </span><span style="">EmailTransport</span><span style="">,</span><span style=""> </span><span style="">EmailAddress</span><span style="">,</span><span style=""> </span><span style="">SmtpTransport</span><span style="">};</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">extension</span><span style="">::</span><span style="">ClientId</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">ConnectionReuseParameters</span><span style="">;</span><span style="">
+</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">email</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">SimpleSendableEmail</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">
+</span><span style="">                </span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;user@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()),</span><span style="">
+</span><span style="">                </span><span style="">vec</span><span style="color:#f92672">!</span><span style="">[</span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;root@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">())],</span><span style="">
+</span><span style="">                </span><span style="color:#e6db74">&#34;message_id&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
+</span><span style="">                </span><span style="color:#e6db74">&#34;Hello world&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
+</span><span style="">            </span><span style="">);</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#75715e">// Connect to a remote server on a custom port
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="color:#66d9ef">mut</span><span style=""> </span><span style="">mailer</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">SmtpTransport</span><span style="">::</span><span style="">simple_builder</span><span style="">(</span><span style="color:#e6db74">&#34;server.tld&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()).</span><span style="">unwrap</span><span style="">()</span><span style="">
+</span><span style="">    </span><span style="color:#75715e">// Set the name sent during EHLO/HELO, default is `localhost`
+</span><span style="color:#75715e"></span><span style="">    </span><span style="">.</span><span style="">hello_name</span><span style="">(</span><span style="">ClientId</span><span style="">::</span><span style="">Domain</span><span style="">(</span><span style="color:#e6db74">&#34;my.hostname.tld&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()))</span><span style="">
+</span><span style="">    </span><span style="color:#75715e">// Add credentials for authentication
+</span><span style="color:#75715e"></span><span style="">    </span><span style="">.</span><span style="">credentials</span><span style="">(</span><span style="">Credentials</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;username&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style=""> </span><span style="color:#e6db74">&#34;password&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()))</span><span style="">
+</span><span style="">    </span><span style="color:#75715e">// Enable SMTPUTF8 if the server supports it
+</span><span style="color:#75715e"></span><span style="">    </span><span style="">.</span><span style="">smtp_utf8</span><span style="">(</span><span style="color:#66d9ef">true</span><span style="">)</span><span style="">
+</span><span style="">    </span><span style="color:#75715e">// Configure expected authentication mechanism
+</span><span style="color:#75715e"></span><span style="">    </span><span style="">.</span><span style="">authentication_mechanism</span><span style="">(</span><span style="">Mechanism</span><span style="">::</span><span style="">Plain</span><span style="">)</span><span style="">
+</span><span style="">    </span><span style="color:#75715e">// Enable connection reuse
+</span><span style="color:#75715e"></span><span style="">    </span><span style="">.</span><span style="">connection_reuse</span><span style="">(</span><span style="">ConnectionReuseParameters</span><span style="">::</span><span style="">ReuseUnlimited</span><span style="">).</span><span style="">build</span><span style="">();</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">result_1</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">mailer</span><span style="">.</span><span style="">send</span><span style="">(</span><span style="color:#f92672">&amp;</span><span style="">email</span><span style="">);</span><span style="">
+</span><span style=""></span><span style="">assert</span><span style="color:#f92672">!</span><span style="">(</span><span style="">result_1</span><span style="">.</span><span style="">is_ok</span><span style="">());</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#75715e">// The second email will use the same connection
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">result_2</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">mailer</span><span style="">.</span><span style="">send</span><span style="">(</span><span style="color:#f92672">&amp;</span><span style="">email</span><span style="">);</span><span style="">
+</span><span style=""></span><span style="">assert</span><span style="color:#f92672">!</span><span style="">(</span><span style="">result_2</span><span style="">.</span><span style="">is_ok</span><span style="">());</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#75715e">// Explicitly close the SMTP transaction as we enabled connection reuse
+</span><span style="color:#75715e"></span><span style="">mailer</span><span style="">.</span><span style="">close</span><span style="">();</span></code></pre>
+</div>
 <h4 id="lower-level">Lower level</h4>
 
 <p>You can also send commands, here is a simple email transaction without
 error handling:</p>
-use lettre::EmailAddress;
-use lettre::smtp::SMTP_PORT;
-use lettre::smtp::client::Client;
-use lettre::smtp::client::net::NetworkStream;
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::commands::*;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">EmailAddress</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">SMTP_PORT</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">client</span><span style="">::</span><span style="">Client</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">client</span><span style="">::</span><span style="">net</span><span style="">::</span><span style="">NetworkStream</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">extension</span><span style="">::</span><span style="">ClientId</span><span style="">;</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">smtp</span><span style="">::</span><span style="">commands</span><span style="">::</span><span style="color:#f92672">*</span><span style="">;</span><span style="">
+</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="color:#66d9ef">mut</span><span style=""> </span><span style="">email_client</span><span style="">: </span><span style="color:#a6e22e">Client</span><span style="color:#f92672">&lt;</span><span style="">NetworkStream</span><span style="color:#f92672">&gt;</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">Client</span><span style="">::</span><span style="">new</span><span style="">();</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">connect</span><span style="">(</span><span style="color:#f92672">&amp;</span><span style="">(</span><span style="color:#e6db74">&#34;localhost&#34;</span><span style="">,</span><span style=""> </span><span style="">SMTP_PORT</span><span style="">),</span><span style=""> </span><span style="">None</span><span style="">);</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">smtp_command</span><span style="">(</span><span style="">EhloCommand</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">ClientId</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;my_hostname&#34;</span><span style="">.</span><span style="">to_string</span><span style="">())));</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">smtp_command</span><span style="">(</span><span style="">
+</span><span style="">            </span><span style="">MailCommand</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">Some</span><span style="">(</span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;user@example.com&#34;</span><span style="">.</span><span style="">to_string</span><span style="">())),</span><span style=""> </span><span style="">vec</span><span style="color:#f92672">!</span><span style="">[])</span><span style="">
+</span><span style="">        </span><span style="">);</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">smtp_command</span><span style="">(</span><span style="">
+</span><span style="">            </span><span style="">RcptCommand</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;user@example.org&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()),</span><span style=""> </span><span style="">vec</span><span style="color:#f92672">!</span><span style="">[])</span><span style="">
+</span><span style="">        </span><span style="">);</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">smtp_command</span><span style="">(</span><span style="">DataCommand</span><span style="">);</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">message</span><span style="">(</span><span style="">Box</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;Test email&#34;</span><span style="">.</span><span style="">as_bytes</span><span style="">()));</span><span style="">
+</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">_</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">email_client</span><span style="">.</span><span style="">smtp_command</span><span style="">(</span><span style="">QuitCommand</span><span style="">);</span></code></pre>
+</div>
 
-let mut email_client: Client<NetworkStream> = Client::new();
-let _ = email_client.connect(&("localhost", SMTP_PORT), None);
-let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
-let _ = email_client.smtp_command(
-            MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
-        );
-let _ = email_client.smtp_command(
-            RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
-        );
-let _ = email_client.smtp_command(DataCommand);
-let _ = email_client.message(Box::new("Test email".as_bytes()));
-let _ = email_client.smtp_command(QuitCommand);
+<footer class=" footline" >
+	
+</footer>
 
 
-      
-      
+        
+        </div> 
       </div>
-    </div>
-
-    
-    
-    
-      
-        
-      
-        
-      
-        
-      
-      
-    
-    
-    
-      
-        
-      
-      
-        
-      
-    
-      
-        
-      
-      
-    
-      
-        
-      
-      
-        
-      
-        
-      
-        
-      
-        
-      
-        
-      
-    
-    
 
     <div id="navigation">
         
         
         
-          
         
-          
-        
-          
-        
-          
-        
-          
-        
-          
-            
-              
-                <a class="nav nav-prev" href="/lettre/sending-messages/intro/"> <i class="fa fa-chevron-left"></i></a>
-              
             
             
-              
-                <a class="nav nav-next" href="/lettre/sending-messages/sendmail/" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
-              
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
             
-          
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
         
-          
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
         
         
         
+
+
+        
+            <a class="nav nav-prev" href="/lettre/sending-messages/intro/" title="Introduction"> <i class="fa fa-chevron-left"></i></a>
+        
+        
+            <a class="nav nav-next" href="/lettre/sending-messages/sendmail/" title="Sendmail transport" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
         
     </div>
 
     </section>
+    
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://lettre.github.io/lettre//js/clipboard.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/perfect-scrollbar.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/perfect-scrollbar.jquery.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/jquery.sticky-kit.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/featherlight.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/html5shiv-printshiv.min.js"></script>
-    <script src="https://lettre.github.io/lettre//js/highlight.pack.js"></script>
+    <script src="/lettre/js/clipboard.min.js?1508105428"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1508105428"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1508105428"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1508105428"></script>
+    <script src="/lettre/js/featherlight.min.js?1508105428"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1508105428"></script>
+    <script src="/lettre/js/highlight.pack.js?1508105428"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://lettre.github.io/lettre//js/modernizr.custom.71422.js"></script>
-    <script src="https://lettre.github.io/lettre//js/learn.js"></script>
-    <script src="https://lettre.github.io/lettre//js/hugo-learn.js"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1508105428"></script>
+    <script src="/lettre/js/learn.js?1508105428"></script>
+    <script src="/lettre/js/hugo-learn.js?1508105428"></script>
+
+    <link href="/lettre/mermaid/mermaid.css?1508105428" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1508105428"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true });
+    </script>
     
 
   </body>
