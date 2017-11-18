@@ -2,8 +2,8 @@
 
 use self::Error::*;
 use std::error::Error as StdError;
-use std::io;
 use std::fmt::{self, Display, Formatter};
+use std::io;
 
 /// An enum of all error kinds.
 #[derive(Debug)]
@@ -40,4 +40,3 @@ impl From<io::Error> for Error {
         Io(err)
     }
 }
-

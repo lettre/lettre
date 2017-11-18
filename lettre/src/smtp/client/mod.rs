@@ -188,7 +188,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             response = self.smtp_command(AuthCommand::new_from_response(
                 mechanism,
                 credentials.clone(),
-                response,
+                &response,
             )?)?;
         }
 
@@ -209,8 +209,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
             out_buf.clear();
 
             let consumed = match message_reader.fill_buf() {
-                Ok(bytes) => { codec.encode(bytes, &mut out_buf)?; bytes.len() },
-                Err(ref err) => panic!("Failed with: {}", err)
+                Ok(bytes) => {
+                    codec.encode(bytes, &mut out_buf)?;
+                    bytes.len()
+                }
+                Err(ref err) => panic!("Failed with: {}", err),
             };
             message_reader.consume(consumed);
 

@@ -40,7 +40,6 @@
 //!
 //! ```rust,no_run
 //! use lettre::smtp::authentication::{Credentials, Mechanism};
-//! use lettre::smtp::SUBMISSION_PORT;
 //! use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 //! use lettre::smtp::extension::ClientId;
 //! use lettre::smtp::ConnectionReuseParameters;
@@ -54,7 +53,7 @@
 //!             );
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = SmtpTransport::simple_builder("server.tld".to_string()).unwrap()
+//! let mut mailer = SmtpTransport::simple_builder("server.tld").unwrap()
 //!     // Set the name sent during EHLO/HELO, default is `localhost`
 //!     .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!     // Add credentials for authentication
@@ -111,9 +110,9 @@ use smtp::authentication::{Credentials, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS, Mechanism};
 use smtp::client::Client;
 use smtp::client::net::ClientTlsParameters;
+use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
-use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::io::Read;
 use std::net::{SocketAddr, ToSocketAddrs};
@@ -140,19 +139,19 @@ pub const SUBMISSION_PORT: u16 = 587;
 // Useful strings and characters
 
 /// The word separator for SMTP transactions
-pub const SP: &'static str = " ";
+pub const SP: &str = " ";
 
 /// The line ending for SMTP transactions (carriage return + line feed)
-pub const CRLF: &'static str = "\r\n";
+pub const CRLF: &str = "\r\n";
 
 /// Colon
-pub const COLON: &'static str = ":";
+pub const COLON: &str = ":";
 
 /// The ending of message content
-pub const MESSAGE_ENDING: &'static str = "\r\n.\r\n";
+pub const MESSAGE_ENDING: &str = "\r\n.\r\n";
 
 /// NUL unicode character
-pub const NUL: &'static str = "\0";
+pub const NUL: &str = "\0";
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
@@ -322,18 +321,16 @@ impl<'a> SmtpTransport {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submission port, using the provided domain
     /// to validate TLS certificates.
-    pub fn simple_builder(domain: String) -> Result<SmtpTransportBuilder, Error> {
+    pub fn simple_builder(domain: &str) -> Result<SmtpTransportBuilder, Error> {
 
         let mut tls_builder = TlsConnector::builder()?;
         tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
 
-        let tls_parameters = ClientTlsParameters::new(
-            domain.clone(),
-            tls_builder.build().unwrap(),
-        );
+        let tls_parameters =
+            ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
 
         SmtpTransportBuilder::new(
-            (domain.as_ref(), SUBMISSION_PORT),
+            (domain, SUBMISSION_PORT),
             ClientSecurity::Required(tls_parameters),
         )
     }

@@ -269,7 +269,7 @@ impl AuthCommand {
     pub fn new_from_response(
         mechanism: Mechanism,
         credentials: Credentials,
-        response: Response,
+        response: &Response,
     ) -> Result<AuthCommand, Error> {
         if !response.has_code(334) {
             return Err(Error::ResponseParsing("Expecting a challenge"));
@@ -418,7 +418,7 @@ mod test {
                 AuthCommand::new_from_response(
                     Mechanism::CramMd5,
                     credentials.clone(),
-                    Response::new(Code::from_str("334").unwrap(), vec!["dGVzdAo=".to_string()]),
+                    &Response::new(Code::from_str("334").unwrap(), vec!["dGVzdAo=".to_string()]),
                 ).unwrap()
             ),
             "dXNlciA1NTIzNThiMzExOWFjOWNkYzM2YWRiN2MxNWRmMWJkNw==\r\n"

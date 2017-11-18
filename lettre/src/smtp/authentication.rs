@@ -7,7 +7,7 @@ use crypto::mac::Mac;
 #[cfg(feature = "crammd5-auth")]
 use crypto::md5::Md5;
 #[cfg(feature = "crammd5-auth")]
-use hex::ToHex;
+use hex;
 use smtp::NUL;
 use smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -160,7 +160,7 @@ impl Mechanism {
                 Ok(format!(
                     "{} {}",
                     credentials.username,
-                    hmac.result().code().to_hex()
+                    hex::encode(hmac.result().code())
                 ))
             }
         }
