@@ -41,11 +41,11 @@ impl MockStream {
         vec
     }
 
-    pub fn next_vec(&mut self, vec: Vec<u8>) {
+    pub fn next_vec(&mut self, vec: &[u8]) {
         let mut cursor = self.reader.lock().unwrap();
         cursor.set_position(0);
         cursor.get_mut().clear();
-        cursor.get_mut().extend_from_slice(vec.as_slice());
+        cursor.get_mut().extend_from_slice(vec);
     }
 
     pub fn swap(&mut self) {

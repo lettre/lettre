@@ -41,9 +41,7 @@ impl StubEmailTransport {
 
     /// Creates a new transport that always returns a success response
     pub fn new_positive() -> StubEmailTransport {
-        StubEmailTransport {
-            response: Ok(()),
-        }
+        StubEmailTransport { response: Ok(()) }
     }
 }
 

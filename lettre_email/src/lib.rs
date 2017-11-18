@@ -66,11 +66,11 @@ pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType}
 use error::Error;
 use lettre::{EmailAddress, SendableEmail};
 use mime::Mime;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 use time::{Tm, now};
 use uuid::Uuid;
-use std::fs::File;
-use std::path::Path;
-use std::io::Read;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait IntoHeader {
@@ -434,13 +434,13 @@ impl PartBuilder {
     }
 
     /// Adds a `ContentType` header with the given MIME type
-    pub fn content_type(mut self, content_type: Mime) -> PartBuilder {
+    pub fn content_type(mut self, content_type: &Mime) -> PartBuilder {
         self.set_content_type(content_type);
         self
     }
 
     /// Adds a `ContentType` header with the given MIME type
-    pub fn set_content_type(&mut self, content_type: Mime) {
+    pub fn set_content_type(&mut self, content_type: &Mime) {
         self.add_header(("Content-Type", format!("{}", content_type).as_ref()));
     }
 
@@ -600,15 +600,25 @@ impl EmailBuilder {
     }
 
     /// Adds an attachment to the email
-    pub fn attachment(mut self, path: &Path, filename: Option<&str>, content_type: Mime) -> Result<EmailBuilder, Error> {
+    pub fn attachment(
+        mut self,
+        path: &Path,
+        filename: Option<&str>,
+        content_type: &Mime,
+    ) -> Result<EmailBuilder, Error> {
         self.set_attachment(path, filename, content_type)?;
         Ok(self)
     }
 
     /// Adds an attachment to the email
     /// If filename is not provided, the name of the file will be used.
-    pub fn set_attachment(&mut self, path: &Path, filename: Option<&str>, content_type: Mime) -> Result<(), Error> {
-       let file = File::open(path);
+    pub fn set_attachment(
+        &mut self,
+        path: &Path,
+        filename: Option<&str>,
+        content_type: &Mime,
+    ) -> Result<(), Error> {
+        let file = File::open(path);
         let body = match file {
             Ok(mut f) => {
                 let mut data = String::new();
@@ -627,18 +637,25 @@ impl EmailBuilder {
 
         let actual_filename = match filename {
             Some(name) => name,
-            None => match path.file_name() {
-                Some(name) => match name.to_str() {
-                    Some(name) => name,
+            None => {
+                match path.file_name() {
+                    Some(name) => {
+                        match name.to_str() {
+                            Some(name) => name,
+                            None => return Err(Error::CannotParseFilename),
+                        }
+                    }
                     None => return Err(Error::CannotParseFilename),
-                },
-                None => return Err(Error::CannotParseFilename),
-            },
+                }
+            }
         };
 
         let content = PartBuilder::new()
             .body(body)
-            .header(("Content-Disposition", format!("attachment; filename=\"{}\"", actual_filename)))
+            .header((
+                "Content-Disposition",
+                format!("attachment; filename=\"{}\"", actual_filename),
+            ))
             .header(("Content-Type", content_type.to_string()))
             .build();
 

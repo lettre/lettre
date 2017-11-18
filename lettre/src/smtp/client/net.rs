@@ -1,6 +1,6 @@
 //! A trait to represent a stream
 
-use native_tls::{TlsConnector, TlsStream, Protocol};
+use native_tls::{Protocol, TlsConnector, TlsStream};
 use smtp::client::mock::MockStream;
 use std::io::{self, ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
@@ -27,7 +27,7 @@ impl ClientTlsParameters {
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 compared to tls-native defaults.
-pub const DEFAULT_TLS_PROTOCOLS : &'static [Protocol] = &[Protocol::Tlsv11, Protocol::Tlsv12];
+pub const DEFAULT_TLS_PROTOCOLS: &'static [Protocol] = &[Protocol::Tlsv11, Protocol::Tlsv12];
 
 #[derive(Debug)]
 /// Represents the different types of underlying network streams

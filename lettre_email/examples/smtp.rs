@@ -14,7 +14,7 @@ fn main() {
         .from("user@example.com")
         .subject("Hi, Hello world")
         .text("Hello world.")
-        .attachment(Path::new("Cargo.toml"), None, mime::TEXT_PLAIN).unwrap()
+        .attachment(Path::new("Cargo.toml"), None, &mime::TEXT_PLAIN).unwrap()
         .build()
         .unwrap();
 
