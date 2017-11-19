@@ -313,9 +313,7 @@ mod test {
     use super::*;
     use smtp::extension::MailBodyParameter;
     #[cfg(feature = "crammd5-auth")]
-    use smtp::response::Code;
-    #[cfg(feature = "crammd5-auth")]
-    use std::str::FromStr;
+    use smtp::response::{Category, Code, Detail, Severity};
 
     #[test]
     fn test_display() {
@@ -418,7 +416,14 @@ mod test {
                 AuthCommand::new_from_response(
                     Mechanism::CramMd5,
                     credentials.clone(),
-                    &Response::new(Code::from_str("334").unwrap(), vec!["dGVzdAo=".to_string()]),
+                    &Response::new(
+                        Code::new(
+                            Severity::PositiveIntermediate,
+                            Category::Unspecified3,
+                            Detail(4),
+                        ),
+                        vec!["dGVzdAo=".to_string()],
+                    ),
                 ).unwrap()
             ),
             "dXNlciA1NTIzNThiMzExOWFjOWNkYzM2YWRiN2MxNWRmMWJkNw==\r\n"
