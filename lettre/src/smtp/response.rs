@@ -23,18 +23,6 @@ pub enum Severity {
     PermanentNegativeCompletion = 5,
 }
 
-impl FromStr for Severity {
-    type Err = NomError;
-
-    fn from_str(s: &str) -> result::Result<Severity, NomError> {
-        match parse_severity(s.as_bytes()) {
-            NomResult::Done(_, res) => Ok(res),
-            NomResult::Error(e) => Err(e),
-            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
-        }
-    }
-}
-
 impl Display for Severity {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", *self as u8)
@@ -58,18 +46,6 @@ pub enum Category {
     MailSystem = 5,
 }
 
-impl FromStr for Category {
-    type Err = NomError;
-
-    fn from_str(s: &str) -> result::Result<Category, NomError> {
-        match parse_category(s.as_bytes()) {
-            NomResult::Done(_, res) => Ok(res),
-            NomResult::Error(e) => Err(e),
-            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
-        }
-    }
-}
-
 impl Display for Category {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", *self as u8)
@@ -79,19 +55,6 @@ impl Display for Category {
 /// The detail digit of a response code (third digit)
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub struct Detail(pub u8);
-
-impl FromStr for Detail {
-    type Err = NomError;
-
-    fn from_str(s: &str) -> result::Result<Detail, NomError> {
-        match parse_detail(s.as_bytes()) {
-            NomResult::Done(_, res) => Ok(res),
-            NomResult::Error(e) => Err(e),
-            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
-        }
-    }
-}
-
 
 impl Display for Detail {
     fn fmt(&self, f: &mut Formatter) -> Result {
@@ -113,18 +76,6 @@ pub struct Code {
 impl Display for Code {
     fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}{}{}", self.severity, self.category, self.detail)
-    }
-}
-
-impl FromStr for Code {
-    type Err = NomError;
-
-    fn from_str(s: &str) -> result::Result<Code, NomError> {
-        match parse_code(s.as_bytes()) {
-            NomResult::Done(_, res) => Ok(res),
-            NomResult::Error(e) => Err(e),
-            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
-        }
     }
 }
 
@@ -217,8 +168,28 @@ named!(parse_code<Code>,
     )
 );
 
+named!(parse_severity<Severity>,
+    alt!(
+        tag!("2") => { |_| Severity::PositiveCompletion } |
+        tag!("3") => { |_| Severity::PositiveIntermediate } |
+        tag!("4") => { |_| Severity::TransientNegativeCompletion } |
+        tag!("5") => { |_| Severity::PermanentNegativeCompletion }
+    )
+);
+
+named!(parse_category<Category>,
+    alt!(
+        tag!("0") => { |_| Category::Syntax } |
+        tag!("1") => { |_| Category::Information } |
+        tag!("2") => { |_| Category::Connections } |
+        tag!("3") => { |_| Category::Unspecified3 } |
+        tag!("4") => { |_| Category::Unspecified4 } |
+        tag!("5") => { |_| Category::MailSystem }
+    )
+);
+
 named!(parse_detail<Detail>,
-    complete!(alt!(
+    alt!(
         tag!("0") => { |_| Detail(0) } |
         tag!("1") => { |_| Detail(1) } |
         tag!("2") => { |_| Detail(2) } |
@@ -229,27 +200,7 @@ named!(parse_detail<Detail>,
         tag!("7") => { |_| Detail(7) } |
         tag!("8") => { |_| Detail(8) } |
         tag!("9") => { |_| Detail(9) }
-    ))
-);
-
-named!(parse_severity<Severity>,
-    complete!(alt!(
-        tag!("2") => { |_| Severity::PositiveCompletion } |
-        tag!("3") => { |_| Severity::PositiveIntermediate } |
-        tag!("4") => { |_| Severity::TransientNegativeCompletion } |
-        tag!("5") => { |_| Severity::PermanentNegativeCompletion }
-    ))
-);
-
-named!(parse_category<Category>,
-    complete!(alt!(
-        tag!("0") => { |_| Category::Syntax } |
-        tag!("1") => { |_| Category::Information } |
-        tag!("2") => { |_| Category::Connections } |
-        tag!("3") => { |_| Category::Unspecified3 } |
-        tag!("4") => { |_| Category::Unspecified4 } |
-        tag!("5") => { |_| Category::MailSystem }
-    ))
+    )
 );
 
 named!(parse_response<Response>,
@@ -309,29 +260,8 @@ mod test {
     use super::{Category, Code, Detail, Response, Severity};
 
     #[test]
-    fn test_severity_from_str() {
-        assert_eq!(
-            "2".parse::<Severity>().unwrap(),
-            Severity::PositiveCompletion
-        );
-        assert_eq!(
-            "4".parse::<Severity>().unwrap(),
-            Severity::TransientNegativeCompletion
-        );
-        assert!("1".parse::<Severity>().is_err());
-        assert!("a51".parse::<Severity>().is_err());
-    }
-
-    #[test]
     fn test_severity_fmt() {
         assert_eq!(format!("{}", Severity::PositiveCompletion), "2");
-    }
-
-    #[test]
-    fn test_category_from_str() {
-        assert_eq!("2".parse::<Category>().unwrap(), Category::Connections);
-        assert_eq!("4".parse::<Category>().unwrap(), Category::Unspecified4);
-        assert!("6".parse::<Category>().is_err());
     }
 
     #[test]
@@ -366,24 +296,6 @@ mod test {
     }
 
     #[test]
-    fn test_code_from_str() {
-        assert_eq!(
-            "421".parse::<Code>().unwrap(),
-            Code {
-                severity: Severity::TransientNegativeCompletion,
-                category: Category::Connections,
-                detail: "1".parse::<Detail>().unwrap(),
-            }
-        );
-        assert!("r2222".parse::<Code>().is_err());
-        assert!("aaa".parse::<Code>().is_err());
-        assert!("-32".parse::<Code>().is_err());
-        assert!("-333".parse::<Code>().is_err());
-        assert!("".parse::<Code>().is_err());
-        assert!("9292".parse::<Code>().is_err());
-    }
-
-    #[test]
     fn test_code_display() {
         let code = Code {
             severity: Severity::TransientNegativeCompletion,
@@ -395,50 +307,33 @@ mod test {
     }
 
     #[test]
-    fn test_response_new() {
+    fn test_response_from_str() {
+        let raw_response = "250-me\r\n250-8BITMIME\r\n250-SIZE 42\r\n250 AUTH PLAIN CRAM-MD5\r\n";
         assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ),
+            raw_response.parse::<Response>().unwrap(),
             Response {
                 code: Code {
                     severity: Severity::PositiveCompletion,
-                    category: Category::Unspecified4,
-                    detail: "1".parse::<Detail>().unwrap(),
+                    category: Category::MailSystem,
+                    detail: Detail(0),
                 },
                 message: vec![
                     "me".to_string(),
-                    "8BITMIME".to_string(),
+                   "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
+                    "AUTH PLAIN CRAM-MD5".to_string(),
                 ],
             }
         );
-        assert_eq!(
-            Response::new(
-                Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                vec![],
-            ),
-            Response {
-                code: Code {
-                    severity: Severity::PositiveCompletion,
-                    category: Category::Unspecified4,
-                    detail: "1".parse::<Detail>().unwrap(),
-                },
-                message: vec![],
-            }
+
+        let wrong_code = "2506-me\r\n250-8BITMIME\r\n250-SIZE 42\r\n250 AUTH PLAIN CRAM-MD5\r\n";
+        assert!(
+            wrong_code.parse::<Response>().is_err()
+        );
+
+        let wrong_end = "250-me\r\n250-8BITMIME\r\n250-SIZE 42\r\n250-AUTH PLAIN CRAM-MD5\r\n";
+        assert!(
+            wrong_end.parse::<Response>().is_err()
         );
     }
 
@@ -447,9 +342,9 @@ mod test {
         assert!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::PositiveCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(0),
                 },
                 vec![
                     "me".to_string(),
@@ -459,11 +354,11 @@ mod test {
             ).is_positive()
         );
         assert!(!Response::new(
-            Code {
-                severity: "5".parse::<Severity>().unwrap(),
-                category: "3".parse::<Category>().unwrap(),
-                detail: "1".parse::<Detail>().unwrap(),
-            },
+                Code {
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(0),
+                },
             vec![
                 "me".to_string(),
                 "8BITMIME".to_string(),
@@ -477,29 +372,29 @@ mod test {
         assert!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "4".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![
                     "me".to_string(),
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).has_code(241)
+            ).has_code(451)
         );
         assert!(!Response::new(
-            Code {
-                severity: "2".parse::<Severity>().unwrap(),
-                category: "5".parse::<Category>().unwrap(),
-                detail: "1".parse::<Detail>().unwrap(),
-            },
+                Code {
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
+                },
             vec![
                 "me".to_string(),
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).has_code(241));
+        ).has_code(251));
     }
 
     #[test]
@@ -507,9 +402,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![
                     "me".to_string(),
@@ -522,9 +417,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![
                     "me mo".to_string(),
@@ -537,9 +432,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![],
             ).first_word(),
@@ -548,9 +443,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![" ".to_string()],
             ).first_word(),
@@ -559,9 +454,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec!["  ".to_string()],
             ).first_word(),
@@ -570,9 +465,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec!["".to_string()],
             ).first_word(),
@@ -585,9 +480,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![
                     "me".to_string(),
@@ -600,9 +495,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![
                     "me mo".to_string(),
@@ -615,9 +510,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![],
             ).first_line(),
@@ -626,9 +521,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec![" ".to_string()],
             ).first_line(),
@@ -637,9 +532,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec!["  ".to_string()],
             ).first_line(),
@@ -648,9 +543,9 @@ mod test {
         assert_eq!(
             Response::new(
                 Code {
-                    severity: "2".parse::<Severity>().unwrap(),
-                    category: "3".parse::<Category>().unwrap(),
-                    detail: "1".parse::<Detail>().unwrap(),
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail(1),
                 },
                 vec!["".to_string()],
             ).first_line(),
