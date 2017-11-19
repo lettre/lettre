@@ -23,6 +23,10 @@ addons:
   apt:
     packages:
     - postfix
+    - libelf-dev
+    - libdw-dev
+    - binutils-dev
+    - libiberty-dev
 
 before_script:
   - smtp-sink 2525 1000&
@@ -32,6 +36,22 @@ script:
   - cargo test --verbose --manifest-path lettre/Cargo.toml --no-default-features
   - cargo test --verbose --manifest-path lettre/Cargo.toml
   - cargo test --verbose --manifest-path lettre_email/Cargo.toml
+
+after_success:
+  - '[ $TRAVIS_RUST_VERSION = stable ] &&
+    LOCAL="~/.local" && export PATH=$LOCAL/bin:$PATH &&
+    wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+    tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build &&
+    cmake -DCMAKE_INSTALL_PREFIX:PATH=$LOCAL .. && make && make install && cd ../.. &&
+    ls target/debug &&
+    RUSTFLAGS="-C link-dead-code" cargo test --no-run &&
+    for file in target/debug/*; do
+      if [[ -x $file ]]; then
+        mkdir -p "target/cov/$(basename $file)";
+        kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file";
+      fi;
+    done &&
+    kcov --coveralls-id=$TRAVIS_JOB_ID --merge target/cov target/cov/*'
 
 env:
   global:
