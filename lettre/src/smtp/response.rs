@@ -1,53 +1,43 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use self::Category::*;
 use self::Severity::*;
-use smtp::error::{Error, SmtpResult};
+use nom::{ErrorKind as NomErrorKind, IResult as NomResult, crlf};
+
+use nom::simple_errors::Err as NomError;
 use std::fmt::{Display, Formatter, Result};
 use std::result;
-use std::str::FromStr;
+use std::str::{FromStr, from_utf8};
+
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Severity {
     /// 2yx
-    PositiveCompletion,
+    PositiveCompletion = 2,
     /// 3yz
-    PositiveIntermediate,
+    PositiveIntermediate = 3,
     /// 4yz
-    TransientNegativeCompletion,
+    TransientNegativeCompletion = 4,
     /// 5yz
-    PermanentNegativeCompletion,
+    PermanentNegativeCompletion = 5,
 }
 
 impl FromStr for Severity {
-    type Err = Error;
-    fn from_str(s: &str) -> result::Result<Severity, Error> {
-        match s {
-            "2" => Ok(PositiveCompletion),
-            "3" => Ok(PositiveIntermediate),
-            "4" => Ok(TransientNegativeCompletion),
-            "5" => Ok(PermanentNegativeCompletion),
-            _ => Err(Error::ResponseParsing(
-                "First digit must be between 2 and 5",
-            )),
+    type Err = NomError;
+
+    fn from_str(s: &str) -> result::Result<Severity, NomError> {
+        match parse_severity(s.as_bytes()) {
+            NomResult::Done(_, res) => Ok(res),
+            NomResult::Error(e) => Err(e),
+            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
         }
     }
 }
 
 impl Display for Severity {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                PositiveCompletion => 2,
-                PositiveIntermediate => 3,
-                TransientNegativeCompletion => 4,
-                PermanentNegativeCompletion => 5,
-            }
-        )
+        write!(f, "{}", *self as u8)
     }
 }
 
@@ -55,50 +45,34 @@ impl Display for Severity {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Category {
     /// x0z
-    Syntax,
+    Syntax = 0,
     /// x1z
-    Information,
+    Information = 1,
     /// x2z
-    Connections,
+    Connections = 2,
     /// x3z
-    Unspecified3,
+    Unspecified3 = 3,
     /// x4z
-    Unspecified4,
+    Unspecified4 = 4,
     /// x5z
-    MailSystem,
+    MailSystem = 5,
 }
 
 impl FromStr for Category {
-    type Err = Error;
-    fn from_str(s: &str) -> result::Result<Category, Error> {
-        match s {
-            "0" => Ok(Syntax),
-            "1" => Ok(Information),
-            "2" => Ok(Connections),
-            "3" => Ok(Unspecified3),
-            "4" => Ok(Unspecified4),
-            "5" => Ok(MailSystem),
-            _ => Err(Error::ResponseParsing(
-                "Second digit must be between 0 and 5",
-            )),
+    type Err = NomError;
+
+    fn from_str(s: &str) -> result::Result<Category, NomError> {
+        match parse_category(s.as_bytes()) {
+            NomResult::Done(_, res) => Ok(res),
+            NomResult::Error(e) => Err(e),
+            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
         }
     }
 }
 
 impl Display for Category {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                Syntax => 0,
-                Information => 1,
-                Connections => 2,
-                Unspecified3 => 3,
-                Unspecified4 => 4,
-                MailSystem => 5,
-            }
-        )
+        write!(f, "{}", *self as u8)
     }
 }
 
@@ -107,16 +81,17 @@ impl Display for Category {
 pub struct Detail(pub u8);
 
 impl FromStr for Detail {
-    type Err = Error;
-    fn from_str(s: &str) -> result::Result<Detail, Error> {
-        match s.parse::<u8>() {
-            Ok(d) if d < 10 => Ok(Detail(d)),
-            _ => Err(Error::ResponseParsing(
-                "Third digit must be between 0 and 9",
-            )),
+    type Err = NomError;
+
+    fn from_str(s: &str) -> result::Result<Detail, NomError> {
+        match parse_detail(s.as_bytes()) {
+            NomResult::Done(_, res) => Ok(res),
+            NomResult::Error(e) => Err(e),
+            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
         }
     }
 }
+
 
 impl Display for Detail {
     fn fmt(&self, f: &mut Formatter) -> Result {
@@ -142,29 +117,13 @@ impl Display for Code {
 }
 
 impl FromStr for Code {
-    type Err = Error;
+    type Err = NomError;
 
-    #[inline]
-    fn from_str(s: &str) -> result::Result<Code, Error> {
-        if s.len() == 3 {
-            match (
-                s[0..1].parse::<Severity>(),
-                s[1..2].parse::<Category>(),
-                s[2..3].parse::<Detail>(),
-            ) {
-                (Ok(severity), Ok(category), Ok(detail)) => {
-                    Ok(Code {
-                        severity: severity,
-                        category: category,
-                        detail: detail,
-                    })
-                }
-                _ => Err(Error::ResponseParsing("Could not parse response code")),
-            }
-        } else {
-            Err(Error::ResponseParsing(
-                "Wrong code length (should be 3 digit)",
-            ))
+    fn from_str(s: &str) -> result::Result<Code, NomError> {
+        match parse_code(s.as_bytes()) {
+            NomResult::Done(_, res) => Ok(res),
+            NomResult::Error(e) => Err(e),
+            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
         }
     }
 }
@@ -184,60 +143,6 @@ impl Code {
     }
 }
 
-/// Parses an SMTP response
-#[derive(PartialEq, Eq, Clone, Debug, Default)]
-pub struct ResponseParser {
-    /// Response code
-    code: Option<Code>,
-    /// Server response string (optional)
-    /// Handle multiline responses
-    message: Vec<String>,
-}
-
-impl ResponseParser {
-    /// Parses a line and return a `bool` indicating if there are more lines to come
-    pub fn read_line(&mut self, line: &str) -> result::Result<bool, Error> {
-
-        if line.len() < 3 {
-            return Err(Error::ResponseParsing(
-                "Incorrect response code (should be 3 digits)",
-            ));
-        }
-
-        match self.code {
-            Some(ref code) => {
-                if code.to_string() != line[0..3] {
-                    return Err(Error::ResponseParsing(
-                        "Response code has changed during a \
-                         reponse",
-                    ));
-                }
-            }
-            None => self.code = Some(line[0..3].parse::<Code>()?),
-        }
-
-        if line.len() > 4 {
-            self.message.push(line[4..].to_string());
-            Ok(line.as_bytes()[3] == b'-')
-        } else {
-            Ok(false)
-        }
-    }
-
-    /// Builds a response from a `ResponseParser`
-    pub fn response(self) -> SmtpResult {
-        match self.code {
-            Some(code) => Ok(Response::new(code, self.message)),
-            None => {
-                Err(Error::ResponseParsing(
-                    "Incomplete response, could not read response \
-                     code",
-                ))
-            }
-        }
-    }
-}
-
 /// Contains an SMTP reply, with separated code and message
 ///
 /// The text message is optional, only the code is mandatory
@@ -248,6 +153,18 @@ pub struct Response {
     /// Server response string (optional)
     /// Handle multiline responses
     pub message: Vec<String>,
+}
+
+impl FromStr for Response {
+    type Err = NomError;
+
+    fn from_str(s: &str) -> result::Result<Response, NomError> {
+        match parse_response(s.as_bytes()) {
+            NomResult::Done(_, res) => Ok(res),
+            NomResult::Error(e) => Err(e),
+            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
+        }
+    }
 }
 
 impl Response {
@@ -285,9 +202,111 @@ impl Response {
     }
 }
 
+// Parsers (originaly from tokio-smtp)
+
+named!(parse_code<Code>,
+    map!(
+        tuple!(parse_severity, parse_category, parse_detail),
+        |(severity, category, detail)| {
+            Code {
+                severity: severity,
+                category: category,
+                detail: detail,
+            }
+        }
+    )
+);
+
+named!(parse_detail<Detail>,
+    complete!(alt!(
+        tag!("0") => { |_| Detail(0) } |
+        tag!("1") => { |_| Detail(1) } |
+        tag!("2") => { |_| Detail(2) } |
+        tag!("3") => { |_| Detail(3) } |
+        tag!("4") => { |_| Detail(4) } |
+        tag!("5") => { |_| Detail(5) } |
+        tag!("6") => { |_| Detail(6) } |
+        tag!("7") => { |_| Detail(7) } |
+        tag!("8") => { |_| Detail(8) } |
+        tag!("9") => { |_| Detail(9) }
+    ))
+);
+
+named!(parse_severity<Severity>,
+    complete!(alt!(
+        tag!("2") => { |_| Severity::PositiveCompletion } |
+        tag!("3") => { |_| Severity::PositiveIntermediate } |
+        tag!("4") => { |_| Severity::TransientNegativeCompletion } |
+        tag!("5") => { |_| Severity::PermanentNegativeCompletion }
+    ))
+);
+
+named!(parse_category<Category>,
+    complete!(alt!(
+        tag!("0") => { |_| Category::Syntax } |
+        tag!("1") => { |_| Category::Information } |
+        tag!("2") => { |_| Category::Connections } |
+        tag!("3") => { |_| Category::Unspecified3 } |
+        tag!("4") => { |_| Category::Unspecified4 } |
+        tag!("5") => { |_| Category::MailSystem }
+    ))
+);
+
+named!(parse_response<Response>,
+    map_res!(
+        tuple!(
+            // Parse any number of continuation lines.
+            many0!(
+                tuple!(
+                    parse_code,
+                    preceded!(
+                        char!('-'),
+                        take_until_and_consume!(b"\r\n".as_ref())
+                    )
+                )
+            ),
+            // Parse the final line.
+            tuple!(
+                parse_code,
+                terminated!(
+                    opt!(
+                        preceded!(
+                            char!(' '),
+                            take_until!(b"\r\n".as_ref())
+                        )
+                    ),
+                    crlf
+                )
+            )
+        ),
+        |(lines, (last_code, last_line)): (Vec<_>, _)| {
+            // Check that all codes are equal.
+            if !lines.iter().all(|&(ref code, _)| *code == last_code) {
+                return Err(());
+            }
+
+            // Extract text from lines, and append last line.
+            let mut lines = lines.into_iter()
+                .map(|(_, text)| text)
+                .collect::<Vec<_>>();
+            if let Some(text) = last_line {
+                lines.push(text);
+            }
+
+            Ok(Response {
+                code: last_code,
+                message: lines.into_iter()
+                    .map(|line| from_utf8(line).map(|s| s.to_string()))
+                    .collect::<result::Result<Vec<_>, _>>()
+                    .map_err(|_| ())?,
+            })
+        }
+    )
+);
+
 #[cfg(test)]
 mod test {
-    use super::{Category, Code, Detail, Response, ResponseParser, Severity};
+    use super::{Category, Code, Detail, Response, Severity};
 
     #[test]
     fn test_severity_from_str() {
@@ -300,7 +319,7 @@ mod test {
             Severity::TransientNegativeCompletion
         );
         assert!("1".parse::<Severity>().is_err());
-        assert!("51".parse::<Severity>().is_err());
+        assert!("a51".parse::<Severity>().is_err());
     }
 
     #[test]
@@ -356,12 +375,12 @@ mod test {
                 detail: "1".parse::<Detail>().unwrap(),
             }
         );
-        assert!("2222".parse::<Code>().is_err());
+        assert!("r2222".parse::<Code>().is_err());
         assert!("aaa".parse::<Code>().is_err());
         assert!("-32".parse::<Code>().is_err());
         assert!("-333".parse::<Code>().is_err());
         assert!("".parse::<Code>().is_err());
-        assert!("292".parse::<Code>().is_err());
+        assert!("9292".parse::<Code>().is_err());
     }
 
     #[test]
@@ -419,35 +438,6 @@ mod test {
                     detail: "1".parse::<Detail>().unwrap(),
                 },
                 message: vec![],
-            }
-        );
-    }
-
-    #[test]
-    fn test_response_parser() {
-        let mut parser = ResponseParser::default();
-
-        assert!(parser.read_line("250-me").unwrap());
-        assert!(parser.read_line("250-8BITMIME").unwrap());
-        assert!(parser.read_line("250-SIZE 42").unwrap());
-        assert!(!parser.read_line("250 AUTH PLAIN CRAM-MD5").unwrap());
-
-        let response = parser.response().unwrap();
-
-        assert_eq!(
-            response,
-            Response {
-                code: Code {
-                    severity: Severity::PositiveCompletion,
-                    category: Category::MailSystem,
-                    detail: Detail(0),
-                },
-                message: vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                    "AUTH PLAIN CRAM-MD5".to_string(),
-                ],
             }
         );
     }

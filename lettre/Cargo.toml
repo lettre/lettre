@@ -16,6 +16,7 @@ travis-ci = { repository = "lettre/lettre" }
 
 [dependencies]
 log = "^0.3"
+nom = { version = "^3.2", optional = true }
 bufstream = { version = "^0.1", optional = true }
 native-tls = { version = "^0.1", optional = true }
 base64 = { version = "^0.8", optional = true }
@@ -34,7 +35,7 @@ unstable = []
 serde-impls = ["serde", "serde_derive"]
 file-transport = ["serde-impls", "serde_json"]
 crammd5-auth = ["rust-crypto", "hex"]
-smtp-transport = ["bufstream", "native-tls", "base64"]
+smtp-transport = ["bufstream", "native-tls", "base64", "nom"]
 sendmail-transport = []
 
 [[example]]
