@@ -106,6 +106,7 @@
 use EmailTransport;
 use SendableEmail;
 use native_tls::TlsConnector;
+use hostname::get_hostname;
 use smtp::authentication::{Credentials, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS, Mechanism};
 use smtp::client::Client;
@@ -224,7 +225,7 @@ impl SmtpTransportBuilder {
                     smtp_utf8: false,
                     credentials: None,
                     connection_reuse: ConnectionReuseParameters::NoReuse,
-                    hello_name: ClientId::Domain("localhost".to_string()),
+                    hello_name: ClientId::Domain(get_hostname().unwrap_or("localhost".to_string())),
                     authentication_mechanism: None,
                     timeout: Some(Duration::new(60, 0)),
                 })
