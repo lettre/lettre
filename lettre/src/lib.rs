@@ -19,6 +19,8 @@ extern crate base64;
 extern crate bufstream;
 #[cfg(feature = "smtp-transport")]
 extern crate native_tls;
+#[cfg(feature = "smtp-transport")]
+extern crate hostname;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
 #[cfg(feature = "serde-impls")]
