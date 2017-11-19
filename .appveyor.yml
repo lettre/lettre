@@ -2,7 +2,7 @@ environment:
   matrix:
     - TARGET: x86_64-pc-windows-msvc
       BITS: 64
-      OPENSSL_VERSION: 1_1_0f
+      OPENSSL_VERSION: 1_1_0g
       OPENSSL_DIR: C:\OpenSSL
 install:
   - ps: Start-FileDownload "http://slproweb.com/download/Win${env:BITS}OpenSSL-${env:OPENSSL_VERSION}.exe"
