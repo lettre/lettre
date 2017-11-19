@@ -9,7 +9,6 @@ use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::{FromStr, from_utf8};
 
-
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Severity {
@@ -137,7 +136,7 @@ impl Response {
 
     /// Tests code equality
     pub fn has_code(&self, code: u16) -> bool {
-        self.code.to_string() == format!("{}", code)
+        self.code.to_string() == code.to_string()
     }
 
     /// Returns only the first word of the message if possible
