@@ -15,21 +15,20 @@ use std::fmt::{self, Display, Formatter};
 /// Accepted authentication mecanisms on an encrypted connection
 /// Trying LOGIN last as it is deprecated.
 #[cfg(feature = "crammd5-auth")]
-pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] =
+pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] =
     &[Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login];
 /// Accepted authentication mecanisms on an encrypted connection
 /// Trying LOGIN last as it is deprecated.
 #[cfg(not(feature = "crammd5-auth"))]
-pub const DEFAULT_ENCRYPTED_MECHANISMS: &'static [Mechanism] =
-    &[Mechanism::Plain, Mechanism::Login];
+pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Accepted authentication mecanisms on an unencrypted connection
 #[cfg(feature = "crammd5-auth")]
-pub const DEFAULT_UNENCRYPTED_MECHANISMS: &'static [Mechanism] = &[Mechanism::CramMd5];
+pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::CramMd5];
 /// Accepted authentication mecanisms on an unencrypted connection
 /// When CRAMMD5 support is not enabled, no mechanisms are allowed.
 #[cfg(not(feature = "crammd5-auth"))]
-pub const DEFAULT_UNENCRYPTED_MECHANISMS: &'static [Mechanism] = &[];
+pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
 
 /// Convertable to user credentials
@@ -61,10 +60,8 @@ pub struct Credentials {
 impl Credentials {
     /// Create a `Credentials` struct from username and password
     pub fn new(username: String, password: String) -> Credentials {
-        Credentials {
-            username: username,
-            password: password,
-        }
+        Credentials { username: username,
+            password: password, }
     }
 }
 
@@ -86,16 +83,12 @@ pub enum Mechanism {
 
 impl Display for Mechanism {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                Mechanism::Plain => "PLAIN",
-                Mechanism::Login => "LOGIN",
-                #[cfg(feature = "crammd5-auth")]
-                Mechanism::CramMd5 => "CRAM-MD5",
-            }
-        )
+        write!(f, "{}", match *self {
+            Mechanism::Plain => "PLAIN",
+            Mechanism::Login => "LOGIN",
+            #[cfg(feature = "crammd5-auth")]
+            Mechanism::CramMd5 => "CRAM-MD5",
+        })
     }
 }
 
@@ -113,22 +106,21 @@ impl Mechanism {
 
     /// Returns the string to send to the server, using the provided username, password and
     /// challenge in some cases
-    pub fn response(
-        &self,
-        credentials: &Credentials,
-        challenge: Option<&str>,
-    ) -> Result<String, Error> {
+    pub fn response(&self,
+                    credentials: &Credentials,
+                    challenge: Option<&str>)
+                    -> Result<String, Error> {
         match *self {
             Mechanism::Plain => {
                 match challenge {
                     Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
-                    None => Ok(format!(
-                        "{}{}{}{}",
-                        NUL,
-                        credentials.username,
-                        NUL,
-                        credentials.password
-                    )),
+                    None => {
+                        Ok(format!("{}{}{}{}",
+                                   NUL,
+                                   credentials.username,
+                                   NUL,
+                                   credentials.password))
+                    }
                 }
             }
             Mechanism::Login => {
@@ -157,11 +149,9 @@ impl Mechanism {
                 let mut hmac = Hmac::new(Md5::new(), credentials.password.as_bytes());
                 hmac.input(decoded_challenge.as_bytes());
 
-                Ok(format!(
-                    "{} {}",
-                    credentials.username,
-                    hex::encode(hmac.result().code())
-                ))
+                Ok(format!("{} {}",
+                           credentials.username,
+                           hex::encode(hmac.result().code())))
             }
         }
     }
@@ -177,10 +167,8 @@ mod test {
 
         let credentials = Credentials::new("username".to_string(), "password".to_string());
 
-        assert_eq!(
-            mechanism.response(&credentials, None).unwrap(),
-            "\u{0}username\u{0}password"
-        );
+        assert_eq!(mechanism.response(&credentials, None).unwrap(),
+                   "\u{0}username\u{0}password");
         assert!(mechanism.response(&credentials, Some("test")).is_err());
     }
 
@@ -190,14 +178,10 @@ mod test {
 
         let credentials = Credentials::new("alice".to_string(), "wonderland".to_string());
 
-        assert_eq!(
-            mechanism.response(&credentials, Some("Username")).unwrap(),
-            "alice"
-        );
-        assert_eq!(
-            mechanism.response(&credentials, Some("Password")).unwrap(),
-            "wonderland"
-        );
+        assert_eq!(mechanism.response(&credentials, Some("Username")).unwrap(),
+                   "alice");
+        assert_eq!(mechanism.response(&credentials, Some("Password")).unwrap(),
+                   "wonderland");
         assert!(mechanism.response(&credentials, None).is_err());
     }
 
@@ -212,7 +196,7 @@ mod test {
             mechanism
                 .response(
                     &credentials,
-                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg=="),
+                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==")
                 )
                 .unwrap(),
             "alice a540ebe4ef2304070bbc3c456c1f64c0"

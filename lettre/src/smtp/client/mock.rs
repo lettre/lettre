@@ -20,17 +20,13 @@ impl Default for MockStream {
 
 impl MockStream {
     pub fn new() -> MockStream {
-        MockStream {
-            reader: Arc::new(Mutex::new(MockCursor::new(Vec::new()))),
-            writer: Arc::new(Mutex::new(MockCursor::new(Vec::new()))),
-        }
+        MockStream { reader: Arc::new(Mutex::new(MockCursor::new(Vec::new()))),
+            writer: Arc::new(Mutex::new(MockCursor::new(Vec::new()))), }
     }
 
     pub fn with_vec(vec: Vec<u8>) -> MockStream {
-        MockStream {
-            reader: Arc::new(Mutex::new(MockCursor::new(vec))),
-            writer: Arc::new(Mutex::new(MockCursor::new(Vec::new()))),
-        }
+        MockStream { reader: Arc::new(Mutex::new(MockCursor::new(vec))),
+            writer: Arc::new(Mutex::new(MockCursor::new(Vec::new()))), }
     }
 
     pub fn take_vec(&mut self) -> Vec<u8> {

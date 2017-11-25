@@ -18,16 +18,14 @@ pub struct ClientTlsParameters {
 impl ClientTlsParameters {
     /// Creates a `ClientTlsParameters`
     pub fn new(domain: String, connector: TlsConnector) -> ClientTlsParameters {
-        ClientTlsParameters {
-            connector: connector,
-            domain: domain,
-        }
+        ClientTlsParameters { connector: connector,
+            domain:    domain, }
     }
 }
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 compared to tls-native defaults.
-pub const DEFAULT_TLS_PROTOCOLS: &'static [Protocol] = &[Protocol::Tlsv11, Protocol::Tlsv12];
+pub const DEFAULT_TLS_PROTOCOLS: &[Protocol] = &[Protocol::Tlsv11, Protocol::Tlsv12];
 
 #[derive(Debug)]
 /// Represents the different types of underlying network streams
@@ -47,9 +45,7 @@ impl NetworkStream {
             NetworkStream::Tcp(ref s) => s.peer_addr(),
             NetworkStream::Tls(ref s) => s.get_ref().peer_addr(),
             NetworkStream::Mock(_) => {
-                Ok(SocketAddr::V4(
-                    SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80),
-                ))
+                Ok(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127, 0, 0, 1), 80)))
             }
         }
     }
@@ -96,7 +92,7 @@ impl Write for NetworkStream {
 pub trait Connector: Sized {
     /// Opens a connection to the given IP socket
     fn connect(addr: &SocketAddr, tls_parameters: Option<&ClientTlsParameters>)
-        -> io::Result<Self>;
+               -> io::Result<Self>;
     /// Upgrades to TLS connection
     fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()>;
     /// Is the NetworkStream encrypted
@@ -104,19 +100,17 @@ pub trait Connector: Sized {
 }
 
 impl Connector for NetworkStream {
-    fn connect(
-        addr: &SocketAddr,
-        tls_parameters: Option<&ClientTlsParameters>,
-    ) -> io::Result<NetworkStream> {
+    fn connect(addr: &SocketAddr,
+               tls_parameters: Option<&ClientTlsParameters>)
+               -> io::Result<NetworkStream> {
         let tcp_stream = TcpStream::connect(addr)?;
 
         match tls_parameters {
             Some(context) => {
-                context
-                    .connector
-                    .connect(context.domain.as_ref(), tcp_stream)
-                    .map(NetworkStream::Tls)
-                    .map_err(|e| io::Error::new(ErrorKind::Other, e))
+                context.connector
+                       .connect(context.domain.as_ref(), tcp_stream)
+                       .map(NetworkStream::Tls)
+                       .map_err(|e| io::Error::new(ErrorKind::Other, e))
             }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
@@ -126,10 +120,10 @@ impl Connector for NetworkStream {
     fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
         *self = match *self {
             NetworkStream::Tcp(ref mut stream) => {
-                match tls_parameters.connector.connect(
-                    tls_parameters.domain.as_ref(),
-                    stream.try_clone().unwrap(),
-                ) {
+                match tls_parameters.connector
+                                    .connect(tls_parameters.domain.as_ref(),
+                                             stream.try_clone().unwrap())
+                {
                     Ok(tls_stream) => NetworkStream::Tls(tls_stream),
                     Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
                 }
