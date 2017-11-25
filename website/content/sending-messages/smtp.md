@@ -98,15 +98,15 @@ use lettre::smtp::commands::*;
 
 let mut email_client: Client<NetworkStream> = Client::new();
 let _ = email_client.connect(&("localhost", SMTP_PORT), None);
-let _ = email_client.smtp_command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
-let _ = email_client.smtp_command(
+let _ = email_client.command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
+let _ = email_client.command(
             MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
         );
-let _ = email_client.smtp_command(
+let _ = email_client.command(
             RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
         );
-let _ = email_client.smtp_command(DataCommand);
+let _ = email_client.command(DataCommand);
 let _ = email_client.message(Box::new("Test email".as_bytes()));
-let _ = email_client.smtp_command(QuitCommand);
+let _ = email_client.command(QuitCommand);
 ```
 

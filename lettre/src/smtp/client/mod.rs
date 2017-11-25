@@ -64,7 +64,6 @@ impl ClientCodec {
                 }
                 Ok(buf.write_all(&frame[start..])?)
             }
-
         }
     }
 }
@@ -102,7 +101,7 @@ impl<S: Write + Read> Client<S> {
 impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
-        let _ = self.smtp_command(QuitCommand);
+        let _ = self.command(QuitCommand);
         self.stream = None;
     }
 
@@ -140,11 +139,10 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(
-        &mut self,
-        addr: &A,
-        tls_parameters: Option<&ClientTlsParameters>,
-    ) -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(&mut self,
+                                     addr: &A,
+                                     tls_parameters: Option<&ClientTlsParameters>)
+                                     -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -162,30 +160,26 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         // Try to connect
         self.set_stream(Connector::connect(&server_addr, tls_parameters)?);
 
-        self.get_reply()
+        self.read_response()
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
     #[cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
     pub fn is_connected(&mut self) -> bool {
-        self.smtp_command(NoopCommand).is_ok()
+        self.command(NoopCommand).is_ok()
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
     pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
         // TODO
         let mut challenges = 10;
-        let mut response = self.smtp_command(
-            AuthCommand::new(mechanism, credentials.clone(), None)?,
-        )?;
+        let mut response = self.command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
-            response = self.smtp_command(AuthCommand::new_from_response(
-                mechanism,
-                credentials.clone(),
-                &response,
-            )?)?;
+            response = self.command(AuthCommand::new_from_response(mechanism,
+                                                                    credentials.clone(),
+                                                                    &response)?)?;
         }
 
         if challenges == 0 {
@@ -217,21 +211,21 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
                 break;
             }
 
-            self.write_server(out_buf.as_slice())?;
+            self.write(out_buf.as_slice())?;
         }
 
-        self.write_server(MESSAGE_ENDING.as_bytes())?;
-        self.get_reply()
+        self.write(MESSAGE_ENDING.as_bytes())?;
+        self.read_response()
     }
 
     /// Sends an SMTP command
-    pub fn smtp_command<C: Display>(&mut self, command: C) -> SmtpResult {
-        self.write_server(command.to_string().as_bytes())?;
-        self.get_reply()
+    pub fn command<C: Display>(&mut self, command: C) -> SmtpResult {
+        self.write(command.to_string().as_bytes())?;
+        self.read_response()
     }
 
     /// Writes a string to the server
-    fn write_server(&mut self, string: &[u8]) -> Result<(), Error> {
+    fn write(&mut self, string: &[u8]) -> Result<(), Error> {
         if self.stream.is_none() {
             return Err(From::from("Connection closed"));
         }
@@ -239,16 +233,13 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.stream.as_mut().unwrap().write_all(string)?;
         self.stream.as_mut().unwrap().flush()?;
 
-        debug!(
-            "Wrote: {}",
-            escape_crlf(String::from_utf8_lossy(string).as_ref())
-        );
+        debug!("Wrote: {}",
+               escape_crlf(String::from_utf8_lossy(string).as_ref()));
         Ok(())
     }
 
     /// Gets the SMTP response
-    fn get_reply(&mut self) -> SmtpResult {
-
+    fn read_response(&mut self) -> SmtpResult {
         let mut raw_response = String::new();
         let mut response = raw_response.parse::<Response>();
 
@@ -275,7 +266,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
 #[cfg(test)]
 mod test {
-    use super::{ClientCodec, escape_crlf};
+    use super::{escape_crlf, ClientCodec};
 
     #[test]
     fn test_codec() {
@@ -291,19 +282,15 @@ mod test {
         assert!(codec.encode(b"test\n", &mut buf).is_ok());
         assert!(codec.encode(b".test\n", &mut buf).is_ok());
         assert!(codec.encode(b"test", &mut buf).is_ok());
-        assert_eq!(
-            String::from_utf8(buf).unwrap(),
-            "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
-        );
+        assert_eq!(String::from_utf8(buf).unwrap(),
+                   "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest");
     }
 
     #[test]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CRLF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CRLF>");
-        assert_eq!(
-            escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-            "EHLO my_name<CRLF>SIZE 42<CRLF>"
-        );
+        assert_eq!(escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+                   "EHLO my_name<CRLF>SIZE 42<CRLF>");
     }
 }

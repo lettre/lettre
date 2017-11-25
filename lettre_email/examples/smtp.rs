@@ -19,9 +19,8 @@ fn main() {
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransport::builder_unencrypted_localhost()
-        .unwrap()
-        .build();
+    let mut mailer = SmtpTransport::builder_unencrypted_localhost().unwrap()
+                                                                   .build();
     // Send the email
     let result = mailer.send(&email);
 

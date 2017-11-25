@@ -7,28 +7,28 @@
 #![doc(html_root_url = "https://docs.rs/lettre/0.7.0")]
 #![deny(missing_docs, unsafe_code, unstable_features, warnings)]
 
-#[macro_use]
-extern crate log;
-#[cfg(feature = "crammd5-auth")]
-extern crate hex;
-#[cfg(feature = "crammd5-auth")]
-extern crate crypto;
 #[cfg(feature = "smtp-transport")]
 extern crate base64;
 #[cfg(feature = "smtp-transport")]
 extern crate bufstream;
+#[cfg(feature = "crammd5-auth")]
+extern crate crypto;
+#[cfg(feature = "crammd5-auth")]
+extern crate hex;
+#[cfg(feature = "smtp-transport")]
+extern crate hostname;
+#[macro_use]
+extern crate log;
 #[cfg(feature = "smtp-transport")]
 extern crate native_tls;
 #[cfg(feature = "smtp-transport")]
-extern crate hostname;
-#[cfg(feature = "file-transport")]
-extern crate serde_json;
+#[macro_use]
+extern crate nom;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
-#[cfg(feature = "smtp-transport")]
-#[macro_use]
-extern crate nom;
+#[cfg(feature = "file-transport")]
+extern crate serde_json;
 
 #[cfg(feature = "smtp-transport")]
 pub mod smtp;
@@ -101,18 +101,15 @@ pub struct SimpleSendableEmail {
 
 impl SimpleSendableEmail {
     /// Returns a new email
-    pub fn new(
-        from_address: EmailAddress,
-        to_addresses: Vec<EmailAddress>,
-        message_id: String,
-        message: String,
-    ) -> SimpleSendableEmail {
-        SimpleSendableEmail {
-            from: from_address,
-            to: to_addresses,
+    pub fn new(from_address: EmailAddress,
+               to_addresses: Vec<EmailAddress>,
+               message_id: String,
+               message: String)
+               -> SimpleSendableEmail {
+        SimpleSendableEmail { from:       from_address,
+            to:         to_addresses,
             message_id: message_id,
-            message: message.into_bytes(),
-        }
+            message:    message.into_bytes(), }
     }
 }
 
