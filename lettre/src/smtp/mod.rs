@@ -304,7 +304,7 @@ macro_rules! try_smtp (
             Err(err) => {
                 if !$client.state.panic {
                     $client.state.panic = true;
-                    $client.reset();
+                    $client.close();
                 }
                 return Err(From::from(err))
             },
@@ -353,7 +353,7 @@ impl<'a> SmtpTransport {
     }
 
     /// Gets the EHLO response and updates server information
-    pub fn get_ehlo(&mut self) -> SmtpResult {
+    fn ehlo(&mut self) -> SmtpResult {
         // Extended Hello
         let ehlo_response = try_smtp!(
             self.client.command(EhloCommand::new(
@@ -370,15 +370,10 @@ impl<'a> SmtpTransport {
         Ok(ehlo_response)
     }
 
-    /// Closes the inner connection
-    pub fn close(&mut self) {
-        self.client.close();
-    }
-
     /// Reset the client state
-    pub fn reset(&mut self) {
+    pub fn close(&mut self) {
         // Close the SMTP transaction if needed
-        self.close();
+        self.client.close();
 
         // Reset the client state
         self.server_info = None;
@@ -396,7 +391,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
 
         // Check if the connection is still available
         if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
-            self.reset();
+            self.close();
         }
 
         if self.state.connection_reuse_count == 0 {
@@ -413,7 +408,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
             // Log the connection
             info!("connection established to {}", self.client_info.server_addr);
 
-            self.get_ehlo()?;
+            self.ehlo()?;
 
             match (&self.client_info.security.clone(),
                   self.server_info.as_ref()
@@ -434,7 +429,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
                     debug!("connection encrypted");
 
                     // Send EHLO again
-                    self.get_ehlo()?;
+                    self.ehlo()?;
                 }
             }
 
@@ -530,9 +525,9 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
             ConnectionReuseParameters::ReuseLimited(limit)
                 if self.state.connection_reuse_count >= limit =>
             {
-                self.reset()
+                self.close()
             }
-            ConnectionReuseParameters::NoReuse => self.reset(),
+            ConnectionReuseParameters::NoReuse => self.close(),
             _ => (),
         }
 

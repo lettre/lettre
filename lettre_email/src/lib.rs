@@ -52,7 +52,7 @@
 //! See the `EmailBuilder` documentation for a complete list of methods.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre_email/0.7.0")]
+#![doc(html_root_url = "https://docs.rs/lettre_email/0.8.0")]
 #![deny(missing_docs, unsafe_code, unstable_features, warnings, missing_debug_implementations)]
 
 extern crate email as email_format;

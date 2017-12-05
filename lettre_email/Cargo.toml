@@ -1,7 +1,7 @@
 [package]
 
 name = "lettre_email"
-version = "0.7.0" # remember to update html_root_url
+version = "0.8.0" # remember to update html_root_url
 description = "Email builder"
 readme = "README.md"
 documentation = "https://docs.rs/lettre_email/"
@@ -16,11 +16,11 @@ travis-ci = { repository = "lettre/lettre_email" }
 
 [dev-dependencies]
 env_logger = "^0.4"
-lettre = { version = "^0.7", path = "../lettre", features = ["smtp-transport"] }
+lettre = { version = "^0.8", path = "../lettre", features = ["smtp-transport"] }
 
 [dependencies]
 email = "^0.0"
 mime = "^0.3"
 time = "^0.1"
 uuid = { version = ">=0.4, <0.6", features = ["v4"] }
-lettre = { version = "^0.7", path = "../lettre", default-features = false }
+lettre = { version = "^0.8", path = "../lettre", default-features = false }

@@ -248,10 +248,16 @@ impl Display for RcptParameter {
 #[cfg(test)]
 mod test {
 
-    use super::{Extension, ServerInfo};
+    use super::{Extension, ServerInfo, ClientId};
     use smtp::authentication::Mechanism;
     use smtp::response::{Category, Code, Detail, Response, Severity};
     use std::collections::HashSet;
+
+    #[test]
+    fn test_clientid_fmt() {
+        assert_eq!(format!("{}", ClientId::new("test".to_string())),
+                   "test".to_string());
+    }
 
     #[test]
     fn test_extension_fmt() {
