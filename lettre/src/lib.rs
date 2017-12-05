@@ -4,7 +4,7 @@
 //! emails have to implement `SendableEmail`.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre/0.7.0")]
+#![doc(html_root_url = "https://docs.rs/lettre/0.8.0")]
 #![deny(missing_docs, unsafe_code, unstable_features, warnings)]
 
 #[cfg(feature = "smtp-transport")]
