@@ -42,6 +42,11 @@ lettre = "0.7"
 
 The tests require an open mail server listening locally on port 2525 and the `sendmail` command.
 
+## Code of conduct
+
+Anyone who interacts with Lettre in any space, including but not limited to
+this GitHub repository, must follow our [code of conduct](https://github.com/lettre/lettre/blob/master/CODE_OF_CONDUCT.md).
+
 ## License
 
 This program is distributed under the terms of the MIT license.
