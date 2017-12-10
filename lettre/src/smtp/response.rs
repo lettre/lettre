@@ -52,11 +52,32 @@ impl Display for Category {
 
 /// The detail digit of a response code (third digit)
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
-pub struct Detail(pub u8);
+pub enum Detail {
+    #[allow(missing_docs)]
+    Zero = 0,
+    #[allow(missing_docs)]
+    One = 1,
+    #[allow(missing_docs)]
+    Two = 2,
+    #[allow(missing_docs)]
+    Three = 3,
+    #[allow(missing_docs)]
+    Four = 4,
+    #[allow(missing_docs)]
+    Five = 5,
+    #[allow(missing_docs)]
+    Six = 6,
+    #[allow(missing_docs)]
+    Seven = 7,
+    #[allow(missing_docs)]
+    Eight = 8,
+    #[allow(missing_docs)]
+    Nine = 9,
+}
 
 impl Display for Detail {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", *self as u8)
     }
 }
 
@@ -80,10 +101,6 @@ impl Display for Code {
 impl Code {
     /// Creates a new `Code` structure
     pub fn new(severity: Severity, category: Category, detail: Detail) -> Code {
-        if detail.0 > 9 {
-            panic!("The detail code must be between 0 and 9");
-        }
-
         Code { severity: severity,
             category: category,
             detail:   detail, }
@@ -181,16 +198,16 @@ named!(
 named!(
     parse_detail<Detail>,
     alt!(
-        tag!("0") => { |_| Detail(0) } |
-        tag!("1") => { |_| Detail(1) } |
-        tag!("2") => { |_| Detail(2) } |
-        tag!("3") => { |_| Detail(3) } |
-        tag!("4") => { |_| Detail(4) } |
-        tag!("5") => { |_| Detail(5) } |
-        tag!("6") => { |_| Detail(6) } |
-        tag!("7") => { |_| Detail(7) } |
-        tag!("8") => { |_| Detail(8) } |
-        tag!("9") => { |_| Detail(9) }
+        tag!("0") => { |_| Detail::Zero } |
+        tag!("1") => { |_| Detail::One } |
+        tag!("2") => { |_| Detail::Two } |
+        tag!("3") => { |_| Detail::Three } |
+        tag!("4") => { |_| Detail::Four} |
+        tag!("5") => { |_| Detail::Five } |
+        tag!("6") => { |_| Detail::Six} |
+        tag!("7") => { |_| Detail::Seven } |
+        tag!("8") => { |_| Detail::Eight } |
+        tag!("9") => { |_| Detail::Nine }
     )
 );
 
@@ -241,25 +258,17 @@ mod test {
     fn test_code_new() {
         assert_eq!(Code::new(Severity::TransientNegativeCompletion,
                              Category::Connections,
-                             Detail(0),),
+                             Detail::Zero,),
                    Code { severity: Severity::TransientNegativeCompletion,
                        category: Category::Connections,
-                       detail:   Detail(0), });
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_code_new_panic() {
-        let _ = Code::new(Severity::TransientNegativeCompletion,
-                          Category::Connections,
-                          Detail(11));
+                       detail:   Detail::Zero, });
     }
 
     #[test]
     fn test_code_display() {
         let code = Code { severity: Severity::TransientNegativeCompletion,
             category: Category::Connections,
-            detail:   Detail(1), };
+            detail:   Detail::One, };
 
         assert_eq!(code.to_string(), "421");
     }
@@ -270,7 +279,7 @@ mod test {
         assert_eq!(raw_response.parse::<Response>().unwrap(),
                    Response { code:    Code { severity: Severity::PositiveCompletion,
                            category: Category::MailSystem,
-                           detail:   Detail(0), },
+                           detail:   Detail::Zero, },
                        message: vec!["me".to_string(),
                                      "8BITMIME".to_string(),
                                      "SIZE 42".to_string(),
@@ -290,7 +299,7 @@ mod test {
                 Code {
                     severity: Severity::PositiveCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(0),
+                    detail: Detail::Zero,
                 },
                 vec![
                     "me".to_string(),
@@ -303,7 +312,7 @@ mod test {
             Code {
                 severity: Severity::TransientNegativeCompletion,
                 category: Category::MailSystem,
-                detail: Detail(0),
+                detail: Detail::Zero,
             },
             vec![
                 "me".to_string(),
@@ -320,7 +329,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![
                     "me".to_string(),
@@ -333,7 +342,7 @@ mod test {
             Code {
                 severity: Severity::TransientNegativeCompletion,
                 category: Category::MailSystem,
-                detail: Detail(1),
+                detail: Detail::One,
             },
             vec![
                 "me".to_string(),
@@ -350,7 +359,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![
                     "me".to_string(),
@@ -365,7 +374,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![
                     "me mo".to_string(),
@@ -380,7 +389,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![],
             ).first_word(),
@@ -391,7 +400,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![" ".to_string()],
             ).first_word(),
@@ -402,7 +411,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec!["  ".to_string()],
             ).first_word(),
@@ -413,7 +422,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec!["".to_string()],
             ).first_word(),
@@ -428,7 +437,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![
                     "me".to_string(),
@@ -443,7 +452,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![
                     "me mo".to_string(),
@@ -458,7 +467,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![],
             ).first_line(),
@@ -469,7 +478,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec![" ".to_string()],
             ).first_line(),
@@ -480,7 +489,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec!["  ".to_string()],
             ).first_line(),
@@ -491,7 +500,7 @@ mod test {
                 Code {
                     severity: Severity::TransientNegativeCompletion,
                     category: Category::MailSystem,
-                    detail: Detail(1),
+                    detail: Detail::One,
                 },
                 vec!["".to_string()],
             ).first_line(),
