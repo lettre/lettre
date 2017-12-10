@@ -366,7 +366,7 @@ mod test {
                         Code::new(
                             Severity::PositiveIntermediate,
                             Category::Unspecified3,
-                            Detail(4),
+                            Detail::Four,
                         ),
                         vec!["dGVzdAo=".to_string()],
                     ),

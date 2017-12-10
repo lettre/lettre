@@ -297,7 +297,7 @@ mod test {
     fn test_serverinfo() {
         let response = Response::new(Code::new(Severity::PositiveCompletion,
                                                Category::Unspecified4,
-                                               Detail(1)),
+                                               Detail::One),
                                      vec!["me".to_string(),
                                           "8BITMIME".to_string(),
                                           "SIZE 42".to_string()]);
@@ -317,7 +317,7 @@ mod test {
 
         let response2 = Response::new(Code::new(Severity::PositiveCompletion,
                                                 Category::Unspecified4,
-                                                Detail(1)),
+                                                Detail::One),
                                       vec!["me".to_string(),
                                            "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
                                            "8BITMIME".to_string(),
