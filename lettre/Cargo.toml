@@ -19,7 +19,7 @@ log = "^0.3"
 nom = { version = "^3.2", optional = true }
 bufstream = { version = "^0.1", optional = true }
 native-tls = { version = "^0.1", optional = true }
-base64 = { version = "^0.8", optional = true }
+base64 = { version = "^0.9", optional = true }
 hex = { version = "^0.3", optional = true }
 hostname = { version = "^0.1", optional = true }
 rust-crypto = { version = "^0.2", optional = true }
