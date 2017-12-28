@@ -15,7 +15,7 @@ keywords = ["email", "smtp", "mailer"]
 travis-ci = { repository = "lettre/lettre" }
 
 [dependencies]
-log = "^0.3"
+log = "^0.4"
 nom = { version = "^3.2", optional = true }
 bufstream = { version = "^0.1", optional = true }
 native-tls = { version = "^0.1", optional = true }
