@@ -14,7 +14,6 @@ use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
 
-
 pub mod net;
 pub mod mock;
 

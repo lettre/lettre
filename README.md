@@ -17,6 +17,11 @@ Lettre provides the following features:
 * Secure delivery with SMTP using encryption and authentication
 * Easy email builders
 
+## Example
+
+See https://github.com/lettre/lettre/blob/master/lettre_email/examples/smtp.rs
+for a simple example of how to build and send an email.
+
 ## Documentation
 
 Released versions:

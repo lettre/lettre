@@ -170,7 +170,6 @@ impl IntoEmail for SimpleEmail {
     }
 }
 
-
 /// Simple representation of an email, useful for some transports
 #[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct SimpleEmail {
@@ -322,7 +321,6 @@ impl Default for PartBuilder {
         Self::new()
     }
 }
-
 
 /// Builds an `Email` structure
 #[derive(PartialEq, Eq, Clone, Debug, Default)]
@@ -628,17 +626,13 @@ impl EmailBuilder {
 
         let actual_filename = match filename {
             Some(name) => name,
-            None => {
-                match path.file_name() {
-                    Some(name) => {
-                        match name.to_str() {
-                            Some(name) => name,
-                            None => return Err(Error::CannotParseFilename),
-                        }
-                    }
+            None => match path.file_name() {
+                Some(name) => match name.to_str() {
+                    Some(name) => name,
                     None => return Err(Error::CannotParseFilename),
-                }
-            }
+                },
+                None => return Err(Error::CannotParseFilename),
+            },
         };
 
         let content = PartBuilder::new().body(body)
@@ -778,14 +772,13 @@ impl EmailBuilder {
                 // add all receivers in to_header and cc_header
                 for receiver in self.to_header.iter()
                                     .chain(self.cc_header.iter())
-                                    .chain(self.bcc_header.iter()) {
+                                    .chain(self.bcc_header.iter())
+                {
                     match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
-                        Address::Group(_, ref ms) => {
-                            for m in ms.iter() {
-                                e.add_to(m.address.clone());
-                            }
-                        }
+                        Address::Group(_, ref ms) => for m in ms.iter() {
+                            e.add_to(m.address.clone());
+                        },
                     }
                 }
                 if e.to.is_empty() {
@@ -844,7 +837,8 @@ impl EmailBuilder {
         let message_id = Uuid::new_v4();
 
         if let Ok(header) = Header::new_with_value("Message-ID".to_string(),
-                                                   format!("<{}.lettre@localhost>", message_id)) {
+                                                   format!("<{}.lettre@localhost>", message_id))
+        {
             self.message.add_header(header)
         }
 
@@ -898,7 +892,6 @@ pub trait ExtractableEmail {
     /// text content
     fn text(self) -> String;
 }
-
 
 #[cfg(test)]
 mod test {

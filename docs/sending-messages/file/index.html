@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="generator" content="Hugo 0.29" />
+    <meta name="generator" content="Hugo 0.32.4" />
     <meta name="description" content="Documentation for the Lettre mailer in Rust">
 <meta name="author" content="Alexis Mousset">
 
@@ -12,17 +12,17 @@
     <title>File transport :: Lettre site</title>
     
     
-    <link href="/lettre/css/nucleus.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/font-awesome.min.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/hybrid.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/featherlight.min.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/perfect-scrollbar.min.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/auto-complete.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/theme.css?1508105428" rel="stylesheet">
-    <link href="/lettre/css/hugo-theme.css?1508105428" rel="stylesheet">
+    <link href="/lettre/css/nucleus.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1516041983" rel="stylesheet">
     
 
-    <script src="/lettre/js/jquery-2.x.min.js?1508105428"></script>
+    <script src="/lettre/js/jquery-2.x.min.js?1516041983"></script>
     
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{ 
@@ -49,14 +49,14 @@
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/lettre/js/lunr.min.js?1508105428"></script>
-<script type="text/javascript" src="/lettre/js/auto-complete.js?1508105428"></script>
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1516041983"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1516041983"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/lettre.github.io\/lettre";
     
 </script>
-<script type="text/javascript" src="/lettre/js/search.js?1508105428"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1516041983"></script>
 
     
   </div>
@@ -357,33 +357,31 @@
 <p>The file transport writes the emails to the given directory. The name of the file will be
 <code>message_id.txt</code>.
 It can be useful for testing purposes, or if you want to keep track of sent messages.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span><span style=""> </span><span style="">std</span><span style="">::</span><span style="">env</span><span style="">::</span><span style="">temp_dir</span><span style="">;</span><span style="">
-</span><span style="">
-</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">file</span><span style="">::</span><span style="">FileEmailTransport</span><span style="">;</span><span style="">
-</span><span style=""></span><span style="color:#66d9ef">use</span><span style=""> </span><span style="">lettre</span><span style="">::</span><span style="">{</span><span style="">SimpleSendableEmail</span><span style="">,</span><span style=""> </span><span style="">EmailTransport</span><span style="">,</span><span style=""> </span><span style="">EmailAddress</span><span style="">};</span><span style="">
-</span><span style="">
-</span><span style=""></span><span style="color:#75715e">// Write to the local temp directory
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="color:#66d9ef">mut</span><span style=""> </span><span style="">sender</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">FileEmailTransport</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">temp_dir</span><span style="">());</span><span style="">
-</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">email</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">SimpleSendableEmail</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="">
-</span><span style="">                </span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;user@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">()),</span><span style="">
-</span><span style="">                </span><span style="">vec</span><span style="color:#f92672">!</span><span style="">[</span><span style="">EmailAddress</span><span style="">::</span><span style="">new</span><span style="">(</span><span style="color:#e6db74">&#34;root@localhost&#34;</span><span style="">.</span><span style="">to_string</span><span style="">())],</span><span style="">
-</span><span style="">                </span><span style="color:#e6db74">&#34;message_id&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
-</span><span style="">                </span><span style="color:#e6db74">&#34;Hello world&#34;</span><span style="">.</span><span style="">to_string</span><span style="">(),</span><span style="">
-</span><span style="">            </span><span style="">);</span><span style="">
-</span><span style="">
-</span><span style=""></span><span style="color:#66d9ef">let</span><span style=""> </span><span style="">result</span><span style=""> </span><span style="color:#f92672">=</span><span style=""> </span><span style="">sender</span><span style="">.</span><span style="">send</span><span style="">(</span><span style="color:#f92672">&amp;</span><span style="">email</span><span style="">);</span><span style="">
-</span><span style=""></span><span style="">assert</span><span style="color:#f92672">!</span><span style="">(</span><span style="">result</span><span style="">.</span><span style="">is_ok</span><span style="">());</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> std::env::temp_dir;
+
+<span style="color:#66d9ef">use</span> lettre::file::FileEmailTransport;
+<span style="color:#66d9ef">use</span> lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
+
+<span style="color:#75715e">// Write to the local temp directory
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sender <span style="color:#f92672">=</span> FileEmailTransport::new(temp_dir());
+<span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> SimpleSendableEmail::new(
+                EmailAddress::new(<span style="color:#e6db74">&#34;user@localhost&#34;</span>.to_string()),
+                vec<span style="color:#f92672">!</span>[EmailAddress::new(<span style="color:#e6db74">&#34;root@localhost&#34;</span>.to_string())],
+                <span style="color:#e6db74">&#34;message_id&#34;</span>.to_string(),
+                <span style="color:#e6db74">&#34;Hello world&#34;</span>.to_string(),
+            );
+
+<span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> sender.send(<span style="color:#f92672">&amp;</span>email);
+assert<span style="color:#f92672">!</span>(result.is_ok());</code></pre></div>
 <p>Example result in <code>/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text"><span style="">b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
-</span><span style="">To: &lt;root@localhost&gt;
-</span><span style="">From: &lt;user@localhost&gt;
-</span><span style="">Subject: Hello
-</span><span style="">Date: Sat, 31 Oct 2015 13:42:19 +0100
-</span><span style="">Message-ID: &lt;b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost&gt;
-</span><span style="">
-</span><span style="">Hello World!</span></code></pre>
-</div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">b7c211bc-9811-45ce-8cd9-68eab575d695: from=&lt;user@localhost&gt; to=&lt;root@localhost&gt;
+To: &lt;root@localhost&gt;
+From: &lt;user@localhost&gt;
+Subject: Hello
+Date: Sat, 31 Oct 2015 13:42:19 +0100
+Message-ID: &lt;b7c211bc-9811-45ce-8cd9-68eab575d695.lettre@localhost&gt;
+
+Hello World!</code></pre></div>
 
 <footer class=" footline" >
 	
@@ -588,20 +586,20 @@ It can be useful for testing purposes, or if you want to keep track of sent mess
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/lettre/js/clipboard.min.js?1508105428"></script>
-    <script src="/lettre/js/perfect-scrollbar.min.js?1508105428"></script>
-    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1508105428"></script>
-    <script src="/lettre/js/jquery.sticky-kit.min.js?1508105428"></script>
-    <script src="/lettre/js/featherlight.min.js?1508105428"></script>
-    <script src="/lettre/js/html5shiv-printshiv.min.js?1508105428"></script>
-    <script src="/lettre/js/highlight.pack.js?1508105428"></script>
+    <script src="/lettre/js/clipboard.min.js?1516041983"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1516041983"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1516041983"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1516041983"></script>
+    <script src="/lettre/js/featherlight.min.js?1516041983"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1516041983"></script>
+    <script src="/lettre/js/highlight.pack.js?1516041983"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/lettre/js/modernizr.custom.71422.js?1508105428"></script>
-    <script src="/lettre/js/learn.js?1508105428"></script>
-    <script src="/lettre/js/hugo-learn.js?1508105428"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1516041983"></script>
+    <script src="/lettre/js/learn.js?1516041983"></script>
+    <script src="/lettre/js/hugo-learn.js?1516041983"></script>
 
-    <link href="/lettre/mermaid/mermaid.css?1508105428" type="text/css" rel="stylesheet" />
-    <script src="/lettre/mermaid/mermaid.js?1508105428"></script>
+    <link href="/lettre/mermaid/mermaid.css?1516041983" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1516041983"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
