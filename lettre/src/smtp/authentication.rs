@@ -30,7 +30,6 @@ pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::CramMd5];
 #[cfg(not(feature = "crammd5-auth"))]
 pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
-
 /// Convertable to user credentials
 pub trait IntoCredentials {
     /// Converts to a `Credentials` struct
@@ -111,18 +110,14 @@ impl Mechanism {
                     challenge: Option<&str>)
                     -> Result<String, Error> {
         match *self {
-            Mechanism::Plain => {
-                match challenge {
-                    Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
-                    None => {
-                        Ok(format!("{}{}{}{}",
+            Mechanism::Plain => match challenge {
+                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                None => Ok(format!("{}{}{}{}",
                                    NUL,
                                    credentials.username,
                                    NUL,
-                                   credentials.password))
-                    }
-                }
-            }
+                                   credentials.password)),
+            },
             Mechanism::Login => {
                 let decoded_challenge = match challenge {
                     Some(challenge) => challenge,

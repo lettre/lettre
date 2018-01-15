@@ -13,10 +13,10 @@ fn bench_simple_send(b: &mut test::Bencher) {
                                                                                    .build();
     b.iter(|| {
                let email =
-            SimpleSendableEmail::new(EmailAddress::new("user@localhost".to_string()),
-                                     vec![EmailAddress::new("root@localhost".to_string())],
-                                     "id".to_string(),
-                                     "Hello world".to_string());
+                   SimpleSendableEmail::new(EmailAddress::new("user@localhost".to_string()),
+                                            vec![EmailAddress::new("root@localhost".to_string())],
+                                            "id".to_string(),
+                                            "Hello world".to_string());
                let result = sender.send(&email);
                assert!(result.is_ok());
            });
@@ -30,10 +30,10 @@ fn bench_reuse_send(b: &mut test::Bencher) {
         .build();
     b.iter(|| {
                let email =
-            SimpleSendableEmail::new(EmailAddress::new("user@localhost".to_string()),
-                                     vec![EmailAddress::new("root@localhost".to_string())],
-                                     "id".to_string(),
-                                     "Hello world".to_string());
+                   SimpleSendableEmail::new(EmailAddress::new("user@localhost".to_string()),
+                                            vec![EmailAddress::new("root@localhost".to_string())],
+                                            "id".to_string(),
+                                            "Hello world".to_string());
                let result = sender.send(&email);
                assert!(result.is_ok());
            });

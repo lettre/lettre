@@ -1,3 +1,3 @@
 #!/bin/sh
 hugo
-lunr-hugo -i "content/**/*.md" -o ../docs/json/search.json -l toml
+lunr-hugo -i "content/**/*.md" -o ../docs/index.json -l toml

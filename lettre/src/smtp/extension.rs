@@ -132,29 +132,27 @@ impl ServerInfo {
                 "STARTTLS" => {
                     features.insert(Extension::StartTls);
                 }
-                "AUTH" => {
-                    for &mechanism in &splitted[1..] {
-                        match mechanism {
-                            "PLAIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Plain));
-                            }
-                            "LOGIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Login));
-                            }
-                            #[cfg(feature = "crammd5-auth")]
-                            "CRAM-MD5" => {
-                                features.insert(Extension::Authentication(Mechanism::CramMd5));
-                            }
-                            _ => (),
+                "AUTH" => for &mechanism in &splitted[1..] {
+                    match mechanism {
+                        "PLAIN" => {
+                            features.insert(Extension::Authentication(Mechanism::Plain));
                         }
+                        "LOGIN" => {
+                            features.insert(Extension::Authentication(Mechanism::Login));
+                        }
+                        #[cfg(feature = "crammd5-auth")]
+                        "CRAM-MD5" => {
+                            features.insert(Extension::Authentication(Mechanism::CramMd5));
+                        }
+                        _ => (),
                     }
-                }
+                },
                 _ => (),
             };
         }
 
         Ok(ServerInfo { name:     name.to_string(),
-               features: features, })
+            features: features, })
     }
 
     /// Checks if the server supports an ESMTP feature
@@ -248,7 +246,7 @@ impl Display for RcptParameter {
 #[cfg(test)]
 mod test {
 
-    use super::{Extension, ServerInfo, ClientId};
+    use super::{ClientId, Extension, ServerInfo};
     use smtp::authentication::Mechanism;
     use smtp::response::{Category, Code, Detail, Response, Severity};
     use std::collections::HashSet;

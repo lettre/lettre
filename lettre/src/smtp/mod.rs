@@ -215,16 +215,14 @@ impl SmtpTransportBuilder {
         let mut addresses = addr.to_socket_addrs()?;
 
         match addresses.next() {
-            Some(addr) => {
-                Ok(SmtpTransportBuilder { server_addr:              addr,
-                       security:                 security,
-                       smtp_utf8:                false,
-                       credentials:              None,
-                       connection_reuse:         ConnectionReuseParameters::NoReuse,
-                       hello_name:               ClientId::hostname(),
-                       authentication_mechanism: None,
-                       timeout:                  Some(Duration::new(60, 0)), })
-            }
+            Some(addr) => Ok(SmtpTransportBuilder { server_addr:              addr,
+                security:                 security,
+                smtp_utf8:                false,
+                credentials:              None,
+                connection_reuse:         ConnectionReuseParameters::NoReuse,
+                hello_name:               ClientId::hostname(),
+                authentication_mechanism: None,
+                timeout:                  Some(Duration::new(60, 0)), }),
             None => Err(Error::Resolution),
         }
     }
@@ -451,7 +449,8 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
                 for mechanism in accepted_mechanisms {
                     if self.server_info.as_ref()
                            .unwrap()
-                           .supports_auth_mechanism(mechanism) {
+                           .supports_auth_mechanism(mechanism)
+                    {
                         found = true;
                         try_smtp!(
                             self.client
@@ -473,13 +472,15 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
 
         if self.server_info.as_ref()
                .unwrap()
-               .supports_feature(Extension::EightBitMime) {
+               .supports_feature(Extension::EightBitMime)
+        {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
         if self.server_info.as_ref()
                .unwrap()
-               .supports_feature(Extension::SmtpUtfEight) && self.client_info.smtp_utf8 {
+               .supports_feature(Extension::SmtpUtfEight) && self.client_info.smtp_utf8
+        {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 

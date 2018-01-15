@@ -243,9 +243,9 @@ impl AuthCommand {
             None
         };
         Ok(AuthCommand { mechanism:   mechanism,
-               credentials: credentials,
-               challenge:   challenge,
-               response:    response, })
+            credentials: credentials,
+            challenge:   challenge,
+            response:    response, })
     }
 
     /// Creates an AUTH command from a response that needs to be a
@@ -266,12 +266,10 @@ impl AuthCommand {
         debug!("auth encoded challenge: {}", encoded_challenge);
 
         let decoded_challenge = match base64::decode(&encoded_challenge) {
-            Ok(challenge) => {
-                match String::from_utf8(challenge) {
-                    Ok(value) => value,
-                    Err(error) => return Err(Error::Utf8Parsing(error)),
-                }
-            }
+            Ok(challenge) => match String::from_utf8(challenge) {
+                Ok(value) => value,
+                Err(error) => return Err(Error::Utf8Parsing(error)),
+            },
             Err(error) => return Err(Error::ChallengeParsing(error)),
         };
 
@@ -280,9 +278,9 @@ impl AuthCommand {
         let response = Some(mechanism.response(&credentials, Some(decoded_challenge.as_ref()))?);
 
         Ok(AuthCommand { mechanism:   mechanism,
-               credentials: credentials,
-               challenge:   Some(decoded_challenge),
-               response:    response, })
+            credentials: credentials,
+            challenge:   Some(decoded_challenge),
+            response:    response, })
     }
 }
 

@@ -4,4 +4,3 @@ reorder_imported_names = true
 reorder_imports_in_group = true
 struct_field_align_threshold = 20
 indent_style = "Visual"
-chain_indent = "Visual"
