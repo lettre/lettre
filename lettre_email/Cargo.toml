@@ -15,7 +15,6 @@ keywords = ["email", "mailer"]
 travis-ci = { repository = "lettre/lettre_email" }
 
 [dev-dependencies]
-env_logger = "^0.4"
 lettre = { version = "^0.8", path = "../lettre", features = ["smtp-transport"] }
 
 [dependencies]
