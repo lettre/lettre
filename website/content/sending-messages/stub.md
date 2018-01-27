@@ -9,20 +9,24 @@ weight = 5
 The stub transport only logs message envelope and drops the content. It can be useful for
 testing purposes.
 
-``` rust
+```rust
+extern crate lettre;
+
 use lettre::stub::StubEmailTransport;
 use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
-let email = SimpleSendableEmail::new(
-                EmailAddress::new("user@localhost".to_string()),
-                vec![EmailAddress::new("root@localhost".to_string())],
-                "message_id".to_string(),
-                "Hello world".to_string(),
-            );
-
-let mut sender = StubEmailTransport::new_positive();
-let result = sender.send(&email);
-assert!(result.is_ok());
+fn main() {
+    let email = SimpleSendableEmail::new(
+                    EmailAddress::new("user@localhost".to_string()),
+                    vec![EmailAddress::new("root@localhost".to_string())],
+                    "message_id".to_string(),
+                    "Hello world".to_string(),
+                );
+    
+    let mut sender = StubEmailTransport::new_positive();
+    let result = sender.send(&email);
+    assert!(result.is_ok());
+}
 ```
 
 Will log (when using a logger like `env_logger`):

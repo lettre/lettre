@@ -8,18 +8,22 @@ weight = 3
 
 The sendmail transport sends the email using the local sendmail command.
 
-``` rust
+```rust,no_run
+extern crate lettre;
+
 use lettre::sendmail::SendmailTransport;
 use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
-let email = SimpleSendableEmail::new(
-                EmailAddress::new("user@localhost".to_string()),
-                vec![EmailAddress::new("root@localhost".to_string())],
-                "message_id".to_string(),
-                "Hello world".to_string(),
-            );
-
-let mut sender = SendmailTransport::new();
-let result = sender.send(&email);
-assert!(result.is_ok());
+fn main() {
+    let email = SimpleSendableEmail::new(
+                    EmailAddress::new("user@localhost".to_string()),
+                    vec![EmailAddress::new("root@localhost".to_string())],
+                    "message_id".to_string(),
+                    "Hello world".to_string(),
+                );
+    
+    let mut sender = SendmailTransport::new();
+    let result = sender.send(&email);
+    assert!(result.is_ok());
+}
 ```

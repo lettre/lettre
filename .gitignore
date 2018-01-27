@@ -1,4 +1,6 @@
 .vscode/
-.project
+.project/
+.idea/
+lettre.iml
 target/
 /Cargo.lock

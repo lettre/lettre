@@ -12,7 +12,7 @@ emails have to implement `SendableEmail`, which is the case for emails created w
 The following transports are available:
 
 * The `SmtpTransport` uses the SMTP protocol to send the message over the network. It is
-  the prefered way of sending emails.
+  the preferred way of sending emails.
 * The `SendmailTransport` uses the sendmail command to send messages. It is an alternative to
   the SMTP transport.
 * The `FileTransport` creates a file containing the email content to be sent. It can be used

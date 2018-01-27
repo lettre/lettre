@@ -12,17 +12,17 @@
     <title>SMTP transport :: Lettre site</title>
     
     
-    <link href="/lettre/css/nucleus.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/font-awesome.min.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/hybrid.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/featherlight.min.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/perfect-scrollbar.min.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/auto-complete.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/theme.css?1516041983" rel="stylesheet">
-    <link href="/lettre/css/hugo-theme.css?1516041983" rel="stylesheet">
+    <link href="/lettre/css/nucleus.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1517057321" rel="stylesheet">
     
 
-    <script src="/lettre/js/jquery-2.x.min.js?1516041983"></script>
+    <script src="/lettre/js/jquery-2.x.min.js?1517057321"></script>
     
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{ 
@@ -49,14 +49,14 @@
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/lettre/js/lunr.min.js?1516041983"></script>
-<script type="text/javascript" src="/lettre/js/auto-complete.js?1516041983"></script>
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1517057321"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1517057321"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/lettre.github.io\/lettre";
     
 </script>
-<script type="text/javascript" src="/lettre/js/search.js?1516041983"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1517057321"></script>
 
     
   </div>
@@ -133,6 +133,35 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/lettre/creating-messages/email/" title="Email creation" class="dd-item ">
+        <a href="/lettre/creating-messages/email/">
+        Email creation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
               
     </li>
   
@@ -373,11 +402,11 @@
 
 <p>This transport uses the SMTP protocol to send emails over the network (locally or remotely).</p>
 
-<p>It is desinged to be:</p>
+<p>It is designed to be:</p>
 
 <ul>
 <li>Secured: email are encrypted by default</li>
-<li>Modern: Unicode support for email content and sender/recipient adresses when compatible</li>
+<li>Modern: Unicode support for email content and sender/recipient addresses when compatible</li>
 <li>Fast: supports tcp connection reuse</li>
 </ul>
 
@@ -389,82 +418,92 @@ emails directly to the destination.</p>
 <h4 id="simple-example">Simple example</h4>
 
 <p>This is the most basic example of usage:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
-<span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> SimpleSendableEmail::new(
-                EmailAddress::new(<span style="color:#e6db74">&#34;user@localhost&#34;</span>.to_string()),
-                vec<span style="color:#f92672">!</span>[EmailAddress::new(<span style="color:#e6db74">&#34;root@localhost&#34;</span>.to_string())],
-                <span style="color:#e6db74">&#34;message_id&#34;</span>.to_string(),
-                <span style="color:#e6db74">&#34;Hello world&#34;</span>.to_string(),
-            );
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
 
-<span style="color:#75715e">// Open a local connection on port 25
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> mailer <span style="color:#f92672">=</span>
-SmtpTransport::builder_unencrypted_localhost().unwrap().build();
-<span style="color:#75715e">// Send the email
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> mailer.send(<span style="color:#f92672">&amp;</span>email);
-
-assert<span style="color:#f92672">!</span>(result.is_ok());</code></pre></div>
+fn main() {
+    let email = SimpleSendableEmail::new(
+                    EmailAddress::new(&#34;user@localhost&#34;.to_string()),
+                    vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())],
+                    &#34;message_id&#34;.to_string(),
+                    &#34;Hello world&#34;.to_string(),
+                );
+    
+    // Open a local connection on port 25
+    let mut mailer =
+    SmtpTransport::builder_unencrypted_localhost().unwrap().build();
+    // Send the email
+    let result = mailer.send(&amp;email);
+    
+    assert!(result.is_ok());
+}</code></pre></div>
 <h4 id="complete-example">Complete example</h4>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> lettre::smtp::authentication::{Credentials, Mechanism};
-<span style="color:#66d9ef">use</span> lettre::smtp::SUBMISSION_PORT;
-<span style="color:#66d9ef">use</span> lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
-<span style="color:#66d9ef">use</span> lettre::smtp::extension::ClientId;
-<span style="color:#66d9ef">use</span> lettre::smtp::ConnectionReuseParameters;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
+use lettre::smtp::authentication::{Credentials, Mechanism};
+use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::ConnectionReuseParameters;
 
-<span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> SimpleSendableEmail::new(
-                EmailAddress::new(<span style="color:#e6db74">&#34;user@localhost&#34;</span>.to_string()),
-                vec<span style="color:#f92672">!</span>[EmailAddress::new(<span style="color:#e6db74">&#34;root@localhost&#34;</span>.to_string())],
-                <span style="color:#e6db74">&#34;message_id&#34;</span>.to_string(),
-                <span style="color:#e6db74">&#34;Hello world&#34;</span>.to_string(),
-            );
-
-<span style="color:#75715e">// Connect to a remote server on a custom port
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> mailer <span style="color:#f92672">=</span> SmtpTransport::simple_builder(<span style="color:#e6db74">&#34;server.tld&#34;</span>.to_string()).unwrap()
-    <span style="color:#75715e">// Set the name sent during EHLO/HELO, default is `localhost`
-</span><span style="color:#75715e"></span>    .hello_name(ClientId::Domain(<span style="color:#e6db74">&#34;my.hostname.tld&#34;</span>.to_string()))
-    <span style="color:#75715e">// Add credentials for authentication
-</span><span style="color:#75715e"></span>    .credentials(Credentials::new(<span style="color:#e6db74">&#34;username&#34;</span>.to_string(), <span style="color:#e6db74">&#34;password&#34;</span>.to_string()))
-    <span style="color:#75715e">// Enable SMTPUTF8 if the server supports it
-</span><span style="color:#75715e"></span>    .smtp_utf8(<span style="color:#66d9ef">true</span>)
-    <span style="color:#75715e">// Configure expected authentication mechanism
-</span><span style="color:#75715e"></span>    .authentication_mechanism(Mechanism::Plain)
-    <span style="color:#75715e">// Enable connection reuse
-</span><span style="color:#75715e"></span>    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
-
-<span style="color:#66d9ef">let</span> result_1 <span style="color:#f92672">=</span> mailer.send(<span style="color:#f92672">&amp;</span>email);
-assert<span style="color:#f92672">!</span>(result_1.is_ok());
-
-<span style="color:#75715e">// The second email will use the same connection
-</span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> result_2 <span style="color:#f92672">=</span> mailer.send(<span style="color:#f92672">&amp;</span>email);
-assert<span style="color:#f92672">!</span>(result_2.is_ok());
-
-<span style="color:#75715e">// Explicitly close the SMTP transaction as we enabled connection reuse
-</span><span style="color:#75715e"></span>mailer.close();</code></pre></div>
+fn main() {
+    let email = SimpleSendableEmail::new(
+                    EmailAddress::new(&#34;user@localhost&#34;.to_string()),
+                    vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())],
+                    &#34;message_id&#34;.to_string(),
+                    &#34;Hello world&#34;.to_string(),
+                );
+    
+    // Connect to a remote server on a custom port
+    let mut mailer = SmtpTransport::simple_builder(&#34;server.tld&#34;).unwrap()
+        // Set the name sent during EHLO/HELO, default is `localhost`
+        .hello_name(ClientId::Domain(&#34;my.hostname.tld&#34;.to_string()))
+        // Add credentials for authentication
+        .credentials(Credentials::new(&#34;username&#34;.to_string(), &#34;password&#34;.to_string()))
+        // Enable SMTPUTF8 if the server supports it
+        .smtp_utf8(true)
+        // Configure expected authentication mechanism
+        .authentication_mechanism(Mechanism::Plain)
+        // Enable connection reuse
+        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
+    
+    let result_1 = mailer.send(&amp;email);
+    assert!(result_1.is_ok());
+    
+    // The second email will use the same connection
+    let result_2 = mailer.send(&amp;email);
+    assert!(result_2.is_ok());
+    
+    // Explicitly close the SMTP transaction as we enabled connection reuse
+    mailer.close();
+}</code></pre></div>
 <h4 id="lower-level">Lower level</h4>
 
 <p>You can also send commands, here is a simple email transaction without
 error handling:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">use</span> lettre::EmailAddress;
-<span style="color:#66d9ef">use</span> lettre::smtp::SMTP_PORT;
-<span style="color:#66d9ef">use</span> lettre::smtp::client::Client;
-<span style="color:#66d9ef">use</span> lettre::smtp::client::net::NetworkStream;
-<span style="color:#66d9ef">use</span> lettre::smtp::extension::ClientId;
-<span style="color:#66d9ef">use</span> lettre::smtp::commands::<span style="color:#f92672">*</span>;
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
-<span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> email_client: <span style="color:#a6e22e">Client</span><span style="color:#f92672">&lt;</span>NetworkStream<span style="color:#f92672">&gt;</span> <span style="color:#f92672">=</span> Client::new();
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.connect(<span style="color:#f92672">&amp;</span>(<span style="color:#e6db74">&#34;localhost&#34;</span>, SMTP_PORT), None);
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.command(EhloCommand::new(ClientId::new(<span style="color:#e6db74">&#34;my_hostname&#34;</span>.to_string())));
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.command(
-            MailCommand::new(Some(EmailAddress::new(<span style="color:#e6db74">&#34;user@example.com&#34;</span>.to_string())), vec<span style="color:#f92672">!</span>[])
-        );
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.command(
-            RcptCommand::new(EmailAddress::new(<span style="color:#e6db74">&#34;user@example.org&#34;</span>.to_string()), vec<span style="color:#f92672">!</span>[])
-        );
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.command(DataCommand);
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.message(Box::new(<span style="color:#e6db74">&#34;Test email&#34;</span>.as_bytes()));
-<span style="color:#66d9ef">let</span> _ <span style="color:#f92672">=</span> email_client.command(QuitCommand);</code></pre></div>
+use lettre::EmailAddress;
+use lettre::smtp::SMTP_PORT;
+use lettre::smtp::client::Client;
+use lettre::smtp::client::net::NetworkStream;
+use lettre::smtp::extension::ClientId;
+use lettre::smtp::commands::*;
+
+fn main() {
+    let mut email_client: Client&lt;NetworkStream&gt; = Client::new();
+    let _ = email_client.connect(&amp;(&#34;localhost&#34;, SMTP_PORT), None);
+    let _ = email_client.command(EhloCommand::new(ClientId::new(&#34;my_hostname&#34;.to_string())));
+    let _ = email_client.command(
+                MailCommand::new(Some(EmailAddress::new(&#34;user@example.com&#34;.to_string())), vec![])
+            );
+    let _ = email_client.command(
+                RcptCommand::new(EmailAddress::new(&#34;user@example.org&#34;.to_string()), vec![])
+            );
+    let _ = email_client.command(DataCommand);
+    let _ = email_client.message(Box::new(&#34;Test email&#34;.as_bytes()));
+    let _ = email_client.command(QuitCommand);
+}</code></pre></div>
 
 <footer class=" footline" >
 	
@@ -542,6 +581,22 @@ error handling:</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
             
         
@@ -669,20 +724,20 @@ error handling:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/lettre/js/clipboard.min.js?1516041983"></script>
-    <script src="/lettre/js/perfect-scrollbar.min.js?1516041983"></script>
-    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1516041983"></script>
-    <script src="/lettre/js/jquery.sticky-kit.min.js?1516041983"></script>
-    <script src="/lettre/js/featherlight.min.js?1516041983"></script>
-    <script src="/lettre/js/html5shiv-printshiv.min.js?1516041983"></script>
-    <script src="/lettre/js/highlight.pack.js?1516041983"></script>
+    <script src="/lettre/js/clipboard.min.js?1517057321"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1517057321"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1517057321"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1517057321"></script>
+    <script src="/lettre/js/featherlight.min.js?1517057321"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1517057321"></script>
+    <script src="/lettre/js/highlight.pack.js?1517057321"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/lettre/js/modernizr.custom.71422.js?1516041983"></script>
-    <script src="/lettre/js/learn.js?1516041983"></script>
-    <script src="/lettre/js/hugo-learn.js?1516041983"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1517057321"></script>
+    <script src="/lettre/js/learn.js?1517057321"></script>
+    <script src="/lettre/js/hugo-learn.js?1517057321"></script>
 
-    <link href="/lettre/mermaid/mermaid.css?1516041983" type="text/css" rel="stylesheet" />
-    <script src="/lettre/mermaid/mermaid.js?1516041983"></script>
+    <link href="/lettre/mermaid/mermaid.css?1517057321" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1517057321"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

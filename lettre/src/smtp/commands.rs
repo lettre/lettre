@@ -266,10 +266,12 @@ impl AuthCommand {
         debug!("auth encoded challenge: {}", encoded_challenge);
 
         let decoded_challenge = match base64::decode(&encoded_challenge) {
-            Ok(challenge) => match String::from_utf8(challenge) {
-                Ok(value) => value,
-                Err(error) => return Err(Error::Utf8Parsing(error)),
-            },
+            Ok(challenge) => {
+                match String::from_utf8(challenge) {
+                    Ok(value) => value,
+                    Err(error) => return Err(Error::Utf8Parsing(error)),
+                }
+            }
             Err(error) => return Err(Error::ChallengeParsing(error)),
         };
 
