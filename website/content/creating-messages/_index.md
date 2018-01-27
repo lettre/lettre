@@ -8,5 +8,4 @@ weight = 2
 
 ### Creating messages
 
-The documentation for the `lettre_email` is available on https://docs.rs/lettre_email/0.7.0/lettre_email/ for now.
-
+This section explains how to create emails.

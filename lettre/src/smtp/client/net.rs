@@ -44,11 +44,13 @@ impl NetworkStream {
         match *self {
             NetworkStream::Tcp(ref s) => s.peer_addr(),
             NetworkStream::Tls(ref s) => s.get_ref().peer_addr(),
-            NetworkStream::Mock(_) => Ok(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127,
-                                                                                        0,
-                                                                                        0,
-                                                                                        1),
-                                                                          80))),
+            NetworkStream::Mock(_) => {
+                Ok(SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(127,
+                                                                  0,
+                                                                  0,
+                                                                  1),
+                                                    80)))
+            }
         }
     }
 
@@ -108,10 +110,12 @@ impl Connector for NetworkStream {
         let tcp_stream = TcpStream::connect(addr)?;
 
         match tls_parameters {
-            Some(context) => context.connector
-                                    .connect(context.domain.as_ref(), tcp_stream)
-                                    .map(NetworkStream::Tls)
-                                    .map_err(|e| io::Error::new(ErrorKind::Other, e)),
+            Some(context) => {
+                context.connector
+                       .connect(context.domain.as_ref(), tcp_stream)
+                       .map(NetworkStream::Tls)
+                       .map_err(|e| io::Error::new(ErrorKind::Other, e))
+            }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
     }

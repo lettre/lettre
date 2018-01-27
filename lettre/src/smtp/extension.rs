@@ -132,21 +132,23 @@ impl ServerInfo {
                 "STARTTLS" => {
                     features.insert(Extension::StartTls);
                 }
-                "AUTH" => for &mechanism in &splitted[1..] {
-                    match mechanism {
-                        "PLAIN" => {
-                            features.insert(Extension::Authentication(Mechanism::Plain));
+                "AUTH" => {
+                    for &mechanism in &splitted[1..] {
+                        match mechanism {
+                            "PLAIN" => {
+                                features.insert(Extension::Authentication(Mechanism::Plain));
+                            }
+                            "LOGIN" => {
+                                features.insert(Extension::Authentication(Mechanism::Login));
+                            }
+                            #[cfg(feature = "crammd5-auth")]
+                            "CRAM-MD5" => {
+                                features.insert(Extension::Authentication(Mechanism::CramMd5));
+                            }
+                            _ => (),
                         }
-                        "LOGIN" => {
-                            features.insert(Extension::Authentication(Mechanism::Login));
-                        }
-                        #[cfg(feature = "crammd5-auth")]
-                        "CRAM-MD5" => {
-                            features.insert(Extension::Authentication(Mechanism::CramMd5));
-                        }
-                        _ => (),
                     }
-                },
+                }
                 _ => (),
             };
         }

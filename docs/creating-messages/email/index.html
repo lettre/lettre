@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="https://lettre.github.io/lettre/images/favicon.png" type="image/x-icon" />
 
-    <title>Sendmail transport :: Lettre site</title>
+    <title>Email creation :: Lettre site</title>
     
     
     <link href="/lettre/css/nucleus.css?1517057321" rel="stylesheet">
@@ -32,7 +32,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/lettre/sending-messages/sendmail/">
+  <body class="" data-url="/lettre/creating-messages/email/">
     <nav id="sidebar" class="">
 
 
@@ -124,7 +124,7 @@
   
     
     <li data-nav-id="/lettre/creating-messages/" title="Creating messages" class="dd-item 
-        
+        parent
         
         
         ">
@@ -148,7 +148,7 @@
  
   
     
-      <li data-nav-id="/lettre/creating-messages/email/" title="Email creation" class="dd-item ">
+      <li data-nav-id="/lettre/creating-messages/email/" title="Email creation" class="dd-item active">
         <a href="/lettre/creating-messages/email/">
         Email creation
         
@@ -175,7 +175,7 @@
   
     
     <li data-nav-id="/lettre/sending-messages/" title="Sending messages" class="dd-item 
-        parent
+        
         
         
         ">
@@ -237,7 +237,7 @@
  
   
     
-      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item active">
+      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item ">
         <a href="/lettre/sending-messages/sendmail/">
         Sendmail transport
         
@@ -324,7 +324,7 @@
                   
                   
                   <div id="top-github-link">
-                    <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/sending-messages/sendmail.md" target="blank">
+                    <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/creating-messages/email.md" target="blank">
                       <i class="fa fa-code-fork"></i>
                       Edit this page
                     </a>
@@ -353,7 +353,7 @@
             
           
           
-            <a href='/lettre/'>Lettre site</a> > <a href='/lettre/sending-messages/'>Sending messages</a> > Sendmail transport
+            <a href='/lettre/'>Lettre site</a> > <a href='/lettre/creating-messages/'>Creating messages</a> > Email creation
           
          
           
@@ -365,7 +365,21 @@
                 
                     <div class="progress">
     <div class="wrapper">
-
+<nav id="TableOfContents">
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#simple-example">Simple example</a></li>
+<li><a href="#complete-example">Complete example</a></li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
     </div>
 </div>
 
@@ -377,30 +391,67 @@
         
         <div id="body-inner">
           
-            <h1>Sendmail transport</h1>
+            <h1>Email creation</h1>
           
 
         
 
 
-<p>The sendmail transport sends the email using the local sendmail command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
-use lettre::sendmail::SendmailTransport;
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
 
-fn main() {
-    let email = SimpleSendableEmail::new(
-                    EmailAddress::new(&#34;user@localhost&#34;.to_string()),
-                    vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())],
-                    &#34;message_id&#34;.to_string(),
-                    &#34;Hello world&#34;.to_string(),
-                );
+<h4 id="simple-example">Simple example</h4>
+
+<p>The <code>email</code> part builds email messages. For now, it does not support attachments.
+An email is built using an <code>EmailBuilder</code>. The simplest email could be:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">crate</span> lettre_email;
+
+<span style="color:#66d9ef">use</span> lettre_email::EmailBuilder;
+
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#75715e">// Create an email
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> EmailBuilder::new()
+        <span style="color:#75715e">// Addresses can be specified by the tuple (email, alias)
+</span><span style="color:#75715e"></span>        .to((<span style="color:#e6db74">&#34;user@example.org&#34;</span>, <span style="color:#e6db74">&#34;Firstname Lastname&#34;</span>))
+        <span style="color:#75715e">// ... or by an address only
+</span><span style="color:#75715e"></span>        .from(<span style="color:#e6db74">&#34;user@example.com&#34;</span>)
+        .subject(<span style="color:#e6db74">&#34;Hi, Hello world&#34;</span>)
+        .text(<span style="color:#e6db74">&#34;Hello world.&#34;</span>)
+        .build();
     
-    let mut sender = SendmailTransport::new();
-    let result = sender.send(&amp;email);
-    assert!(result.is_ok());
+    assert<span style="color:#f92672">!</span>(email.is_ok());
 }</code></pre></div>
+<p>When the <code>build</code> method is called, the <code>EmailBuilder</code> will add the missing headers (like
+<code>Message-ID</code> or <code>Date</code>) and check for missing necessary ones (like <code>From</code> or <code>To</code>). It will
+then generate an <code>Email</code> that can be sent.</p>
+
+<p>The <code>text()</code> method will create a plain text email, while the <code>html()</code> method will create an
+HTML email. You can use the <code>alternative()</code> method to provide both versions, using plain text
+as fallback for the HTML version.</p>
+
+<h4 id="complete-example">Complete example</h4>
+
+<p>Below is a more complete example, not using method chaining:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust" data-lang="rust"><span style="color:#66d9ef">extern</span> <span style="color:#66d9ef">crate</span> lettre_email;
+
+<span style="color:#66d9ef">use</span> lettre_email::EmailBuilder;
+
+<span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
+    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> builder <span style="color:#f92672">=</span> EmailBuilder::new();
+    builder.add_to((<span style="color:#e6db74">&#34;user@example.org&#34;</span>, <span style="color:#e6db74">&#34;Alias name&#34;</span>));
+    builder.add_cc((<span style="color:#e6db74">&#34;user@example.net&#34;</span>, <span style="color:#e6db74">&#34;Alias name&#34;</span>));
+    builder.add_from(<span style="color:#e6db74">&#34;no-reply@example.com&#34;</span>);
+    builder.add_from(<span style="color:#e6db74">&#34;no-reply@example.eu&#34;</span>);
+    builder.set_sender(<span style="color:#e6db74">&#34;no-reply@example.com&#34;</span>);
+    builder.set_subject(<span style="color:#e6db74">&#34;Hello world&#34;</span>);
+    builder.set_alternative(<span style="color:#e6db74">&#34;&lt;h2&gt;Hi, Hello world.&lt;/h2&gt;&#34;</span>, <span style="color:#e6db74">&#34;Hi, Hello world.&#34;</span>);
+    builder.add_reply_to(<span style="color:#e6db74">&#34;contact@example.com&#34;</span>);
+    builder.add_header((<span style="color:#e6db74">&#34;X-Custom-Header&#34;</span>, <span style="color:#e6db74">&#34;my header&#34;</span>));
+    
+    <span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> builder.build();
+    assert<span style="color:#f92672">!</span>(email.is_ok());
+}</code></pre></div>
+<p>See the <code>EmailBuilder</code> documentation for a complete list of methods.</p>
+
 
 <footer class=" footline" >
 	
@@ -471,6 +522,7 @@ fn main() {
             
                 
                     
+                    
                 
                 
 
@@ -483,6 +535,7 @@ fn main() {
             
             
                 
+                    
                     
                 
                 
@@ -503,6 +556,8 @@ fn main() {
             
                 
                     
+                        
+                        
                     
                 
                 
@@ -516,61 +571,6 @@ fn main() {
             
             
                 
-                    
-                        
-                        
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
                     
                 
                 
@@ -599,6 +599,54 @@ fn main() {
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -609,10 +657,10 @@ fn main() {
 
 
         
-            <a class="nav nav-prev" href="/lettre/sending-messages/smtp/" title="SMTP transport"> <i class="fa fa-chevron-left"></i></a>
+            <a class="nav nav-prev" href="/lettre/creating-messages/" title="Creating messages"> <i class="fa fa-chevron-left"></i></a>
         
         
-            <a class="nav nav-next" href="/lettre/sending-messages/file/" title="File transport" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+            <a class="nav nav-next" href="/lettre/sending-messages/" title="Sending messages" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
         
     </div>
 
