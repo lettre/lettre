@@ -61,7 +61,8 @@ impl ClientCodec {
                         start = idx;
                     }
                 }
-                Ok(buf.write_all(&frame[start..])?)
+                buf.write_all(&frame[start..])?;
+                Ok(())
             }
         }
     }
