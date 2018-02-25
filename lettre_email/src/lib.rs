@@ -9,6 +9,7 @@ extern crate lettre;
 extern crate mime;
 extern crate time;
 extern crate uuid;
+extern crate base64;
 
 pub mod error;
 
@@ -559,8 +560,8 @@ impl EmailBuilder {
         let file = File::open(path);
         let body = match file {
             Ok(mut f) => {
-                let mut data = String::new();
-                let read = f.read_to_string(&mut data);
+                let mut data = Vec::new();
+                let read = f.read_to_end(&mut data);
                 match read {
                     Ok(_) => data,
                     Err(e) => {
@@ -588,11 +589,13 @@ impl EmailBuilder {
             }
         };
 
-        let content = PartBuilder::new().body(body)
+        let encoded_body = base64::encode(&body);
+        let content = PartBuilder::new().body(encoded_body)
                                         .header(("Content-Disposition",
                                                 format!("attachment; filename=\"{}\"",
                                                          actual_filename)))
                                         .header(("Content-Type", content_type.to_string()))
+                                        .header(("Content-Transfer-Encoding", "base64"))
                                         .build();
 
         self.set_message_type(MimeMultipartType::Mixed);
