@@ -780,6 +780,9 @@ impl EmailBuilder {
         if !self.cc_header.is_empty() {
             self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
+        if !self.bcc_header.is_empty() {
+            self.message.add_header(Header::new_with_value("Bcc".into(), self.bcc_header).unwrap());
+        }
         if !self.reply_to_header.is_empty() {
             self.message.add_header(
                 Header::new_with_value("Reply-To".into(), self.reply_to_header).unwrap(),
@@ -913,6 +916,7 @@ mod test {
         let email = email_builder.to("user@localhost")
                                  .from("user@localhost")
                                  .cc(("cc@localhost", "Alias"))
+                                 .bcc("bcc@localhost")
                                  .reply_to("reply@localhost")
                                  .sender("sender@localhost")
                                  .body("Hello World!")
@@ -925,8 +929,9 @@ mod test {
         assert_eq!(format!("{}", String::from_utf8_lossy(email.message().as_ref())),
                    format!("Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                             <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                            <reply@localhost>\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
+                            Bcc: <bcc@localhost>\r\nReply-To: <reply@localhost>\r\n\
+                            MIME-Version: 1.0\r\nMessage-ID: \
                             <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                            date_now.rfc822z(),
                            email.message_id()));
