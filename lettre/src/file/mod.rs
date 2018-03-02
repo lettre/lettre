@@ -40,10 +40,12 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport 
         let mut message_content = String::new();
         let _ = email.message().read_to_string(&mut message_content);
 
-        let simple_email = SimpleSendableEmail::new(email.from().clone(),
-                                                    email.to().clone(),
-                                                    email.message_id().clone(),
-                                                    message_content);
+        let simple_email = SimpleSendableEmail::new(
+            email.from().clone(),
+            email.to().clone(),
+            email.message_id().clone(),
+            message_content,
+        );
 
         f.write_all(serde_json::to_string(&simple_email)?.as_bytes())?;
 

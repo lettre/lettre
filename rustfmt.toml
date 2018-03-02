@@ -1,6 +1,0 @@
-write_mode = "Overwrite"
-reorder_imports = true
-reorder_imported_names = true
-reorder_imports_in_group = true
-struct_field_align_threshold = 20
-indent_style = "Visual"

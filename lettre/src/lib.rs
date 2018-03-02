@@ -101,15 +101,18 @@ pub struct SimpleSendableEmail {
 
 impl SimpleSendableEmail {
     /// Returns a new email
-    pub fn new(from_address: EmailAddress,
-               to_addresses: Vec<EmailAddress>,
-               message_id: String,
-               message: String)
-               -> SimpleSendableEmail {
-        SimpleSendableEmail { from:       from_address,
-            to:         to_addresses,
-            message_id: message_id,
-            message:    message.into_bytes(), }
+    pub fn new(
+        from_address: EmailAddress,
+        to_addresses: Vec<EmailAddress>,
+        message_id: String,
+        message: String,
+    ) -> SimpleSendableEmail {
+        SimpleSendableEmail {
+            from: from_address,
+            to: to_addresses,
+            message_id,
+            message: message.into_bytes(),
+        }
     }
 }
 

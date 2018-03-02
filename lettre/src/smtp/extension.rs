@@ -44,9 +44,9 @@ impl ClientId {
     /// found
     pub fn hostname() -> ClientId {
         ClientId::Domain(match get_hostname() {
-                             Some(name) => name,
-                             None => DEFAULT_EHLO_HOSTNAME.to_string(),
-                         })
+            Some(name) => name,
+            None => DEFAULT_EHLO_HOSTNAME.to_string(),
+        })
     }
 }
 
@@ -95,14 +95,16 @@ pub struct ServerInfo {
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f,
-               "{} with {}",
-               self.name,
-               if self.features.is_empty() {
-                   "no supported features".to_string()
-               } else {
-                   format!("{:?}", self.features)
-               })
+        write!(
+            f,
+            "{} with {}",
+            self.name,
+            if self.features.is_empty() {
+                "no supported features".to_string()
+            } else {
+                format!("{:?}", self.features)
+            }
+        )
     }
 }
 
@@ -132,29 +134,29 @@ impl ServerInfo {
                 "STARTTLS" => {
                     features.insert(Extension::StartTls);
                 }
-                "AUTH" => {
-                    for &mechanism in &splitted[1..] {
-                        match mechanism {
-                            "PLAIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Plain));
-                            }
-                            "LOGIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Login));
-                            }
-                            #[cfg(feature = "crammd5-auth")]
-                            "CRAM-MD5" => {
-                                features.insert(Extension::Authentication(Mechanism::CramMd5));
-                            }
-                            _ => (),
+                "AUTH" => for &mechanism in &splitted[1..] {
+                    match mechanism {
+                        "PLAIN" => {
+                            features.insert(Extension::Authentication(Mechanism::Plain));
                         }
+                        "LOGIN" => {
+                            features.insert(Extension::Authentication(Mechanism::Login));
+                        }
+                        #[cfg(feature = "crammd5-auth")]
+                        "CRAM-MD5" => {
+                            features.insert(Extension::Authentication(Mechanism::CramMd5));
+                        }
+                        _ => (),
                     }
-                }
+                },
                 _ => (),
             };
         }
 
-        Ok(ServerInfo { name:     name.to_string(),
-            features: features, })
+        Ok(ServerInfo {
+            name: name.to_string(),
+            features,
+        })
     }
 
     /// Checks if the server supports an ESMTP feature
@@ -164,7 +166,8 @@ impl ServerInfo {
 
     /// Checks if the server supports an ESMTP feature
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
-        self.features.contains(&Extension::Authentication(mechanism))
+        self.features
+            .contains(&Extension::Authentication(mechanism))
     }
 }
 
@@ -192,12 +195,14 @@ impl Display for MailParameter {
             MailParameter::Body(ref value) => write!(f, "BODY={}", value),
             MailParameter::Size(size) => write!(f, "SIZE={}", size),
             MailParameter::SmtpUtfEight => f.write_str("SMTPUTF8"),
-            MailParameter::Other { ref keyword,
-                                   value: Some(ref value), } => {
-                write!(f, "{}={}", keyword, XText(value))
-            }
-            MailParameter::Other { ref keyword,
-                                   value: None, } => f.write_str(keyword),
+            MailParameter::Other {
+                ref keyword,
+                value: Some(ref value),
+            } => write!(f, "{}={}", keyword, XText(value)),
+            MailParameter::Other {
+                ref keyword,
+                value: None,
+            } => f.write_str(keyword),
         }
     }
 }
@@ -235,12 +240,14 @@ pub enum RcptParameter {
 impl Display for RcptParameter {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
-            RcptParameter::Other { ref keyword,
-                                   value: Some(ref value), } => {
-                write!(f, "{}={}", keyword, XText(value))
-            }
-            RcptParameter::Other { ref keyword,
-                                   value: None, } => f.write_str(keyword),
+            RcptParameter::Other {
+                ref keyword,
+                value: Some(ref value),
+            } => write!(f, "{}={}", keyword, XText(value)),
+            RcptParameter::Other {
+                ref keyword,
+                value: None,
+            } => f.write_str(keyword),
         }
     }
 }
@@ -255,16 +262,22 @@ mod test {
 
     #[test]
     fn test_clientid_fmt() {
-        assert_eq!(format!("{}", ClientId::new("test".to_string())),
-                   "test".to_string());
+        assert_eq!(
+            format!("{}", ClientId::new("test".to_string())),
+            "test".to_string()
+        );
     }
 
     #[test]
     fn test_extension_fmt() {
-        assert_eq!(format!("{}", Extension::EightBitMime),
-                   "8BITMIME".to_string());
-        assert_eq!(format!("{}", Extension::Authentication(Mechanism::Plain)),
-                   "AUTH PLAIN".to_string());
+        assert_eq!(
+            format!("{}", Extension::EightBitMime),
+            "8BITMIME".to_string()
+        );
+        assert_eq!(
+            format!("{}", Extension::Authentication(Mechanism::Plain)),
+            "AUTH PLAIN".to_string()
+        );
     }
 
     #[test]
@@ -272,41 +285,67 @@ mod test {
         let mut eightbitmime = HashSet::new();
         assert!(eightbitmime.insert(Extension::EightBitMime));
 
-        assert_eq!(format!("{}",
-                           ServerInfo { name:     "name".to_string(),
-                               features: eightbitmime.clone(), }),
-                   "name with {EightBitMime}".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: eightbitmime.clone(),
+                }
+            ),
+            "name with {EightBitMime}".to_string()
+        );
 
         let empty = HashSet::new();
 
-        assert_eq!(format!("{}",
-                           ServerInfo { name:     "name".to_string(),
-                               features: empty, }),
-                   "name with no supported features".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: empty,
+                }
+            ),
+            "name with no supported features".to_string()
+        );
 
         let mut plain = HashSet::new();
         assert!(plain.insert(Extension::Authentication(Mechanism::Plain)));
 
-        assert_eq!(format!("{}",
-                           ServerInfo { name:     "name".to_string(),
-                               features: plain.clone(), }),
-                   "name with {Authentication(Plain)}".to_string());
+        assert_eq!(
+            format!(
+                "{}",
+                ServerInfo {
+                    name: "name".to_string(),
+                    features: plain.clone(),
+                }
+            ),
+            "name with {Authentication(Plain)}".to_string()
+        );
     }
 
     #[test]
     fn test_serverinfo() {
-        let response = Response::new(Code::new(Severity::PositiveCompletion,
-                                               Category::Unspecified4,
-                                               Detail::One),
-                                     vec!["me".to_string(),
-                                          "8BITMIME".to_string(),
-                                          "SIZE 42".to_string()]);
+        let response = Response::new(
+            Code::new(
+                Severity::PositiveCompletion,
+                Category::Unspecified4,
+                Detail::One,
+            ),
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        );
 
         let mut features = HashSet::new();
         assert!(features.insert(Extension::EightBitMime));
 
-        let server_info = ServerInfo { name:     "me".to_string(),
-            features: features, };
+        let server_info = ServerInfo {
+            name: "me".to_string(),
+            features: features,
+        };
 
         assert_eq!(ServerInfo::from_response(&response).unwrap(), server_info);
 
@@ -315,13 +354,19 @@ mod test {
         #[cfg(feature = "crammd5-auth")]
         assert!(!server_info.supports_auth_mechanism(Mechanism::CramMd5));
 
-        let response2 = Response::new(Code::new(Severity::PositiveCompletion,
-                                                Category::Unspecified4,
-                                                Detail::One),
-                                      vec!["me".to_string(),
-                                           "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
-                                           "8BITMIME".to_string(),
-                                           "SIZE 42".to_string()]);
+        let response2 = Response::new(
+            Code::new(
+                Severity::PositiveCompletion,
+                Category::Unspecified4,
+                Detail::One,
+            ),
+            vec![
+                "me".to_string(),
+                "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        );
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
@@ -329,8 +374,10 @@ mod test {
         #[cfg(feature = "crammd5-auth")]
         assert!(features2.insert(Extension::Authentication(Mechanism::CramMd5),));
 
-        let server_info2 = ServerInfo { name:     "me".to_string(),
-            features: features2, };
+        let server_info2 = ServerInfo {
+            name: "me".to_string(),
+            features: features2,
+        };
 
         assert_eq!(ServerInfo::from_response(&response2).unwrap(), server_info2);
 
