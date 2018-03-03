@@ -52,18 +52,14 @@ impl StdError for Error {
         match *self {
             // Try to display the first line of the server's response that usually
             // contains a short humanly readable error message
-            Transient(ref err) => {
-                match err.first_line() {
-                    Some(line) => line,
-                    None => "undetailed transient error during SMTP transaction",
-                }
-            }
-            Permanent(ref err) => {
-                match err.first_line() {
-                    Some(line) => line,
-                    None => "undetailed permanent error during SMTP transaction",
-                }
-            }
+            Transient(ref err) => match err.first_line() {
+                Some(line) => line,
+                None => "undetailed transient error during SMTP transaction",
+            },
+            Permanent(ref err) => match err.first_line() {
+                Some(line) => line,
+                None => "undetailed permanent error during SMTP transaction",
+            },
             ResponseParsing(err) => err,
             ChallengeParsing(ref err) => err.description(),
             Utf8Parsing(ref err) => err.description(),

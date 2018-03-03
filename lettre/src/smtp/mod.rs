@@ -120,22 +120,23 @@ impl SmtpTransportBuilder {
     /// * No authentication
     /// * No SMTPUTF8 support
     /// * A 60 seconds timeout for smtp commands
-    pub fn new<A: ToSocketAddrs>(addr: A,
-                                 security: ClientSecurity)
-                                 -> Result<SmtpTransportBuilder, Error> {
+    pub fn new<A: ToSocketAddrs>(
+        addr: A,
+        security: ClientSecurity,
+    ) -> Result<SmtpTransportBuilder, Error> {
         let mut addresses = addr.to_socket_addrs()?;
 
         match addresses.next() {
-            Some(addr) => {
-                Ok(SmtpTransportBuilder { server_addr:              addr,
-                    security:                 security,
-                    smtp_utf8:                false,
-                    credentials:              None,
-                    connection_reuse:         ConnectionReuseParameters::NoReuse,
-                    hello_name:               ClientId::hostname(),
-                    authentication_mechanism: None,
-                    timeout:                  Some(Duration::new(60, 0)), })
-            }
+            Some(addr) => Ok(SmtpTransportBuilder {
+                server_addr: addr,
+                security,
+                smtp_utf8: false,
+                credentials: None,
+                connection_reuse: ConnectionReuseParameters::NoReuse,
+                hello_name: ClientId::hostname(),
+                authentication_mechanism: None,
+                timeout: Some(Duration::new(60, 0)),
+            }),
             None => Err(Error::Resolution),
         }
     }
@@ -153,9 +154,10 @@ impl SmtpTransportBuilder {
     }
 
     /// Enable connection reuse
-    pub fn connection_reuse(mut self,
-                            parameters: ConnectionReuseParameters)
-                            -> SmtpTransportBuilder {
+    pub fn connection_reuse(
+        mut self,
+        parameters: ConnectionReuseParameters,
+    ) -> SmtpTransportBuilder {
         self.connection_reuse = parameters;
         self
     }
@@ -234,14 +236,17 @@ impl<'a> SmtpTransport {
         let tls_parameters =
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
 
-        SmtpTransportBuilder::new((domain, SUBMISSION_PORT),
-                                  ClientSecurity::Required(tls_parameters))
+        SmtpTransportBuilder::new(
+            (domain, SUBMISSION_PORT),
+            ClientSecurity::Required(tls_parameters),
+        )
     }
 
     /// Creates a new configurable builder
-    pub fn builder<A: ToSocketAddrs>(addr: A,
-                                     security: ClientSecurity)
-                                     -> Result<SmtpTransportBuilder, Error> {
+    pub fn builder<A: ToSocketAddrs>(
+        addr: A,
+        security: ClientSecurity,
+    ) -> Result<SmtpTransportBuilder, Error> {
         SmtpTransportBuilder::new(addr, security)
     }
 
@@ -256,20 +261,24 @@ impl<'a> SmtpTransport {
     pub fn new(builder: SmtpTransportBuilder) -> SmtpTransport {
         let client = Client::new();
 
-        SmtpTransport { client:      client,
+        SmtpTransport {
+            client,
             server_info: None,
             client_info: builder,
-            state:       State { panic:                  false,
-                connection_reuse_count: 0, }, }
+            state: State {
+                panic: false,
+                connection_reuse_count: 0,
+            },
+        }
     }
 
     /// Gets the EHLO response and updates server information
     fn ehlo(&mut self) -> SmtpResult {
         // Extended Hello
         let ehlo_response = try_smtp!(
-            self.client.command(EhloCommand::new(
-                ClientId::new(self.client_info.hello_name.to_string()),
-            )),
+            self.client.command(EhloCommand::new(ClientId::new(
+                self.client_info.hello_name.to_string()
+            ),)),
             self
         );
 
@@ -306,13 +315,13 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
         }
 
         if self.state.connection_reuse_count == 0 {
-            self.client.connect(&self.client_info.server_addr,
-                                 match self.client_info.security {
-                                     ClientSecurity::Wrapper(ref tls_parameters) => {
-                                         Some(tls_parameters)
-                                     }
-                                     _ => None,
-                                 })?;
+            self.client.connect(
+                &self.client_info.server_addr,
+                match self.client_info.security {
+                    ClientSecurity::Wrapper(ref tls_parameters) => Some(tls_parameters),
+                    _ => None,
+                },
+            )?;
 
             self.client.set_timeout(self.client_info.timeout)?;
 
@@ -321,11 +330,13 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
 
             self.ehlo()?;
 
-            match (&self.client_info.security.clone(),
-                  self.server_info.as_ref()
-                       .unwrap()
-                       .supports_feature(Extension::StartTls))
-            {
+            match (
+                &self.client_info.security.clone(),
+                self.server_info
+                    .as_ref()
+                    .unwrap()
+                    .supports_feature(Extension::StartTls),
+            ) {
                 (&ClientSecurity::Required(_), false) => {
                     return Err(From::from("Could not encrypt connection, aborting"))
                 }
@@ -360,9 +371,10 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
                 };
 
                 for mechanism in accepted_mechanisms {
-                    if self.server_info.as_ref()
-                           .unwrap()
-                           .supports_auth_mechanism(mechanism)
+                    if self.server_info
+                        .as_ref()
+                        .unwrap()
+                        .supports_auth_mechanism(mechanism)
                     {
                         found = true;
                         try_smtp!(
@@ -383,30 +395,38 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info.as_ref()
-               .unwrap()
-               .supports_feature(Extension::EightBitMime)
+        if self.server_info
+            .as_ref()
+            .unwrap()
+            .supports_feature(Extension::EightBitMime)
         {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
-        if self.server_info.as_ref()
-               .unwrap()
-               .supports_feature(Extension::SmtpUtfEight) && self.client_info.smtp_utf8
+        if self.server_info
+            .as_ref()
+            .unwrap()
+            .supports_feature(Extension::SmtpUtfEight) && self.client_info.smtp_utf8
         {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 
-        try_smtp!(self.client.command(MailCommand::new(Some(email.from().clone()), mail_options,)),
-                  self);
+        try_smtp!(
+            self.client
+                .command(MailCommand::new(Some(email.from().clone()), mail_options,)),
+            self
+        );
 
         // Log the mail command
         info!("{}: from=<{}>", message_id, email.from());
 
         // Recipient
         for to_address in &email.to() {
-            try_smtp!(self.client.command(RcptCommand::new(to_address.clone(), vec![]),),
-                      self);
+            try_smtp!(
+                self.client
+                    .command(RcptCommand::new(to_address.clone(), vec![]),),
+                self
+            );
             // Log the rcpt command
             info!("{}: to=<{}>", message_id, to_address);
         }
@@ -422,16 +442,19 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
             self.state.connection_reuse_count += 1;
 
             // Log the message
-            info!("{}: conn_use={}, status=sent ({})",
-                  message_id,
-                  self.state.connection_reuse_count,
-                  result.as_ref()
-                        .ok()
-                        .unwrap()
-                        .message
-                        .iter()
-                        .next()
-                        .unwrap_or(&"no response".to_string()));
+            info!(
+                "{}: conn_use={}, status=sent ({})",
+                message_id,
+                self.state.connection_reuse_count,
+                result
+                    .as_ref()
+                    .ok()
+                    .unwrap()
+                    .message
+                    .iter()
+                    .next()
+                    .unwrap_or(&"no response".to_string())
+            );
         }
 
         // Test if we can reuse the existing connection

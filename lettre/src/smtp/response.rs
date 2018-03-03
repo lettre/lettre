@@ -91,9 +91,11 @@ impl Display for Code {
 impl Code {
     /// Creates a new `Code` structure
     pub fn new(severity: Severity, category: Category, detail: Detail) -> Code {
-        Code { severity: severity,
-            category: category,
-            detail:   detail, }
+        Code {
+            severity,
+            category,
+            detail,
+        }
     }
 }
 
@@ -124,8 +126,7 @@ impl FromStr for Response {
 impl Response {
     /// Creates a new `Response`
     pub fn new(code: Code, message: Vec<String>) -> Response {
-        Response { code:    code,
-            message: message, }
+        Response { code, message }
     }
 
     /// Tells if the response is positive
@@ -143,7 +144,8 @@ impl Response {
 
     /// Returns only the first word of the message if possible
     pub fn first_word(&self) -> Option<&str> {
-        self.message.get(0)
+        self.message
+            .get(0)
             .and_then(|line| line.split_whitespace().next())
     }
 
@@ -155,11 +157,17 @@ impl Response {
 
 // Parsers (originaly from tokio-smtp)
 
-named!(parse_code<Code>,
-       map!(tuple!(parse_severity, parse_category, parse_detail),
-            |(severity, category, detail)| Code { severity: severity,
-                category: category,
-                detail:   detail, }));
+named!(
+    parse_code<Code>,
+    map!(
+        tuple!(parse_severity, parse_category, parse_detail),
+        |(severity, category, detail)| Code {
+            severity,
+            category,
+            detail,
+        }
+    )
+);
 
 named!(
     parse_severity<Severity>,
@@ -199,34 +207,47 @@ named!(
     )
 );
 
-named!(parse_response<Response>,
-       map_res!(tuple!(// Parse any number of continuation lines.
-                       many0!(tuple!(parse_code,
-                                     preceded!(char!('-'),
-                                               take_until_and_consume!(b"\r\n".as_ref())))),
-                       // Parse the final line.
-                       tuple!(parse_code,
-                              terminated!(opt!(preceded!(char!(' '),
-                                                         take_until!(b"\r\n".as_ref()))),
-                                          crlf))),
-                |(lines, (last_code, last_line)): (Vec<_>, _)| {
-                    // Check that all codes are equal.
-                    if !lines.iter().all(|&(ref code, _)| *code == last_code) {
-                        return Err(());
-                    }
+named!(
+    parse_response<Response>,
+    map_res!(
+        tuple!(
+            // Parse any number of continuation lines.
+            many0!(tuple!(
+                parse_code,
+                preceded!(char!('-'), take_until_and_consume!(b"\r\n".as_ref()))
+            )),
+            // Parse the final line.
+            tuple!(
+                parse_code,
+                terminated!(
+                    opt!(preceded!(char!(' '), take_until!(b"\r\n".as_ref()))),
+                    crlf
+                )
+            )
+        ),
+        |(lines, (last_code, last_line)): (Vec<_>, _)| {
+            // Check that all codes are equal.
+            if !lines.iter().all(|&(ref code, _)| *code == last_code) {
+                return Err(());
+            }
 
-                    // Extract text from lines, and append last line.
-                    let mut lines = lines.into_iter().map(|(_, text)| text).collect::<Vec<_>>();
-                    if let Some(text) = last_line {
-                        lines.push(text);
-                    }
+            // Extract text from lines, and append last line.
+            let mut lines = lines.into_iter().map(|(_, text)| text).collect::<Vec<_>>();
+            if let Some(text) = last_line {
+                lines.push(text);
+            }
 
-                    Ok(Response { code:    last_code,
-                        message: lines.into_iter()
-                                      .map(|line| from_utf8(line).map(|s| s.to_string()))
-                                      .collect::<result::Result<Vec<_>, _>>()
-                                      .map_err(|_| ())?, })
-                }));
+            Ok(Response {
+                code: last_code,
+                message: lines
+                    .into_iter()
+                    .map(|line| from_utf8(line).map(|s| s.to_string()))
+                    .collect::<result::Result<Vec<_>, _>>()
+                    .map_err(|_| ())?,
+            })
+        }
+    )
+);
 
 #[cfg(test)]
 mod test {
@@ -244,19 +265,27 @@ mod test {
 
     #[test]
     fn test_code_new() {
-        assert_eq!(Code::new(Severity::TransientNegativeCompletion,
-                             Category::Connections,
-                             Detail::Zero,),
-                   Code { severity: Severity::TransientNegativeCompletion,
-                       category: Category::Connections,
-                       detail:   Detail::Zero, });
+        assert_eq!(
+            Code::new(
+                Severity::TransientNegativeCompletion,
+                Category::Connections,
+                Detail::Zero,
+            ),
+            Code {
+                severity: Severity::TransientNegativeCompletion,
+                category: Category::Connections,
+                detail: Detail::Zero,
+            }
+        );
     }
 
     #[test]
     fn test_code_display() {
-        let code = Code { severity: Severity::TransientNegativeCompletion,
+        let code = Code {
+            severity: Severity::TransientNegativeCompletion,
             category: Category::Connections,
-            detail:   Detail::One, };
+            detail: Detail::One,
+        };
 
         assert_eq!(code.to_string(), "421");
     }
@@ -264,14 +293,22 @@ mod test {
     #[test]
     fn test_response_from_str() {
         let raw_response = "250-me\r\n250-8BITMIME\r\n250-SIZE 42\r\n250 AUTH PLAIN CRAM-MD5\r\n";
-        assert_eq!(raw_response.parse::<Response>().unwrap(),
-                   Response { code:    Code { severity: Severity::PositiveCompletion,
-                           category: Category::MailSystem,
-                           detail:   Detail::Zero, },
-                       message: vec!["me".to_string(),
-                                     "8BITMIME".to_string(),
-                                     "SIZE 42".to_string(),
-                                     "AUTH PLAIN CRAM-MD5".to_string()], });
+        assert_eq!(
+            raw_response.parse::<Response>().unwrap(),
+            Response {
+                code: Code {
+                    severity: Severity::PositiveCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail::Zero,
+                },
+                message: vec![
+                    "me".to_string(),
+                    "8BITMIME".to_string(),
+                    "SIZE 42".to_string(),
+                    "AUTH PLAIN CRAM-MD5".to_string(),
+                ],
+            }
+        );
 
         let wrong_code = "2506-me\r\n250-8BITMIME\r\n250-SIZE 42\r\n250 AUTH PLAIN CRAM-MD5\r\n";
         assert!(wrong_code.parse::<Response>().is_err());

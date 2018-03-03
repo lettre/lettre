@@ -15,7 +15,7 @@ pub struct StubEmailTransport {
 impl StubEmailTransport {
     /// Creates a new transport that always returns the given response
     pub fn new(response: StubResult) -> StubEmailTransport {
-        StubEmailTransport { response: response }
+        StubEmailTransport { response }
     }
 
     /// Creates a new transport that always returns a success response
@@ -29,10 +29,12 @@ pub type StubResult = Result<(), ()>;
 
 impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport {
     fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
-        info!("{}: from=<{}> to=<{:?}>",
-              email.message_id(),
-              email.from(),
-              email.to());
+        info!(
+            "{}: from=<{}> to=<{:?}>",
+            email.message_id(),
+            email.from(),
+            email.to()
+        );
         self.response
     }
 }

@@ -139,10 +139,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Connects to the configured server
-    pub fn connect<A: ToSocketAddrs>(&mut self,
-                                     addr: &A,
-                                     tls_parameters: Option<&ClientTlsParameters>)
-                                     -> SmtpResult {
+    pub fn connect<A: ToSocketAddrs>(
+        &mut self,
+        addr: &A,
+        tls_parameters: Option<&ClientTlsParameters>,
+    ) -> SmtpResult {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -177,9 +178,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
-            response = self.command(AuthCommand::new_from_response(mechanism,
-                                                                    credentials.clone(),
-                                                                    &response)?)?;
+            response = self.command(AuthCommand::new_from_response(
+                mechanism,
+                credentials.clone(),
+                &response,
+            )?)?;
         }
 
         if challenges == 0 {
@@ -233,8 +236,10 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         self.stream.as_mut().unwrap().write_all(string)?;
         self.stream.as_mut().unwrap().flush()?;
 
-        debug!("Wrote: {}",
-               escape_crlf(String::from_utf8_lossy(string).as_ref()));
+        debug!(
+            "Wrote: {}",
+            escape_crlf(String::from_utf8_lossy(string).as_ref())
+        );
         Ok(())
     }
 
@@ -282,15 +287,19 @@ mod test {
         assert!(codec.encode(b"test\n", &mut buf).is_ok());
         assert!(codec.encode(b".test\n", &mut buf).is_ok());
         assert!(codec.encode(b"test", &mut buf).is_ok());
-        assert_eq!(String::from_utf8(buf).unwrap(),
-                   "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest");
+        assert_eq!(
+            String::from_utf8(buf).unwrap(),
+            "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
+        );
     }
 
     #[test]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CRLF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CRLF>");
-        assert_eq!(escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
-                   "EHLO my_name<CRLF>SIZE 42<CRLF>");
+        assert_eq!(
+            escape_crlf("EHLO my_name\r\nSIZE 42\r\n"),
+            "EHLO my_name<CRLF>SIZE 42<CRLF>"
+        );
     }
 }

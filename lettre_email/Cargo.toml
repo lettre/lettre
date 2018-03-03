@@ -28,4 +28,4 @@ mime = "^0.3"
 time = "^0.1"
 uuid = { version = "^0.6", features = ["v4"] }
 lettre = { version = "^0.8", path = "../lettre", default-features = false }
-base64 = "0.9.0"
+base64 = "^0.9"

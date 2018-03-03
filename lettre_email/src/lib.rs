@@ -4,12 +4,12 @@
 #![doc(html_root_url = "https://docs.rs/lettre_email/0.8.0")]
 #![deny(missing_docs, unsafe_code, unstable_features, warnings, missing_debug_implementations)]
 
+extern crate base64;
 extern crate email as email_format;
 extern crate lettre;
 extern crate mime;
 extern crate time;
 extern crate uuid;
-extern crate base64;
 
 pub mod error;
 
@@ -123,17 +123,17 @@ impl IntoEmail for SimpleEmail {
 /// Simple representation of an email, useful for some transports
 #[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct SimpleEmail {
-    from:        Option<Mailbox>,
-    to:          Vec<Mailbox>,
-    cc:          Vec<Mailbox>,
-    bcc:         Vec<Mailbox>,
-    reply_to:    Option<Mailbox>,
-    subject:     Option<String>,
-    date:        Option<Tm>,
-    html:        Option<String>,
-    text:        Option<String>,
+    from: Option<Mailbox>,
+    to: Vec<Mailbox>,
+    cc: Vec<Mailbox>,
+    bcc: Vec<Mailbox>,
+    reply_to: Option<Mailbox>,
+    subject: Option<String>,
+    date: Option<Tm>,
+    html: Option<String>,
+    text: Option<String>,
     attachments: Vec<String>,
-    headers:     Vec<Header>,
+    headers: Vec<Header>,
 }
 
 impl SimpleEmail {
@@ -307,8 +307,10 @@ pub struct Envelope {
 impl Envelope {
     /// Constructs an envelope with no receivers and an empty sender
     pub fn new() -> Self {
-        Envelope { to:   vec![],
-            from: String::new(), }
+        Envelope {
+            to: vec![],
+            from: String::new(),
+        }
     }
     /// Adds a receiver
     pub fn to<S: Into<String>>(mut self, address: S) -> Self {
@@ -344,7 +346,9 @@ pub struct Email {
 impl PartBuilder {
     /// Creates a new empty part
     pub fn new() -> PartBuilder {
-        PartBuilder { message: MimeMessage::new_blank_message(), }
+        PartBuilder {
+            message: MimeMessage::new_blank_message(),
+        }
     }
 
     /// Adds a generic header
@@ -412,15 +416,17 @@ impl PartBuilder {
 impl EmailBuilder {
     /// Creates a new empty email
     pub fn new() -> EmailBuilder {
-        EmailBuilder { message:         PartBuilder::new(),
-            to_header:       vec![],
-            from_header:     vec![],
-            cc_header:       vec![],
-            bcc_header:      vec![],
+        EmailBuilder {
+            message: PartBuilder::new(),
+            to_header: vec![],
+            from_header: vec![],
+            cc_header: vec![],
+            bcc_header: vec![],
             reply_to_header: vec![],
-            sender_header:   None,
-            envelope:        None,
-            date_issued:     false, }
+            sender_header: None,
+            envelope: None,
+            date_issued: false,
+        }
     }
 
     /// Sets the email body
@@ -525,7 +531,8 @@ impl EmailBuilder {
 
     /// Adds a `Subject` header
     pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.message.add_header(("Subject".to_string(), subject.into()));
+        self.message
+            .add_header(("Subject".to_string(), subject.into()));
     }
 
     /// Adds a `Date` header with the given date
@@ -536,27 +543,30 @@ impl EmailBuilder {
 
     /// Adds a `Date` header with the given date
     pub fn set_date(&mut self, date: &Tm) {
-        self.message.add_header(("Date", Tm::rfc822z(date).to_string()));
+        self.message
+            .add_header(("Date", Tm::rfc822z(date).to_string()));
         self.date_issued = true;
     }
 
     /// Adds an attachment to the email
-    pub fn attachment(mut self,
-                      path: &Path,
-                      filename: Option<&str>,
-                      content_type: &Mime)
-                      -> Result<EmailBuilder, Error> {
+    pub fn attachment(
+        mut self,
+        path: &Path,
+        filename: Option<&str>,
+        content_type: &Mime,
+    ) -> Result<EmailBuilder, Error> {
         self.set_attachment(path, filename, content_type)?;
         Ok(self)
     }
 
     /// Adds an attachment to the email
     /// If filename is not provided, the name of the file will be used.
-    pub fn set_attachment(&mut self,
-                          path: &Path,
-                          filename: Option<&str>,
-                          content_type: &Mime)
-                          -> Result<(), Error> {
+    pub fn set_attachment(
+        &mut self,
+        path: &Path,
+        filename: Option<&str>,
+        content_type: &Mime,
+    ) -> Result<(), Error> {
         let file = File::open(path);
         let body = match file {
             Ok(mut f) => {
@@ -576,27 +586,25 @@ impl EmailBuilder {
 
         let actual_filename = match filename {
             Some(name) => name,
-            None => {
-                match path.file_name() {
-                    Some(name) => {
-                        match name.to_str() {
-                            Some(name) => name,
-                            None => return Err(Error::CannotParseFilename),
-                        }
-                    }
+            None => match path.file_name() {
+                Some(name) => match name.to_str() {
+                    Some(name) => name,
                     None => return Err(Error::CannotParseFilename),
-                }
-            }
+                },
+                None => return Err(Error::CannotParseFilename),
+            },
         };
 
         let encoded_body = base64::encode(&body);
-        let content = PartBuilder::new().body(encoded_body)
-                                        .header(("Content-Disposition",
-                                                format!("attachment; filename=\"{}\"",
-                                                         actual_filename)))
-                                        .header(("Content-Type", content_type.to_string()))
-                                        .header(("Content-Transfer-Encoding", "base64"))
-                                        .build();
+        let content = PartBuilder::new()
+            .body(encoded_body)
+            .header((
+                "Content-Disposition",
+                format!("attachment; filename=\"{}\"", actual_filename),
+            ))
+            .header(("Content-Type", content_type.to_string()))
+            .header(("Content-Transfer-Encoding", "base64"))
+            .build();
 
         self.set_message_type(MimeMultipartType::Mixed);
         self.add_child(content);
@@ -635,7 +643,10 @@ impl EmailBuilder {
     /// Sets the email body to plain text content
     pub fn set_text<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message.add_header(("Content-Type", format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref()));
+        self.message.add_header((
+            "Content-Type",
+            format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
+        ));
     }
 
     /// Sets the email body to HTML content
@@ -647,34 +658,41 @@ impl EmailBuilder {
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         self.message.set_body(body);
-        self.message.add_header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()));
+        self.message
+            .add_header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()));
     }
 
     /// Sets the email content
-    pub fn alternative<S: Into<String>, T: Into<String>>(mut self,
-                                                         body_html: S,
-                                                         body_text: T)
-                                                         -> EmailBuilder {
+    pub fn alternative<S: Into<String>, T: Into<String>>(
+        mut self,
+        body_html: S,
+        body_text: T,
+    ) -> EmailBuilder {
         self.set_alternative(body_html, body_text);
         self
     }
 
     /// Sets the email content
-    pub fn set_alternative<S: Into<String>, T: Into<String>>(&mut self,
-                                                             body_html: S,
-                                                             body_text: T) {
+    pub fn set_alternative<S: Into<String>, T: Into<String>>(
+        &mut self,
+        body_html: S,
+        body_text: T,
+    ) {
         let mut alternate = PartBuilder::new();
         alternate.set_message_type(MimeMultipartType::Alternative);
 
-        let text = PartBuilder::new().body(body_text)
-                                     .header(("Content-Type",
-                                             format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref()))
-                                     .build();
+        let text = PartBuilder::new()
+            .body(body_text)
+            .header((
+                "Content-Type",
+                format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
+            ))
+            .build();
 
-        let html = PartBuilder::new().body(body_html)
-                                     .header(("Content-Type",
-                                             format!("{}", mime::TEXT_HTML).as_ref()))
-                                     .build();
+        let html = PartBuilder::new()
+            .body(body_html)
+            .header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()))
+            .build();
 
         alternate.add_child(text);
         alternate.add_child(html);
@@ -726,17 +744,16 @@ impl EmailBuilder {
                 // we need to generate the envelope
                 let mut e = Envelope::new();
                 // add all receivers in to_header and cc_header
-                for receiver in self.to_header.iter()
-                                    .chain(self.cc_header.iter())
-                                    .chain(self.bcc_header.iter())
+                for receiver in self.to_header
+                    .iter()
+                    .chain(self.cc_header.iter())
+                    .chain(self.bcc_header.iter())
                 {
                     match *receiver {
                         Address::Mailbox(ref m) => e.add_to(m.address.clone()),
-                        Address::Group(_, ref ms) => {
-                            for m in ms.iter() {
-                                e.add_to(m.address.clone());
-                            }
-                        }
+                        Address::Group(_, ref ms) => for m in ms.iter() {
+                            e.add_to(m.address.clone());
+                        },
                     }
                 }
                 if e.to.is_empty() {
@@ -769,7 +786,8 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to_header.is_empty() {
-            self.message.add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+            self.message
+                .add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
         }
         if !self.from_header.is_empty() {
             self.message
@@ -778,10 +796,12 @@ impl EmailBuilder {
             return Err(Error::MissingFrom);
         }
         if !self.cc_header.is_empty() {
-            self.message.add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
+            self.message
+                .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
         if !self.bcc_header.is_empty() {
-            self.message.add_header(Header::new_with_value("Bcc".into(), self.bcc_header).unwrap());
+            self.message
+                .add_header(Header::new_with_value("Bcc".into(), self.bcc_header).unwrap());
         }
         if !self.reply_to_header.is_empty() {
             self.message.add_header(
@@ -790,28 +810,33 @@ impl EmailBuilder {
         }
 
         if !self.date_issued {
-            self.message.add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            self.message
+                .add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
         self.message.add_header(("MIME-Version", "1.0"));
 
         let message_id = Uuid::new_v4();
 
-        if let Ok(header) = Header::new_with_value("Message-ID".to_string(),
-                                                   format!("<{}.lettre@localhost>", message_id))
-        {
+        if let Ok(header) = Header::new_with_value(
+            "Message-ID".to_string(),
+            format!("<{}.lettre@localhost>", message_id),
+        ) {
             self.message.add_header(header)
         }
 
-        Ok(Email { message:    self.message.build().as_string().into_bytes(),
-               envelope:   envelope,
-               message_id: message_id, })
+        Ok(Email {
+            message: self.message.build().as_string().into_bytes(),
+            envelope: envelope,
+            message_id: message_id,
+        })
     }
 }
 
 impl<'a> SendableEmail<'a, &'a [u8]> for Email {
     fn to(&self) -> Vec<EmailAddress> {
-        self.envelope.to
+        self.envelope
+            .to
             .iter()
             .map(|x| EmailAddress::new(x.clone()))
             .collect()
@@ -866,46 +891,56 @@ mod test {
         let email_builder = SimpleEmail::default();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
-                                 .from("user@localhost")
-                                 .cc(("cc@localhost", "Alias"))
-                                 .reply_to("reply@localhost")
-                                 .text("Hello World!")
-                                 .date(date_now.clone())
-                                 .subject("Hello")
-                                 .header(("X-test", "value"))
-                                 .into_email()
-                                 .unwrap();
+        let email = email_builder
+            .to("user@localhost")
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .reply_to("reply@localhost")
+            .text("Hello World!")
+            .date(date_now.clone())
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .into_email()
+            .unwrap();
 
-        assert_eq!(format!("{}", String::from_utf8_lossy(email.message().as_ref())),
-                   format!("Subject: Hello\r\nContent-Type: text/plain; \
-                            charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                            <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
-                            <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+        assert_eq!(
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
+            format!(
+                "Subject: Hello\r\nContent-Type: text/plain; \
+                 charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                 <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
+                 <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
     fn test_multiple_from() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
-        let email = email_builder.to("anna@example.com")
-                                 .from("dieter@example.com")
-                                 .from("joachim@example.com")
-                                 .date(&date_now)
-                                 .subject("Invitation")
-                                 .body("We invite you!")
-                                 .build()
-                                 .unwrap();
-        assert_eq!(format!("{}", String::from_utf8_lossy(email.message().as_ref())),
-                   format!("Date: {}\r\nSubject: Invitation\r\nSender: \
-                            <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
-                            <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
-                            1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+        let email = email_builder
+            .to("anna@example.com")
+            .from("dieter@example.com")
+            .from("joachim@example.com")
+            .date(&date_now)
+            .subject("Invitation")
+            .body("We invite you!")
+            .build()
+            .unwrap();
+        assert_eq!(
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
+            format!(
+                "Date: {}\r\nSubject: Invitation\r\nSender: \
+                 <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
+                 <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
+                 1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
@@ -913,28 +948,33 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
-                                 .from("user@localhost")
-                                 .cc(("cc@localhost", "Alias"))
-                                 .bcc("bcc@localhost")
-                                 .reply_to("reply@localhost")
-                                 .sender("sender@localhost")
-                                 .body("Hello World!")
-                                 .date(&date_now)
-                                 .subject("Hello")
-                                 .header(("X-test", "value"))
-                                 .build()
-                                 .unwrap();
+        let email = email_builder
+            .to("user@localhost")
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .bcc("bcc@localhost")
+            .reply_to("reply@localhost")
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .build()
+            .unwrap();
 
-        assert_eq!(format!("{}", String::from_utf8_lossy(email.message().as_ref())),
-                   format!("Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
-                            <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
-                            <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
-                            Bcc: <bcc@localhost>\r\nReply-To: <reply@localhost>\r\n\
-                            MIME-Version: 1.0\r\nMessage-ID: \
-                            <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                           date_now.rfc822z(),
-                           email.message_id()));
+        assert_eq!(
+            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
+            format!(
+                "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
+                 <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
+                 Bcc: <bcc@localhost>\r\nReply-To: <reply@localhost>\r\n\
+                 MIME-Version: 1.0\r\nMessage-ID: \
+                 <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
+                date_now.rfc822z(),
+                email.message_id()
+            )
+        );
     }
 
     #[test]
@@ -942,24 +982,29 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder.to("user@localhost")
-                                 .from("user@localhost")
-                                 .cc(("cc@localhost", "Alias"))
-                                 .bcc("bcc@localhost")
-                                 .reply_to("reply@localhost")
-                                 .sender("sender@localhost")
-                                 .body("Hello World!")
-                                 .date(&date_now)
-                                 .subject("Hello")
-                                 .header(("X-test", "value"))
-                                 .build()
-                                 .unwrap();
+        let email = email_builder
+            .to("user@localhost")
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .bcc("bcc@localhost")
+            .reply_to("reply@localhost")
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .build()
+            .unwrap();
 
         assert_eq!(email.from().to_string(), "sender@localhost".to_string());
-        assert_eq!(email.to(),
-                   vec![EmailAddress::new("user@localhost".to_string()),
-                        EmailAddress::new("cc@localhost".to_string()),
-                        EmailAddress::new("bcc@localhost".to_string())]);
+        assert_eq!(
+            email.to(),
+            vec![
+                EmailAddress::new("user@localhost".to_string()),
+                EmailAddress::new("cc@localhost".to_string()),
+                EmailAddress::new("bcc@localhost".to_string()),
+            ]
+        );
     }
 
 }
