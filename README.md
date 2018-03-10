@@ -19,9 +19,6 @@ Lettre provides the following features:
 
 ## Example
 
-See https://github.com/lettre/lettre/blob/master/lettre_email/examples/smtp.rs
-for a simple example of how to build and send an email.
-
 ```rust,no_run
 extern crate lettre;
 extern crate lettre_email;

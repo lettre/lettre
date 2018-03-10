@@ -642,11 +642,14 @@ impl EmailBuilder {
 
     /// Sets the email body to plain text content
     pub fn set_text<S: Into<String>>(&mut self, body: S) {
-        self.message.set_body(body);
-        self.message.add_header((
-            "Content-Type",
-            format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
-        ));
+        let text = PartBuilder::new()
+            .body(body)
+            .header((
+                "Content-Type",
+                format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
+            ))
+            .build();
+        self.add_child(text);
     }
 
     /// Sets the email body to HTML content
@@ -657,9 +660,11 @@ impl EmailBuilder {
 
     /// Sets the email body to HTML content
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
-        self.message.set_body(body);
-        self.message
-            .add_header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()));
+        let html = PartBuilder::new()
+            .body(body)
+            .header(("Content-Type", format!("{}", mime::TEXT_HTML).as_ref()))
+            .build();
+        self.add_child(html);
     }
 
     /// Sets the email content
@@ -881,41 +886,9 @@ pub trait ExtractableEmail {
 
 #[cfg(test)]
 mod test {
-
-    use super::{EmailBuilder, IntoEmail, SimpleEmail};
+    use super::EmailBuilder;
     use lettre::{EmailAddress, SendableEmail};
     use time::now;
-
-    #[test]
-    fn test_simple_email_builder() {
-        let email_builder = SimpleEmail::default();
-        let date_now = now();
-
-        let email = email_builder
-            .to("user@localhost")
-            .from("user@localhost")
-            .cc(("cc@localhost", "Alias"))
-            .reply_to("reply@localhost")
-            .text("Hello World!")
-            .date(date_now.clone())
-            .subject("Hello")
-            .header(("X-test", "value"))
-            .into_email()
-            .unwrap();
-
-        assert_eq!(
-            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
-            format!(
-                "Subject: Hello\r\nContent-Type: text/plain; \
-                 charset=utf-8\r\nX-test: value\r\nTo: <user@localhost>\r\nFrom: \
-                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
-                 <reply@localhost>\r\nDate: {}\r\nMIME-Version: 1.0\r\nMessage-ID: \
-                 <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                date_now.rfc822z(),
-                email.message_id()
-            )
-        );
-    }
 
     #[test]
     fn test_multiple_from() {
