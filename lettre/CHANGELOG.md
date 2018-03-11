@@ -1,37 +1,47 @@
+### v0.8.0
+
+#### Added
+
+* Move doc to a dedicated website
+* Add tests for the doc using skeptic
+* Added a code of conduct
+* Use hostname as `ClientId` when available
+
+#### Changed
+
+* Detail in SMTP Response is now an enum
+* Use nom for parsing smtp responses
+
+#### Removed
+
+* `get_ehlo` and `reset` in SmtpTransport are now private
+
 ### v0.7.0 (2017-10-08)
 
-#### Features
+#### Added
 
-* **all**
-  * Split into the *lettre* and *lettre_email* crates
-  * A lot of small improvements
+* Allow validating server certificate
 
-* **smtp transport**
-  * Use *tls-native* instead of *openssl*
-  * Allow validating server certificate
+#### Changed
+
+* Split into the *lettre* and *lettre_email* crates
+* A lot of small improvements
+* Use *tls-native* instead of *openssl* in smtp transport
 
 ### v0.6.2 (2017-02-18)
 
-#### Features
+#### Changed
 
-* **all**
-  * Update env-logger crate to 0.4
-  * Update openssl crate to 0.9
+* Update env-logger crate to 0.4
+* Update openssl crate to 0.9
 
 ### v0.6.1 (2016-10-19)
 
-#### Features
+#### Changed
 
-* **documentation**
-  * #91: Build seperate docs for each release
-  * #96: Add complete documentation information to README
+* #91: Build seperate docs for each release
+* #96: Add complete documentation information to README
 
-#### Bugfixes
+#### Fixed
 
-* **tests**
-  * #93: Force building tests before coverage computing
-
-### v0.6.0 (2016-05-05)
-
-Nothing.
-
+* #93: Force building tests before coverage computing
