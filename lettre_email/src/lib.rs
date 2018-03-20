@@ -662,7 +662,10 @@ impl EmailBuilder {
     pub fn set_html<S: Into<String>>(&mut self, body: S) {
         let html = PartBuilder::new()
             .body(body)
-            .header(("Content-Type", format!("{}", mime::TEXT_HTML_UTF_8).as_ref()))
+            .header((
+                "Content-Type",
+                format!("{}", mime::TEXT_HTML_UTF_8).as_ref(),
+            ))
             .build();
         self.add_child(html);
     }
@@ -696,7 +699,10 @@ impl EmailBuilder {
 
         let html = PartBuilder::new()
             .body(body_html)
-            .header(("Content-Type", format!("{}", mime::TEXT_HTML_UTF_8).as_ref()))
+            .header((
+                "Content-Type",
+                format!("{}", mime::TEXT_HTML_UTF_8).as_ref(),
+            ))
             .build();
 
         alternate.add_child(text);
@@ -832,8 +838,8 @@ impl EmailBuilder {
 
         Ok(Email {
             message: self.message.build().as_string().into_bytes(),
-            envelope: envelope,
-            message_id: message_id,
+            envelope,
+            message_id,
         })
     }
 }
