@@ -11,6 +11,10 @@
 
 * Detail in SMTP Response is now an enum
 * Use nom for parsing smtp responses
+* `Envelope` was moved from `lettre_email` to `lettre`
+* `EmailAddress::new()` now returns a `Result`
+* `SendableEmail` replaces `from` and `to` by `envelope` that returns an `Envelope`
+* `File` transport storage format has changed
 
 #### Removed
 

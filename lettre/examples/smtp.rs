@@ -1,17 +1,17 @@
 extern crate env_logger;
 extern crate lettre;
 
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail, SmtpTransport};
+use lettre::{EmailTransport, SimpleSendableEmail, SmtpTransport};
 
 fn main() {
     env_logger::init();
 
     let email = SimpleSendableEmail::new(
-        EmailAddress::new("user@localhost".to_string()),
-        vec![EmailAddress::new("root@localhost".to_string())],
-        "file_id".to_string(),
+        "user@localhost".to_string(),
+        &["root@localhost".to_string()],
+        "my-message-id".to_string(),
         "Hello ß☺ example".to_string(),
-    );
+    ).unwrap();
 
     // Open a local connection on port 25
     let mut mailer = SmtpTransport::builder_unencrypted_localhost()

@@ -12,17 +12,17 @@
     <title>File transport :: Lettre site</title>
     
     
-    <link href="/lettre/css/nucleus.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/font-awesome.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/hybrid.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/featherlight.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/perfect-scrollbar.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/auto-complete.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/theme.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/hugo-theme.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/nucleus.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1522506318" rel="stylesheet">
     
 
-    <script src="/lettre/js/jquery-2.x.min.js?1517057321"></script>
+    <script src="/lettre/js/jquery-2.x.min.js?1522506318"></script>
     
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{ 
@@ -49,14 +49,14 @@
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/lettre/js/lunr.min.js?1517057321"></script>
-<script type="text/javascript" src="/lettre/js/auto-complete.js?1517057321"></script>
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1522506318"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1522506318"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/lettre.github.io\/lettre";
     
 </script>
-<script type="text/javascript" src="/lettre/js/search.js?1517057321"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1522506318"></script>
 
     
   </div>
@@ -391,17 +391,17 @@ It can be useful for testing purposes, or if you want to keep track of sent mess
 <span style="color:#66d9ef">use</span> std::env::temp_dir;
 
 <span style="color:#66d9ef">use</span> lettre::file::FileEmailTransport;
-<span style="color:#66d9ef">use</span> lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
+<span style="color:#66d9ef">use</span> lettre::{SimpleSendableEmail, EmailTransport};
 
 <span style="color:#66d9ef">fn</span> <span style="color:#a6e22e">main</span>() {
     <span style="color:#75715e">// Write to the local temp directory
 </span><span style="color:#75715e"></span>    <span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> sender <span style="color:#f92672">=</span> FileEmailTransport::new(temp_dir());
     <span style="color:#66d9ef">let</span> email <span style="color:#f92672">=</span> SimpleSendableEmail::new(
-                    EmailAddress::new(<span style="color:#e6db74">&#34;user@localhost&#34;</span>.to_string()),
-                    vec<span style="color:#f92672">!</span>[EmailAddress::new(<span style="color:#e6db74">&#34;root@localhost&#34;</span>.to_string())],
+                    <span style="color:#e6db74">&#34;user@localhost&#34;</span>.to_string(),
+                    <span style="color:#f92672">&amp;</span>[<span style="color:#e6db74">&#34;root@localhost&#34;</span>.to_string()],
                     <span style="color:#e6db74">&#34;message_id&#34;</span>.to_string(),
                     <span style="color:#e6db74">&#34;Hello world&#34;</span>.to_string(),
-                );
+                ).unwrap();
     
     <span style="color:#66d9ef">let</span> result <span style="color:#f92672">=</span> sender.send(<span style="color:#f92672">&amp;</span>email);
     assert<span style="color:#f92672">!</span>(result.is_ok());
@@ -635,20 +635,20 @@ Hello World!</code></pre></div>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/lettre/js/clipboard.min.js?1517057321"></script>
-    <script src="/lettre/js/perfect-scrollbar.min.js?1517057321"></script>
-    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1517057321"></script>
-    <script src="/lettre/js/jquery.sticky-kit.min.js?1517057321"></script>
-    <script src="/lettre/js/featherlight.min.js?1517057321"></script>
-    <script src="/lettre/js/html5shiv-printshiv.min.js?1517057321"></script>
-    <script src="/lettre/js/highlight.pack.js?1517057321"></script>
+    <script src="/lettre/js/clipboard.min.js?1522506318"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1522506318"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1522506318"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1522506318"></script>
+    <script src="/lettre/js/featherlight.min.js?1522506318"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1522506318"></script>
+    <script src="/lettre/js/highlight.pack.js?1522506318"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/lettre/js/modernizr.custom.71422.js?1517057321"></script>
-    <script src="/lettre/js/learn.js?1517057321"></script>
-    <script src="/lettre/js/hugo-learn.js?1517057321"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1522506318"></script>
+    <script src="/lettre/js/learn.js?1522506318"></script>
+    <script src="/lettre/js/hugo-learn.js?1522506318"></script>
 
-    <link href="/lettre/mermaid/mermaid.css?1517057321" type="text/css" rel="stylesheet" />
-    <script src="/lettre/mermaid/mermaid.js?1517057321"></script>
+    <link href="/lettre/mermaid/mermaid.css?1522506318" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1522506318"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

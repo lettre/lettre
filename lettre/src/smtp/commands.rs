@@ -307,7 +307,7 @@ mod test {
     #[test]
     fn test_display() {
         let id = ClientId::Domain("localhost".to_string());
-        let email = EmailAddress::new("test@example.com".to_string());
+        let email = EmailAddress::new("test@example.com".to_string()).unwrap();
         let mail_parameter = MailParameter::Other {
             keyword: "TEST".to_string(),
             value: Some("value".to_string()),

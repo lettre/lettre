@@ -29,11 +29,15 @@ pub type StubResult = Result<(), ()>;
 
 impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport {
     fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
+        let envelope = email.envelope();
         info!(
             "{}: from=<{}> to=<{:?}>",
             email.message_id(),
-            email.from(),
-            email.to()
+            match envelope.from() {
+                Some(address) => address.to_string(),
+                None => "".to_string(),
+            },
+            envelope.to()
         );
         self.response
     }

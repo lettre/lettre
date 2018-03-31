@@ -308,6 +308,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
     fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SmtpResult {
         // Extract email information
         let message_id = email.message_id();
+        let envelope = email.envelope();
 
         // Check if the connection is still available
         if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
@@ -413,15 +414,22 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
 
         try_smtp!(
             self.client
-                .command(MailCommand::new(Some(email.from().clone()), mail_options,)),
+                .command(MailCommand::new(envelope.from().cloned(), mail_options,)),
             self
         );
 
         // Log the mail command
-        info!("{}: from=<{}>", message_id, email.from());
+        info!(
+            "{}: from=<{}>",
+            message_id,
+            match envelope.from() {
+                Some(address) => address.to_string(),
+                None => "".to_string(),
+            }
+        );
 
         // Recipient
-        for to_address in &email.to() {
+        for to_address in envelope.to() {
             try_smtp!(
                 self.client
                     .command(RcptCommand::new(to_address.clone(), vec![]),),

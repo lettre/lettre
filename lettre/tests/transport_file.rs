@@ -4,7 +4,7 @@ extern crate lettre;
 #[cfg(feature = "file-transport")]
 mod test {
 
-    use lettre::{EmailAddress, EmailTransport, SendableEmail, SimpleSendableEmail};
+    use lettre::{EmailTransport, SendableEmail, SimpleSendableEmail};
     use lettre::file::FileEmailTransport;
     use std::env::temp_dir;
     use std::fs::File;
@@ -15,11 +15,11 @@ mod test {
     fn file_transport() {
         let mut sender = FileEmailTransport::new(temp_dir());
         let email = SimpleSendableEmail::new(
-            EmailAddress::new("user@localhost".to_string()),
-            vec![EmailAddress::new("root@localhost".to_string())],
+            "user@localhost".to_string(),
+            &["root@localhost".to_string()],
             "file_id".to_string(),
             "Hello file".to_string(),
-        );
+        ).unwrap();
         let result = sender.send(&email);
         assert!(result.is_ok());
 
@@ -31,8 +31,7 @@ mod test {
 
         assert_eq!(
             buffer,
-            "{\"to\":[\"root@localhost\"],\"from\":\"user@localhost\",\"message_id\":\
-             \"file_id\",\"message\":[72,101,108,108,111,32,102,105,108,101]}"
+            "{\"envelope\":{\"forward_path\":[\"root@localhost\"],\"reverse_path\":\"user@localhost\"},\"message_id\":\"file_id\",\"message\":[72,101,108,108,111,32,102,105,108,101]}"
         );
 
         remove_file(file).unwrap();

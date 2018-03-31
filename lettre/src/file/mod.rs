@@ -40,10 +40,9 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport 
         let mut message_content = String::new();
         let _ = email.message().read_to_string(&mut message_content);
 
-        let simple_email = SimpleSendableEmail::new(
-            email.from().clone(),
-            email.to().clone(),
-            email.message_id().clone(),
+        let simple_email = SimpleSendableEmail::new_with_envelope(
+            email.envelope().clone(),
+            email.message_id().to_string(),
             message_content,
         );
 
