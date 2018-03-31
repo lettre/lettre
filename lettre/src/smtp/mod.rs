@@ -80,6 +80,7 @@ pub enum ClientSecurity {
 
 /// Configures connection reuse behavior
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub enum ConnectionReuseParameters {
     /// Unlimitied connection reuse
     ReuseUnlimited,

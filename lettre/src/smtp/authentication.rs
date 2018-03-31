@@ -51,6 +51,7 @@ impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
 
 /// Contains user credentials
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct Credentials {
     username: String,
     password: String,
@@ -65,6 +66,7 @@ impl Credentials {
 
 /// Represents authentication mechanisms
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
+#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub enum Mechanism {
     /// PLAIN authentication mechanism
     /// RFC 4616: https://tools.ietf.org/html/rfc4616
