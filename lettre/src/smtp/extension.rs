@@ -212,7 +212,7 @@ impl Display for MailParameter {
 }
 
 /// Values for the `BODY` parameter to `MAIL FROM`
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub enum MailBodyParameter {
     /// `7BIT`

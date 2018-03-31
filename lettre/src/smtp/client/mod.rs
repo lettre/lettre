@@ -18,7 +18,7 @@ pub mod net;
 pub mod mock;
 
 /// The codec used for transparency
-#[derive(Default, Debug)]
+#[derive(Default, Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct ClientCodec {
     escape_count: u8,

@@ -30,7 +30,7 @@ impl StdError for Error {
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
-            Io(ref err) => Some(&*err as &StdError),
+            Io(ref err) => Some(&*err),
             _ => None,
         }
     }

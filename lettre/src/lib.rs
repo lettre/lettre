@@ -5,8 +5,9 @@
 //!
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.8.0")]
-#![deny(missing_docs, unsafe_code, unstable_features, warnings)]
-
+#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts, unsafe_code, unstable_features,
+        unused_import_braces, unused_qualifications)]
 #[cfg(feature = "smtp-transport")]
 extern crate base64;
 #[cfg(feature = "smtp-transport")]
@@ -52,7 +53,7 @@ use std::error::Error as StdError;
 use std::str::FromStr;
 
 /// Error type for email content
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     /// Missing from in envelope
     MissingFrom,

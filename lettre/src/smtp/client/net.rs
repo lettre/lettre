@@ -8,6 +8,7 @@ use std::time::Duration;
 
 /// Parameters to use for secure clients
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct ClientTlsParameters {
     /// A connector from `native-tls`
     pub connector: TlsConnector,
