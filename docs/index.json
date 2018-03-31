@@ -20,7 +20,7 @@
     {
         "uri": "/content/getting-started/intro",
         "title": "Introduction",
-        "content": "\n{{% notice note %}}\nThis documentation is written for lettre 0.7.\nPlease use https://docs.rs/lettre/0.6.2/lettre/ for lettre 0.6.\n{{% /notice%}}\n\nLettre is an email library that allows creating and sending messages. It provides:\n\nAn easy to use email builder\nPluggable email transports\nUnicode support (for emails and transports, including for sender et recipient addresses when compatible)\nSecure defaults (emails are only sent encrypted by default)\n",
+        "content": "\n{{% notice note %}}\nThis documentation is written for lettre 0.8.\nPlease use https://docs.rs/lettre/0.7.0/lettre/ for lettre 0.7.\n{{% /notice%}}\n\nLettre is an email library that allows creating and sending messages. It provides:\n\nAn easy to use email builder\nPluggable email transports\nUnicode support (for emails and transports, including for sender et recipient addresses when compatible)\nSecure defaults (emails are only sent encrypted by default)\n",
         "tags": []
     },
     {
