@@ -53,16 +53,26 @@ impl Display for Category {
 /// The detail digit of a response code (third digit)
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum Detail {
-    #[allow(missing_docs)] Zero = 0,
-    #[allow(missing_docs)] One = 1,
-    #[allow(missing_docs)] Two = 2,
-    #[allow(missing_docs)] Three = 3,
-    #[allow(missing_docs)] Four = 4,
-    #[allow(missing_docs)] Five = 5,
-    #[allow(missing_docs)] Six = 6,
-    #[allow(missing_docs)] Seven = 7,
-    #[allow(missing_docs)] Eight = 8,
-    #[allow(missing_docs)] Nine = 9,
+    #[allow(missing_docs)]
+    Zero = 0,
+    #[allow(missing_docs)]
+    One = 1,
+    #[allow(missing_docs)]
+    Two = 2,
+    #[allow(missing_docs)]
+    Three = 3,
+    #[allow(missing_docs)]
+    Four = 4,
+    #[allow(missing_docs)]
+    Five = 5,
+    #[allow(missing_docs)]
+    Six = 6,
+    #[allow(missing_docs)]
+    Seven = 7,
+    #[allow(missing_docs)]
+    Eight = 8,
+    #[allow(missing_docs)]
+    Nine = 9,
 }
 
 impl Display for Detail {

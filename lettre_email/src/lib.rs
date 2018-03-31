@@ -15,13 +15,14 @@ pub mod error;
 
 pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use error::Error;
-use lettre::{EmailAddress, SendableEmail};
+use lettre::{EmailAddress, Envelope, Error as EmailError, SendableEmail};
 use mime::Mime;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use time::{now, Tm};
 use uuid::Uuid;
+use std::str::FromStr;
 
 /// Converts an address or an address with an alias to a `Header`
 pub trait IntoHeader {
@@ -293,43 +294,6 @@ pub struct EmailBuilder {
     envelope: Option<Envelope>,
     /// Date issued
     date_issued: bool,
-}
-
-/// Simple email enveloppe representation
-#[derive(PartialEq, Eq, Clone, Debug, Default)]
-pub struct Envelope {
-    /// The envelope recipients' addresses
-    pub to: Vec<String>,
-    /// The envelope sender address
-    pub from: String,
-}
-
-impl Envelope {
-    /// Constructs an envelope with no receivers and an empty sender
-    pub fn new() -> Self {
-        Envelope {
-            to: vec![],
-            from: String::new(),
-        }
-    }
-    /// Adds a receiver
-    pub fn to<S: Into<String>>(mut self, address: S) -> Self {
-        self.add_to(address);
-        self
-    }
-    /// Adds a receiver
-    pub fn add_to<S: Into<String>>(&mut self, address: S) {
-        self.to.push(address.into());
-    }
-    /// Sets the sender
-    pub fn from<S: Into<String>>(mut self, address: S) -> Self {
-        self.set_from(address);
-        self
-    }
-    /// Sets the sender
-    pub fn set_from<S: Into<String>>(&mut self, address: S) {
-        self.from = address.into();
-    }
 }
 
 /// Simple email representation
@@ -753,7 +717,7 @@ impl EmailBuilder {
             Some(e) => e,
             None => {
                 // we need to generate the envelope
-                let mut e = Envelope::new();
+                let mut e = Envelope::builder();
                 // add all receivers in to_header and cc_header
                 for receiver in self.to_header
                     .iter()
@@ -761,16 +725,13 @@ impl EmailBuilder {
                     .chain(self.bcc_header.iter())
                 {
                     match *receiver {
-                        Address::Mailbox(ref m) => e.add_to(m.address.clone()),
+                        Address::Mailbox(ref m) => e.add_to(EmailAddress::from_str(&m.address)?),
                         Address::Group(_, ref ms) => for m in ms.iter() {
-                            e.add_to(m.address.clone());
+                            e.add_to(EmailAddress::from_str(&m.address.clone())?);
                         },
                     }
                 }
-                if e.to.is_empty() {
-                    return Err(Error::MissingTo);
-                }
-                e.set_from(match self.sender_header {
+                e.set_from(EmailAddress::from_str(&match self.sender_header {
                     Some(x) => x.address.clone(), // if we have a sender_header, use it
                     None => {
                         // use a from header
@@ -783,15 +744,15 @@ impl EmailBuilder {
                                     // if it's an author group, use the first author
                                     Some(mailbox) => mailbox.address.clone(),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => return Err(Error::MissingFrom), // empty envelope sender
+                                    None => return Err(Error::Email(EmailError::MissingFrom)), // empty envelope sender
                                 },
                             },
                             // if we don't have a from header
-                            None => return Err(Error::MissingFrom), // empty envelope sender
+                            None => return Err(Error::Email(EmailError::MissingFrom)), // empty envelope sender
                         }
                     }
-                });
-                e
+                })?);
+                e.build()?
             }
         };
         // Add the collected addresses as mailbox-list all at once.
@@ -804,7 +765,7 @@ impl EmailBuilder {
             self.message
                 .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
         } else {
-            return Err(Error::MissingFrom);
+            return Err(Error::Email(EmailError::MissingFrom));
         }
         if !self.cc_header.is_empty() {
             self.message
@@ -845,20 +806,12 @@ impl EmailBuilder {
 }
 
 impl<'a> SendableEmail<'a, &'a [u8]> for Email {
-    fn to(&self) -> Vec<EmailAddress> {
-        self.envelope
-            .to
-            .iter()
-            .map(|x| EmailAddress::new(x.clone()))
-            .collect()
-    }
-
-    fn from(&self) -> EmailAddress {
-        EmailAddress::new(self.envelope.from.clone())
+    fn envelope(&self) -> Envelope {
+        self.envelope.clone()
     }
 
     fn message_id(&self) -> String {
-        format!("{}", self.message_id)
+        self.message_id.to_string()
     }
 
     fn message(&'a self) -> Box<&[u8]> {
@@ -975,14 +928,17 @@ mod test {
             .build()
             .unwrap();
 
-        assert_eq!(email.from().to_string(), "sender@localhost".to_string());
         assert_eq!(
-            email.to(),
+            email.envelope().from().unwrap().to_string(),
+            "sender@localhost".to_string()
+        );
+        assert_eq!(
+            email.envelope().to(),
             vec![
-                EmailAddress::new("user@localhost".to_string()),
-                EmailAddress::new("cc@localhost".to_string()),
-                EmailAddress::new("bcc@localhost".to_string()),
-            ]
+                EmailAddress::new("user@localhost".to_string()).unwrap(),
+                EmailAddress::new("cc@localhost".to_string()).unwrap(),
+                EmailAddress::new("bcc@localhost".to_string()).unwrap(),
+            ].as_slice()
         );
     }
 

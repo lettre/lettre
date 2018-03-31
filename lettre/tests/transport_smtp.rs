@@ -4,7 +4,7 @@ extern crate lettre;
 #[cfg(feature = "smtp-transport")]
 mod test {
 
-    use lettre::{ClientSecurity, EmailAddress, EmailTransport, SimpleSendableEmail, SmtpTransport};
+    use lettre::{ClientSecurity, EmailTransport, SimpleSendableEmail, SmtpTransport};
 
     #[test]
     fn smtp_transport_simple() {
@@ -12,11 +12,11 @@ mod test {
             .unwrap()
             .build();
         let email = SimpleSendableEmail::new(
-            EmailAddress::new("user@localhost".to_string()),
-            vec![EmailAddress::new("root@localhost".to_string())],
+            "user@localhost".to_string(),
+            &["root@localhost".to_string()],
             "smtp_id".to_string(),
             "Hello smtp".to_string(),
-        );
+        ).unwrap();
 
         sender.send(&email).unwrap();
     }

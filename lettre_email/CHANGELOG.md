@@ -7,6 +7,10 @@
 * Add tests for the doc using skeptic
 * Added a code of conduct
 
+#### Changed
+
+* `Envelope` was moved from `lettre_email` to `lettre`
+
 #### Fixed
 
 * Add missing "Bcc" headers when building the email

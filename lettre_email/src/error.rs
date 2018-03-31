@@ -5,13 +5,13 @@ use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 
+use lettre;
+
 /// An enum of all error kinds.
 #[derive(Debug)]
 pub enum Error {
-    /// Missing sender
-    MissingFrom,
-    /// Missing recipient
-    MissingTo,
+    /// Envelope error
+    Email(lettre::Error),
     /// Unparseable filename for attachment
     CannotParseFilename,
     /// IO error
@@ -27,8 +27,7 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            MissingFrom => "the sender is missing",
-            MissingTo => "the recipient is missing",
+            Email(ref err) => err.description(),
             CannotParseFilename => "the attachment filename could not be parsed",
             Io(ref err) => err.description(),
         }
@@ -38,5 +37,11 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Io(err)
+    }
+}
+
+impl From<lettre::Error> for Error {
+    fn from(err: lettre::Error) -> Error {
+        Email(err)
     }
 }

@@ -12,15 +12,15 @@ The sendmail transport sends the email using the local sendmail command.
 extern crate lettre;
 
 use lettre::sendmail::SendmailTransport;
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress};
+use lettre::{SimpleSendableEmail, EmailTransport};
 
 fn main() {
     let email = SimpleSendableEmail::new(
-                    EmailAddress::new("user@localhost".to_string()),
-                    vec![EmailAddress::new("root@localhost".to_string())],
+                    "user@localhost".to_string(),
+                    &["root@localhost".to_string()],
                     "message_id".to_string(),
                     "Hello world".to_string(),
-                );
+                ).unwrap();
     
     let mut sender = SendmailTransport::new();
     let result = sender.send(&email);

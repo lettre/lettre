@@ -33,13 +33,18 @@ impl SendmailTransport {
 
 impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTransport {
     fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SendmailResult {
+        let envelope = email.envelope();
+
         // Spawn the sendmail command
-        let to_addresses: Vec<String> = email.to().iter().map(|x| x.to_string()).collect();
+        let to_addresses: Vec<String> = envelope.to().iter().map(|x| x.to_string()).collect();
         let mut process = Command::new(&self.command)
             .args(&[
                 "-i",
                 "-f",
-                &email.from().to_string(),
+                &match envelope.from() {
+                    Some(address) => address.to_string(),
+                    None => "\"\"".to_string(),
+                },
                 &to_addresses.join(" "),
             ])
             .stdin(Stdio::piped())

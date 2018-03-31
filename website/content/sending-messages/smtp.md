@@ -26,15 +26,15 @@ This is the most basic example of usage:
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
 
 fn main() {
     let email = SimpleSendableEmail::new(
-                    EmailAddress::new("user@localhost".to_string()),
-                    vec![EmailAddress::new("root@localhost".to_string())],
+                    "user@localhost".to_string(),
+                    &["root@localhost".to_string()],
                     "message_id".to_string(),
                     "Hello world".to_string(),
-                );
+                ).unwrap();
     
     // Open a local connection on port 25
     let mut mailer =
@@ -52,17 +52,17 @@ fn main() {
 extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::ConnectionReuseParameters;
 
 fn main() {
     let email = SimpleSendableEmail::new(
-                    EmailAddress::new("user@localhost".to_string()),
-                    vec![EmailAddress::new("root@localhost".to_string())],
+                    "user@localhost".to_string(),
+                    &["root@localhost".to_string()],
                     "message_id".to_string(),
                     "Hello world".to_string(),
-                );
+                ).unwrap();
     
     // Connect to a remote server on a custom port
     let mut mailer = SmtpTransport::simple_builder("server.tld").unwrap()
@@ -109,10 +109,10 @@ fn main() {
     let _ = email_client.connect(&("localhost", SMTP_PORT), None);
     let _ = email_client.command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
     let _ = email_client.command(
-                MailCommand::new(Some(EmailAddress::new("user@example.com".to_string())), vec![])
+                MailCommand::new(Some(EmailAddress::new("user@example.com".to_string()).unwrap()), vec![])
             );
     let _ = email_client.command(
-                RcptCommand::new(EmailAddress::new("user@example.org".to_string()), vec![])
+                RcptCommand::new(EmailAddress::new("user@example.org".to_string()).unwrap(), vec![])
             );
     let _ = email_client.command(DataCommand);
     let _ = email_client.message(Box::new("Test email".as_bytes()));

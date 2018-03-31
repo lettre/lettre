@@ -12,17 +12,17 @@
     <title>SMTP transport :: Lettre site</title>
     
     
-    <link href="/lettre/css/nucleus.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/font-awesome.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/hybrid.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/featherlight.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/perfect-scrollbar.min.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/auto-complete.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/theme.css?1517057321" rel="stylesheet">
-    <link href="/lettre/css/hugo-theme.css?1517057321" rel="stylesheet">
+    <link href="/lettre/css/nucleus.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/font-awesome.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/hybrid.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/featherlight.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/perfect-scrollbar.min.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/auto-complete.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/theme.css?1522506318" rel="stylesheet">
+    <link href="/lettre/css/hugo-theme.css?1522506318" rel="stylesheet">
     
 
-    <script src="/lettre/js/jquery-2.x.min.js?1517057321"></script>
+    <script src="/lettre/js/jquery-2.x.min.js?1522506318"></script>
     
     <style type="text/css">
       :root #header + #content > #left > #rlblock_left{ 
@@ -49,14 +49,14 @@
     <span data-search-clear=""><i class="fa fa-close"></i></span>
 </div>
 
-<script type="text/javascript" src="/lettre/js/lunr.min.js?1517057321"></script>
-<script type="text/javascript" src="/lettre/js/auto-complete.js?1517057321"></script>
+<script type="text/javascript" src="/lettre/js/lunr.min.js?1522506318"></script>
+<script type="text/javascript" src="/lettre/js/auto-complete.js?1522506318"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/lettre.github.io\/lettre";
     
 </script>
-<script type="text/javascript" src="/lettre/js/search.js?1517057321"></script>
+<script type="text/javascript" src="/lettre/js/search.js?1522506318"></script>
 
     
   </div>
@@ -420,15 +420,15 @@ emails directly to the destination.</p>
 <p>This is the most basic example of usage:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
 
 fn main() {
     let email = SimpleSendableEmail::new(
-                    EmailAddress::new(&#34;user@localhost&#34;.to_string()),
-                    vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())],
+                    &#34;user@localhost&#34;.to_string(),
+                    &amp;[&#34;root@localhost&#34;.to_string()],
                     &#34;message_id&#34;.to_string(),
                     &#34;Hello world&#34;.to_string(),
-                );
+                ).unwrap();
     
     // Open a local connection on port 25
     let mut mailer =
@@ -442,17 +442,17 @@ fn main() {
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::{SimpleSendableEmail, EmailTransport, EmailAddress, SmtpTransport};
+use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::ConnectionReuseParameters;
 
 fn main() {
     let email = SimpleSendableEmail::new(
-                    EmailAddress::new(&#34;user@localhost&#34;.to_string()),
-                    vec![EmailAddress::new(&#34;root@localhost&#34;.to_string())],
+                    &#34;user@localhost&#34;.to_string(),
+                    &amp;[&#34;root@localhost&#34;.to_string()],
                     &#34;message_id&#34;.to_string(),
                     &#34;Hello world&#34;.to_string(),
-                );
+                ).unwrap();
     
     // Connect to a remote server on a custom port
     let mut mailer = SmtpTransport::simple_builder(&#34;server.tld&#34;).unwrap()
@@ -495,10 +495,10 @@ fn main() {
     let _ = email_client.connect(&amp;(&#34;localhost&#34;, SMTP_PORT), None);
     let _ = email_client.command(EhloCommand::new(ClientId::new(&#34;my_hostname&#34;.to_string())));
     let _ = email_client.command(
-                MailCommand::new(Some(EmailAddress::new(&#34;user@example.com&#34;.to_string())), vec![])
+                MailCommand::new(Some(EmailAddress::new(&#34;user@example.com&#34;.to_string()).unwrap()), vec![])
             );
     let _ = email_client.command(
-                RcptCommand::new(EmailAddress::new(&#34;user@example.org&#34;.to_string()), vec![])
+                RcptCommand::new(EmailAddress::new(&#34;user@example.org&#34;.to_string()).unwrap(), vec![])
             );
     let _ = email_client.command(DataCommand);
     let _ = email_client.message(Box::new(&#34;Test email&#34;.as_bytes()));
@@ -724,20 +724,20 @@ fn main() {
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/lettre/js/clipboard.min.js?1517057321"></script>
-    <script src="/lettre/js/perfect-scrollbar.min.js?1517057321"></script>
-    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1517057321"></script>
-    <script src="/lettre/js/jquery.sticky-kit.min.js?1517057321"></script>
-    <script src="/lettre/js/featherlight.min.js?1517057321"></script>
-    <script src="/lettre/js/html5shiv-printshiv.min.js?1517057321"></script>
-    <script src="/lettre/js/highlight.pack.js?1517057321"></script>
+    <script src="/lettre/js/clipboard.min.js?1522506318"></script>
+    <script src="/lettre/js/perfect-scrollbar.min.js?1522506318"></script>
+    <script src="/lettre/js/perfect-scrollbar.jquery.min.js?1522506318"></script>
+    <script src="/lettre/js/jquery.sticky-kit.min.js?1522506318"></script>
+    <script src="/lettre/js/featherlight.min.js?1522506318"></script>
+    <script src="/lettre/js/html5shiv-printshiv.min.js?1522506318"></script>
+    <script src="/lettre/js/highlight.pack.js?1522506318"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/lettre/js/modernizr.custom.71422.js?1517057321"></script>
-    <script src="/lettre/js/learn.js?1517057321"></script>
-    <script src="/lettre/js/hugo-learn.js?1517057321"></script>
+    <script src="/lettre/js/modernizr.custom.71422.js?1522506318"></script>
+    <script src="/lettre/js/learn.js?1522506318"></script>
+    <script src="/lettre/js/hugo-learn.js?1522506318"></script>
 
-    <link href="/lettre/mermaid/mermaid.css?1517057321" type="text/css" rel="stylesheet" />
-    <script src="/lettre/mermaid/mermaid.js?1517057321"></script>
+    <link href="/lettre/mermaid/mermaid.css?1522506318" type="text/css" rel="stylesheet" />
+    <script src="/lettre/mermaid/mermaid.js?1522506318"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
