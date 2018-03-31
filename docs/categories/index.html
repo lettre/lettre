@@ -9,7 +9,7 @@
 
     <link rel="shortcut icon" href="https://lettre.github.io/lettre/images/favicon.png" type="image/x-icon" />
 
-    <title>Sendmail transport :: Lettre site</title>
+    <title>Categories :: Lettre site</title>
     
     
     <link href="/lettre/css/nucleus.css?1522521488" rel="stylesheet">
@@ -32,7 +32,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/lettre/sending-messages/sendmail/">
+  <body class="" data-url="/lettre/categories/">
     <nav id="sidebar" class="">
 
 
@@ -175,7 +175,7 @@
   
     
     <li data-nav-id="/lettre/sending-messages/" title="Sending messages" class="dd-item 
-        parent
+        
         
         
         ">
@@ -237,7 +237,7 @@
  
   
     
-      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item active">
+      <li data-nav-id="/lettre/sending-messages/sendmail/" title="Sendmail transport" class="dd-item ">
         <a href="/lettre/sending-messages/sendmail/">
         Sendmail transport
         
@@ -320,17 +320,6 @@
               <div class="sticky-spacer">
                 <div id="top-bar">
                 
-                  
-                  
-                  
-                  <div id="top-github-link">
-                    <a class="github-link" href="https://github.com/lettre/lettre/edit/master/website/content/sending-messages/sendmail.md" target="blank">
-                      <i class="fa fa-code-fork"></i>
-                      Edit this page
-                    </a>
-                  </div>
-                  
-                
                 
                 <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
                     <span id="sidebar-toggle-span">
@@ -345,19 +334,7 @@
                     
           
           
-            
-            
-          
-          
-            
-            
-          
-          
-            <a href='/lettre/'>Lettre site</a> > <a href='/lettre/sending-messages/'>Sending messages</a> > Sendmail transport
-          
-         
-          
-         
+            Categories
           
            
                   </span>
@@ -377,35 +354,17 @@
         
         <div id="body-inner">
           
-            <h1>Sendmail transport</h1>
+            <h1>Categories</h1>
           
 
         
 
 
-<p>The sendmail transport sends the email using the local sendmail command.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-rust,no_run" data-lang="rust,no_run">extern crate lettre;
 
-use lettre::sendmail::SendmailTransport;
-use lettre::{SimpleSendableEmail, EmailTransport};
-
-fn main() {
-    let email = SimpleSendableEmail::new(
-                    &#34;user@localhost&#34;.to_string(),
-                    &amp;[&#34;root@localhost&#34;.to_string()],
-                    &#34;message_id&#34;.to_string(),
-                    &#34;Hello world&#34;.to_string(),
-                ).unwrap();
-    
-    let mut sender = SendmailTransport::new();
-    let result = sender.send(&amp;email);
-    assert!(result.is_ok());
-}</code></pre></div>
 
 <footer class=" footline" >
 	
 </footer>
-
 
         
         </div> 
@@ -503,7 +462,6 @@ fn main() {
             
                 
                     
-                    
                 
                 
 
@@ -517,8 +475,21 @@ fn main() {
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
                         
-                        
+            
+            
+                
                     
                 
                 
@@ -551,26 +522,6 @@ fn main() {
             
             
                 
-                    
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                        
-                        
                     
                 
                 
@@ -609,10 +560,8 @@ fn main() {
 
 
         
-            <a class="nav nav-prev" href="/lettre/sending-messages/smtp/" title="SMTP transport"> <i class="fa fa-chevron-left"></i></a>
         
-        
-            <a class="nav nav-next" href="/lettre/sending-messages/file/" title="File transport" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+            <a class="nav nav-next" href="/lettre/getting-started/" title="Getting started" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
         
     </div>
 
@@ -642,4 +591,3 @@ fn main() {
 
   </body>
 </html>
-
