@@ -7,7 +7,7 @@ use SendableEmail;
 use std::io::Read;
 
 /// This transport logs the message envelope and returns the given response
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct StubEmailTransport {
     response: StubResult,
 }

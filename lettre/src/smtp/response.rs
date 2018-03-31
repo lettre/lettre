@@ -1,7 +1,6 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use self::Severity::*;
 use nom::{crlf, ErrorKind as NomErrorKind, IResult as NomResult};
 use nom::simple_errors::Err as NomError;
 use std::fmt::{Display, Formatter, Result};
@@ -147,7 +146,7 @@ impl Response {
     /// Tells if the response is positive
     pub fn is_positive(&self) -> bool {
         match self.code.severity {
-            PositiveCompletion | PositiveIntermediate => true,
+            Severity::PositiveCompletion | Severity::PositiveIntermediate => true,
             _ => false,
         }
     }

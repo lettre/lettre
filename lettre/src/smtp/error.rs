@@ -73,11 +73,11 @@ impl StdError for Error {
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
-            ChallengeParsing(ref err) => Some(&*err as &StdError),
-            Utf8Parsing(ref err) => Some(&*err as &StdError),
-            Io(ref err) => Some(&*err as &StdError),
-            Tls(ref err) => Some(&*err as &StdError),
-            Parsing(ref err) => Some(&*err as &StdError),
+            ChallengeParsing(ref err) => Some(&*err),
+            Utf8Parsing(ref err) => Some(&*err),
+            Io(ref err) => Some(&*err),
+            Tls(ref err) => Some(&*err),
+            Parsing(ref err) => Some(&*err),
             _ => None,
         }
     }

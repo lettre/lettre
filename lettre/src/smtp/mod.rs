@@ -66,6 +66,7 @@ pub const NUL: &str = "\0";
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub enum ClientSecurity {
     /// Insecure connection
     None,
@@ -79,7 +80,7 @@ pub enum ClientSecurity {
 }
 
 /// Configures connection reuse behavior
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub enum ConnectionReuseParameters {
     /// Unlimitied connection reuse
@@ -91,6 +92,7 @@ pub enum ConnectionReuseParameters {
 }
 
 /// Contains client configuration
+#[allow(missing_debug_implementations)]
 pub struct SmtpTransportBuilder {
     /// Enable connection reuse
     connection_reuse: ConnectionReuseParameters,
@@ -199,6 +201,7 @@ struct State {
 }
 
 /// Structure that implements the high level SMTP client
+#[allow(missing_debug_implementations)]
 pub struct SmtpTransport {
     /// Information about the server
     /// Value is None before HELO/EHLO

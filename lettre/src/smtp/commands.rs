@@ -32,7 +32,7 @@ impl EhloCommand {
 }
 
 /// STARTTLS command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct StarttlsCommand;
 
@@ -104,7 +104,7 @@ impl RcptCommand {
 }
 
 /// DATA command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct DataCommand;
 
@@ -116,7 +116,7 @@ impl Display for DataCommand {
 }
 
 /// QUIT command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct QuitCommand;
 
@@ -128,7 +128,7 @@ impl Display for QuitCommand {
 }
 
 /// NOOP command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct NoopCommand;
 
@@ -206,7 +206,7 @@ impl ExpnCommand {
 }
 
 /// RSET command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct RsetCommand;
 
