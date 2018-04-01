@@ -1,4 +1,4 @@
-baseURL = "https://lettre.github.io/lettre"
+baseURL = "http://docs.lettre.at/"
 languageCode = "en-us"
 title = "Lettre site"
 theme = "hugo-theme-learn"
