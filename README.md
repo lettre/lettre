@@ -7,7 +7,7 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-This is an email library written in Rust.
+An email library written in Rust.
 
 ## Features
 
@@ -59,15 +59,8 @@ fn main() {
 
 ## Documentation
 
-Released versions:
-
-* [latest](https://docs.rs/lettre/)
-* [v0.8.0](https://docs.rs/lettre/0.8.0/lettre/)
-* [v0.7.0](https://docs.rs/lettre/0.7.0/lettre/)
-* [v0.6.2](https://docs.rs/lettre/0.6.2/lettre/)
-* [v0.6.1](https://docs.rs/lettre/0.6.1/lettre/)
-* [v0.6.0](https://docs.rs/lettre/0.6.0/lettre/)
-* [v0.5.1](https://docs.rs/lettre/0.5.1/lettre/)
+* [User documentation](http://docs.lettre.at/)
+* [API reference](https://docs.rs/lettre/)
 
 ## Install
 
