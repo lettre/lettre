@@ -74,10 +74,10 @@ pub enum Extension {
 impl Display for Extension {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
-            Extension::EightBitMime => write!(f, "{}", "8BITMIME"),
-            Extension::SmtpUtfEight => write!(f, "{}", "SMTPUTF8"),
-            Extension::StartTls => write!(f, "{}", "STARTTLS"),
-            Extension::Authentication(ref mechanism) => write!(f, "{} {}", "AUTH", mechanism),
+            Extension::EightBitMime => write!(f, "8BITMIME"),
+            Extension::SmtpUtfEight => write!(f, "SMTPUTF8"),
+            Extension::StartTls => write!(f, "STARTTLS"),
+            Extension::Authentication(ref mechanism) => write!(f, "AUTH {}", mechanism),
         }
     }
 }
