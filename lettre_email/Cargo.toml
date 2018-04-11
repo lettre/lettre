@@ -1,7 +1,7 @@
 [package]
 
 name = "lettre_email"
-version = "0.8.0" # remember to update html_root_url
+version = "0.8.1" # remember to update html_root_url
 description = "Email builder"
 readme = "README.md"
 documentation = "https://docs.rs/lettre_email/"
@@ -10,17 +10,13 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
 categories = ["email"]
 keywords = ["email", "mailer"]
-build = "build.rs"
 
 [badges]
 travis-ci = { repository = "lettre/lettre_email" }
 
 [dev-dependencies]
 lettre = { version = "^0.8", path = "../lettre", features = ["smtp-transport"] }
-skeptic = "^0.13"
-
-[build-dependencies]
-skeptic = "^0.13"
+glob = "0.2"
 
 [dependencies]
 email = "^0.0"
