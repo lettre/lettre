@@ -10,7 +10,6 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
 categories = ["email"]
 keywords = ["email", "smtp", "mailer"]
-build = "build.rs"
 
 [badges]
 travis-ci = { repository = "lettre/lettre" }
@@ -30,10 +29,7 @@ serde_derive = { version = "^1.0", optional = true }
 
 [dev-dependencies]
 env_logger = "^0.5"
-skeptic = "^0.13"
-
-[build-dependencies]
-skeptic = "^0.13"
+glob = "0.2"
 
 [features]
 default = ["file-transport", "crammd5-auth", "smtp-transport", "sendmail-transport"]
