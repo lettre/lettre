@@ -12,13 +12,6 @@ matrix:
 
 sudo: required
 
-cache:
-  directories:
-  - target/debug/deps
-  - target/debug/build
-  - target/release/deps
-  - target/release/build
-
 addons:
   apt:
     packages:
