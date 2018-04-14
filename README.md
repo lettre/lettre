@@ -59,7 +59,7 @@ fn main() {
 
 ## Documentation
 
-* [User documentation](http://docs.lettre.at/)
+* [User documentation](http://lettre.at/)
 * [API reference](https://docs.rs/lettre/)
 
 ## Install
