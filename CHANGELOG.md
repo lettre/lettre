@@ -1,3 +1,23 @@
+<a name="v0.8.1"></a>
+### v0.8.1 (2018-04-11)
+
+#### Fix
+
+* **all:**
+  *  Replace skeptic by some custom rustdoc invocations ([81bad131](https://github.com/lettre/lettre/commit/81bad1317519d330c46ea02f2b7a266b97cc00dd))
+
+#### Documentation
+
+* **all:**
+  *  Add changelog sections for style and docs ([b4d03ead](https://github.com/lettre/lettre/commit/b4d03ead8cce04e0c3d65a30e7a07acca9530f30))
+  *  Use clog to generate changelogs ([8981a775](https://github.com/lettre/lettre/commit/8981a7758c89be69974ef204c4390744aea94e4f), closes [#233](https://github.com/lettre/lettre/issues/233))
+
+#### Style
+
+* **transport-smtp:**  Avoid useless empty format strings ([f3271715](https://github.com/lettre/lettre/commit/f3271715ecaf2793c9064462184867e4f22b0ead))
+
+
+
 <a name="v0.8.0"></a>
 ### v0.8.0 (2018-03-31)
 
