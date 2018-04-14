@@ -4,6 +4,7 @@
 
 [![Build Status](https://travis-ci.org/lettre/lettre.svg?branch=master)](https://travis-ci.org/lettre/lettre)
 [![Build status](https://ci.appveyor.com/api/projects/status/mpwglemugjtkps2d/branch/master?svg=true)](https://ci.appveyor.com/project/amousset/lettre/branch/master)
+[![codecov](https://codecov.io/gh/lettre/lettre/branch/master/graph/badge.svg)](https://codecov.io/gh/lettre/lettre)
 
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
 [![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
