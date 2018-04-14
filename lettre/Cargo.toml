@@ -4,7 +4,7 @@ name = "lettre"
 version = "0.9.0" # remember to update html_root_url
 description = "Email client"
 readme = "README.md"
-documentation = "https://docs.rs/lettre/"
+homepage = "http://lettre.at"
 repository = "https://github.com/lettre/lettre"
 license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
@@ -13,6 +13,10 @@ keywords = ["email", "smtp", "mailer"]
 
 [badges]
 travis-ci = { repository = "lettre/lettre" }
+appveyor = { repository = "lettre/lettre" }
+maintenance = { status = "actively-developed" }
+is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
+is-it-maintained-open-issues = { repository = "lettre/lettre" }
 
 [dependencies]
 log = "^0.4"
