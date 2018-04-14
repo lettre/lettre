@@ -1,10 +1,4 @@
-+++
-date = "2017-05-21T23:46:17+02:00"
-title = "SMTP transport"
-toc = true
-weight = 2
-
-+++
+SMTP Transport
 
 This transport uses the SMTP protocol to send emails over the network (locally or remotely).
 

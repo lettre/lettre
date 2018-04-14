@@ -1,10 +1,6 @@
-+++
-date = "2018-01-21T23:46:17+02:00"
-title = "Email creation"
-toc = true
-weight = 4
+### Creating messages
 
-+++
+This section explains how to create emails.
 
 #### Simple example
 
