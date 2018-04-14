@@ -1,10 +1,4 @@
-+++
-date = "2017-05-21T23:46:17+02:00"
-title = "Sendmail transport"
-toc = true
-weight = 3
-
-+++
+#### Sendmail Transport
 
 The sendmail transport sends the email using the local sendmail command.
 
