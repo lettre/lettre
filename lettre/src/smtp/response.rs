@@ -169,7 +169,7 @@ impl Response {
     }
 }
 
-// Parsers (originaly from tokio-smtp)
+// Parsers (originally from tokio-smtp)
 
 named!(
     parse_code<Code>,
