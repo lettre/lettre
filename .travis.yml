@@ -1,17 +1,13 @@
 language: rust
-
 rust:
 - stable
 - beta
 - nightly
 - 1.18.0
-
 matrix:
   allow_failures:
-    - rust: nightly
-
+  - rust: nightly
 sudo: required
-
 addons:
   apt:
     packages:
@@ -23,25 +19,31 @@ addons:
     - gcc
     - binutils-dev
     - libiberty-dev
-
 before_script:
-  - smtp-sink 2525 1000&
-  - sudo chgrp -R postdrop /var/spool/postfix/maildrop
-
+- smtp-sink 2525 1000&
+- sudo chgrp -R postdrop /var/spool/postfix/maildrop
 script:
-  - cargo test --verbose --all
-
-after_success: |
-  wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
-  tar xzf master.tar.gz &&
-  cd kcov-master &&
-  mkdir build &&
-  cd build &&
-  cmake .. &&
-  make &&
-  make install DESTDIR=../../kcov-build &&
-  cd ../.. &&
-  rm -rf kcov-master &&
-  for file in target/debug/lettre*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
-  bash <(curl -s https://codecov.io/bash) &&
-  echo "Uploaded code coverage"
+- cargo test --verbose --all
+after_success: |-
+  - wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz &&
+    tar xzf master.tar.gz &&
+    cd kcov-master &&
+    mkdir build &&
+    cd build &&
+    cmake .. &&
+    make &&
+    make install DESTDIR=../../kcov-build &&
+    cd ../.. &&
+    rm -rf kcov-master &&
+    for file in target/debug/lettre*[^\.d]; do mkdir -p "target/cov/$(basename $file)"; ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --verify "target/cov/$(basename $file)" "$file"; done &&
+    bash <(curl -s https://codecov.io/bash) &&
+    echo "Uploaded code coverage"
+  - [ $TRAVIS_BRANCH = master ] &&
+    [ $TRAVIS_PULL_REQUEST = false ] &&
+    cd website && make clean && make &&
+    sudo pip install ghp-import &&
+    ghp-import -n _book &&
+    git push -fq https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages
+env:
+  global:
+    secure: CkJDc8fdUFva8vtnG7fgqE6B8+G1UzqgemQszv5Gbg/mMnv6Pk7nClePMvSz1J/WEtcvPqqc0I41Z/3OjvIDzfaGjXFBYmn7TvafgBVE7qB3xOgnSg2AlTZYJ/yh5FMx3j5m8DqoM7XffXVRUXdqQDeer7/yT3zKieE2gu/CDH0IAuuJeVp/xJOQHGrktMubdg89w9+w7cjH9avLFMMpbyt5D5jOamR9eEPt5SoxTv/HF6Sy79Jc+rNvUcI+7n/ateBRNODkPxUZGElKILk0M+AKYQU951o1hEHzJyBpMDMQAou5udh690ZMvXZxjyTP07APRtrOZScgfjIcMyVsX4GCAy8ePJ8v8bH6SuMQlVnBOyyu6IGH1rubZV+NpK5Qxd19r5xD/4N6ZwKHmWSo5eQgFNXLrZ6x56ntO8CnrC+p0p8oqvDkITBFvTVEPrz35bF1GOTgoG6egkVz5Vj5Z32ipmc9/a/dUI0wGWbjC4Bc2AuGks+H8A+G2dHRCYHF3gwuvYh8hnEePs+ZKGUffbFNeHCI8I7krOvTgLCLYos9BSvMqKT8+4MLQaO+/C00BX/qYZZfAeI3HngwlcYWHNaTwKFJRRHsf2uNS/5wlhSAlKOchr7Tw231Z+EwOw6dmEn9bgriFjWbbhWAoV6U1priz1P97x6t3sZjQA3eCvs=
