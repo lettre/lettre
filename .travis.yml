@@ -23,9 +23,7 @@ addons:
 before_script:
 - smtp-sink 2525 1000&
 - sudo chgrp -R postdrop /var/spool/postfix/maildrop
-- npm config set ca ""
-- sudo npm install -g npm
-- npm config delete ca
+- sudo npm set strict-ssl false && sudo npm install -g gitbook-cli
 script:
 - cargo test --verbose --all
 after_success:
