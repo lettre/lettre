@@ -3,7 +3,7 @@
     "plugins": [ "-sharing", "edit-link" ],
     "pluginsConfig": {
         "edit-link": {
-            "base": "https://github.com/lettre/lettre/edit/master/website/src",
+            "base": "https://github.com/lettre/lettre/edit/master/website/content",
             "label": "Edit"
         }
     }
