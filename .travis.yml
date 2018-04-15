@@ -29,6 +29,3 @@ script:
 after_success:
 - ./.build-scripts/codecov.sh
 - '[ $TRAVIS_BRANCH = master ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'
-env:
-  global:
-    secure: CkJDc8fdUFva8vtnG7fgqE6B8+G1UzqgemQszv5Gbg/mMnv6Pk7nClePMvSz1J/WEtcvPqqc0I41Z/3OjvIDzfaGjXFBYmn7TvafgBVE7qB3xOgnSg2AlTZYJ/yh5FMx3j5m8DqoM7XffXVRUXdqQDeer7/yT3zKieE2gu/CDH0IAuuJeVp/xJOQHGrktMubdg89w9+w7cjH9avLFMMpbyt5D5jOamR9eEPt5SoxTv/HF6Sy79Jc+rNvUcI+7n/ateBRNODkPxUZGElKILk0M+AKYQU951o1hEHzJyBpMDMQAou5udh690ZMvXZxjyTP07APRtrOZScgfjIcMyVsX4GCAy8ePJ8v8bH6SuMQlVnBOyyu6IGH1rubZV+NpK5Qxd19r5xD/4N6ZwKHmWSo5eQgFNXLrZ6x56ntO8CnrC+p0p8oqvDkITBFvTVEPrz35bF1GOTgoG6egkVz5Vj5Z32ipmc9/a/dUI0wGWbjC4Bc2AuGks+H8A+G2dHRCYHF3gwuvYh8hnEePs+ZKGUffbFNeHCI8I7krOvTgLCLYos9BSvMqKT8+4MLQaO+/C00BX/qYZZfAeI3HngwlcYWHNaTwKFJRRHsf2uNS/5wlhSAlKOchr7Tw231Z+EwOw6dmEn9bgriFjWbbhWAoV6U1priz1P97x6t3sZjQA3eCvs=
