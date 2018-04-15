@@ -77,7 +77,7 @@
 #### Changes
 
 * **documentation**
-  * #91: Build seperate docs for each release
+  * #91: Build separate docs for each release
   * #96: Add complete documentation information to README
 
 #### Fixed

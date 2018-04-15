@@ -45,7 +45,7 @@ impl<S: Into<String>, T: Into<String>> IntoHeader for (S, T) {
     }
 }
 
-/// Converts an adress or an address with an alias to a `Mailbox`
+/// Converts an address or an address with an alias to a `Mailbox`
 pub trait IntoMailbox {
     /// Converts to a `Mailbox` struct
     fn into_mailbox(self) -> Mailbox;
@@ -372,7 +372,7 @@ impl PartBuilder {
         self.message.children.push(child);
     }
 
-    /// Gets builded `MimeMessage`
+    /// Gets built `MimeMessage`
     pub fn build(mut self) -> MimeMessage {
         self.message.update_headers();
         self.message
