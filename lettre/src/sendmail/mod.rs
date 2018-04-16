@@ -32,7 +32,9 @@ impl SendmailTransport {
     }
 }
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T> for SendmailTransport {
+    type Result = SendmailResult;
+
     fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SendmailResult {
         let envelope = email.envelope();
 
