@@ -27,7 +27,9 @@ impl StubEmailTransport {
 /// SMTP result type
 pub type StubResult = Result<(), ()>;
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T, StubResult> for StubEmailTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T> for StubEmailTransport {
+    type Result = StubResult;
+
     fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
         let envelope = email.envelope();
         info!(

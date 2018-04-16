@@ -212,9 +212,12 @@ pub trait SendableEmail<'a, T: Read + 'a> {
 }
 
 /// Transport method for emails
-pub trait EmailTransport<'a, U: Read + 'a, V> {
+pub trait EmailTransport<'a, U: Read + 'a> {
+    /// Result type for the transport
+    type Result;
+
     /// Sends the email
-    fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> V;
+    fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> Self::Result;
 }
 
 /// Minimal email structure

@@ -31,7 +31,9 @@ impl FileEmailTransport {
     }
 }
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T, FileResult> for FileEmailTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T> for FileEmailTransport {
+    type Result = FileResult;
+
     fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> FileResult {
         let mut file = self.path.clone();
         file.push(format!("{}.txt", email.message_id()));

@@ -306,7 +306,9 @@ impl<'a> SmtpTransport {
     }
 }
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T, SmtpResult> for SmtpTransport {
+impl<'a, T: Read + 'a> EmailTransport<'a, T> for SmtpTransport {
+    type Result = SmtpResult;
+
     /// Sends an email
     #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
     fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SmtpResult {
