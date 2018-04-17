@@ -1,11 +1,9 @@
 //! Provides authentication mechanisms
 
 #[cfg(feature = "crammd5-auth")]
-use crypto::hmac::Hmac;
+use md5::Md5;
 #[cfg(feature = "crammd5-auth")]
-use crypto::mac::Mac;
-#[cfg(feature = "crammd5-auth")]
-use crypto::md5::Md5;
+use hmac::{Hmac, Mac};
 #[cfg(feature = "crammd5-auth")]
 use hex;
 use smtp::NUL;
@@ -146,7 +144,8 @@ impl Mechanism {
                     None => return Err(Error::Client("This mechanism does expect a challenge")),
                 };
 
-                let mut hmac = Hmac::new(Md5::new(), credentials.password.as_bytes());
+                let mut hmac: Hmac<Md5> = Hmac::new_varkey(credentials.password.as_bytes())
+                    .expect("md5 should support variable key size");
                 hmac.input(decoded_challenge.as_bytes());
 
                 Ok(format!(
