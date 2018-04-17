@@ -26,7 +26,8 @@ native-tls = { version = "^0.1", optional = true }
 base64 = { version = "^0.9", optional = true }
 hex = { version = "^0.3", optional = true }
 hostname = { version = "^0.1", optional = true }
-rust-crypto = { version = "^0.2", optional = true }
+md-5 = { version = "^0.7", optional = true }
+hmac = { version = "^0.6", optional = true }
 serde = { version = "^1.0", optional = true }
 serde_json = { version = "^1.0", optional = true }
 serde_derive = { version = "^1.0", optional = true }
@@ -40,7 +41,7 @@ default = ["file-transport", "crammd5-auth", "smtp-transport", "sendmail-transpo
 unstable = []
 serde-impls = ["serde", "serde_derive"]
 file-transport = ["serde-impls", "serde_json"]
-crammd5-auth = ["rust-crypto", "hex"]
+crammd5-auth = ["md-5", "hmac", "hex"]
 smtp-transport = ["bufstream", "native-tls", "base64", "nom", "hostname"]
 sendmail-transport = []
 
