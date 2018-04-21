@@ -194,10 +194,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Sends the message content
-    pub fn message<T: Read>(&mut self, mut message: Box<T>) -> SmtpResult {
+    pub fn message(&mut self, message: Box<Read>) -> SmtpResult {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
-        let mut message_reader = BufReader::new(message.as_mut());
+
+        let mut message_reader = BufReader::new(message);
 
         loop {
             out_buf.clear();

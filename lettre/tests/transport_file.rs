@@ -4,8 +4,8 @@ extern crate lettre;
 #[cfg(feature = "file-transport")]
 mod test {
 
-    use lettre::{EmailTransport, SendableEmail, SimpleSendableEmail};
-    use lettre::file::FileEmailTransport;
+    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
+    use lettre::file::FileTransport;
     use std::env::temp_dir;
     use std::fs::File;
     use std::fs::remove_file;
@@ -13,25 +13,28 @@ mod test {
 
     #[test]
     fn file_transport() {
-        let mut sender = FileEmailTransport::new(temp_dir());
-        let email = SimpleSendableEmail::new(
-            "user@localhost".to_string(),
-            &["root@localhost".to_string()],
-            "file_id".to_string(),
-            "Hello file".to_string(),
-        ).unwrap();
-        let result = sender.send(&email);
+        let mut sender = FileTransport::new(temp_dir());
+        let email = SendableEmail::new(
+            Envelope::new(
+                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+            ).unwrap(),
+            "id".to_string(),
+            "Hello ß☺ example".to_string().into_bytes(),
+        );
+        let message_id = email.message_id().to_string();
+
+        let result = sender.send(email);
         assert!(result.is_ok());
 
-        let message_id = email.message_id();
-        let file = format!("{}/{}.txt", temp_dir().to_str().unwrap(), message_id);
+        let file = format!("{}/{}.json", temp_dir().to_str().unwrap(), message_id);
         let mut f = File::open(file.clone()).unwrap();
         let mut buffer = String::new();
         let _ = f.read_to_string(&mut buffer);
 
         assert_eq!(
             buffer,
-            "{\"envelope\":{\"forward_path\":[\"root@localhost\"],\"reverse_path\":\"user@localhost\"},\"message_id\":\"file_id\",\"message\":[72,101,108,108,111,32,102,105,108,101]}"
+            "{\"envelope\":{\"forward_path\":[\"root@localhost\"],\"reverse_path\":\"user@localhost\"},\"message_id\":\"id\",\"message\":[72,101,108,108,111,32,195,159,226,152,186,32,101,120,97,109,112,108,101]}"
         );
 
         remove_file(file).unwrap();

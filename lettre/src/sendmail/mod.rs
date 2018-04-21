@@ -1,7 +1,8 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use {EmailTransport, SendableEmail};
+use Transport;
+use SendableEmail;
 use sendmail::error::SendmailResult;
 use std::io::Read;
 use std::io::prelude::*;
@@ -32,19 +33,19 @@ impl SendmailTransport {
     }
 }
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T> for SendmailTransport {
+impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SendmailResult {
-        let envelope = email.envelope();
+    fn send(&mut self, email: SendableEmail) -> SendmailResult {
+        let message_id = email.message_id().to_string();
 
         // Spawn the sendmail command
-        let to_addresses: Vec<String> = envelope.to().iter().map(|x| x.to_string()).collect();
+        let to_addresses: Vec<String> = email.envelope.to().iter().map(|x| x.to_string()).collect();
         let mut process = Command::new(&self.command)
             .args(&[
                 "-i",
                 "-f",
-                &match envelope.from() {
+                &match email.envelope().from() {
                     Some(address) => address.to_string(),
                     None => "\"\"".to_string(),
                 },
@@ -67,7 +68,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T> for SendmailTransport {
             Err(error) => return Err(From::from(error)),
         }
 
-        info!("Wrote message to stdin");
+        info!("Wrote {} message to stdin", message_id);
 
         if let Ok(output) = process.wait_with_output() {
             if output.status.success() {

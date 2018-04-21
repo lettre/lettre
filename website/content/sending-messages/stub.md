@@ -6,19 +6,21 @@ testing purposes.
 ```rust
 extern crate lettre;
 
-use lettre::stub::StubEmailTransport;
-use lettre::{SimpleSendableEmail, EmailTransport};
+use lettre::stub::StubTransport;
+use lettre::{SendableEmail, Envelope, EmailAddress, Transport};
 
 fn main() {
-    let email = SimpleSendableEmail::new(
-                    "user@localhost".to_string(),
-                    &["root@localhost".to_string()],
-                    "message_id".to_string(),
-                    "Hello world".to_string(),
-                ).unwrap();
+    let email = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id".to_string(),
+        "Hello world".to_string().into_bytes(),
+    );
     
-    let mut sender = StubEmailTransport::new_positive();
-    let result = sender.send(&email);
+    let mut sender = StubTransport::new_positive();
+    let result = sender.send(email);
     assert!(result.is_ok());
 }
 ```

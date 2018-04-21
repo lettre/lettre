@@ -14,8 +14,7 @@
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 
-use EmailTransport;
-use SendableEmail;
+use {SendableEmail, Transport};
 use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS};
@@ -25,7 +24,6 @@ use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
-use std::io::Read;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -306,15 +304,13 @@ impl<'a> SmtpTransport {
     }
 }
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T> for SmtpTransport {
+impl<'a> Transport<'a> for SmtpTransport {
     type Result = SmtpResult;
 
     /// Sends an email
     #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
-    fn send<U: SendableEmail<'a, T> + 'a>(&mut self, email: &'a U) -> SmtpResult {
-        // Extract email information
-        let message_id = email.message_id();
-        let envelope = email.envelope();
+    fn send(&mut self, email: SendableEmail) -> SmtpResult {
+        let message_id = email.message_id().to_string();
 
         // Check if the connection is still available
         if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
@@ -419,8 +415,10 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T> for SmtpTransport {
         }
 
         try_smtp!(
-            self.client
-                .command(MailCommand::new(envelope.from().cloned(), mail_options,)),
+            self.client.command(MailCommand::new(
+                email.envelope().from().cloned(),
+                mail_options,
+            )),
             self
         );
 
@@ -428,14 +426,14 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T> for SmtpTransport {
         info!(
             "{}: from=<{}>",
             message_id,
-            match envelope.from() {
+            match email.envelope().from() {
                 Some(address) => address.to_string(),
                 None => "".to_string(),
             }
         );
 
         // Recipient
-        for to_address in envelope.to() {
+        for to_address in email.envelope().to() {
             try_smtp!(
                 self.client
                     .command(RcptCommand::new(to_address.clone(), vec![]),),
@@ -449,7 +447,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T> for SmtpTransport {
         try_smtp!(self.client.command(DataCommand), self);
 
         // Message content
-        let result = self.client.message(email.message());
+        let result = self.client.message(Box::new(email.message()));
 
         if result.is_ok() {
             // Increment the connection reuse counter

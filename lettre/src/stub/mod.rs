@@ -2,44 +2,42 @@
 //! testing purposes.
 //!
 
-use EmailTransport;
+use Transport;
 use SendableEmail;
-use std::io::Read;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
-pub struct StubEmailTransport {
+pub struct StubTransport {
     response: StubResult,
 }
 
-impl StubEmailTransport {
+impl StubTransport {
     /// Creates a new transport that always returns the given response
-    pub fn new(response: StubResult) -> StubEmailTransport {
-        StubEmailTransport { response }
+    pub fn new(response: StubResult) -> StubTransport {
+        StubTransport { response }
     }
 
     /// Creates a new transport that always returns a success response
-    pub fn new_positive() -> StubEmailTransport {
-        StubEmailTransport { response: Ok(()) }
+    pub fn new_positive() -> StubTransport {
+        StubTransport { response: Ok(()) }
     }
 }
 
 /// SMTP result type
 pub type StubResult = Result<(), ()>;
 
-impl<'a, T: Read + 'a> EmailTransport<'a, T> for StubEmailTransport {
+impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
-    fn send<U: SendableEmail<'a, T>>(&mut self, email: &'a U) -> StubResult {
-        let envelope = email.envelope();
+    fn send(&mut self, email: SendableEmail) -> StubResult {
         info!(
             "{}: from=<{}> to=<{:?}>",
             email.message_id(),
-            match envelope.from() {
+            match email.envelope().from() {
                 Some(address) => address.to_string(),
                 None => "".to_string(),
             },
-            envelope.to()
+            email.envelope().to()
         );
         self.response
     }

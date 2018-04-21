@@ -3,8 +3,8 @@
 extern crate lettre;
 extern crate test;
 
-use lettre::{ClientSecurity, SmtpTransport};
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
+use lettre::{ClientSecurity, SmtpTransport, Envelope};
+use lettre::{EmailAddress, SendableEmail, Transport};
 use lettre::smtp::ConnectionReuseParameters;
 
 #[bench]
@@ -13,13 +13,15 @@ fn bench_simple_send(b: &mut test::Bencher) {
         .unwrap()
         .build();
     b.iter(|| {
-        let email = SimpleSendableEmail::new(
-            EmailAddress::new("user@localhost".to_string()),
-            vec![EmailAddress::new("root@localhost".to_string())],
+        let email = SendableEmail::new(
+            Envelope::new(
+                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+            ).unwrap(),
             "id".to_string(),
-            "Hello world".to_string(),
+            "Hello ß☺ example".to_string().into_bytes(),
         );
-        let result = sender.send(&email);
+        let result = sender.send(email);
         assert!(result.is_ok());
     });
 }
@@ -31,13 +33,15 @@ fn bench_reuse_send(b: &mut test::Bencher) {
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
         .build();
     b.iter(|| {
-        let email = SimpleSendableEmail::new(
-            EmailAddress::new("user@localhost".to_string()),
-            vec![EmailAddress::new("root@localhost".to_string())],
+        let email = SendableEmail::new(
+            Envelope::new(
+                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+            ).unwrap(),
             "id".to_string(),
-            "Hello world".to_string(),
+            "Hello ß☺ example".to_string().into_bytes(),
         );
-        let result = sender.send(&email);
+        let result = sender.send(email);
         assert!(result.is_ok());
     });
     sender.close()

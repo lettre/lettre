@@ -26,242 +26,6 @@ use time::{now, Tm};
 use uuid::Uuid;
 use std::str::FromStr;
 
-/// Converts an address or an address with an alias to a `Header`
-pub trait IntoHeader {
-    /// Converts to a `Header` struct
-    fn into_header(self) -> Header;
-}
-
-impl IntoHeader for Header {
-    fn into_header(self) -> Header {
-        self
-    }
-}
-
-impl<S: Into<String>, T: Into<String>> IntoHeader for (S, T) {
-    fn into_header(self) -> Header {
-        let (name, value) = self;
-        Header::new(name.into(), value.into())
-    }
-}
-
-/// Converts an address or an address with an alias to a `Mailbox`
-pub trait IntoMailbox {
-    /// Converts to a `Mailbox` struct
-    fn into_mailbox(self) -> Mailbox;
-}
-
-impl IntoMailbox for Mailbox {
-    fn into_mailbox(self) -> Mailbox {
-        self
-    }
-}
-
-impl<'a> IntoMailbox for &'a str {
-    fn into_mailbox(self) -> Mailbox {
-        Mailbox::new(self.into())
-    }
-}
-
-impl IntoMailbox for String {
-    fn into_mailbox(self) -> Mailbox {
-        Mailbox::new(self)
-    }
-}
-
-impl<S: Into<String>, T: Into<String>> IntoMailbox for (S, T) {
-    fn into_mailbox(self) -> Mailbox {
-        let (address, alias) = self;
-        Mailbox::new_with_name(alias.into(), address.into())
-    }
-}
-
-/// Can be transformed to a sendable email
-pub trait IntoEmail {
-    /// Builds an email
-    fn into_email(self) -> Result<Email, Error>;
-}
-
-impl IntoEmail for SimpleEmail {
-    fn into_email(self) -> Result<Email, Error> {
-        let mut builder = EmailBuilder::new();
-
-        if self.from.is_some() {
-            builder.add_from(self.from.unwrap());
-        }
-
-        for to_address in self.to {
-            builder.add_to(to_address.into_mailbox());
-        }
-
-        for cc_address in self.cc {
-            builder.add_cc(cc_address.into_mailbox());
-        }
-
-        if self.reply_to.is_some() {
-            builder.add_reply_to(self.reply_to.unwrap().into_mailbox());
-        }
-
-        if self.subject.is_some() {
-            builder.set_subject(self.subject.unwrap());
-        }
-
-        // No date for now
-
-        match (self.text, self.html) {
-            (Some(text), Some(html)) => builder.set_alternative(html, text),
-            (Some(text), None) => builder.set_text(text),
-            (None, Some(html)) => builder.set_html(html),
-            (None, None) => (),
-        }
-
-        for header in self.headers {
-            builder.add_header(header.into_header());
-        }
-
-        builder.build()
-    }
-}
-
-/// Simple representation of an email, useful for some transports
-#[derive(PartialEq, Eq, Clone, Debug, Default)]
-pub struct SimpleEmail {
-    from: Option<Mailbox>,
-    to: Vec<Mailbox>,
-    cc: Vec<Mailbox>,
-    bcc: Vec<Mailbox>,
-    reply_to: Option<Mailbox>,
-    subject: Option<String>,
-    date: Option<Tm>,
-    html: Option<String>,
-    text: Option<String>,
-    attachments: Vec<String>,
-    headers: Vec<Header>,
-}
-
-impl SimpleEmail {
-    /// Adds a generic header
-    pub fn header<A: IntoHeader>(mut self, header: A) -> SimpleEmail {
-        self.add_header(header);
-        self
-    }
-
-    /// Adds a generic header
-    pub fn add_header<A: IntoHeader>(&mut self, header: A) {
-        self.headers.push(header.into_header());
-    }
-
-    /// Adds a `From` header and stores the sender address
-    pub fn from<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
-        self.add_from(address);
-        self
-    }
-
-    /// Adds a `From` header and stores the sender address
-    pub fn add_from<A: IntoMailbox>(&mut self, address: A) {
-        self.from = Some(address.into_mailbox());
-    }
-
-    /// Adds a `To` header and stores the recipient address
-    pub fn to<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
-        self.add_to(address);
-        self
-    }
-
-    /// Adds a `To` header and stores the recipient address
-    pub fn add_to<A: IntoMailbox>(&mut self, address: A) {
-        self.to.push(address.into_mailbox());
-    }
-
-    /// Adds a `Cc` header and stores the recipient address
-    pub fn cc<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
-        self.add_cc(address);
-        self
-    }
-
-    /// Adds a `Cc` header and stores the recipient address
-    pub fn add_cc<A: IntoMailbox>(&mut self, address: A) {
-        self.cc.push(address.into_mailbox());
-    }
-
-    /// Adds a `Bcc` header and stores the recipient address
-    pub fn bcc<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
-        self.add_bcc(address);
-        self
-    }
-
-    /// Adds a `Bcc` header and stores the recipient address
-    pub fn add_bcc<A: IntoMailbox>(&mut self, address: A) {
-        self.bcc.push(address.into_mailbox());
-    }
-
-    /// Adds a `Reply-To` header
-    pub fn reply_to<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
-        self.add_reply_to(address);
-        self
-    }
-
-    /// Adds a `Reply-To` header
-    pub fn add_reply_to<A: IntoMailbox>(&mut self, address: A) {
-        self.reply_to = Some(address.into_mailbox());
-    }
-
-    /// Adds a `Subject` header
-    pub fn subject<S: Into<String>>(mut self, subject: S) -> SimpleEmail {
-        self.set_subject(subject);
-        self
-    }
-
-    /// Adds a `Subject` header
-    pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.subject = Some(subject.into());
-    }
-
-    /// Adds a `Date` header with the given date
-    pub fn date(mut self, date: Tm) -> SimpleEmail {
-        self.set_date(date);
-        self
-    }
-
-    /// Adds a `Date` header with the given date
-    pub fn set_date(&mut self, date: Tm) {
-        self.date = Some(date);
-    }
-
-    /// Adds an attachment to the message
-    pub fn attachment<S: Into<String>>(mut self, path: S) -> SimpleEmail {
-        self.add_attachment(path);
-        self
-    }
-
-    /// Adds an attachment to the message
-    pub fn add_attachment<S: Into<String>>(&mut self, path: S) {
-        self.attachments.push(path.into());
-    }
-
-    /// Sets the email body to plain text content
-    pub fn text<S: Into<String>>(mut self, body: S) -> SimpleEmail {
-        self.set_text(body);
-        self
-    }
-
-    /// Sets the email body to plain text content
-    pub fn set_text<S: Into<String>>(&mut self, body: S) {
-        self.text = Some(body.into());
-    }
-
-    /// Sets the email body to HTML content
-    pub fn html<S: Into<String>>(mut self, body: S) -> SimpleEmail {
-        self.set_html(body);
-        self
-    }
-
-    /// Sets the email body to HTML content
-    pub fn set_html<S: Into<String>>(&mut self, body: S) {
-        self.html = Some(body.into());
-    }
-}
-
 /// Builds a `MimeMessage` structure
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct PartBuilder {
@@ -281,17 +45,17 @@ pub struct EmailBuilder {
     /// Message
     message: PartBuilder,
     /// The recipients' addresses for the mail header
-    to_header: Vec<Address>,
+    to: Vec<Address>,
     /// The sender addresses for the mail header
-    from_header: Vec<Address>,
+    from: Vec<Address>,
     /// The Cc addresses for the mail header
-    cc_header: Vec<Address>,
+    cc: Vec<Address>,
     /// The Bcc addresses for the mail header
-    bcc_header: Vec<Address>,
+    bcc: Vec<Address>,
     /// The Reply-To addresses for the mail header
-    reply_to_header: Vec<Address>,
+    reply_to: Vec<Address>,
     /// The sender address for the mail header
-    sender_header: Option<Mailbox>,
+    sender: Option<Mailbox>,
     /// The envelope
     envelope: Option<Envelope>,
     /// Date issued
@@ -309,6 +73,23 @@ pub struct Email {
     message_id: Uuid,
 }
 
+impl Into<SendableEmail> for Email {
+    fn into(self) -> SendableEmail {
+        SendableEmail::new(
+            self.envelope.clone(),
+            self.message_id.to_string(),
+            self.message,
+        )
+    }
+}
+
+impl Email {
+    /// TODO
+    pub fn builder() -> EmailBuilder {
+        EmailBuilder::new()
+    }
+}
+
 impl PartBuilder {
     /// Creates a new empty part
     pub fn new() -> PartBuilder {
@@ -318,58 +99,32 @@ impl PartBuilder {
     }
 
     /// Adds a generic header
-    pub fn header<A: IntoHeader>(mut self, header: A) -> PartBuilder {
-        self.add_header(header);
+    pub fn header<A: Into<Header>>(mut self, header: A) -> PartBuilder {
+        self.message.headers.insert(header.into());
         self
-    }
-
-    /// Adds a generic header
-    pub fn add_header<A: IntoHeader>(&mut self, header: A) {
-        self.message.headers.insert(header.into_header());
     }
 
     /// Sets the body
     pub fn body<S: Into<String>>(mut self, body: S) -> PartBuilder {
-        self.set_body(body);
-        self
-    }
-
-    /// Sets the body
-    pub fn set_body<S: Into<String>>(&mut self, body: S) {
         self.message.body = body.into();
+        self
     }
 
     /// Defines a `MimeMultipartType` value
     pub fn message_type(mut self, mime_type: MimeMultipartType) -> PartBuilder {
-        self.set_message_type(mime_type);
-        self
-    }
-
-    /// Defines a `MimeMultipartType` value
-    pub fn set_message_type(&mut self, mime_type: MimeMultipartType) {
         self.message.message_type = Some(mime_type);
-    }
-
-    /// Adds a `ContentType` header with the given MIME type
-    pub fn content_type(mut self, content_type: &Mime) -> PartBuilder {
-        self.set_content_type(content_type);
         self
     }
 
     /// Adds a `ContentType` header with the given MIME type
-    pub fn set_content_type(&mut self, content_type: &Mime) {
-        self.add_header(("Content-Type", format!("{}", content_type).as_ref()));
+    pub fn content_type(self, content_type: &Mime) -> PartBuilder {
+        self.header(("Content-Type", format!("{}", content_type).as_ref()))
     }
 
     /// Adds a child part
     pub fn child(mut self, child: MimeMessage) -> PartBuilder {
-        self.add_child(child);
-        self
-    }
-
-    /// Adds a child part
-    pub fn add_child(&mut self, child: MimeMessage) {
         self.message.children.push(child);
+        self
     }
 
     /// Gets built `MimeMessage`
@@ -384,12 +139,12 @@ impl EmailBuilder {
     pub fn new() -> EmailBuilder {
         EmailBuilder {
             message: PartBuilder::new(),
-            to_header: vec![],
-            from_header: vec![],
-            cc_header: vec![],
-            bcc_header: vec![],
-            reply_to_header: vec![],
-            sender_header: None,
+            to: vec![],
+            from: vec![],
+            cc: vec![],
+            bcc: vec![],
+            reply_to: vec![],
+            sender: None,
             envelope: None,
             date_issued: false,
         }
@@ -397,142 +152,78 @@ impl EmailBuilder {
 
     /// Sets the email body
     pub fn body<S: Into<String>>(mut self, body: S) -> EmailBuilder {
-        self.message.set_body(body);
-        self
-    }
-
-    /// Sets the email body
-    pub fn set_body<S: Into<String>>(&mut self, body: S) {
-        self.message.set_body(body);
-    }
-
-    /// Add a generic header
-    pub fn header<A: IntoHeader>(mut self, header: A) -> EmailBuilder {
-        self.message.add_header(header);
+        self.message = self.message.body(body);
         self
     }
 
     /// Add a generic header
-    pub fn add_header<A: IntoHeader>(&mut self, header: A) {
-        self.message.add_header(header);
-    }
-
-    /// Adds a `From` header and stores the sender address
-    pub fn from<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.add_from(address);
+    pub fn header<A: Into<Header>>(mut self, header: A) -> EmailBuilder {
+        self.message = self.message.header(header);
         self
     }
 
     /// Adds a `From` header and stores the sender address
-    pub fn add_from<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.from_header.push(Address::Mailbox(mailbox));
-    }
-
-    /// Adds a `To` header and stores the recipient address
-    pub fn to<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.add_to(address);
+    pub fn from<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.from.push(Address::Mailbox(mailbox));
         self
     }
 
     /// Adds a `To` header and stores the recipient address
-    pub fn add_to<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.to_header.push(Address::Mailbox(mailbox));
-    }
-
-    /// Adds a `Cc` header and stores the recipient address
-    pub fn cc<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.add_cc(address);
+    pub fn to<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.to.push(Address::Mailbox(mailbox));
         self
     }
 
     /// Adds a `Cc` header and stores the recipient address
-    pub fn add_cc<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.cc_header.push(Address::Mailbox(mailbox));
-    }
-
-    /// Adds a `Bcc` header and stores the recipient address
-    pub fn bcc<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.add_bcc(address);
+    pub fn cc<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.cc.push(Address::Mailbox(mailbox));
         self
     }
 
     /// Adds a `Bcc` header and stores the recipient address
-    pub fn add_bcc<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.bcc_header.push(Address::Mailbox(mailbox));
-    }
-
-    /// Adds a `Reply-To` header
-    pub fn reply_to<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.add_reply_to(address);
+    pub fn bcc<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.bcc.push(Address::Mailbox(mailbox));
         self
     }
 
     /// Adds a `Reply-To` header
-    pub fn add_reply_to<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.reply_to_header.push(Address::Mailbox(mailbox));
-    }
-
-    /// Adds a `Sender` header
-    pub fn sender<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
-        self.set_sender(address);
+    pub fn reply_to<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.reply_to.push(Address::Mailbox(mailbox));
         self
     }
 
     /// Adds a `Sender` header
-    pub fn set_sender<A: IntoMailbox>(&mut self, address: A) {
-        let mailbox = address.into_mailbox();
-        self.sender_header = Some(mailbox);
+    pub fn sender<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
+        let mailbox = address.into();
+        self.sender = Some(mailbox);
+        self
     }
 
     /// Adds a `Subject` header
     pub fn subject<S: Into<String>>(mut self, subject: S) -> EmailBuilder {
-        self.set_subject(subject);
+        self.message = self.message.header(("Subject".to_string(), subject.into()));
         self
-    }
-
-    /// Adds a `Subject` header
-    pub fn set_subject<S: Into<String>>(&mut self, subject: S) {
-        self.message
-            .add_header(("Subject".to_string(), subject.into()));
     }
 
     /// Adds a `Date` header with the given date
     pub fn date(mut self, date: &Tm) -> EmailBuilder {
-        self.set_date(date);
-        self
-    }
-
-    /// Adds a `Date` header with the given date
-    pub fn set_date(&mut self, date: &Tm) {
-        self.message
-            .add_header(("Date", Tm::rfc822z(date).to_string()));
+        self.message = self.message.header(("Date", Tm::rfc822z(date).to_string()));
         self.date_issued = true;
+        self
     }
 
     /// Adds an attachment to the email
     pub fn attachment(
-        mut self,
+        self,
         path: &Path,
         filename: Option<&str>,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {
-        self.set_attachment(path, filename, content_type)?;
-        Ok(self)
-    }
-
-    /// Adds an attachment to the email
-    /// If filename is not provided, the name of the file will be used.
-    pub fn set_attachment(
-        &mut self,
-        path: &Path,
-        filename: Option<&str>,
-        content_type: &Mime,
-    ) -> Result<(), Error> {
         let file = File::open(path);
         let body = match file {
             Ok(mut f) => {
@@ -572,42 +263,23 @@ impl EmailBuilder {
             .header(("Content-Transfer-Encoding", "base64"))
             .build();
 
-        self.set_message_type(MimeMultipartType::Mixed);
-        self.add_child(content);
-
-        Ok(())
+        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
     }
 
     /// Set the message type
     pub fn message_type(mut self, message_type: MimeMultipartType) -> EmailBuilder {
-        self.set_message_type(message_type);
+        self.message = self.message.message_type(message_type);
         self
-    }
-
-    /// Set the message type
-    pub fn set_message_type(&mut self, message_type: MimeMultipartType) {
-        self.message.set_message_type(message_type);
     }
 
     /// Adds a child
     pub fn child(mut self, child: MimeMessage) -> EmailBuilder {
-        self.add_child(child);
-        self
-    }
-
-    /// Adds a child
-    pub fn add_child(&mut self, child: MimeMessage) {
-        self.message.add_child(child);
-    }
-
-    /// Sets the email body to plain text content
-    pub fn text<S: Into<String>>(mut self, body: S) -> EmailBuilder {
-        self.set_text(body);
+        self.message = self.message.child(child);
         self
     }
 
     /// Sets the email body to plain text content
-    pub fn set_text<S: Into<String>>(&mut self, body: S) {
+    pub fn text<S: Into<String>>(self, body: S) -> EmailBuilder {
         let text = PartBuilder::new()
             .body(body)
             .header((
@@ -615,17 +287,11 @@ impl EmailBuilder {
                 format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
             ))
             .build();
-        self.add_child(text);
+        self.child(text)
     }
 
     /// Sets the email body to HTML content
-    pub fn html<S: Into<String>>(mut self, body: S) -> EmailBuilder {
-        self.set_html(body);
-        self
-    }
-
-    /// Sets the email body to HTML content
-    pub fn set_html<S: Into<String>>(&mut self, body: S) {
+    pub fn html<S: Into<String>>(self, body: S) -> EmailBuilder {
         let html = PartBuilder::new()
             .body(body)
             .header((
@@ -633,28 +299,15 @@ impl EmailBuilder {
                 format!("{}", mime::TEXT_HTML_UTF_8).as_ref(),
             ))
             .build();
-        self.add_child(html);
+        self.child(html)
     }
 
     /// Sets the email content
     pub fn alternative<S: Into<String>, T: Into<String>>(
-        mut self,
+        self,
         body_html: S,
         body_text: T,
     ) -> EmailBuilder {
-        self.set_alternative(body_html, body_text);
-        self
-    }
-
-    /// Sets the email content
-    pub fn set_alternative<S: Into<String>, T: Into<String>>(
-        &mut self,
-        body_html: S,
-        body_text: T,
-    ) {
-        let mut alternate = PartBuilder::new();
-        alternate.set_message_type(MimeMultipartType::Alternative);
-
         let text = PartBuilder::new()
             .body(body_text)
             .header((
@@ -671,74 +324,65 @@ impl EmailBuilder {
             ))
             .build();
 
-        alternate.add_child(text);
-        alternate.add_child(html);
+        let alternate = PartBuilder::new()
+            .message_type(MimeMultipartType::Alternative)
+            .child(text)
+            .child(html);
 
-        self.set_message_type(MimeMultipartType::Mixed);
-        self.add_child(alternate.build());
+        self.message_type(MimeMultipartType::Mixed)
+            .child(alternate.build())
     }
 
     /// Sets the envelope for manual destination control
     /// If this function is not called, the envelope will be calculated
     /// from the "to" and "cc" addresses you set.
     pub fn envelope(mut self, envelope: Envelope) -> EmailBuilder {
-        self.set_envelope(envelope);
-        self
-    }
-
-    /// Sets the envelope for manual destination control
-    /// If this function is not called, the envelope will be calculated
-    /// from the "to" and "cc" addresses you set.
-    pub fn set_envelope(&mut self, envelope: Envelope) {
         self.envelope = Some(envelope);
+        self
     }
 
     /// Builds the Email
     pub fn build(mut self) -> Result<Email, Error> {
         // If there are multiple addresses in "From", the "Sender" is required.
-        if self.from_header.len() >= 2 && self.sender_header.is_none() {
+        if self.from.len() >= 2 && self.sender.is_none() {
             // So, we must find something to put as Sender.
-            for possible_sender in &self.from_header {
+            for possible_sender in &self.from {
                 // Only a mailbox can be used as sender, not Address::Group.
                 if let Address::Mailbox(ref mbx) = *possible_sender {
-                    self.sender_header = Some(mbx.clone());
+                    self.sender = Some(mbx.clone());
                     break;
                 }
             }
             // Address::Group is not yet supported, so the line below will never panic.
             // If groups are supported one day, add another Error for this case
             //  and return it here, if sender_header is still None at this point.
-            assert!(self.sender_header.is_some());
+            assert!(self.sender.is_some());
         }
         // Add the sender header, if any.
-        if let Some(ref v) = self.sender_header {
-            self.message.add_header(("Sender", v.to_string().as_ref()));
+        if let Some(ref v) = self.sender {
+            self.message = self.message.header(("Sender", v.to_string().as_ref()));
         }
         // Calculate the envelope
         let envelope = match self.envelope {
             Some(e) => e,
             None => {
                 // we need to generate the envelope
-                let mut e = Envelope::builder();
+                let mut to = vec![];
                 // add all receivers in to_header and cc_header
-                for receiver in self.to_header
-                    .iter()
-                    .chain(self.cc_header.iter())
-                    .chain(self.bcc_header.iter())
-                {
+                for receiver in self.to.iter().chain(self.cc.iter()).chain(self.bcc.iter()) {
                     match *receiver {
-                        Address::Mailbox(ref m) => e.add_to(EmailAddress::from_str(&m.address)?),
+                        Address::Mailbox(ref m) => to.push(EmailAddress::from_str(&m.address)?),
                         Address::Group(_, ref ms) => for m in ms.iter() {
-                            e.add_to(EmailAddress::from_str(&m.address.clone())?);
+                            to.push(EmailAddress::from_str(&m.address.clone())?);
                         },
                     }
                 }
-                e.set_from(EmailAddress::from_str(&match self.sender_header {
+                let from = Some(EmailAddress::from_str(&match self.sender {
                     Some(x) => x.address.clone(), // if we have a sender_header, use it
                     None => {
                         // use a from header
-                        debug_assert!(self.from_header.len() <= 1); // else we'd have sender_header
-                        match self.from_header.first() {
+                        debug_assert!(self.from.len() <= 1); // else we'd have sender_header
+                        match self.from.first() {
                             Some(a) => match *a {
                                 // if we have a from header
                                 Address::Mailbox(ref mailbox) => mailbox.address.clone(), // use it
@@ -754,41 +398,40 @@ impl EmailBuilder {
                         }
                     }
                 })?);
-                e.build()?
+                Envelope::new(from, to)?
             }
         };
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
-        if !self.to_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("To".into(), self.to_header).unwrap());
+        if !self.to.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("To".into(), self.to).unwrap());
         }
-        if !self.from_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("From".into(), self.from_header).unwrap());
+        if !self.from.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("From".into(), self.from).unwrap());
         } else {
             return Err(Error::Email(EmailError::MissingFrom));
         }
-        if !self.cc_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
+        if !self.cc.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("Cc".into(), self.cc).unwrap());
         }
-        if !self.bcc_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Bcc".into(), self.bcc_header).unwrap());
+        if !self.bcc.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("Bcc".into(), self.bcc).unwrap());
         }
-        if !self.reply_to_header.is_empty() {
-            self.message.add_header(
-                Header::new_with_value("Reply-To".into(), self.reply_to_header).unwrap(),
-            );
+        if !self.reply_to.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("Reply-To".into(), self.reply_to).unwrap());
         }
 
         if !self.date_issued {
-            self.message
-                .add_header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            self.message = self.message
+                .header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
-        self.message.add_header(("MIME-Version", "1.0"));
+        self.message = self.message.header(("MIME-Version", "1.0"));
 
         let message_id = Uuid::new_v4();
 
@@ -796,7 +439,7 @@ impl EmailBuilder {
             "Message-ID".to_string(),
             format!("<{}.lettre@localhost>", message_id),
         ) {
-            self.message.add_header(header)
+            self.message = self.message.header(header)
         }
 
         Ok(Email {
@@ -807,55 +450,17 @@ impl EmailBuilder {
     }
 }
 
-impl<'a> SendableEmail<'a, &'a [u8]> for Email {
-    fn envelope(&self) -> Envelope {
-        self.envelope.clone()
-    }
-
-    fn message_id(&self) -> String {
-        self.message_id.to_string()
-    }
-
-    fn message(&'a self) -> Box<&[u8]> {
-        Box::new(self.message.as_slice())
-    }
-}
-
-/// Email sendable by any type of client, giving access to all fields
-pub trait ExtractableEmail {
-    /// From address
-    fn from_address(&self) -> Option<String>;
-    /// To addresses
-    fn to_addresses(&self) -> Vec<String>;
-    /// Cc addresses
-    fn cc_addresses(&self) -> Vec<String>;
-    /// Bcc addresses
-    fn bcc_addresses(&self) -> Vec<String>;
-    /// Replay-To addresses
-    fn reply_to_address(&self) -> String;
-    /// Subject
-    fn subject(&self) -> String;
-    /// Message ID
-    fn message_id(&self) -> String;
-    /// Other Headers
-    fn headers(&self) -> Vec<String>;
-    /// html content
-    fn html(self) -> String;
-    /// text content
-    fn text(self) -> String;
-}
-
 #[cfg(test)]
 mod test {
-    use super::EmailBuilder;
-    use lettre::{EmailAddress, SendableEmail};
+    use super::{SendableEmail, EmailBuilder};
+    use lettre::EmailAddress;
     use time::now;
 
     #[test]
     fn test_multiple_from() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
-        let email = email_builder
+        let email: SendableEmail = email_builder
             .to("anna@example.com")
             .from("dieter@example.com")
             .from("joachim@example.com")
@@ -863,16 +468,18 @@ mod test {
             .subject("Invitation")
             .body("We invite you!")
             .build()
-            .unwrap();
+            .unwrap()
+            .into();
+        let id = email.message_id().to_string();
         assert_eq!(
-            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
+            email.message_to_string().unwrap(),
             format!(
                 "Date: {}\r\nSubject: Invitation\r\nSender: \
                  <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
                  <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
                  1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
                 date_now.rfc822z(),
-                email.message_id()
+                id
             )
         );
     }
@@ -882,7 +489,7 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder
+        let email: SendableEmail = email_builder
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
@@ -894,10 +501,11 @@ mod test {
             .subject("Hello")
             .header(("X-test", "value"))
             .build()
-            .unwrap();
-
+            .unwrap()
+            .into();
+        let id = email.message_id().to_string();
         assert_eq!(
-            format!("{}", String::from_utf8_lossy(email.message().as_ref())),
+            email.message_to_string().unwrap(),
             format!(
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
@@ -906,7 +514,7 @@ mod test {
                  MIME-Version: 1.0\r\nMessage-ID: \
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
-                email.message_id()
+                id
             )
         );
     }
@@ -916,7 +524,7 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email = email_builder
+        let email: SendableEmail = email_builder
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
@@ -928,7 +536,8 @@ mod test {
             .subject("Hello")
             .header(("X-test", "value"))
             .build()
-            .unwrap();
+            .unwrap()
+            .into();
 
         assert_eq!(
             email.envelope().from().unwrap().to_string(),

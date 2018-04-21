@@ -1,13 +1,11 @@
 //! Lettre is a mailer written in Rust. It provides a simple email builder and several transports.
 //!
-//! This mailer contains the available transports for your emails. To be sendable, the
-//! emails have to implement `SendableEmail`.
+//! This mailer contains the available transports for your emails.
 //!
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.9.0")]
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-        trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
-        unused_qualifications)]
+#![deny(missing_copy_implementations, trivial_casts, trivial_numeric_casts, unsafe_code,
+        unstable_features, unused_import_braces, unused_qualifications)]
 #[cfg(feature = "smtp-transport")]
 extern crate base64;
 #[cfg(feature = "smtp-transport")]
@@ -28,6 +26,8 @@ extern crate native_tls;
 #[macro_use]
 extern crate nom;
 #[cfg(feature = "serde-impls")]
+extern crate serde;
+#[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
 #[cfg(feature = "file-transport")]
@@ -42,7 +42,7 @@ pub mod stub;
 pub mod file;
 
 #[cfg(feature = "file-transport")]
-pub use file::FileEmailTransport;
+pub use file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
@@ -51,6 +51,8 @@ pub use smtp::{ClientSecurity, SmtpTransport};
 pub use smtp::client::net::ClientTlsParameters;
 use std::fmt::{self, Display, Formatter};
 use std::io::Read;
+use std::io::Cursor;
+use std::io;
 use std::error::Error as StdError;
 use std::str::FromStr;
 
@@ -150,133 +152,74 @@ impl Envelope {
     pub fn from(&self) -> Option<&EmailAddress> {
         self.reverse_path.as_ref()
     }
+}
 
-    /// Creates a new builder
-    pub fn builder() -> EnvelopeBuilder {
-        EnvelopeBuilder::new()
+pub enum Message {
+    Reader(Box<Read + Send>),
+    Bytes(Cursor<Vec<u8>>),
+}
+
+impl Read for Message {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        match *self {
+            Message::Reader(ref mut rdr) => rdr.read(buf),
+            Message::Bytes(ref mut rdr) => rdr.read(buf),
+        }
     }
 }
 
-/// Simple email envelope representation
-#[derive(PartialEq, Eq, Clone, Debug, Default)]
-pub struct EnvelopeBuilder {
-    /// The envelope recipients' addresses
-    to: Vec<EmailAddress>,
-    /// The envelope sender address
-    from: Option<EmailAddress>,
+/// Sendable email structure
+pub struct SendableEmail {
+    envelope: Envelope,
+    message_id: String,
+    message: Message,
 }
 
-impl EnvelopeBuilder {
-    /// Constructs an envelope with no recipients and an empty sender
-    pub fn new() -> Self {
-        EnvelopeBuilder {
-            to: vec![],
-            from: None,
+impl SendableEmail {
+    pub fn new(envelope: Envelope, message_id: String, message: Vec<u8>) -> SendableEmail {
+        SendableEmail {
+            envelope,
+            message_id,
+            message: Message::Bytes(Cursor::new(message)),
         }
     }
 
-    /// Adds a recipient
-    pub fn to<S: Into<EmailAddress>>(mut self, address: S) -> Self {
-        self.add_to(address);
-        self
+    pub fn new_with_reader(
+        envelope: Envelope,
+        message_id: String,
+        message: Box<Read + Send>,
+    ) -> SendableEmail {
+        SendableEmail {
+            envelope,
+            message_id,
+            message: Message::Reader(message),
+        }
     }
 
-    /// Adds a recipient
-    pub fn add_to<S: Into<EmailAddress>>(&mut self, address: S) {
-        self.to.push(address.into());
+    pub fn envelope(&self) -> &Envelope {
+        &self.envelope
     }
 
-    /// Sets the sender
-    pub fn from<S: Into<EmailAddress>>(mut self, address: S) -> Self {
-        self.set_from(address);
-        self
+    pub fn message_id(&self) -> &str {
+        &self.message_id
     }
 
-    /// Sets the sender
-    pub fn set_from<S: Into<EmailAddress>>(&mut self, address: S) {
-        self.from = Some(address.into());
+    pub fn message(self) -> Message {
+        self.message
     }
 
-    /// Build the envelope
-    pub fn build(self) -> EmailResult<Envelope> {
-        Envelope::new(self.from, self.to)
+    pub fn message_to_string(mut self) -> Result<String, io::Error> {
+        let mut message_content = String::new();
+        self.message.read_to_string(&mut message_content)?;
+        Ok(message_content)
     }
-}
-
-/// Email sendable by an SMTP client
-pub trait SendableEmail<'a, T: Read + 'a> {
-    /// Envelope
-    fn envelope(&self) -> Envelope;
-    /// Message ID, used for logging
-    fn message_id(&self) -> String;
-    /// Message content
-    fn message(&'a self) -> Box<T>;
 }
 
 /// Transport method for emails
-pub trait EmailTransport<'a, U: Read + 'a> {
+pub trait Transport<'a> {
     /// Result type for the transport
     type Result;
 
     /// Sends the email
-    fn send<T: SendableEmail<'a, U> + 'a>(&mut self, email: &'a T) -> Self::Result;
-}
-
-/// Minimal email structure
-#[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
-pub struct SimpleSendableEmail {
-    /// Envelope
-    envelope: Envelope,
-    /// Message ID
-    message_id: String,
-    /// Message content
-    message: Vec<u8>,
-}
-
-impl SimpleSendableEmail {
-    /// Returns a new email
-    pub fn new(
-        from_address: String,
-        to_addresses: &[String],
-        message_id: String,
-        message: String,
-    ) -> EmailResult<SimpleSendableEmail> {
-        let to: Result<Vec<EmailAddress>, Error> = to_addresses
-            .iter()
-            .map(|x| EmailAddress::new(x.clone()))
-            .collect();
-        Ok(SimpleSendableEmail::new_with_envelope(
-            Envelope::new(Some(EmailAddress::new(from_address)?), to?)?,
-            message_id,
-            message,
-        ))
-    }
-
-    /// Returns a new email from a valid envelope
-    pub fn new_with_envelope(
-        envelope: Envelope,
-        message_id: String,
-        message: String,
-    ) -> SimpleSendableEmail {
-        SimpleSendableEmail {
-            envelope,
-            message_id,
-            message: message.into_bytes(),
-        }
-    }
-}
-
-impl<'a> SendableEmail<'a, &'a [u8]> for SimpleSendableEmail {
-    fn envelope(&self) -> Envelope {
-        self.envelope.clone()
-    }
-
-    fn message_id(&self) -> String {
-        self.message_id.clone()
-    }
-
-    fn message(&'a self) -> Box<&[u8]> {
-        Box::new(self.message.as_slice())
-    }
+    fn send(&mut self, email: SendableEmail) -> Self::Result;
 }

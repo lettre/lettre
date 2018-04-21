@@ -20,21 +20,23 @@ This is the most basic example of usage:
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
+use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpTransport};
 
 fn main() {
-    let email = SimpleSendableEmail::new(
-                    "user@localhost".to_string(),
-                    &["root@localhost".to_string()],
-                    "message_id".to_string(),
-                    "Hello world".to_string(),
-                ).unwrap();
+    let email = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id".to_string(),
+        "Hello world".to_string().into_bytes(),
+    );
     
     // Open a local connection on port 25
     let mut mailer =
     SmtpTransport::builder_unencrypted_localhost().unwrap().build();
     // Send the email
-    let result = mailer.send(&email);
+    let result = mailer.send(email);
     
     assert!(result.is_ok());
 }
@@ -46,17 +48,28 @@ fn main() {
 extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::{SimpleSendableEmail, EmailTransport, SmtpTransport};
+use lettre::{SendableEmail, Envelope, EmailAddress, Transport, SmtpTransport};
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::ConnectionReuseParameters;
 
 fn main() {
-    let email = SimpleSendableEmail::new(
-                    "user@localhost".to_string(),
-                    &["root@localhost".to_string()],
-                    "message_id".to_string(),
-                    "Hello world".to_string(),
-                ).unwrap();
+    let email_1 = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id1".to_string(),
+        "Hello world".to_string().into_bytes(),
+    );
+    
+    let email_2 = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id2".to_string(),
+        "Hello world a second time".to_string().into_bytes(),
+    );
     
     // Connect to a remote server on a custom port
     let mut mailer = SmtpTransport::simple_builder("server.tld").unwrap()
@@ -71,11 +84,11 @@ fn main() {
         // Enable connection reuse
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
     
-    let result_1 = mailer.send(&email);
+    let result_1 = mailer.send(email_1);
     assert!(result_1.is_ok());
     
     // The second email will use the same connection
-    let result_2 = mailer.send(&email);
+    let result_2 = mailer.send(email_2);
     assert!(result_2.is_ok());
     
     // Explicitly close the SMTP transaction as we enabled connection reuse
