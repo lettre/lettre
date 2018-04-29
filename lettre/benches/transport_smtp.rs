@@ -3,7 +3,7 @@
 extern crate lettre;
 extern crate test;
 
-use lettre::{ClientSecurity, SmtpTransport, Envelope};
+use lettre::{ClientSecurity, Envelope, SmtpTransport};
 use lettre::{EmailAddress, SendableEmail, Transport};
 use lettre::smtp::ConnectionReuseParameters;
 

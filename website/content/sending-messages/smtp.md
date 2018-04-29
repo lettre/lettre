@@ -20,7 +20,7 @@ This is the most basic example of usage:
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpTransport};
+use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpClient};
 
 fn main() {
     let email = SendableEmail::new(
@@ -34,7 +34,7 @@ fn main() {
     
     // Open a local connection on port 25
     let mut mailer =
-    SmtpTransport::builder_unencrypted_localhost().unwrap().build();
+    SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
     let result = mailer.send(email);
     
@@ -48,7 +48,7 @@ fn main() {
 extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::{SendableEmail, Envelope, EmailAddress, Transport, SmtpTransport};
+use lettre::{SendableEmail, Envelope, EmailAddress, Transport, SmtpClient};
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::ConnectionReuseParameters;
 
@@ -72,7 +72,7 @@ fn main() {
     );
     
     // Connect to a remote server on a custom port
-    let mut mailer = SmtpTransport::simple_builder("server.tld").unwrap()
+    let mut mailer = SmtpClient::new_simple("server.tld").unwrap()
         // Set the name sent during EHLO/HELO, default is `localhost`
         .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
         // Add credentials for authentication
@@ -82,7 +82,7 @@ fn main() {
         // Configure expected authentication mechanism
         .authentication_mechanism(Mechanism::Plain)
         // Enable connection reuse
-        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).build();
+        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
     
     let result_1 = mailer.send(email_1);
     assert!(result_1.is_ok());
@@ -106,13 +106,13 @@ extern crate lettre;
 
 use lettre::EmailAddress;
 use lettre::smtp::SMTP_PORT;
-use lettre::smtp::client::Client;
+use lettre::smtp::client::InnerClient;
 use lettre::smtp::client::net::NetworkStream;
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::commands::*;
 
 fn main() {
-    let mut email_client: Client<NetworkStream> = Client::new();
+    let mut email_client: InnerClient<NetworkStream> = InnerClient::new();
     let _ = email_client.connect(&("localhost", SMTP_PORT), None);
     let _ = email_client.command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
     let _ = email_client.command(

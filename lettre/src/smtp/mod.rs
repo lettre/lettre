@@ -18,7 +18,7 @@ use {SendableEmail, Transport};
 use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS};
-use smtp::client::Client;
+use smtp::client::InnerClient;
 use smtp::client::net::ClientTlsParameters;
 use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::commands::*;
@@ -91,7 +91,7 @@ pub enum ConnectionReuseParameters {
 
 /// Contains client configuration
 #[allow(missing_debug_implementations)]
-pub struct SmtpTransportBuilder {
+pub struct SmtpClient {
     /// Enable connection reuse
     connection_reuse: ConnectionReuseParameters,
     /// Name sent during EHLO
@@ -112,7 +112,7 @@ pub struct SmtpTransportBuilder {
 }
 
 /// Builder for the SMTP `SmtpTransport`
-impl SmtpTransportBuilder {
+impl SmtpClient {
     /// Creates a new SMTP client
     ///
     /// Defaults are:
@@ -121,14 +121,11 @@ impl SmtpTransportBuilder {
     /// * No authentication
     /// * No SMTPUTF8 support
     /// * A 60 seconds timeout for smtp commands
-    pub fn new<A: ToSocketAddrs>(
-        addr: A,
-        security: ClientSecurity,
-    ) -> Result<SmtpTransportBuilder, Error> {
+    pub fn new<A: ToSocketAddrs>(addr: A, security: ClientSecurity) -> Result<SmtpClient, Error> {
         let mut addresses = addr.to_socket_addrs()?;
 
         match addresses.next() {
-            Some(addr) => Ok(SmtpTransportBuilder {
+            Some(addr) => Ok(SmtpClient {
                 server_addr: addr,
                 security,
                 smtp_utf8: false,
@@ -142,41 +139,59 @@ impl SmtpTransportBuilder {
         }
     }
 
+    /// Simple and secure transport, should be used when possible.
+    /// Creates an encrypted transport over submission port, using the provided domain
+    /// to validate TLS certificates.
+    pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
+        let mut tls_builder = TlsConnector::builder()?;
+        tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
+
+        let tls_parameters =
+            ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
+
+        SmtpClient::new(
+            (domain, SUBMISSION_PORT),
+            ClientSecurity::Required(tls_parameters),
+        )
+    }
+
+    /// Creates a new local SMTP client to port 25
+    pub fn new_unencrypted_localhost() -> Result<SmtpClient, Error> {
+        SmtpClient::new(("localhost", SMTP_PORT), ClientSecurity::None)
+    }
+
     /// Enable SMTPUTF8 if the server supports it
-    pub fn smtp_utf8(mut self, enabled: bool) -> SmtpTransportBuilder {
+    pub fn smtp_utf8(mut self, enabled: bool) -> SmtpClient {
         self.smtp_utf8 = enabled;
         self
     }
 
     /// Set the name used during EHLO
-    pub fn hello_name(mut self, name: ClientId) -> SmtpTransportBuilder {
+    pub fn hello_name(mut self, name: ClientId) -> SmtpClient {
         self.hello_name = name;
         self
     }
 
     /// Enable connection reuse
-    pub fn connection_reuse(
-        mut self,
-        parameters: ConnectionReuseParameters,
-    ) -> SmtpTransportBuilder {
+    pub fn connection_reuse(mut self, parameters: ConnectionReuseParameters) -> SmtpClient {
         self.connection_reuse = parameters;
         self
     }
 
     /// Set the client credentials
-    pub fn credentials<S: Into<Credentials>>(mut self, credentials: S) -> SmtpTransportBuilder {
+    pub fn credentials<S: Into<Credentials>>(mut self, credentials: S) -> SmtpClient {
         self.credentials = Some(credentials.into());
         self
     }
 
     /// Set the authentication mechanism to use
-    pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpTransportBuilder {
+    pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpClient {
         self.authentication_mechanism = Some(mechanism);
         self
     }
 
     /// Set the timeout duration
-    pub fn timeout(mut self, timeout: Option<Duration>) -> SmtpTransportBuilder {
+    pub fn timeout(mut self, timeout: Option<Duration>) -> SmtpClient {
         self.timeout = timeout;
         self
     }
@@ -184,7 +199,7 @@ impl SmtpTransportBuilder {
     /// Build the SMTP client
     ///
     /// It does not connect to the server, but only creates the `SmtpTransport`
-    pub fn build(self) -> SmtpTransport {
+    pub fn transport(self) -> SmtpTransport {
         SmtpTransport::new(self)
     }
 }
@@ -207,9 +222,9 @@ pub struct SmtpTransport {
     /// SmtpTransport variable states
     state: State,
     /// Information about the client
-    client_info: SmtpTransportBuilder,
+    client_info: SmtpClient,
     /// Low level client
-    client: Client,
+    client: InnerClient,
 }
 
 macro_rules! try_smtp (
@@ -228,40 +243,11 @@ macro_rules! try_smtp (
 );
 
 impl<'a> SmtpTransport {
-    /// Simple and secure transport, should be used when possible.
-    /// Creates an encrypted transport over submission port, using the provided domain
-    /// to validate TLS certificates.
-    pub fn simple_builder(domain: &str) -> Result<SmtpTransportBuilder, Error> {
-        let mut tls_builder = TlsConnector::builder()?;
-        tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
-
-        let tls_parameters =
-            ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
-
-        SmtpTransportBuilder::new(
-            (domain, SUBMISSION_PORT),
-            ClientSecurity::Required(tls_parameters),
-        )
-    }
-
-    /// Creates a new configurable builder
-    pub fn builder<A: ToSocketAddrs>(
-        addr: A,
-        security: ClientSecurity,
-    ) -> Result<SmtpTransportBuilder, Error> {
-        SmtpTransportBuilder::new(addr, security)
-    }
-
-    /// Creates a new local SMTP client to port 25
-    pub fn builder_unencrypted_localhost() -> Result<SmtpTransportBuilder, Error> {
-        SmtpTransportBuilder::new(("localhost", SMTP_PORT), ClientSecurity::None)
-    }
-
     /// Creates a new SMTP client
     ///
     /// It does not connect to the server, but only creates the `SmtpTransport`
-    pub fn new(builder: SmtpTransportBuilder) -> SmtpTransport {
-        let client = Client::new();
+    pub fn new(builder: SmtpClient) -> SmtpTransport {
+        let client = InnerClient::new();
 
         SmtpTransport {
             client,

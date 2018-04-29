@@ -2,7 +2,7 @@ extern crate lettre;
 extern crate lettre_email;
 extern crate mime;
 
-use lettre::{SmtpTransport, Transport};
+use lettre::{SmtpClient, Transport};
 use lettre_email::Email;
 use std::path::Path;
 
@@ -19,9 +19,7 @@ fn main() {
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransport::builder_unencrypted_localhost()
-        .unwrap()
-        .build();
+    let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
     let result = mailer.send(email.into());
 

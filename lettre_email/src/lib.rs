@@ -452,7 +452,7 @@ impl EmailBuilder {
 
 #[cfg(test)]
 mod test {
-    use super::{SendableEmail, EmailBuilder};
+    use super::{EmailBuilder, SendableEmail};
     use lettre::EmailAddress;
     use time::now;
 

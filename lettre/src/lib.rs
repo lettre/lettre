@@ -46,7 +46,7 @@ pub use file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::{ClientSecurity, SmtpTransport};
+pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 #[cfg(feature = "smtp-transport")]
 pub use smtp::client::net::ClientTlsParameters;
 use std::fmt::{self, Display, Formatter};
