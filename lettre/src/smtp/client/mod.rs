@@ -132,7 +132,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
         match self.stream {
             Some(ref mut stream) => {
                 stream.get_mut().set_read_timeout(duration)?;
-                stream.get_mut().set_read_timeout(duration)?;
+                stream.get_mut().set_write_timeout(duration)?;
                 Ok(())
             }
             None => Ok(()),
