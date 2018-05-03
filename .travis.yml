@@ -28,4 +28,4 @@ script:
 - cargo test --verbose --all
 after_success:
 - ./.build-scripts/codecov.sh
-- '[ $TRAVIS_BRANCH = master ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'
+- '[ "$TRAVIS_BRANCH" = "v0.8.x" ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'
