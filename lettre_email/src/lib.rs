@@ -1,7 +1,7 @@
 //! Lettre is a mailer written in Rust. lettre_email provides a simple email builder.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre_email/0.8.1")]
+#![doc(html_root_url = "https://docs.rs/lettre_email/0.8.2")]
 #![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
         trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
         unused_qualifications)]
@@ -45,7 +45,7 @@ impl<S: Into<String>, T: Into<String>> IntoHeader for (S, T) {
     }
 }
 
-/// Converts an adress or an address with an alias to a `Mailbox`
+/// Converts an address or an address with an alias to a `Mailbox`
 pub trait IntoMailbox {
     /// Converts to a `Mailbox` struct
     fn into_mailbox(self) -> Mailbox;
@@ -372,7 +372,7 @@ impl PartBuilder {
         self.message.children.push(child);
     }
 
-    /// Gets builded `MimeMessage`
+    /// Gets built `MimeMessage`
     pub fn build(mut self) -> MimeMessage {
         self.message.update_headers();
         self.message

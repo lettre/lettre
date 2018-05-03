@@ -1,3 +1,29 @@
+<a name="v0.8.2"></a>
+### v0.8.2 (2018-05-03)
+
+
+#### Bug Fixes
+
+* **transport:**  Write timeout is not set in smtp transport ([cc3580a8](https://github.com/lettre/lettre/commit/cc3580a8942e11c2addf6677f05e16fb451c7ea0))
+
+#### Style
+
+* **all:**  Fix typos ([360c42ff](https://github.com/lettre/lettre/commit/360c42ffb8f706222eaad14e72619df1e4857814))
+
+#### Features
+
+* **all:**
+  *  Add set -xe option to build scripts ([57bbabaa](https://github.com/lettre/lettre/commit/57bbabaa6a10cc1a4de6f379e25babfee7adf6ad))
+  *  Move post-success scripts to separate files ([3177b58c](https://github.com/lettre/lettre/commit/3177b58c6d11ffae73c958713f6f0084173924e1))
+  *  Add website upload to travis build script ([a5294df6](https://github.com/lettre/lettre/commit/a5294df63728e14e24eeb851bb4403abd6a7bd36))
+  *  Add codecov upload in travis ([a03bfa00](https://github.com/lettre/lettre/commit/a03bfa008537b1d86ff789d0823e89ad5d99bd79))
+  *  Update README to put useful links at the top ([1ebbe660](https://github.com/lettre/lettre/commit/1ebbe660f5e142712f702c02d5d1e45211763b42))
+  *  Update badges in README and Cargo.toml ([f7ee5c42](https://github.com/lettre/lettre/commit/f7ee5c427ad71e4295f2f1d8e3e9e2dd850223e8))
+  *  Move docs from hugo to gitbook ([27935e32](https://github.com/lettre/lettre/commit/27935e32ef097db8db004569f35cad1d6cd30eca))
+* **transport:**  Use md-5 and hmac instead of rust-crypto ([0cf018a8](https://github.com/lettre/lettre/commit/0cf018a85e4ea1ad16c7216670da560cc915ec32))
+
+
+
 <a name="v0.8.1"></a>
 ### v0.8.1 (2018-04-11)
 
@@ -77,7 +103,7 @@
 #### Changes
 
 * **documentation**
-  * #91: Build seperate docs for each release
+  * #91: Build separate docs for each release
   * #96: Add complete documentation information to README
 
 #### Fixed

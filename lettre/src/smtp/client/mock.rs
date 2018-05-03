@@ -103,9 +103,9 @@ mod test {
     #[test]
     fn clone_test() {
         let mut mock = MockStream::new();
-        let mut clonned = mock.clone();
+        let mut cloned = mock.clone();
         mock.write(&[6, 7]).unwrap();
-        assert_eq!(clonned.take_vec(), vec![6, 7]);
+        assert_eq!(cloned.take_vec(), vec![6, 7]);
     }
 
     #[test]

@@ -4,7 +4,7 @@
 //! emails have to implement `SendableEmail`.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre/0.8.1")]
+#![doc(html_root_url = "https://docs.rs/lettre/0.8.2")]
 #![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
         trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
         unused_qualifications)]
@@ -13,13 +13,15 @@ extern crate base64;
 #[cfg(feature = "smtp-transport")]
 extern crate bufstream;
 #[cfg(feature = "crammd5-auth")]
-extern crate crypto;
-#[cfg(feature = "crammd5-auth")]
 extern crate hex;
+#[cfg(feature = "crammd5-auth")]
+extern crate hmac;
 #[cfg(feature = "smtp-transport")]
 extern crate hostname;
 #[macro_use]
 extern crate log;
+#[cfg(feature = "crammd5-auth")]
+extern crate md5;
 #[cfg(feature = "smtp-transport")]
 extern crate native_tls;
 #[cfg(feature = "smtp-transport")]

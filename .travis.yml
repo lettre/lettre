@@ -1,26 +1,31 @@
 language: rust
-
 rust:
 - stable
 - beta
 - nightly
-- 1.18.0
-
+- 1.20.0
 matrix:
   allow_failures:
-    - rust: nightly
-
+  - rust: nightly
 sudo: required
-
 addons:
   apt:
     packages:
     - postfix
-
+    - libcurl4-openssl-dev
+    - libelf-dev
+    - libdw-dev
+    - cmake
+    - gcc
+    - binutils-dev
+    - libiberty-dev
+    - npm
 before_script:
-  - smtp-sink 2525 1000&
-  - sudo chgrp -R postdrop /var/spool/postfix/maildrop
-
+- smtp-sink 2525 1000&
+- sudo chgrp -R postdrop /var/spool/postfix/maildrop
+- sudo npm set strict-ssl false && sudo npm install -g gitbook-cli
 script:
-  - cargo test --verbose --all
-
+- cargo test --verbose --all
+after_success:
+- ./.build-scripts/codecov.sh
+- '[ "$TRAVIS_BRANCH" = "v0.8.x" ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'

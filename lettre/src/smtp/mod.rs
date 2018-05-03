@@ -37,7 +37,7 @@ pub mod client;
 pub mod error;
 pub mod util;
 
-// Registrated port numbers:
+// Registered port numbers:
 // https://www.iana.
 // org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml
 
@@ -74,7 +74,7 @@ pub enum ClientSecurity {
     Opportunistic(ClientTlsParameters),
     /// Always use `STARTTLS`
     Required(ClientTlsParameters),
-    /// Use TLS wrapped connection without negotation
+    /// Use TLS wrapped connection without negotiation
     /// Non RFC-compliant, should only be used if the server does not support STARTTLS.
     Wrapper(ClientTlsParameters),
 }
@@ -83,7 +83,7 @@ pub enum ClientSecurity {
 #[derive(Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub enum ConnectionReuseParameters {
-    /// Unlimitied connection reuse
+    /// Unlimited connection reuse
     ReuseUnlimited,
     /// Maximum number of connection reuse
     ReuseLimited(u16),

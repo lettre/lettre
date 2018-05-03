@@ -1,10 +1,4 @@
-+++
-date = "2017-05-21T23:46:17+02:00"
-title = "Stub transport"
-toc = true
-weight = 5
-
-+++
+#### Stub Transport
 
 The stub transport only logs message envelope and drops the content. It can be useful for
 testing purposes.

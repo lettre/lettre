@@ -1,10 +1,4 @@
-+++
-date = "2017-05-21T23:46:17+02:00"
-title = "File transport"
-toc = true
-weight = 4
-
-+++
+#### File Transport
 
 The file transport writes the emails to the given directory. The name of the file will be
 `message_id.txt`.

@@ -1,10 +1,10 @@
 [package]
 
 name = "lettre_email"
-version = "0.8.1" # remember to update html_root_url
+version = "0.8.2" # remember to update html_root_url
 description = "Email builder"
 readme = "README.md"
-documentation = "https://docs.rs/lettre_email/"
+homepage = "http://lettre.at"
 repository = "https://github.com/lettre/lettre"
 license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
@@ -13,6 +13,10 @@ keywords = ["email", "mailer"]
 
 [badges]
 travis-ci = { repository = "lettre/lettre_email" }
+appveyor = { repository = "lettre/lettre_email" }
+maintenance = { status = "actively-developed" }
+is-it-maintained-issue-resolution = { repository = "lettre/lettre_email" }
+is-it-maintained-open-issues = { repository = "lettre/lettre_email" }
 
 [dev-dependencies]
 lettre = { version = "^0.8", path = "../lettre", features = ["smtp-transport"] }

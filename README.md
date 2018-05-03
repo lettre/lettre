@@ -1,13 +1,27 @@
 # lettre
 
+**Lettre is a mailer library for Rust.**
+
 [![Build Status](https://travis-ci.org/lettre/lettre.svg?branch=master)](https://travis-ci.org/lettre/lettre)
 [![Build status](https://ci.appveyor.com/api/projects/status/mpwglemugjtkps2d/branch/master?svg=true)](https://ci.appveyor.com/project/amousset/lettre/branch/master)
+[![codecov](https://codecov.io/gh/lettre/lettre/branch/master/graph/badge.svg)](https://codecov.io/gh/lettre/lettre)
+
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
 [![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
+[![Required Rust version](https://img.shields.io/badge/rustc-1.20-green.svg)]()
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-An email library written in Rust.
+[![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/lettre/lettre.svg)](http://isitmaintained.com/project/lettre/lettre "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/lettre/lettre.svg)](http://isitmaintained.com/project/lettre/lettre "Percentage of issues still open")
+
+Useful links:
+
+* [User documentation](http://lettre.at/)
+* [API documentation](https://docs.rs/lettre/)
+* [Changelog](https://github.com/lettre/lettre/blob/master/CHANGELOG.md)
+
+---
 
 ## Features
 
@@ -19,6 +33,15 @@ Lettre provides the following features:
 * Easy email builders
 
 ## Example
+
+This library requires Rust 1.20 or newer.
+To use this library, add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+lettre = "0.8"
+lettre_email = "0.8"
+```
 
 ```rust,no_run
 extern crate lettre;
@@ -55,22 +78,6 @@ fn main() {
 
     assert!(result.is_ok());
 }
-```
-
-## Documentation
-
-* [User documentation](http://docs.lettre.at/)
-* [API reference](https://docs.rs/lettre/)
-
-## Install
-
-This library requires rust 1.18 or newer.
-To use this library, add the following to your `Cargo.toml`:
-
-```toml
-[dependencies]
-lettre = "0.8"
-lettre_email = "0.8"
 ```
 
 ## Testing

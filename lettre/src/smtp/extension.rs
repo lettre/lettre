@@ -126,8 +126,8 @@ impl ServerInfo {
                 continue;
             }
 
-            let splitted: Vec<&str> = line.split_whitespace().collect();
-            match splitted[0] {
+            let split: Vec<&str> = line.split_whitespace().collect();
+            match split[0] {
                 "8BITMIME" => {
                     features.insert(Extension::EightBitMime);
                 }
@@ -137,7 +137,7 @@ impl ServerInfo {
                 "STARTTLS" => {
                     features.insert(Extension::StartTls);
                 }
-                "AUTH" => for &mechanism in &splitted[1..] {
+                "AUTH" => for &mechanism in &split[1..] {
                     match mechanism {
                         "PLAIN" => {
                             features.insert(Extension::Authentication(Mechanism::Plain));
@@ -350,7 +350,7 @@ mod test {
 
         let server_info = ServerInfo {
             name: "me".to_string(),
-            features: features,
+            features,
         };
 
         assert_eq!(ServerInfo::from_response(&response).unwrap(), server_info);

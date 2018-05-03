@@ -161,7 +161,7 @@ impl Timeout for NetworkStream {
         }
     }
 
-    /// Set write tiemout for IO calls
+    /// Set write timeout for IO calls
     fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
