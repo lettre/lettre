@@ -1,19 +1,29 @@
 extern crate lettre;
 
-use lettre::{EmailTransport, SimpleSendableEmail};
-use lettre::stub::StubEmailTransport;
+use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
+use lettre::stub::StubTransport;
 
 #[test]
 fn stub_transport() {
-    let mut sender_ok = StubEmailTransport::new_positive();
-    let mut sender_ko = StubEmailTransport::new(Err(()));
-    let email = SimpleSendableEmail::new(
-        "user@localhost".to_string(),
-        &["root@localhost".to_string()],
-        "stub_id".to_string(),
-        "Hello stub".to_string(),
-    ).unwrap();
+    let mut sender_ok = StubTransport::new_positive();
+    let mut sender_ko = StubTransport::new(Err(()));
+    let email_ok = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id".to_string(),
+        "Hello ß☺ example".to_string().into_bytes(),
+    );
+    let email_ko = SendableEmail::new(
+        Envelope::new(
+            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+        ).unwrap(),
+        "id".to_string(),
+        "Hello ß☺ example".to_string().into_bytes(),
+    );
 
-    sender_ok.send(&email).unwrap();
-    sender_ko.send(&email).unwrap_err();
+    sender_ok.send(email_ok).unwrap();
+    sender_ko.send(email_ko).unwrap_err();
 }

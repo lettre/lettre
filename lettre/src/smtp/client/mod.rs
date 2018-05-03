@@ -77,7 +77,7 @@ fn escape_crlf(string: &str) -> String {
 
 /// Structure that implements the SMTP client
 #[derive(Debug, Default)]
-pub struct Client<S: Write + Read = NetworkStream> {
+pub struct InnerClient<S: Write + Read = NetworkStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<BufStream<S>>,
@@ -90,16 +90,16 @@ macro_rules! return_err (
 );
 
 #[cfg_attr(feature = "cargo-clippy", allow(new_without_default_derive))]
-impl<S: Write + Read> Client<S> {
+impl<S: Write + Read> InnerClient<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn new() -> Client<S> {
-        Client { stream: None }
+    pub fn new() -> InnerClient<S> {
+        InnerClient { stream: None }
     }
 }
 
-impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
+impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.command(QuitCommand);
@@ -194,10 +194,11 @@ impl<S: Connector + Write + Read + Timeout + Debug> Client<S> {
     }
 
     /// Sends the message content
-    pub fn message<T: Read>(&mut self, mut message: Box<T>) -> SmtpResult {
+    pub fn message(&mut self, message: Box<Read>) -> SmtpResult {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
-        let mut message_reader = BufReader::new(message.as_mut());
+
+        let mut message_reader = BufReader::new(message);
 
         loop {
             out_buf.clear();

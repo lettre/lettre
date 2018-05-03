@@ -10,11 +10,11 @@ An email is built using an `EmailBuilder`. The simplest email could be:
 ```rust
 extern crate lettre_email;
 
-use lettre_email::EmailBuilder;
+use lettre_email::Email;
 
 fn main() {
     // Create an email
-    let email = EmailBuilder::new()
+    let email = Email::builder()
         // Addresses can be specified by the tuple (email, alias)
         .to(("user@example.org", "Firstname Lastname"))
         // ... or by an address only
