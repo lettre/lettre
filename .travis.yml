@@ -25,7 +25,7 @@ before_script:
 - sudo chgrp -R postdrop /var/spool/postfix/maildrop
 - sudo npm set strict-ssl false && sudo npm install -g gitbook-cli
 script:
-- cargo test --verbose --all
+- cargo test --verbose --all --all-features
 after_success:
 - ./.build-scripts/codecov.sh
 - '[ "$TRAVIS_BRANCH" = "v0.8.x" ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'

@@ -37,7 +37,7 @@ env_logger = "^0.5"
 glob = "0.2"
 
 [features]
-default = ["file-transport", "crammd5-auth", "smtp-transport", "sendmail-transport"]
+default = ["file-transport", "smtp-transport", "sendmail-transport"]
 unstable = []
 serde-impls = ["serde", "serde_derive"]
 file-transport = ["serde-impls", "serde_json"]
