@@ -8,7 +8,7 @@
 //! It implements the following extensions:
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
-//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN mechanisms
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN and XOAUTH2 mechanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
@@ -43,23 +43,6 @@ pub const SMTP_PORT: u16 = 25;
 
 /// Default submission port
 pub const SUBMISSION_PORT: u16 = 587;
-
-// Useful strings and characters
-
-/// The word separator for SMTP transactions
-pub const SP: &str = " ";
-
-/// The line ending for SMTP transactions (carriage return + line feed)
-pub const CRLF: &str = "\r\n";
-
-/// Colon
-pub const COLON: &str = ":";
-
-/// The ending of message content
-pub const MESSAGE_ENDING: &str = "\r\n.\r\n";
-
-/// NUL unicode character
-pub const NUL: &str = "\0";
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]

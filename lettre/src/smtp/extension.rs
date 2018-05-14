@@ -145,6 +145,9 @@ impl ServerInfo {
                         "LOGIN" => {
                             features.insert(Extension::Authentication(Mechanism::Login));
                         }
+                        "XOAUTH2" => {
+                            features.insert(Extension::Authentication(Mechanism::Xoauth2));
+                        }
                         _ => (),
                     }
                 },
@@ -362,7 +365,7 @@ mod test {
             ),
             vec![
                 "me".to_string(),
-                "AUTH PLAIN CRAM-MD5 OTHER".to_string(),
+                "AUTH PLAIN CRAM-MD5 XOAUTH2 OTHER".to_string(),
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
@@ -371,6 +374,7 @@ mod test {
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
         assert!(features2.insert(Extension::Authentication(Mechanism::Plain),));
+        assert!(features2.insert(Extension::Authentication(Mechanism::Xoauth2),));
 
         let server_info2 = ServerInfo {
             name: "me".to_string(),
