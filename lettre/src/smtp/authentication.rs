@@ -1,31 +1,14 @@
-//! Provides authentication mechanisms
+//! Provides limited SASL authentication mechanisms
 
-#[cfg(feature = "crammd5-auth")]
-use md5::Md5;
-#[cfg(feature = "crammd5-auth")]
-use hmac::{Hmac, Mac};
-#[cfg(feature = "crammd5-auth")]
-use hex;
 use smtp::NUL;
 use smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// Accepted authentication mechanisms on an encrypted connection
 /// Trying LOGIN last as it is deprecated.
-#[cfg(feature = "crammd5-auth")]
-pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] =
-    &[Mechanism::Plain, Mechanism::CramMd5, Mechanism::Login];
-/// Accepted authentication mechanisms on an encrypted connection
-/// Trying LOGIN last as it is deprecated.
-#[cfg(not(feature = "crammd5-auth"))]
 pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Accepted authentication mechanisms on an unencrypted connection
-#[cfg(feature = "crammd5-auth")]
-pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::CramMd5];
-/// Accepted authentication mechanisms on an unencrypted connection
-/// When CRAMMD5 support is not enabled, no mechanisms are allowed.
-#[cfg(not(feature = "crammd5-auth"))]
 pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
 /// Convertable to user credentials
@@ -51,14 +34,14 @@ impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
 pub struct Credentials {
-    username: String,
-    password: String,
+    authentication_identity: String,
+    secret: String,
 }
 
 impl Credentials {
     /// Create a `Credentials` struct from username and password
     pub fn new(username: String, password: String) -> Credentials {
-        Credentials { username, password }
+        Credentials { authentication_identity: username, secret: password }
     }
 }
 
@@ -73,10 +56,6 @@ pub enum Mechanism {
     /// Obsolete but needed for some providers (like office365)
     /// https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt
     Login,
-    /// CRAM-MD5 authentication mechanism
-    /// RFC 2195: https://tools.ietf.org/html/rfc2195
-    #[cfg(feature = "crammd5-auth")]
-    CramMd5,
 }
 
 impl Display for Mechanism {
@@ -87,8 +66,6 @@ impl Display for Mechanism {
             match *self {
                 Mechanism::Plain => "PLAIN",
                 Mechanism::Login => "LOGIN",
-                #[cfg(feature = "crammd5-auth")]
-                Mechanism::CramMd5 => "CRAM-MD5",
             }
         )
     }
@@ -101,8 +78,6 @@ impl Mechanism {
         match *self {
             Mechanism::Plain => true,
             Mechanism::Login => false,
-            #[cfg(feature = "crammd5-auth")]
-            Mechanism::CramMd5 => false,
         }
     }
 
@@ -118,7 +93,7 @@ impl Mechanism {
                 Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
                     "{}{}{}{}",
-                    NUL, credentials.username, NUL, credentials.password
+                    NUL, credentials.authentication_identity, NUL, credentials.secret
                 )),
             },
             Mechanism::Login => {
@@ -128,31 +103,14 @@ impl Mechanism {
                 };
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
-                    return Ok(credentials.username.to_string());
+                    return Ok(credentials.authentication_identity.to_string());
                 }
 
                 if vec!["Password", "Password:"].contains(&decoded_challenge) {
-                    return Ok(credentials.password.to_string());
+                    return Ok(credentials.secret.to_string());
                 }
 
                 Err(Error::Client("Unrecognized challenge"))
-            }
-            #[cfg(feature = "crammd5-auth")]
-            Mechanism::CramMd5 => {
-                let decoded_challenge = match challenge {
-                    Some(challenge) => challenge,
-                    None => return Err(Error::Client("This mechanism does expect a challenge")),
-                };
-
-                let mut hmac: Hmac<Md5> = Hmac::new_varkey(credentials.password.as_bytes())
-                    .expect("md5 should support variable key size");
-                hmac.input(decoded_challenge.as_bytes());
-
-                Ok(format!(
-                    "{} {}",
-                    credentials.username,
-                    hex::encode(hmac.result().code())
-                ))
             }
         }
     }
@@ -188,25 +146,6 @@ mod test {
         assert_eq!(
             mechanism.response(&credentials, Some("Password")).unwrap(),
             "wonderland"
-        );
-        assert!(mechanism.response(&credentials, None).is_err());
-    }
-
-    #[test]
-    #[cfg(feature = "crammd5-auth")]
-    fn test_cram_md5() {
-        let mechanism = Mechanism::CramMd5;
-
-        let credentials = Credentials::new("alice".to_string(), "wonderland".to_string());
-
-        assert_eq!(
-            mechanism
-                .response(
-                    &credentials,
-                    Some("PDE3ODkzLjEzMjA2NzkxMjNAdGVzc2VyYWN0LnN1c2FtLmluPg==")
-                )
-                .unwrap(),
-            "alice a540ebe4ef2304070bbc3c456c1f64c0"
         );
         assert!(mechanism.response(&credentials, None).is_err());
     }

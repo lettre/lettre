@@ -313,8 +313,6 @@ impl AuthCommand {
 mod test {
     use super::*;
     use smtp::extension::MailBodyParameter;
-    #[cfg(feature = "crammd5-auth")]
-    use smtp::response::{Category, Code, Detail, Severity};
 
     #[test]
     fn test_display() {
@@ -391,43 +389,12 @@ mod test {
             ),
             "AUTH PLAIN AHVzZXIAcGFzc3dvcmQ=\r\n"
         );
-        #[cfg(feature = "crammd5-auth")]
-        assert_eq!(
-            format!(
-                "{}",
-                AuthCommand::new(
-                    Mechanism::CramMd5,
-                    credentials.clone(),
-                    Some("test".to_string()),
-                ).unwrap()
-            ),
-            "dXNlciAzMTYxY2NmZDdmMjNlMzJiYmMzZTQ4NjdmYzk0YjE4Nw==\r\n"
-        );
         assert_eq!(
             format!(
                 "{}",
                 AuthCommand::new(Mechanism::Login, credentials.clone(), None).unwrap()
             ),
             "AUTH LOGIN\r\n"
-        );
-        #[cfg(feature = "crammd5-auth")]
-        assert_eq!(
-            format!(
-                "{}",
-                AuthCommand::new_from_response(
-                    Mechanism::CramMd5,
-                    credentials.clone(),
-                    &Response::new(
-                        Code::new(
-                            Severity::PositiveIntermediate,
-                            Category::Unspecified3,
-                            Detail::Four,
-                        ),
-                        vec!["dGVzdAo=".to_string()],
-                    ),
-                ).unwrap()
-            ),
-            "dXNlciA1NTIzNThiMzExOWFjOWNkYzM2YWRiN2MxNWRmMWJkNw==\r\n"
         );
     }
 }

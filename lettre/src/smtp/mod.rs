@@ -8,8 +8,7 @@
 //! It implements the following extensions:
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
-//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN and
-//! CRAM-MD5 mechanisms
+//! * AUTH ([RFC 4954](http://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN mechanisms
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
