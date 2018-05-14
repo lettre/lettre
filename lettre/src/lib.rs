@@ -10,16 +10,10 @@
 extern crate base64;
 #[cfg(feature = "smtp-transport")]
 extern crate bufstream;
-#[cfg(feature = "crammd5-auth")]
-extern crate hex;
-#[cfg(feature = "crammd5-auth")]
-extern crate hmac;
 #[cfg(feature = "smtp-transport")]
 extern crate hostname;
 #[macro_use]
 extern crate log;
-#[cfg(feature = "crammd5-auth")]
-extern crate md5;
 #[cfg(feature = "smtp-transport")]
 extern crate native_tls;
 #[cfg(feature = "smtp-transport")]
