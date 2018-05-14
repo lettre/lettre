@@ -1,6 +1,5 @@
 //! Provides limited SASL authentication mechanisms
 
-use smtp::NUL;
 use smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
 
@@ -56,6 +55,9 @@ pub enum Mechanism {
     /// Obsolete but needed for some providers (like office365)
     /// https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt
     Login,
+    /// Non-standard XOAUTH2 mechanism
+    /// https://developers.google.com/gmail/imap/xoauth2-protocol
+    Xoauth2,
 }
 
 impl Display for Mechanism {
@@ -66,6 +68,7 @@ impl Display for Mechanism {
             match *self {
                 Mechanism::Plain => "PLAIN",
                 Mechanism::Login => "LOGIN",
+                Mechanism::Xoauth2 => "XOAUTH2",
             }
         )
     }
@@ -73,10 +76,9 @@ impl Display for Mechanism {
 
 impl Mechanism {
     /// Does the mechanism supports initial response
-    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
     pub fn supports_initial_response(&self) -> bool {
         match *self {
-            Mechanism::Plain => true,
+            Mechanism::Plain | Mechanism::Xoauth2 => true,
             Mechanism::Login => false,
         }
     }
@@ -92,8 +94,8 @@ impl Mechanism {
             Mechanism::Plain => match challenge {
                 Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
-                    "{}{}{}{}",
-                    NUL, credentials.authentication_identity, NUL, credentials.secret
+                    "\u{0}{}\u{0}{}",
+                    credentials.authentication_identity, credentials.secret
                 )),
             },
             Mechanism::Login => {
@@ -111,7 +113,14 @@ impl Mechanism {
                 }
 
                 Err(Error::Client("Unrecognized challenge"))
-            }
+            },
+            Mechanism::Xoauth2 => match challenge {
+                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                None => Ok(format!(
+                    "user={}\x01auth=Bearer {}\x01\x01",
+                    credentials.authentication_identity, credentials.secret
+                )),
+            },
         }
     }
 }
@@ -148,5 +157,18 @@ mod test {
             "wonderland"
         );
         assert!(mechanism.response(&credentials, None).is_err());
+    }
+
+    #[test]
+    fn test_xoauth2() {
+        let mechanism = Mechanism::Xoauth2;
+
+        let credentials = Credentials::new("username".to_string(), "vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==".to_string());
+
+        assert_eq!(
+            mechanism.response(&credentials, None).unwrap(),
+            "user=username\x01auth=Bearer vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==\x01\x01"
+        );
+        assert!(mechanism.response(&credentials, Some("test")).is_err());
     }
 }

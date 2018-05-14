@@ -2,7 +2,6 @@
 
 use bufstream::BufStream;
 use nom::ErrorKind as NomErrorKind;
-use smtp::{CRLF, MESSAGE_ENDING};
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use smtp::commands::*;
@@ -72,7 +71,7 @@ impl ClientCodec {
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
 /// Used for debug displays
 fn escape_crlf(string: &str) -> String {
-    string.replace(CRLF, "<CRLF>")
+    string.replace("\r\n", "<CRLF>")
 }
 
 /// Structure that implements the SMTP client
@@ -219,7 +218,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
             self.write(out_buf.as_slice())?;
         }
 
-        self.write(MESSAGE_ENDING.as_bytes())?;
+        self.write("\r\n.\r\n".as_bytes())?;
         self.read_response()
     }
 

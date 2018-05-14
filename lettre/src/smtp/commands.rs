@@ -2,7 +2,6 @@
 
 use EmailAddress;
 use base64;
-use smtp::CRLF;
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::error::Error;
 use smtp::extension::{MailParameter, RcptParameter};
@@ -19,8 +18,7 @@ pub struct EhloCommand {
 
 impl Display for EhloCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "EHLO {}", self.client_id)?;
-        f.write_str(CRLF)
+        write!(f, "EHLO {}\r\n", self.client_id)
     }
 }
 
@@ -38,8 +36,7 @@ pub struct StarttlsCommand;
 
 impl Display for StarttlsCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("STARTTLS")?;
-        f.write_str(CRLF)
+        f.write_str("STARTTLS\r\n")
     }
 }
 
@@ -64,7 +61,7 @@ impl Display for MailCommand {
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
         }
-        f.write_str(CRLF)
+        f.write_str("\r\n")
     }
 }
 
@@ -89,7 +86,7 @@ impl Display for RcptCommand {
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
         }
-        f.write_str(CRLF)
+        f.write_str("\r\n")
     }
 }
 
@@ -110,8 +107,7 @@ pub struct DataCommand;
 
 impl Display for DataCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("DATA")?;
-        f.write_str(CRLF)
+        f.write_str("DATA\r\n")
     }
 }
 
@@ -122,8 +118,7 @@ pub struct QuitCommand;
 
 impl Display for QuitCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("QUIT")?;
-        f.write_str(CRLF)
+        f.write_str("QUIT\r\n")
     }
 }
 
@@ -134,8 +129,7 @@ pub struct NoopCommand;
 
 impl Display for NoopCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("NOOP")?;
-        f.write_str(CRLF)
+        f.write_str("NOOP\r\n")
     }
 }
 
@@ -152,7 +146,7 @@ impl Display for HelpCommand {
         if self.argument.is_some() {
             write!(f, " {}", self.argument.as_ref().unwrap())?;
         }
-        f.write_str(CRLF)
+        f.write_str("\r\n")
     }
 }
 
@@ -172,8 +166,7 @@ pub struct VrfyCommand {
 
 impl Display for VrfyCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "VRFY {}", self.argument)?;
-        f.write_str(CRLF)
+        write!(f, "VRFY {}\r\n", self.argument)
     }
 }
 
@@ -193,8 +186,7 @@ pub struct ExpnCommand {
 
 impl Display for ExpnCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "EXPN {}", self.argument)?;
-        f.write_str(CRLF)
+        write!(f, "EXPN {}\r\n", self.argument)
     }
 }
 
@@ -212,8 +204,7 @@ pub struct RsetCommand;
 
 impl Display for RsetCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str("RSET")?;
-        f.write_str(CRLF)
+        f.write_str("RSET\r\n")
     }
 }
 
@@ -246,7 +237,7 @@ impl Display for AuthCommand {
                 None => write!(f, "AUTH {}", self.mechanism)?,
             }
         }
-        f.write_str(CRLF)
+        f.write_str("\r\n")
     }
 }
 
