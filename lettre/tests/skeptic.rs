@@ -6,6 +6,7 @@ use std::env;
 use std::path::Path;
 use std::process::Command;
 
+/*
 #[test]
 fn test_readme() {
     let readme = Path::new(file!())
@@ -19,6 +20,7 @@ fn test_readme() {
 
     skeptic_test(&readme);
 }
+*/
 
 #[test]
 fn book_test() {
