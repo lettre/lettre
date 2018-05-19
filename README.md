@@ -48,12 +48,12 @@ extern crate lettre;
 extern crate lettre_email;
 extern crate mime;
 
-use lettre::{Transport, SmtpClient};
-use lettre_email::Email;
+use lettre::{EmailTransport, SmtpTransport};
+use lettre_email::EmailBuilder;
 use std::path::Path;
 
 fn main() {
-    let email = Email::builder()
+    let email = EmailBuilder::new()
         // Addresses can be specified by the tuple (email, alias)
         .to(("user@example.org", "Firstname Lastname"))
         // ... or by an address only
@@ -65,10 +65,10 @@ fn main() {
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap()
-                                                                   .transport();
+    let mut mailer = SmtpTransport::builder_unencrypted_localhost().unwrap()
+                                                                   .build();
     // Send the email
-    let result = mailer.send(email.into());
+    let result = mailer.send(&email);
 
     if result.is_ok() {
         println!("Email sent");
