@@ -83,6 +83,56 @@ fn main() {
 }
 ```
 
+You can specify custom TLS settings:
+
+```rust,no_run
+extern crate native_tls;
+extern crate lettre;
+extern crate lettre_email;
+
+use native_tls::TlsConnector;
+use native_tls::{Protocol};
+use lettre::smtp::authentication::{Credentials, Mechanism};
+use lettre::{EmailTransport, SimpleSendableEmail, ClientTlsParameters, ClientSecurity};
+use lettre::smtp::ConnectionReuseParameters;
+use lettre::smtp::{SmtpTransportBuilder};
+use lettre_email::EmailBuilder;
+
+fn main() {
+    let email = SimpleSendableEmail::new(
+                    "user@localhost".to_string(),
+                    &["root@localhost".to_string()],
+                    "message_id".to_string(),
+                    "Hello world".to_string(),
+                ).unwrap();
+
+    let mut tls_builder = TlsConnector::builder().unwrap();
+    tls_builder.supported_protocols(&[Protocol::Tlsv10]).unwrap();
+    let tls_parameters =
+        ClientTlsParameters::new(
+            "smtp.example.com".to_string(),
+            tls_builder.build().unwrap()
+        );
+
+    let mut mailer = SmtpTransportBuilder::new(
+        ("smtp.example.com", 465), ClientSecurity::Wrapper(tls_parameters)
+    )
+        .expect("Failed to create transport")
+        .authentication_mechanism(Mechanism::Login)
+        .credentials(Credentials::new(
+            "example_username".to_string(), "example_password".to_string()
+        ))
+        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
+        .build();
+
+    let result = mailer.send(&email);
+    
+    assert!(result.is_ok());
+    
+    mailer.close();
+}
+```
+
 #### Lower level
 
 You can also send commands, here is a simple email transaction without
