@@ -49,8 +49,8 @@ impl<'a> Transport<'a> for SendmailTransport {
                     Some(address) => address.to_string(),
                     None => "\"\"".to_string(),
                 },
-                &to_addresses.join(" "),
             ])
+            .args(&to_addresses)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
