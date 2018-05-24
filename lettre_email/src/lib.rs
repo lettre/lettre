@@ -270,7 +270,7 @@ impl EmailBuilder {
     /// This is usefull when your attachment is actually not a file, but a sequence of bytes.
     pub fn attach_from_vec(
         self,
-        bytes_vec: Vec<u8>,
+        bytes_vec: &Vec<u8>,
         filename: &str,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {        
