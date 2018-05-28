@@ -40,7 +40,10 @@ pub struct Credentials {
 impl Credentials {
     /// Create a `Credentials` struct from username and password
     pub fn new(username: String, password: String) -> Credentials {
-        Credentials { authentication_identity: username, secret: password }
+        Credentials {
+            authentication_identity: username,
+            secret: password,
+        }
     }
 }
 
@@ -113,7 +116,7 @@ impl Mechanism {
                 }
 
                 Err(Error::Client("Unrecognized challenge"))
-            },
+            }
             Mechanism::Xoauth2 => match challenge {
                 Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
@@ -163,7 +166,10 @@ mod test {
     fn test_xoauth2() {
         let mechanism = Mechanism::Xoauth2;
 
-        let credentials = Credentials::new("username".to_string(), "vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==".to_string());
+        let credentials = Credentials::new(
+            "username".to_string(),
+            "vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==".to_string(),
+        );
 
         assert_eq!(
             mechanism.response(&credentials, None).unwrap(),

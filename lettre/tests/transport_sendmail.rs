@@ -3,8 +3,8 @@ extern crate lettre;
 #[cfg(test)]
 #[cfg(feature = "sendmail-transport")]
 mod test {
-    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
     use lettre::sendmail::SendmailTransport;
+    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
 
     #[test]
     fn sendmail_transport_simple() {

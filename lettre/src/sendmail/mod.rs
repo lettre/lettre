@@ -1,8 +1,8 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use Transport;
 use SendableEmail;
+use Transport;
 use sendmail::error::SendmailResult;
 use std::io::Read;
 use std::io::prelude::*;

@@ -1,8 +1,8 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use nom::{crlf, ErrorKind as NomErrorKind, IResult as NomResult};
 use nom::simple_errors::Err as NomError;
+use nom::{crlf, ErrorKind as NomErrorKind, IResult as NomResult};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::{FromStr, from_utf8};

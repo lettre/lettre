@@ -27,27 +27,27 @@ extern crate serde_derive;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
 
-#[cfg(feature = "smtp-transport")]
-pub mod smtp;
-#[cfg(feature = "sendmail-transport")]
-pub mod sendmail;
-pub mod stub;
 #[cfg(feature = "file-transport")]
 pub mod file;
+#[cfg(feature = "sendmail-transport")]
+pub mod sendmail;
+#[cfg(feature = "smtp-transport")]
+pub mod smtp;
+pub mod stub;
 
 #[cfg(feature = "file-transport")]
 pub use file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
-#[cfg(feature = "smtp-transport")]
 pub use smtp::client::net::ClientTlsParameters;
-use std::fmt::{self, Display, Formatter};
-use std::io::Read;
-use std::io::Cursor;
-use std::io;
+#[cfg(feature = "smtp-transport")]
+pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use std::error::Error as StdError;
+use std::fmt::{self, Display, Formatter};
+use std::io;
+use std::io::Cursor;
+use std::io::Read;
 use std::str::FromStr;
 
 /// Error type for email content

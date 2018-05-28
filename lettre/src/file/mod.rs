@@ -3,9 +3,9 @@
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 
-use Transport;
 use Envelope;
 use SendableEmail;
+use Transport;
 use file::error::FileResult;
 use serde_json;
 use std::fs::File;

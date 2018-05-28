@@ -1,7 +1,7 @@
 extern crate lettre;
 
-use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
 use lettre::stub::StubTransport;
+use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
 
 #[test]
 fn stub_transport() {

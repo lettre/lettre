@@ -3,9 +3,9 @@
 extern crate lettre;
 extern crate test;
 
+use lettre::smtp::ConnectionReuseParameters;
 use lettre::{ClientSecurity, Envelope, SmtpTransport};
 use lettre::{EmailAddress, SendableEmail, Transport};
-use lettre::smtp::ConnectionReuseParameters;
 
 #[bench]
 fn bench_simple_send(b: &mut test::Bencher) {
