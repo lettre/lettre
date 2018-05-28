@@ -13,8 +13,8 @@ use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
 
-pub mod net;
 pub mod mock;
+pub mod net;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
@@ -218,7 +218,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
             self.write(out_buf.as_slice())?;
         }
 
-        self.write("\r\n.\r\n".as_bytes())?;
+        self.write(b"\r\n.\r\n")?;
         self.read_response()
     }
 

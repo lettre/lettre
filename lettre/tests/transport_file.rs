@@ -4,8 +4,8 @@ extern crate lettre;
 #[cfg(feature = "file-transport")]
 mod test {
 
-    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
     use lettre::file::FileTransport;
+    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
     use std::env::temp_dir;
     use std::fs::File;
     use std::fs::remove_file;

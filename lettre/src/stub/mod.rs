@@ -2,8 +2,8 @@
 //! testing purposes.
 //!
 
-use Transport;
 use SendableEmail;
+use Transport;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]

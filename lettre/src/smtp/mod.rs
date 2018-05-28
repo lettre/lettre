@@ -13,7 +13,6 @@
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 
-use {SendableEmail, Transport};
 use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS};
@@ -25,13 +24,14 @@ use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
+use {SendableEmail, Transport};
 
-pub mod extension;
-pub mod commands;
 pub mod authentication;
-pub mod response;
 pub mod client;
+pub mod commands;
 pub mod error;
+pub mod extension;
+pub mod response;
 pub mod util;
 
 // Registered port numbers:
@@ -404,7 +404,7 @@ impl<'a> Transport<'a> for SmtpTransport {
         for to_address in email.envelope().to() {
             try_smtp!(
                 self.client
-                    .command(RcptCommand::new(to_address.clone(), vec![]),),
+                    .command(RcptCommand::new(to_address.clone(), vec![])),
                 self
             );
             // Log the rcpt command

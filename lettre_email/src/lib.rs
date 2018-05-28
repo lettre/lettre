@@ -22,9 +22,9 @@ use mime::Mime;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
+use std::str::FromStr;
 use time::{now, Tm};
 use uuid::Uuid;
-use std::str::FromStr;
 
 /// Builds a `MimeMessage` structure
 #[derive(PartialEq, Eq, Clone, Debug)]
