@@ -217,7 +217,7 @@ impl EmailBuilder {
         self
     }
 
-    /// Adds an attachment to the email
+    /// Adds an attachment to the email from a file
     pub fn attachment(
         self,
         path: &Path,
@@ -251,6 +251,32 @@ impl EmailBuilder {
                 None => return Err(Error::CannotParseFilename),
             },
         };
+
+        let encoded_body = base64::encode(&body);
+        let content = PartBuilder::new()
+            .body(encoded_body)
+            .header((
+                "Content-Disposition",
+                format!("attachment; filename=\"{}\"", actual_filename),
+            ))
+            .header(("Content-Type", content_type.to_string()))
+            .header(("Content-Transfer-Encoding", "base64"))
+            .build();
+
+        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
+    }
+
+    /// Adds an attachment to the email from a vector of bytes.
+    /// This is usefull when your attachment is actually not a file, but a sequence of bytes.
+    pub fn attach_from_vec(
+        self,
+        bytes_vec: &Vec<u8>,
+        filename: &str,
+        content_type: &Mime,
+    ) -> Result<EmailBuilder, Error> {        
+        let body = bytes_vec;
+
+        let actual_filename = filename;
 
         let encoded_body = base64::encode(&body);
         let content = PartBuilder::new()
