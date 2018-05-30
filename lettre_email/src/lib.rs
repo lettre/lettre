@@ -2,9 +2,11 @@
 //!
 
 #![doc(html_root_url = "https://docs.rs/lettre_email/0.9.0")]
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-        trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
-        unused_qualifications)]
+#![deny(
+    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
+    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
+    unused_qualifications
+)]
 
 extern crate base64;
 extern crate email as email_format;
@@ -19,8 +21,7 @@ pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType}
 use error::Error;
 use lettre::{EmailAddress, Envelope, Error as EmailError, SendableEmail};
 use mime::Mime;
-use std::fs::File;
-use std::io::Read;
+use std::fs;
 use std::path::Path;
 use std::str::FromStr;
 use time::{now, Tm};
@@ -218,72 +219,36 @@ impl EmailBuilder {
     }
 
     /// Adds an attachment to the email from a file
-    pub fn attachment(
+    ///
+    /// If not specified, the filename will be extracted from the file path.
+    pub fn attachment_from_file(
         self,
         path: &Path,
         filename: Option<&str>,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {
-        let file = File::open(path);
-        let body = match file {
-            Ok(mut f) => {
-                let mut data = Vec::new();
-                let read = f.read_to_end(&mut data);
-                match read {
-                    Ok(_) => data,
-                    Err(e) => {
-                        return Err(From::from(e));
-                    }
-                }
-            }
-            Err(e) => {
-                return Err(From::from(e));
-            }
-        };
-
-        let actual_filename = match filename {
-            Some(name) => name,
-            None => match path.file_name() {
-                Some(name) => match name.to_str() {
-                    Some(name) => name,
-                    None => return Err(Error::CannotParseFilename),
-                },
-                None => return Err(Error::CannotParseFilename),
-            },
-        };
-
-        let encoded_body = base64::encode(&body);
-        let content = PartBuilder::new()
-            .body(encoded_body)
-            .header((
-                "Content-Disposition",
-                format!("attachment; filename=\"{}\"", actual_filename),
-            ))
-            .header(("Content-Type", content_type.to_string()))
-            .header(("Content-Transfer-Encoding", "base64"))
-            .build();
-
-        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
+        self.attachment(
+            fs::read(path)?.as_slice(),
+            filename.unwrap_or(path.file_name()
+                .and_then(|x| x.to_str())
+                .ok_or(Error::CannotParseFilename)?),
+            content_type,
+        )
     }
 
     /// Adds an attachment to the email from a vector of bytes.
-    /// This is usefull when your attachment is actually not a file, but a sequence of bytes.
-    pub fn attach_from_vec(
+    pub fn attachment(
         self,
-        bytes_vec: &Vec<u8>,
+        body: &[u8],
         filename: &str,
         content_type: &Mime,
-    ) -> Result<EmailBuilder, Error> {        
-        let body = bytes_vec;
-
-        let actual_filename = filename;
-
+    ) -> Result<EmailBuilder, Error> {
         let encoded_body = base64::encode(&body);
         let content = PartBuilder::new()
             .body(encoded_body)
             .header((
                 "Content-Disposition",
-                format!("attachment; filename=\"{}\"", actual_filename),
+                format!("attachment; filename=\"{}\"", filename),
             ))
             .header(("Content-Type", content_type.to_string()))
             .header(("Content-Transfer-Encoding", "base64"))
