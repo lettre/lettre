@@ -1,52 +1,30 @@
 //! Error and result type for sendmail transport
 
-use self::Error::*;
-use std::error::Error as StdError;
-use std::fmt::{self, Display, Formatter};
+use failure;
 use std::io;
 
 /// An enum of all error kinds.
-#[derive(Debug)]
+#[derive(Fail, Debug)]
 pub enum Error {
     /// Internal client error
-    Client(&'static str),
+    #[fail(display = "Internal client error: {}", error)]
+    Client { error: &'static str },
     /// IO error
-    Io(io::Error),
-}
-
-impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
-    }
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Client(err) => err,
-            Io(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
-        match *self {
-            Io(ref err) => Some(&*err),
-            _ => None,
-        }
-    }
+    #[fail(display = "IO error: {}", error)]
+    Io { error: io::Error },
 }
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
-        Io(err)
+        Error::Io { error: err }
     }
 }
 
 impl From<&'static str> for Error {
     fn from(string: &'static str) -> Error {
-        Client(string)
+        Error::Client { error: string }
     }
 }
 
 /// sendmail result type
-pub type SendmailResult = Result<(), Error>;
+pub type SendmailResult = Result<(), failure::Error>;
