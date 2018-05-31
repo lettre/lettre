@@ -102,10 +102,8 @@ impl Mechanism {
                 )),
             },
             Mechanism::Login => {
-                let decoded_challenge = match challenge {
-                    Some(challenge) => challenge,
-                    None => return Err(Error::Client("This mechanism does expect a challenge")),
-                };
+                let decoded_challenge =
+                    challenge.ok_or(Error::Client("This mechanism does expect a challenge"))?;
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
                     return Ok(credentials.authentication_identity.to_string());

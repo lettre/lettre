@@ -101,6 +101,18 @@ impl From<nom::simple_errors::Err> for Error {
     }
 }
 
+impl From<DecodeError> for Error {
+    fn from(err: DecodeError) -> Error {
+        ChallengeParsing(err)
+    }
+}
+
+impl From<FromUtf8Error> for Error {
+    fn from(err: FromUtf8Error) -> Error {
+        Utf8Parsing(err)
+    }
+}
+
 impl From<Response> for Error {
     fn from(response: Response) -> Error {
         match response.code.severity {

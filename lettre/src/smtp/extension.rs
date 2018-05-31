@@ -10,8 +10,8 @@ use std::fmt::{self, Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::result::Result;
 
-/// Default ehlo clinet id
-pub const DEFAULT_EHLO_HOSTNAME: &str = "localhost";
+/// Default client id
+pub const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
 
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -44,10 +44,7 @@ impl ClientId {
     /// Defines a `ClientId` with the current hostname, of `localhost` if hostname could not be
     /// found
     pub fn hostname() -> ClientId {
-        ClientId::Domain(match get_hostname() {
-            Some(name) => name,
-            None => DEFAULT_EHLO_HOSTNAME.to_string(),
-        })
+        ClientId::Domain(get_hostname().unwrap_or_else(|| DEFAULT_DOMAIN_CLIENT_ID.to_string()))
     }
 }
 

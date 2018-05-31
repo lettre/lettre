@@ -53,10 +53,7 @@ impl Display for MailCommand {
         write!(
             f,
             "MAIL FROM:<{}>",
-            match self.sender {
-                Some(ref address) => address.to_string(),
-                None => "".to_string(),
-            }
+            self.sender.as_ref().map(|x| x.as_ref()).unwrap_or("")
         )?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
@@ -220,17 +217,12 @@ pub struct AuthCommand {
 
 impl Display for AuthCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let encoded_response = if self.response.is_some() {
-            Some(base64::encode_config(
-                self.response.as_ref().unwrap().as_bytes(),
-                base64::STANDARD,
-            ))
-        } else {
-            None
-        };
+        let encoded_response = self.response
+            .as_ref()
+            .map(|r| base64::encode_config(r.as_bytes(), base64::STANDARD));
 
         if self.mechanism.supports_initial_response() {
-            write!(f, "AUTH {} {}", self.mechanism, encoded_response.unwrap(),)?;
+            write!(f, "AUTH {} {}", self.mechanism, encoded_response.unwrap())?;
         } else {
             match encoded_response {
                 Some(response) => f.write_str(&response)?,
@@ -272,21 +264,12 @@ impl AuthCommand {
             return Err(Error::ResponseParsing("Expecting a challenge"));
         }
 
-        let encoded_challenge = match response.first_word() {
-            Some(challenge) => challenge.to_string(),
-            None => return Err(Error::ResponseParsing("Could not read auth challenge")),
-        };
-
+        let encoded_challenge = response
+            .first_word()
+            .ok_or(Error::ResponseParsing("Could not read auth challenge"))?;
         debug!("auth encoded challenge: {}", encoded_challenge);
 
-        let decoded_challenge = match base64::decode(&encoded_challenge) {
-            Ok(challenge) => match String::from_utf8(challenge) {
-                Ok(value) => value,
-                Err(error) => return Err(Error::Utf8Parsing(error)),
-            },
-            Err(error) => return Err(Error::ChallengeParsing(error)),
-        };
-
+        let decoded_challenge = String::from_utf8(base64::decode(&encoded_challenge)?)?;
         debug!("auth decoded challenge: {}", decoded_challenge);
 
         let response = Some(mechanism.response(&credentials, Some(decoded_challenge.as_ref()))?);
