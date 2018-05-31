@@ -58,26 +58,23 @@ impl<'a> Transport<'a> for SendmailTransport {
         let mut message_content = String::new();
         let _ = email.message().read_to_string(&mut message_content);
 
-        match process
+        process
             .stdin
             .as_mut()
             .unwrap()
-            .write_all(message_content.as_bytes())
-        {
-            Ok(_) => (),
-            Err(error) => return Err(From::from(error)),
-        }
+            .write_all(message_content.as_bytes())?;
 
         info!("Wrote {} message to stdin", message_id);
 
-        if let Ok(output) = process.wait_with_output() {
-            if output.status.success() {
-                Ok(())
-            } else {
-                Err(From::from("The message could not be sent"))
-            }
+        let output = process.wait_with_output()?;
+
+        if output.status.success() {
+            Ok(())
         } else {
-            Err(From::from("The sendmail process stopped"))
+            // TODO display stderr
+            Err(error::Error::Client {
+                error: "The message could not be sent",
+            })?
         }
     }
 }

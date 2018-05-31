@@ -6,7 +6,7 @@
 #![doc(html_root_url = "https://docs.rs/lettre/0.9.0")]
 #![deny(
     missing_copy_implementations, trivial_casts, trivial_numeric_casts, unsafe_code,
-    unstable_features, unused_import_braces, unused_qualifications
+    unstable_features, unused_import_braces
 )]
 #[cfg(feature = "smtp-transport")]
 extern crate base64;
@@ -26,9 +26,13 @@ extern crate serde;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
+extern crate failure;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
+#[macro_use]
+extern crate failure_derive;
 
+pub mod error;
 #[cfg(feature = "file-transport")]
 pub mod file;
 #[cfg(feature = "sendmail-transport")]
@@ -37,6 +41,9 @@ pub mod sendmail;
 pub mod smtp;
 pub mod stub;
 
+use error::EmailResult;
+use error::Error as EmailError;
+use failure::Error;
 #[cfg(feature = "file-transport")]
 pub use file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
@@ -45,46 +52,11 @@ pub use sendmail::SendmailTransport;
 pub use smtp::client::net::ClientTlsParameters;
 #[cfg(feature = "smtp-transport")]
 pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
-use std::error::Error as StdError;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::io::Cursor;
 use std::io::Read;
 use std::str::FromStr;
-
-/// Error type for email content
-#[derive(Debug, Clone, Copy)]
-pub enum Error {
-    /// Missing from in envelope
-    MissingFrom,
-    /// Missing to in envelope
-    MissingTo,
-    /// Invalid email
-    InvalidEmailAddress,
-}
-
-impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::MissingFrom => "missing source address, invalid envelope",
-            Error::MissingTo => "missing destination address, invalid envelope",
-            Error::InvalidEmailAddress => "invalid email address",
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
-        None
-    }
-}
-
-impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
-    }
-}
-
-/// Email result type
-pub type EmailResult<T> = Result<T, Error>;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -131,7 +103,7 @@ impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
     pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
         if to.is_empty() {
-            return Err(Error::MissingTo);
+            Err(EmailError::MissingTo)?;
         }
         Ok(Envelope {
             forward_path: to,

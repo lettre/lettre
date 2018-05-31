@@ -4,9 +4,12 @@
 #![doc(html_root_url = "https://docs.rs/lettre_email/0.9.0")]
 #![deny(
     missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces,
-    unused_qualifications
+    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces
 )]
+
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
 
 extern crate base64;
 extern crate email as email_format;
@@ -18,8 +21,9 @@ extern crate uuid;
 pub mod error;
 
 pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
-use error::Error;
-use lettre::{EmailAddress, Envelope, Error as EmailError, SendableEmail};
+use error::Error as EmailError;
+use failure::Error;
+use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
 use std::fs;
 use std::path::Path;
@@ -231,7 +235,7 @@ impl EmailBuilder {
             fs::read(path)?.as_slice(),
             filename.unwrap_or(path.file_name()
                 .and_then(|x| x.to_str())
-                .ok_or(Error::CannotParseFilename)?),
+                .ok_or(EmailError::CannotParseFilename)?),
             content_type,
         )
     }
@@ -369,26 +373,30 @@ impl EmailBuilder {
                     }
                 }
                 let from = Some(EmailAddress::from_str(&match self.sender {
-                    Some(x) => x.address.clone(), // if we have a sender_header, use it
+                    Some(x) => Ok(x.address.clone()), // if we have a sender_header, use it
                     None => {
                         // use a from header
                         debug_assert!(self.from.len() <= 1); // else we'd have sender_header
                         match self.from.first() {
                             Some(a) => match *a {
                                 // if we have a from header
-                                Address::Mailbox(ref mailbox) => mailbox.address.clone(), // use it
+                                Address::Mailbox(ref mailbox) => Ok(mailbox.address.clone()), // use it
                                 Address::Group(_, ref mailbox_list) => match mailbox_list.first() {
                                     // if it's an author group, use the first author
-                                    Some(mailbox) => mailbox.address.clone(),
+                                    Some(mailbox) => Ok(mailbox.address.clone()),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => return Err(Error::Email(EmailError::MissingFrom)), // empty envelope sender
+                                    None => Err(EmailError::Envelope {
+                                        error: LettreError::MissingFrom,
+                                    }), // empty envelope sender
                                 },
                             },
                             // if we don't have a from header
-                            None => return Err(Error::Email(EmailError::MissingFrom)), // empty envelope sender
+                            None => Err(EmailError::Envelope {
+                                error: LettreError::MissingFrom,
+                            }), // empty envelope sender
                         }
                     }
-                })?);
+                }?)?);
                 Envelope::new(from, to)?
             }
         };
@@ -402,7 +410,9 @@ impl EmailBuilder {
             self.message = self.message
                 .header(Header::new_with_value("From".into(), self.from).unwrap());
         } else {
-            return Err(Error::Email(EmailError::MissingFrom));
+            Err(EmailError::Envelope {
+                error: LettreError::MissingFrom,
+            })?;
         }
         if !self.cc.is_empty() {
             self.message = self.message
