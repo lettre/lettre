@@ -40,17 +40,17 @@ impl<'a> Transport<'a> for SendmailTransport {
         let message_id = email.message_id().to_string();
 
         // Spawn the sendmail command
-        let to_addresses: Vec<String> = email.envelope.to().iter().map(|x| x.to_string()).collect();
         let mut process = Command::new(&self.command)
-            .args(&[
-                "-i",
-                "-f",
-                &match email.envelope().from() {
-                    Some(address) => address.to_string(),
-                    None => "\"\"".to_string(),
-                },
-            ])
-            .args(&to_addresses)
+            .arg("-i")
+            .arg("-f")
+            .arg(
+                email
+                    .envelope()
+                    .from()
+                    .map(|x| x.as_ref())
+                    .unwrap_or("\"\""),
+            )
+            .args(email.envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;

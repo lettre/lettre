@@ -52,6 +52,7 @@ pub use sendmail::SendmailTransport;
 pub use smtp::client::net::ClientTlsParameters;
 #[cfg(feature = "smtp-transport")]
 pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::io::Cursor;
@@ -82,6 +83,18 @@ impl FromStr for EmailAddress {
 impl Display for EmailAddress {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str(&self.0)
+    }
+}
+
+impl AsRef<str> for EmailAddress {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl AsRef<OsStr> for EmailAddress {
+    fn as_ref(&self) -> &OsStr {
+        &self.0.as_ref()
     }
 }
 
