@@ -1,12 +1,12 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
+use sendmail::error::SendmailResult;
+use std::io::prelude::*;
+use std::io::Read;
+use std::process::{Command, Stdio};
 use SendableEmail;
 use Transport;
-use sendmail::error::SendmailResult;
-use std::io::Read;
-use std::io::prelude::*;
-use std::process::{Command, Stdio};
 
 pub mod error;
 

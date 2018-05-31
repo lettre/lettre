@@ -16,9 +16,9 @@
 use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS};
-use smtp::client::InnerClient;
 use smtp::client::net::ClientTlsParameters;
 use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
+use smtp::client::InnerClient;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
 use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};

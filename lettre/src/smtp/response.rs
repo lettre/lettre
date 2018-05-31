@@ -5,7 +5,7 @@ use nom::simple_errors::Err as NomError;
 use nom::{crlf, ErrorKind as NomErrorKind, IResult as NomResult};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
-use std::str::{FromStr, from_utf8};
+use std::str::{from_utf8, FromStr};
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]

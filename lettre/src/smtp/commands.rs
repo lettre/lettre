@@ -1,6 +1,5 @@
 //! SMTP commands
 
-use EmailAddress;
 use base64;
 use smtp::authentication::{Credentials, Mechanism};
 use smtp::error::Error;
@@ -8,6 +7,7 @@ use smtp::extension::ClientId;
 use smtp::extension::{MailParameter, RcptParameter};
 use smtp::response::Response;
 use std::fmt::{self, Display, Formatter};
+use EmailAddress;
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
