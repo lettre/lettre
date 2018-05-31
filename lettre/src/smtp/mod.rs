@@ -40,22 +40,22 @@ pub mod util;
 
 /// Default smtp port
 pub const SMTP_PORT: u16 = 25;
-
 /// Default submission port
 pub const SUBMISSION_PORT: u16 = 587;
+/// Default submission over TLS port
+pub const SUBMISSIONS_PORT: u16 = 465;
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
 pub enum ClientSecurity {
-    /// Insecure connection
+    /// Insecure connection only (for testing purposes)
     None,
-    /// Use `STARTTLS` when available
+    /// Start with insecure connection and use `STARTTLS` when available
     Opportunistic(ClientTlsParameters),
-    /// Always use `STARTTLS`
+    /// Start with insecure connection and require `STARTTLS`
     Required(ClientTlsParameters),
-    /// Use TLS wrapped connection without negotiation
-    /// Non RFC-compliant, should only be used if the server does not support STARTTLS.
+    /// Use TLS wrapped connection
     Wrapper(ClientTlsParameters),
 }
 
@@ -122,7 +122,7 @@ impl SmtpClient {
     }
 
     /// Simple and secure transport, should be used when possible.
-    /// Creates an encrypted transport over submission port, using the provided domain
+    /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
         let mut tls_builder = TlsConnector::builder()?;
@@ -132,8 +132,8 @@ impl SmtpClient {
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
 
         SmtpClient::new(
-            (domain, SUBMISSION_PORT),
-            ClientSecurity::Required(tls_parameters),
+            (domain, SUBMISSIONS_PORT),
+            ClientSecurity::Wrapper(tls_parameters),
         )
     }
 
