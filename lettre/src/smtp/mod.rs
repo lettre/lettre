@@ -125,8 +125,8 @@ impl SmtpClient {
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
-        let mut tls_builder = TlsConnector::builder()?;
-        tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
+        let mut tls_builder = TlsConnector::builder();
+        tls_builder.min_protocol_version(Some(DEFAULT_TLS_PROTOCOLS[0]));
 
         let tls_parameters =
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
