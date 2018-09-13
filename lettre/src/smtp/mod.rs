@@ -17,7 +17,7 @@ use native_tls::TlsConnector;
 use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
                            DEFAULT_UNENCRYPTED_MECHANISMS};
 use smtp::client::net::ClientTlsParameters;
-use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
+use smtp::client::net::DEFAULT_TLS_PROTOCOL;
 use smtp::client::InnerClient;
 use smtp::commands::*;
 use smtp::error::{Error, SmtpResult};
@@ -125,11 +125,11 @@ impl SmtpClient {
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
-        let mut tls_builder = TlsConnector::builder()?;
-        tls_builder.supported_protocols(DEFAULT_TLS_PROTOCOLS)?;
+        let mut tls_builder = TlsConnector::builder();
+        tls_builder.min_protocol_version(Some(DEFAULT_TLS_PROTOCOL));
 
         let tls_parameters =
-            ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
+            ClientTlsParameters::new(domain.to_string(), tls_builder.build()?);
 
         SmtpClient::new(
             (domain, SUBMISSIONS_PORT),

@@ -22,7 +22,7 @@ is-it-maintained-open-issues = { repository = "lettre/lettre" }
 log = "^0.4"
 nom = { version = "^3.2", optional = true }
 bufstream = { version = "^0.1", optional = true }
-native-tls = { version = "^0.1", optional = true }
+native-tls = { version = "^0.2", optional = true }
 base64 = { version = "^0.9", optional = true }
 hostname = { version = "^0.1", optional = true }
 serde = { version = "^1.0", optional = true }
