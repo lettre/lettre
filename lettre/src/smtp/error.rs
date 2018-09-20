@@ -37,7 +37,7 @@ pub enum Error {
     /// TLS error
     Tls(native_tls::Error),
     /// Parsing error
-    Parsing(nom::simple_errors::Err),
+    Parsing(nom::ErrorKind),
 }
 
 impl Display for Error {
@@ -77,7 +77,6 @@ impl StdError for Error {
             Utf8Parsing(ref err) => Some(&*err),
             Io(ref err) => Some(&*err),
             Tls(ref err) => Some(&*err),
-            Parsing(ref err) => Some(&*err),
             _ => None,
         }
     }
@@ -95,8 +94,8 @@ impl From<native_tls::Error> for Error {
     }
 }
 
-impl From<nom::simple_errors::Err> for Error {
-    fn from(err: nom::simple_errors::Err) -> Error {
+impl From<nom::ErrorKind> for Error {
+    fn from(err: nom::ErrorKind) -> Error {
         Parsing(err)
     }
 }

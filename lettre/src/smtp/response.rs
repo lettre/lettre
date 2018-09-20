@@ -1,8 +1,7 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use nom::simple_errors::Err as NomError;
-use nom::{crlf, ErrorKind as NomErrorKind, IResult as NomResult};
+use nom::{crlf, ErrorKind as NomErrorKind};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::{from_utf8, FromStr};
@@ -126,13 +125,12 @@ pub struct Response {
 }
 
 impl FromStr for Response {
-    type Err = NomError;
+    type Err = NomErrorKind;
 
-    fn from_str(s: &str) -> result::Result<Response, NomError> {
+    fn from_str(s: &str) -> result::Result<Response, NomErrorKind> {
         match parse_response(s.as_bytes()) {
-            NomResult::Done(_, res) => Ok(res),
-            NomResult::Error(e) => Err(e),
-            NomResult::Incomplete(_) => Err(NomErrorKind::Complete),
+            Ok((_, res)) => Ok(res),
+            Err(e) => Err(e.into_error_kind()),
         }
     }
 }
