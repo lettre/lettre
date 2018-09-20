@@ -44,6 +44,9 @@ impl Default for PartBuilder {
     }
 }
 
+/// Represents a message id
+pub type MessageId = String;
+
 /// Builds an `Email` structure
 #[derive(PartialEq, Eq, Clone, Debug, Default)]
 pub struct EmailBuilder {
@@ -59,6 +62,10 @@ pub struct EmailBuilder {
     bcc: Vec<Address>,
     /// The Reply-To addresses for the mail header
     reply_to: Vec<Address>,
+    /// The In-Reply-To ids for the mail header
+    in_reply_to: Vec<MessageId>,
+    /// The References ids for the mail header
+    references: Vec<MessageId>,
     /// The sender address for the mail header
     sender: Option<Mailbox>,
     /// The envelope
@@ -149,6 +156,8 @@ impl EmailBuilder {
             cc: vec![],
             bcc: vec![],
             reply_to: vec![],
+            in_reply_to: vec![],
+            references: vec![],
             sender: None,
             envelope: None,
             date_issued: false,
@@ -199,6 +208,18 @@ impl EmailBuilder {
     pub fn reply_to<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
         self.reply_to.push(Address::Mailbox(mailbox));
+        self
+    }
+
+    /// Adds a `In-Reply-To` header
+    pub fn in_reply_to(mut self, message_id: MessageId) -> EmailBuilder {
+        self.in_reply_to.push(message_id);
+        self
+    }
+
+    /// Adds a `References` header
+    pub fn references(mut self, message_id: MessageId) -> EmailBuilder {
+        self.references.push(message_id);
         self
     }
 
@@ -422,6 +443,14 @@ impl EmailBuilder {
             self.message = self.message
                 .header(Header::new_with_value("Reply-To".into(), self.reply_to).unwrap());
         }
+        if !self.in_reply_to.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("In-Reply-To".into(), self.in_reply_to.join(" ")).unwrap());
+        }
+        if !self.references.is_empty() {
+            self.message = self.message
+                .header(Header::new_with_value("References".into(), self.references.join(" ")).unwrap());
+        }
 
         if !self.date_issued {
             self.message = self.message
@@ -492,6 +521,7 @@ mod test {
             .cc(("cc@localhost", "Alias"))
             .bcc("bcc@localhost")
             .reply_to("reply@localhost")
+            .in_reply_to("original".to_string())
             .sender("sender@localhost")
             .body("Hello World!")
             .date(&date_now)
@@ -507,7 +537,7 @@ mod test {
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
                  <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
-                 Reply-To: <reply@localhost>\r\n\
+                 Reply-To: <reply@localhost>\r\nIn-Reply-To: original\r\n\
                  MIME-Version: 1.0\r\nMessage-ID: \
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
