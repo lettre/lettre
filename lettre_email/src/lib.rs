@@ -106,6 +106,14 @@ impl IntoEmail for SimpleEmail {
             builder.set_subject(self.subject.unwrap());
         }
 
+        if self.in_reply_to.is_some() {
+            builder.add_in_reply_to(self.in_reply_to.unwrap().into_mailbox());
+        }
+
+        if self.reference.is_some() {
+            builder.add_reference(self.reference.unwrap().into_mailbox());
+        }
+
         // No date for now
 
         match (self.text, self.html) {
@@ -131,6 +139,8 @@ pub struct SimpleEmail {
     cc: Vec<Mailbox>,
     bcc: Vec<Mailbox>,
     reply_to: Option<Mailbox>,
+    in_reply_to: Option<Mailbox>,
+    reference: Option<Mailbox>,
     subject: Option<String>,
     date: Option<Tm>,
     html: Option<String>,
@@ -182,6 +192,18 @@ impl SimpleEmail {
     /// Adds a `Cc` header and stores the recipient address
     pub fn add_cc<A: IntoMailbox>(&mut self, address: A) {
         self.cc.push(address.into_mailbox());
+    }
+
+    /// Adds a `In-Reply-To` to the header
+    pub fn in_reply_to<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
+        self.in_reply_to = Some(address.into_mailbox());
+        self
+    }
+
+    /// Adds a `Reference` to the header
+    pub fn reference<A: IntoMailbox>(mut self, address: A) -> SimpleEmail {
+        self.reference = Some(address.into_mailbox());
+        self
     }
 
     /// Adds a `Bcc` header and stores the recipient address
@@ -296,6 +318,10 @@ pub struct EmailBuilder {
     envelope: Option<Envelope>,
     /// Date issued
     date_issued: bool,
+    /// Reference Header
+    reference_header: Vec<Address>,
+    /// In-Reply-To Header
+    in_reply_to_header: Vec<Address>
 }
 
 /// Simple email representation
@@ -392,6 +418,8 @@ impl EmailBuilder {
             sender_header: None,
             envelope: None,
             date_issued: false,
+            reference_header: vec![],
+            in_reply_to_header: vec![]
         }
     }
 
@@ -468,6 +496,28 @@ impl EmailBuilder {
     /// Adds a `Reply-To` header
     pub fn reply_to<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
         self.add_reply_to(address);
+        self
+    }
+
+    /// Adds a `In-Reply-To` header
+    pub fn add_in_reply_to<A: IntoMailbox>(&mut self, address: A) { 
+        self.in_reply_to_header.push(Address::Mailbox(address.into_mailbox()));
+    }
+
+    /// Adds a `Reference` header
+    pub fn add_reference<A: IntoMailbox>(&mut self, address: A) {
+        self.reference_header.push(Address::Mailbox(address.into_mailbox()));
+    }
+
+    /// Adds a `In-Reply-To` header
+    pub fn in_reply_to<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
+        self.add_in_reply_to(address);
+        self
+    }
+
+    /// Adds a `Reference` header
+    pub fn reference<A: IntoMailbox>(mut self, address: A) -> EmailBuilder {
+        self.add_reference(address);
         self
     }
 
@@ -776,6 +826,18 @@ impl EmailBuilder {
         if !self.reply_to_header.is_empty() {
             self.message.add_header(
                 Header::new_with_value("Reply-To".into(), self.reply_to_header).unwrap(),
+            );
+        }
+
+        if !self.reference_header.is_empty() {
+            self.message.add_header(
+                Header::new_with_value("Reference".into(), self.reference_header).unwrap(),
+            );
+        }
+
+        if !self.in_reply_to_header.is_empty() {
+            self.message.add_header(
+                Header::new_with_value("In-Reply-To".into(), self.in_reply_to_header).unwrap(),
             );
         }
 
