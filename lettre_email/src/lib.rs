@@ -773,10 +773,6 @@ impl EmailBuilder {
             self.message
                 .add_header(Header::new_with_value("Cc".into(), self.cc_header).unwrap());
         }
-        if !self.bcc_header.is_empty() {
-            self.message
-                .add_header(Header::new_with_value("Bcc".into(), self.bcc_header).unwrap());
-        }
         if !self.reply_to_header.is_empty() {
             self.message.add_header(
                 Header::new_with_value("Reply-To".into(), self.reply_to_header).unwrap(),
@@ -902,7 +898,7 @@ mod test {
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
                  <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
-                 Bcc: <bcc@localhost>\r\nReply-To: <reply@localhost>\r\n\
+                 Reply-To: <reply@localhost>\r\n\
                  MIME-Version: 1.0\r\nMessage-ID: \
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
