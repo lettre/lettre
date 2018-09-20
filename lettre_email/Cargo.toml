@@ -26,7 +26,7 @@ glob = "0.2"
 email = { git = "https://github.com/lettre/rust-email" }
 mime = "^0.3"
 time = "^0.1"
-uuid = { version = "^0.6", features = ["v4"] }
+uuid = { version = "^0.7", features = ["v4"] }
 lettre = { version = "^0.9", path = "../lettre", default-features = false }
 base64 = "^0.9"
 failure = "^0.1"
