@@ -31,6 +31,7 @@ extern crate failure;
 extern crate serde_json;
 #[macro_use]
 extern crate failure_derive;
+extern crate fast_chemail;
 
 pub mod error;
 #[cfg(feature = "file-transport")]
@@ -58,6 +59,7 @@ use std::io;
 use std::io::Cursor;
 use std::io::Read;
 use std::str::FromStr;
+use fast_chemail::is_valid_email;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -65,9 +67,10 @@ use std::str::FromStr;
 pub struct EmailAddress(String);
 
 impl EmailAddress {
-    /// Creates a new `EmailAddress`. For now it makes no validation.
     pub fn new(address: String) -> EmailResult<EmailAddress> {
-        // TODO make some basic sanity checks
+        if !is_valid_email(&address) && !address.ends_with("localhost") {
+            Err(EmailError::InvalidEmailAddress)?;
+        }
         Ok(EmailAddress(address))
     }
 }
