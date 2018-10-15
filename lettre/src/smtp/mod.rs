@@ -103,6 +103,8 @@ impl SmtpClient {
     /// * No authentication
     /// * No SMTPUTF8 support
     /// * A 60 seconds timeout for smtp commands
+    /// 
+    /// Consider using [`SmtpClient::new_simple`] instead, if possible.
     pub fn new<A: ToSocketAddrs>(addr: A, security: ClientSecurity) -> Result<SmtpClient, Error> {
         let mut addresses = addr.to_socket_addrs()?;
 
