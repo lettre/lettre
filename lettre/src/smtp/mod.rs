@@ -31,6 +31,8 @@ pub mod client;
 pub mod commands;
 pub mod error;
 pub mod extension;
+#[cfg(feature = "connection-pool")]
+pub mod r2d2;
 pub mod response;
 pub mod util;
 
@@ -73,6 +75,7 @@ pub enum ConnectionReuseParameters {
 
 /// Contains client configuration
 #[allow(missing_debug_implementations)]
+#[derive(Clone)]
 pub struct SmtpClient {
     /// Enable connection reuse
     connection_reuse: ConnectionReuseParameters,
@@ -242,6 +245,95 @@ impl<'a> SmtpTransport {
         }
     }
 
+    fn connect(&mut self) -> Result<(), Error> {
+        // Check if the connection is still available
+        if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
+            self.close();
+        }
+
+        if self.state.connection_reuse_count > 0 {
+            info!("connection already established to {}", self.client_info.server_addr);
+            return Ok(());
+        }
+
+        self.client.connect(
+            &self.client_info.server_addr,
+            match self.client_info.security {
+                ClientSecurity::Wrapper(ref tls_parameters) => Some(tls_parameters),
+                _ => None,
+            },
+        )?;
+
+        self.client.set_timeout(self.client_info.timeout)?;
+
+        // Log the connection
+        info!("connection established to {}", self.client_info.server_addr);
+
+        self.ehlo()?;
+
+        match (
+            &self.client_info.security.clone(),
+            self.server_info
+                .as_ref()
+                .unwrap()
+                .supports_feature(Extension::StartTls),
+        ) {
+            (&ClientSecurity::Required(_), false) => {
+                return Err(From::from("Could not encrypt connection, aborting"))
+            }
+            (&ClientSecurity::Opportunistic(_), false) => (),
+            (&ClientSecurity::None, _) => (),
+            (&ClientSecurity::Wrapper(_), _) => (),
+            (&ClientSecurity::Opportunistic(ref tls_parameters), true)
+                | (&ClientSecurity::Required(ref tls_parameters), true) => {
+                    try_smtp!(self.client.command(StarttlsCommand), self);
+                    try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
+
+                    debug!("connection encrypted");
+
+                    // Send EHLO again
+                    self.ehlo()?;
+                }
+        }
+
+        if self.client_info.credentials.is_some() {
+            let mut found = false;
+
+            // Compute accepted mechanism
+            let accepted_mechanisms = match self.client_info.authentication_mechanism {
+                Some(mechanism) => vec![mechanism],
+                None => {
+                    if self.client.is_encrypted() {
+                        DEFAULT_ENCRYPTED_MECHANISMS.to_vec()
+                    } else {
+                        DEFAULT_UNENCRYPTED_MECHANISMS.to_vec()
+                    }
+                }
+            };
+
+            for mechanism in accepted_mechanisms {
+                if self.server_info
+                    .as_ref()
+                    .unwrap()
+                    .supports_auth_mechanism(mechanism)
+                {
+                    found = true;
+                    try_smtp!(
+                        self.client
+                            .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
+                        self
+                    );
+                    break;
+                }
+            }
+
+            if !found {
+                info!("No supported authentication mechanisms available");
+            }
+        }
+        Ok(())
+    }
+
     /// Gets the EHLO response and updates server information
     fn ehlo(&mut self) -> SmtpResult {
         // Extended Hello
@@ -280,87 +372,8 @@ impl<'a> Transport<'a> for SmtpTransport {
     fn send(&mut self, email: SendableEmail) -> SmtpResult {
         let message_id = email.message_id().to_string();
 
-        // Check if the connection is still available
-        if (self.state.connection_reuse_count > 0) && (!self.client.is_connected()) {
-            self.close();
-        }
-
-        if self.state.connection_reuse_count == 0 {
-            self.client.connect(
-                &self.client_info.server_addr,
-                match self.client_info.security {
-                    ClientSecurity::Wrapper(ref tls_parameters) => Some(tls_parameters),
-                    _ => None,
-                },
-            )?;
-
-            self.client.set_timeout(self.client_info.timeout)?;
-
-            // Log the connection
-            info!("connection established to {}", self.client_info.server_addr);
-
-            self.ehlo()?;
-
-            match (
-                &self.client_info.security.clone(),
-                self.server_info
-                    .as_ref()
-                    .unwrap()
-                    .supports_feature(Extension::StartTls),
-            ) {
-                (&ClientSecurity::Required(_), false) => {
-                    return Err(From::from("Could not encrypt connection, aborting"))
-                }
-                (&ClientSecurity::Opportunistic(_), false) => (),
-                (&ClientSecurity::None, _) => (),
-                (&ClientSecurity::Wrapper(_), _) => (),
-                (&ClientSecurity::Opportunistic(ref tls_parameters), true)
-                | (&ClientSecurity::Required(ref tls_parameters), true) => {
-                    try_smtp!(self.client.command(StarttlsCommand), self);
-                    try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
-
-                    debug!("connection encrypted");
-
-                    // Send EHLO again
-                    self.ehlo()?;
-                }
-            }
-
-            if self.client_info.credentials.is_some() {
-                let mut found = false;
-
-                // Compute accepted mechanism
-                let accepted_mechanisms = match self.client_info.authentication_mechanism {
-                    Some(mechanism) => vec![mechanism],
-                    None => {
-                        if self.client.is_encrypted() {
-                            DEFAULT_ENCRYPTED_MECHANISMS.to_vec()
-                        } else {
-                            DEFAULT_UNENCRYPTED_MECHANISMS.to_vec()
-                        }
-                    }
-                };
-
-                for mechanism in accepted_mechanisms {
-                    if self.server_info
-                        .as_ref()
-                        .unwrap()
-                        .supports_auth_mechanism(mechanism)
-                    {
-                        found = true;
-                        try_smtp!(
-                            self.client
-                                .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
-                            self
-                        );
-                        break;
-                    }
-                }
-
-                if !found {
-                    info!("No supported authentication mechanisms available");
-                }
-            }
+        if !self.client.is_connected() {
+            self.connect()?;
         }
 
         // Mail
