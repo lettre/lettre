@@ -430,6 +430,10 @@ impl EmailBuilder {
         if !self.from.is_empty() {
             self.message = self.message
                 .header(Header::new_with_value("From".into(), self.from).unwrap());
+        } else if let Some(from) = envelope.from() {
+            let from = vec![Address::new_mailbox(from.to_string())];
+            self.message = self.message
+                .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
             Err(EmailError::Envelope {
                 error: LettreError::MissingFrom,
