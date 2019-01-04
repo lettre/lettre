@@ -23,7 +23,7 @@ lettre = { version = "^0.9", path = "../lettre", features = ["smtp-transport"] }
 glob = "0.2"
 
 [dependencies]
-email = { git = "https://github.com/lettre/rust-email" }
+email = "^0.0.20"
 mime = "^0.3"
 time = "^0.1"
 uuid = { version = "^0.7", features = ["v4"] }
