@@ -254,7 +254,13 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
                 break;
             }
             // TODO read more than one line
-            self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+            let read_count = self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+
+            // EOF is reached
+            if read_count == 0 {
+                break;
+            }
+
             response = raw_response.parse::<Response>();
         }
 
