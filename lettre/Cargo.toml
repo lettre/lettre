@@ -47,3 +47,7 @@ sendmail-transport = []
 [[example]]
 name = "smtp"
 required-features = ["smtp-transport"]
+
+[[example]]
+name = "smtp_gmail"
+required-features = ["smtp-transport"]
