@@ -36,7 +36,8 @@ fn skeptic_test(path: &Path) {
         .arg(&depdir)
         .arg(path);
 
-    let result = cmd.spawn()
+    let result = cmd
+        .spawn()
         .expect("Failed to spawn process")
         .wait()
         .expect("Failed to run process");

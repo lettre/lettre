@@ -14,8 +14,9 @@
 //!
 
 use native_tls::TlsConnector;
-use smtp::authentication::{Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS,
-                           DEFAULT_UNENCRYPTED_MECHANISMS};
+use smtp::authentication::{
+    Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
+};
 use smtp::client::net::ClientTlsParameters;
 use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
 use smtp::client::InnerClient;
@@ -106,7 +107,7 @@ impl SmtpClient {
     /// * No authentication
     /// * No SMTPUTF8 support
     /// * A 60 seconds timeout for smtp commands
-    /// 
+    ///
     /// Consider using [`SmtpClient::new_simple`] instead, if possible.
     pub fn new<A: ToSocketAddrs>(addr: A, security: ClientSecurity) -> Result<SmtpClient, Error> {
         let mut addresses = addr.to_socket_addrs()?;
@@ -254,7 +255,10 @@ impl<'a> SmtpTransport {
         }
 
         if self.state.connection_reuse_count > 0 {
-            info!("connection already established to {}", self.client_info.server_addr);
+            info!(
+                "connection already established to {}",
+                self.client_info.server_addr
+            );
             return Ok(());
         }
 
@@ -281,21 +285,21 @@ impl<'a> SmtpTransport {
                 .supports_feature(Extension::StartTls),
         ) {
             (&ClientSecurity::Required(_), false) => {
-                return Err(From::from("Could not encrypt connection, aborting"))
+                return Err(From::from("Could not encrypt connection, aborting"));
             }
             (&ClientSecurity::Opportunistic(_), false) => (),
             (&ClientSecurity::None, _) => (),
             (&ClientSecurity::Wrapper(_), _) => (),
             (&ClientSecurity::Opportunistic(ref tls_parameters), true)
-                | (&ClientSecurity::Required(ref tls_parameters), true) => {
-                    try_smtp!(self.client.command(StarttlsCommand), self);
-                    try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
+            | (&ClientSecurity::Required(ref tls_parameters), true) => {
+                try_smtp!(self.client.command(StarttlsCommand), self);
+                try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
 
-                    debug!("connection encrypted");
+                debug!("connection encrypted");
 
-                    // Send EHLO again
-                    self.ehlo()?;
-                }
+                // Send EHLO again
+                self.ehlo()?;
+            }
         }
 
         if self.client_info.credentials.is_some() {
@@ -314,7 +318,8 @@ impl<'a> SmtpTransport {
             };
 
             for mechanism in accepted_mechanisms {
-                if self.server_info
+                if self
+                    .server_info
                     .as_ref()
                     .unwrap()
                     .supports_auth_mechanism(mechanism)
@@ -370,7 +375,10 @@ impl<'a> Transport<'a> for SmtpTransport {
     type Result = SmtpResult;
 
     /// Sends an email
-    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms, cyclomatic_complexity))]
+    #[cfg_attr(
+        feature = "cargo-clippy",
+        allow(clippy::match_same_arms, clippy::cyclomatic_complexity)
+    )]
     fn send(&mut self, email: SendableEmail) -> SmtpResult {
         let message_id = email.message_id().to_string();
 
@@ -381,7 +389,8 @@ impl<'a> Transport<'a> for SmtpTransport {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info
+        if self
+            .server_info
             .as_ref()
             .unwrap()
             .supports_feature(Extension::EightBitMime)
@@ -389,10 +398,12 @@ impl<'a> Transport<'a> for SmtpTransport {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
-        if self.server_info
+        if self
+            .server_info
             .as_ref()
             .unwrap()
-            .supports_feature(Extension::SmtpUtfEight) && self.client_info.smtp_utf8
+            .supports_feature(Extension::SmtpUtfEight)
+            && self.client_info.smtp_utf8
         {
             mail_options.push(MailParameter::SmtpUtfEight);
         }

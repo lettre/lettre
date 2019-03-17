@@ -5,8 +5,12 @@
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.9.0")]
 #![deny(
-    missing_copy_implementations, trivial_casts, trivial_numeric_casts, unsafe_code,
-    unstable_features, unused_import_braces
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces
 )]
 #[cfg(feature = "smtp-transport")]
 extern crate base64;
@@ -47,23 +51,23 @@ pub mod stub;
 use error::EmailResult;
 use error::Error as EmailError;
 use failure::Error;
+use fast_chemail::is_valid_email;
 #[cfg(feature = "file-transport")]
 pub use file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
 pub use smtp::client::net::ClientTlsParameters;
-#[cfg(feature = "smtp-transport")]
-pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
 pub use smtp::r2d2::SmtpConnectionManager;
+#[cfg(feature = "smtp-transport")]
+pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::io::Cursor;
 use std::io::Read;
 use std::str::FromStr;
-use fast_chemail::is_valid_email;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]

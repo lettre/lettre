@@ -3,8 +3,14 @@
 
 #![doc(html_root_url = "https://docs.rs/lettre_email/0.9.0")]
 #![deny(
-    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces
 )]
 
 extern crate failure;
@@ -254,9 +260,11 @@ impl EmailBuilder {
     ) -> Result<EmailBuilder, Error> {
         self.attachment(
             fs::read(path)?.as_slice(),
-            filename.unwrap_or(path.file_name()
-                .and_then(|x| x.to_str())
-                .ok_or(EmailError::CannotParseFilename)?),
+            filename.unwrap_or(
+                path.file_name()
+                    .and_then(|x| x.to_str())
+                    .ok_or(EmailError::CannotParseFilename)?,
+            ),
             content_type,
         )
     }
@@ -388,9 +396,11 @@ impl EmailBuilder {
                 for receiver in self.to.iter().chain(self.cc.iter()).chain(self.bcc.iter()) {
                     match *receiver {
                         Address::Mailbox(ref m) => to.push(EmailAddress::from_str(&m.address)?),
-                        Address::Group(_, ref ms) => for m in ms.iter() {
-                            to.push(EmailAddress::from_str(&m.address.clone())?);
-                        },
+                        Address::Group(_, ref ms) => {
+                            for m in ms.iter() {
+                                to.push(EmailAddress::from_str(&m.address.clone())?);
+                            }
+                        }
                     }
                 }
                 let from = Some(EmailAddress::from_str(&match self.sender {
@@ -424,15 +434,18 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("To".into(), self.to).unwrap());
         }
         if !self.from.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("From".into(), self.from).unwrap());
         } else if let Some(from) = envelope.from() {
             let from = vec![Address::new_mailbox(from.to_string())];
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
             Err(EmailError::Envelope {
@@ -440,24 +453,29 @@ impl EmailBuilder {
             })?;
         }
         if !self.cc.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("Cc".into(), self.cc).unwrap());
         }
         if !self.reply_to.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("Reply-To".into(), self.reply_to).unwrap());
         }
         if !self.in_reply_to.is_empty() {
-            self.message = self.message
-                .header(Header::new_with_value("In-Reply-To".into(), self.in_reply_to.join(" ")).unwrap());
+            self.message = self.message.header(
+                Header::new_with_value("In-Reply-To".into(), self.in_reply_to.join(" ")).unwrap(),
+            );
         }
         if !self.references.is_empty() {
-            self.message = self.message
-                .header(Header::new_with_value("References".into(), self.references.join(" ")).unwrap());
+            self.message = self.message.header(
+                Header::new_with_value("References".into(), self.references.join(" ")).unwrap(),
+            );
         }
 
         if !self.date_issued {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
         }
 
@@ -580,7 +598,8 @@ mod test {
                 EmailAddress::new("user@localhost".to_string()).unwrap(),
                 EmailAddress::new("cc@localhost".to_string()).unwrap(),
                 EmailAddress::new("bcc@localhost".to_string()).unwrap(),
-            ].as_slice()
+            ]
+            .as_slice()
         );
     }
 

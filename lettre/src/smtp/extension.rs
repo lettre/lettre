@@ -134,20 +134,22 @@ impl ServerInfo {
                 "STARTTLS" => {
                     features.insert(Extension::StartTls);
                 }
-                "AUTH" => for &mechanism in &split[1..] {
-                    match mechanism {
-                        "PLAIN" => {
-                            features.insert(Extension::Authentication(Mechanism::Plain));
+                "AUTH" => {
+                    for &mechanism in &split[1..] {
+                        match mechanism {
+                            "PLAIN" => {
+                                features.insert(Extension::Authentication(Mechanism::Plain));
+                            }
+                            "LOGIN" => {
+                                features.insert(Extension::Authentication(Mechanism::Login));
+                            }
+                            "XOAUTH2" => {
+                                features.insert(Extension::Authentication(Mechanism::Xoauth2));
+                            }
+                            _ => (),
                         }
-                        "LOGIN" => {
-                            features.insert(Extension::Authentication(Mechanism::Login));
-                        }
-                        "XOAUTH2" => {
-                            features.insert(Extension::Authentication(Mechanism::Xoauth2));
-                        }
-                        _ => (),
                     }
-                },
+                }
                 _ => (),
             };
         }

@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cargo-clippy", allow(clippy::write_with_newline))]
+
 //! SMTP commands
 
 use base64;
@@ -163,6 +165,7 @@ pub struct VrfyCommand {
 
 impl Display for VrfyCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        #[cfg_attr(feature = "cargo-clippy", allow(clippy::write_with_newline))]
         write!(f, "VRFY {}\r\n", self.argument)
     }
 }
@@ -217,7 +220,8 @@ pub struct AuthCommand {
 
 impl Display for AuthCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let encoded_response = self.response
+        let encoded_response = self
+            .response
             .as_ref()
             .map(|r| base64::encode_config(r.as_bytes(), base64::STANDARD));
 

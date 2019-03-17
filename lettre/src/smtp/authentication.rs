@@ -79,8 +79,8 @@ impl Display for Mechanism {
 
 impl Mechanism {
     /// Does the mechanism supports initial response
-    pub fn supports_initial_response(&self) -> bool {
-        match *self {
+    pub fn supports_initial_response(self) -> bool {
+        match self {
             Mechanism::Plain | Mechanism::Xoauth2 => true,
             Mechanism::Login => false,
         }
@@ -89,11 +89,11 @@ impl Mechanism {
     /// Returns the string to send to the server, using the provided username, password and
     /// challenge in some cases
     pub fn response(
-        &self,
+        self,
         credentials: &Credentials,
         challenge: Option<&str>,
     ) -> Result<String, Error> {
-        match *self {
+        match self {
             Mechanism::Plain => match challenge {
                 Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
                 None => Ok(format!(

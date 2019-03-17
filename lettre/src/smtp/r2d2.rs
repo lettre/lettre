@@ -1,6 +1,6 @@
 use r2d2::ManageConnection;
-use smtp::{ConnectionReuseParameters, SmtpClient, SmtpTransport};
 use smtp::error::Error;
+use smtp::{ConnectionReuseParameters, SmtpClient, SmtpTransport};
 
 pub struct SmtpConnectionManager {
     transport_builder: SmtpClient,

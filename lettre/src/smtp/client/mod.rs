@@ -88,7 +88,7 @@ macro_rules! return_err (
     })
 );
 
-#[cfg_attr(feature = "cargo-clippy", allow(new_without_default_derive))]
+#[cfg_attr(feature = "cargo-clippy", allow(clippy::new_without_default_derive))]
 impl<S: Write + Read> InnerClient<S> {
     /// Creates a new SMTP client
     ///
@@ -165,7 +165,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
-    #[cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
     pub fn is_connected(&mut self) -> bool {
         self.stream.is_some() && self.command(NoopCommand).is_ok()
     }

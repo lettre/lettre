@@ -47,7 +47,7 @@ impl Display for Error {
 }
 
 impl StdError for Error {
-    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
     fn description(&self) -> &str {
         match *self {
             // Try to display the first line of the server's response that usually

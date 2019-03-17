@@ -331,20 +331,19 @@ mod test {
 
     #[test]
     fn test_response_is_positive() {
-        assert!(
-            Response::new(
-                Code {
-                    severity: Severity::PositiveCompletion,
-                    category: Category::MailSystem,
-                    detail: Detail::Zero,
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).is_positive()
-        );
+        assert!(Response::new(
+            Code {
+                severity: Severity::PositiveCompletion,
+                category: Category::MailSystem,
+                detail: Detail::Zero,
+            },
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        )
+        .is_positive());
         assert!(!Response::new(
             Code {
                 severity: Severity::TransientNegativeCompletion,
@@ -356,25 +355,25 @@ mod test {
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).is_positive());
+        )
+        .is_positive());
     }
 
     #[test]
     fn test_response_has_code() {
-        assert!(
-            Response::new(
-                Code {
-                    severity: Severity::TransientNegativeCompletion,
-                    category: Category::MailSystem,
-                    detail: Detail::One,
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).has_code(451)
-        );
+        assert!(Response::new(
+            Code {
+                severity: Severity::TransientNegativeCompletion,
+                category: Category::MailSystem,
+                detail: Detail::One,
+            },
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        )
+        .has_code(451));
         assert!(!Response::new(
             Code {
                 severity: Severity::TransientNegativeCompletion,
@@ -386,7 +385,8 @@ mod test {
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).has_code(251));
+        )
+        .has_code(251));
     }
 
     #[test]
@@ -403,7 +403,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_word(),
+            )
+            .first_word(),
             Some("me")
         );
         assert_eq!(
@@ -418,7 +419,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_word(),
+            )
+            .first_word(),
             Some("me")
         );
         assert_eq!(
@@ -429,7 +431,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -440,7 +443,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![" ".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -451,7 +455,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["  ".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -462,7 +467,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
     }
@@ -481,7 +487,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_line(),
+            )
+            .first_line(),
             Some("me")
         );
         assert_eq!(
@@ -496,7 +503,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_line(),
+            )
+            .first_line(),
             Some("me mo")
         );
         assert_eq!(
@@ -507,7 +515,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![],
-            ).first_line(),
+            )
+            .first_line(),
             None
         );
         assert_eq!(
@@ -518,7 +527,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![" ".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some(" ")
         );
         assert_eq!(
@@ -529,7 +539,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["  ".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some("  ")
         );
         assert_eq!(
@@ -540,7 +551,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some("")
         );
     }

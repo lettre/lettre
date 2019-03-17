@@ -3,8 +3,8 @@ mod test {
     extern crate lettre;
     extern crate r2d2;
 
-    use self::lettre::{SmtpConnectionManager, Transport};
     use self::lettre::{ClientSecurity, EmailAddress, Envelope, SendableEmail, SmtpClient};
+    use self::lettre::{SmtpConnectionManager, Transport};
     use self::r2d2::Pool;
     use std::sync::mpsc;
     use std::thread;
@@ -14,7 +14,8 @@ mod test {
             Envelope::new(
                 Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
                 vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            ).unwrap(),
+            )
+            .unwrap(),
             "id".to_string(),
             message.to_string().into_bytes(),
         )
