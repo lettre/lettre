@@ -1,3 +1,34 @@
+<a name="v0.9.0"></a>
+### v0.9.0 (2019-03-17)
+
+#### Bug Fixes
+
+* **email:**
+  * Inserting 'from' from envelope into message headers ([058fa69](https://github.com/lettre/lettre/commit/058fa69))
+  * Do not include Bcc addresses in headers ([ee31bbe](https://github.com/lettre/lettre/commit/ee31bbe))
+
+* **transport:**
+  * Write timeout is not set in smtp transport ([d71b560](https://github.com/lettre/lettre/commit/d71b560))
+  * Client::read_response infinite loop ([72f3cd8](https://github.com/lettre/lettre/commit/72f3cd8))
+
+#### Features
+
+* **all:**
+  * Update dependencies
+  * Start using the failure crate for errors ([c10fe3d](https://github.com/lettre/lettre/commit/c10fe3d))
+
+* **transport:**
+  * Remove TLS 1.1 in accepted protocols by default (only allow TLS 1.2) ([4b48bdb](https://github.com/lettre/lettre/commit/4b48bdb))
+  * Initial support for XOAUTH2 ([ed7c164](https://github.com/lettre/lettre/commit/ed7c164))
+  * Remove support for CRAM-MD5 ([bc09aa2](https://github.com/lettre/lettre/commit/bc09aa2))
+  * SMTP connection pool implementation with r2d2 ([434654e](https://github.com/lettre/lettre/commit/434654e))
+  * Use md-5 and hmac instead of rust-crypto ([e7e0f34](https://github.com/lettre/lettre/commit/e7e0f34))
+  * Gmail transport simple example ([a8d8e2a](https://github.com/lettre/lettre/commit/a8d8e2a))
+
+* **email:**
+  * Add In-Reply-To and References headers ([fc91bb6](https://github.com/lettre/lettre/commit/fc91bb6))
+  * Remove non-chaining builder methods ([1baf8a9](https://github.com/lettre/lettre/commit/1baf8a9))
+
 <a name="v0.8.2"></a>
 ### v0.8.2 (2018-05-03)
 

@@ -34,13 +34,13 @@ Lettre provides the following features:
 
 ## Example
 
-This library requires Rust 1.20 or newer.
+This library requires Rust 1.26 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.8"
-lettre_email = "0.8"
+lettre = "0.9"
+lettre_email = "0.9"
 ```
 
 ```rust,no_run
