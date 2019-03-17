@@ -46,7 +46,6 @@ lettre_email = "0.8"
 ```rust,no_run
 extern crate lettre;
 extern crate lettre_email;
-extern crate mime;
 
 use lettre::{EmailTransport, SmtpTransport};
 use lettre_email::EmailBuilder;
@@ -60,7 +59,6 @@ fn main() {
         .from("user@example.com")
         .subject("Hi, Hello world")
         .text("Hello world.")
-        .attachment(Path::new("Cargo.toml"), None, &mime::TEXT_PLAIN).unwrap()
         .build()
         .unwrap();
 
