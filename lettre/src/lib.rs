@@ -32,6 +32,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate failure_derive;
 extern crate fast_chemail;
+#[cfg(feature = "connection-pool")]
+extern crate r2d2;
 
 pub mod error;
 #[cfg(feature = "file-transport")]
@@ -53,6 +55,8 @@ pub use sendmail::SendmailTransport;
 pub use smtp::client::net::ClientTlsParameters;
 #[cfg(feature = "smtp-transport")]
 pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
+pub use smtp::r2d2::SmtpConnectionManager;
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
