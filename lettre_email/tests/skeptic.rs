@@ -1,6 +1,4 @@
-extern crate glob;
-
-use self::glob::glob;
+use glob::glob;
 use std::env;
 use std::env::consts::EXE_EXTENSION;
 use std::path::Path;

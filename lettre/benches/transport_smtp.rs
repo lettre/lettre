@@ -1,17 +1,16 @@
 #![feature(test)]
 
-extern crate lettre;
 extern crate test;
 
 use lettre::smtp::ConnectionReuseParameters;
-use lettre::{ClientSecurity, Envelope, SmtpTransport};
+use lettre::{ClientSecurity, Envelope, SmtpClient};
 use lettre::{EmailAddress, SendableEmail, Transport};
 
 #[bench]
 fn bench_simple_send(b: &mut test::Bencher) {
-    let mut sender = SmtpTransport::builder("127.0.0.1:2525", ClientSecurity::None)
+    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
-        .build();
+        .transport();
     b.iter(|| {
         let email = SendableEmail::new(
             Envelope::new(
@@ -29,10 +28,10 @@ fn bench_simple_send(b: &mut test::Bencher) {
 
 #[bench]
 fn bench_reuse_send(b: &mut test::Bencher) {
-    let mut sender = SmtpTransport::builder("127.0.0.1:2525", ClientSecurity::None)
+    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
-        .build();
+        .transport();
     b.iter(|| {
         let email = SendableEmail::new(
             Envelope::new(

@@ -1,5 +1,3 @@
-extern crate lettre;
-
 use lettre::stub::StubTransport;
 use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
 

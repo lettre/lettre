@@ -1,26 +1,8 @@
-extern crate glob;
-
-use self::glob::glob;
+use glob::glob;
 use std::env;
 use std::env::consts::EXE_EXTENSION;
 use std::path::Path;
 use std::process::Command;
-
-/*
-#[test]
-fn test_readme() {
-    let readme = Path::new(file!())
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("README.md");
-
-    skeptic_test(&readme);
-}
-*/
 
 #[test]
 fn book_test() {

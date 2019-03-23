@@ -1,11 +1,8 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "connection-pool"))]
 mod test {
-    extern crate lettre;
-    extern crate r2d2;
-
-    use self::lettre::{ClientSecurity, EmailAddress, Envelope, SendableEmail, SmtpClient};
-    use self::lettre::{SmtpConnectionManager, Transport};
-    use self::r2d2::Pool;
+    use lettre::{ClientSecurity, EmailAddress, Envelope, SendableEmail, SmtpClient};
+    use lettre::{SmtpConnectionManager, Transport};
+    use r2d2::Pool;
     use std::sync::mpsc;
     use std::thread;
 
@@ -23,7 +20,7 @@ mod test {
 
     #[test]
     fn send_one() {
-        let client = SmtpClient::new("localhost:2525", ClientSecurity::None).unwrap();
+        let client = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None).unwrap();
         let manager = SmtpConnectionManager::new(client).unwrap();
         let pool = Pool::builder().max_size(1).build(manager).unwrap();
 

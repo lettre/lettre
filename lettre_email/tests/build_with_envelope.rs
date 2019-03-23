@@ -1,5 +1,3 @@
-extern crate lettre;
-extern crate lettre_email;
 use lettre::{EmailAddress, Envelope};
 use lettre_email::EmailBuilder;
 

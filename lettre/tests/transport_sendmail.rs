@@ -1,5 +1,3 @@
-extern crate lettre;
-
 #[cfg(test)]
 #[cfg(feature = "sendmail-transport")]
 mod test {
