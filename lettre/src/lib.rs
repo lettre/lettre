@@ -34,7 +34,7 @@ pub use crate::smtp::client::net::ClientTlsParameters;
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use fast_chemail::is_valid_email;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
-pub use smtp::r2d2::SmtpConnectionManager;
+pub use crate::smtp::r2d2::SmtpConnectionManager;
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
