@@ -88,7 +88,7 @@ mod test {
     fn write_take_test() {
         let mut mock = MockStream::new();
         // write to mock stream
-        mock.write(&[1, 2, 3]).unwrap();
+        mock.write_all(&[1, 2, 3]).unwrap();
         assert_eq!(mock.take_vec(), vec![1, 2, 3]);
     }
 
@@ -104,7 +104,7 @@ mod test {
     fn clone_test() {
         let mut mock = MockStream::new();
         let mut cloned = mock.clone();
-        mock.write(&[6, 7]).unwrap();
+        mock.write_all(&[6, 7]).unwrap();
         assert_eq!(cloned.take_vec(), vec![6, 7]);
     }
 
@@ -112,7 +112,7 @@ mod test {
     fn swap_test() {
         let mut mock = MockStream::new();
         let mut vec = Vec::new();
-        mock.write(&[8, 9, 10]).unwrap();
+        mock.write_all(&[8, 9, 10]).unwrap();
         mock.swap();
         mock.read_to_end(&mut vec).unwrap();
         assert_eq!(vec, vec![8, 9, 10]);

@@ -37,13 +37,15 @@ mod tests {
 
     #[test]
     fn test() {
-        for (input, expect) in vec![
+        for (input, expect) in [
             ("bjorn", "bjorn"),
             ("bjørn", "bjørn"),
             ("Ø+= ❤️‰", "Ø+2B+3D+20❤️‰"),
             ("+", "+2B"),
-        ] {
-            assert_eq!(format!("{}", XText(input)), expect);
+        ]
+        .iter()
+        {
+            assert_eq!(format!("{}", XText(input)), expect.to_string());
         }
     }
 }

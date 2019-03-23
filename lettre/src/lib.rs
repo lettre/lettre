@@ -30,11 +30,11 @@ pub use crate::file::FileTransport;
 pub use crate::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::client::net::ClientTlsParameters;
+#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
+pub use crate::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use fast_chemail::is_valid_email;
-#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
-pub use crate::smtp::r2d2::SmtpConnectionManager;
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
