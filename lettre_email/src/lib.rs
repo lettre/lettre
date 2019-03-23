@@ -13,17 +13,10 @@
     unused_import_braces
 )]
 
-extern crate base64;
-extern crate email as email_format;
-extern crate lettre;
-extern crate mime;
-extern crate time;
-extern crate uuid;
-
 pub mod error;
 
-pub use crate::email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use crate::error::Error;
+pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
 use std::fs;
@@ -411,15 +404,11 @@ impl EmailBuilder {
                                     // if it's an author group, use the first author
                                     Some(mailbox) => Ok(mailbox.address.clone()),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => Err(Error::Envelope(
-                                        LettreError::MissingFrom,
-                                    )), // empty envelope sender
+                                    None => Err(Error::Envelope(LettreError::MissingFrom)), // empty envelope sender
                                 },
                             },
                             // if we don't have a from header
-                            None => Err(Error::Envelope(
-                                LettreError::MissingFrom,
-                            )), // empty envelope sender
+                            None => Err(Error::Envelope(LettreError::MissingFrom)), // empty envelope sender
                         }
                     }
                 }?)?);
@@ -443,9 +432,7 @@ impl EmailBuilder {
                 .message
                 .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
-            Err(Error::Envelope(
-                LettreError::MissingFrom,
-            ))?;
+            Err(Error::Envelope(LettreError::MissingFrom))?;
         }
         if !self.cc.is_empty() {
             self.message = self

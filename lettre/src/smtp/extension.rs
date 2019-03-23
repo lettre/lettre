@@ -1,10 +1,10 @@
 //! ESMTP features
 
-use hostname::get_hostname;
 use crate::smtp::authentication::Mechanism;
 use crate::smtp::error::Error;
 use crate::smtp::response::Response;
 use crate::smtp::util::XText;
+use hostname::get_hostname;
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -15,7 +15,10 @@ pub const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
 
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum ClientId {
     /// A fully-qualified domain name
     Domain(String),
@@ -50,7 +53,10 @@ impl ClientId {
 
 /// Supported ESMTP keywords
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -81,7 +87,10 @@ impl Display for Extension {
 
 /// Contains information about an SMTP server
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct ServerInfo {
     /// Server name
     ///
@@ -174,7 +183,10 @@ impl ServerInfo {
 
 /// A `MAIL FROM` extension parameter
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum MailParameter {
     /// `BODY` parameter
     Body(MailBodyParameter),
@@ -211,7 +223,10 @@ impl Display for MailParameter {
 
 /// Values for the `BODY` parameter to `MAIL FROM`
 #[derive(PartialEq, Eq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum MailBodyParameter {
     /// `7BIT`
     SevenBit,
@@ -230,7 +245,10 @@ impl Display for MailBodyParameter {
 
 /// A `RCPT TO` extension parameter
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum RcptParameter {
     /// Custom parameter
     Other {

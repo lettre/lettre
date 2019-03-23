@@ -2,17 +2,21 @@
 //!
 
 use crate::sendmail::error::SendmailResult;
+use crate::SendableEmail;
+use crate::Transport;
+use log::info;
 use std::io::prelude::*;
 use std::io::Read;
 use std::process::{Command, Stdio};
-use crate::SendableEmail;
-use crate::Transport;
 
 pub mod error;
 
 /// Sends an email using the `sendmail` command
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct SendmailTransport {
     command: String,
 }

@@ -4,19 +4,22 @@
 //!
 
 use crate::file::error::FileResult;
+use crate::Envelope;
+use crate::SendableEmail;
+use crate::Transport;
 use serde_json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use crate::Envelope;
-use crate::SendableEmail;
-use crate::Transport;
 
 pub mod error;
 
 /// Writes the content and the envelope information to a file
 #[derive(Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct FileTransport {
     path: PathBuf,
 }
@@ -31,7 +34,10 @@ impl FileTransport {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 struct SerializableEmail {
     envelope: Envelope,
     message_id: String,

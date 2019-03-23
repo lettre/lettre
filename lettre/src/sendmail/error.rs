@@ -1,11 +1,11 @@
 //! Error and result type for sendmail transport
 
+use self::Error::*;
+use std::io;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
 };
-use self::Error::*;
-use std::io;
 
 /// An enum of all error kinds.
 #[derive(Debug)]

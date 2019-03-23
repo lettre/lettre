@@ -1,12 +1,12 @@
 //! Error and result type for emails
 
+use self::Error::*;
 use lettre;
 use std::io;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
 };
-use self::Error::*;
 
 /// An enum of all error kinds.
 #[derive(Debug)]
@@ -42,7 +42,6 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error::Io(err)
-
     }
 }
 

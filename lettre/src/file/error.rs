@@ -1,12 +1,12 @@
 //! Error and result type for file transport
 
+use self::Error::*;
+use serde_json;
+use std::io;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
 };
-use serde_json;
-use std::io;
-use self::Error::*;
 
 /// An enum of all error kinds.
 #[derive(Debug)]

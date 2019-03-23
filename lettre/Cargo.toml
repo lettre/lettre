@@ -10,6 +10,7 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>"]
 categories = ["email"]
 keywords = ["email", "smtp", "mailer"]
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "lettre/lettre" }

@@ -1,7 +1,7 @@
 //! A trait to represent a stream
 
-use native_tls::{Protocol, TlsConnector, TlsStream};
 use crate::smtp::client::mock::MockStream;
+use native_tls::{Protocol, TlsConnector, TlsStream};
 use std::io::{self, ErrorKind, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
 use std::time::Duration;

@@ -13,7 +13,6 @@
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 
-use native_tls::TlsConnector;
 use crate::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
@@ -23,9 +22,11 @@ use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
+use crate::{SendableEmail, Transport};
+use log::{debug, info};
+use native_tls::TlsConnector;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
-use crate::{SendableEmail, Transport};
 
 pub mod authentication;
 pub mod client;
@@ -64,7 +65,10 @@ pub enum ClientSecurity {
 
 /// Configures connection reuse behavior
 #[derive(Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum ConnectionReuseParameters {
     /// Unlimited connection reuse
     ReuseUnlimited,

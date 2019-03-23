@@ -12,29 +12,6 @@
     unstable_features,
     unused_import_braces
 )]
-#[cfg(feature = "smtp-transport")]
-extern crate base64;
-#[cfg(feature = "smtp-transport")]
-extern crate bufstream;
-#[cfg(feature = "smtp-transport")]
-extern crate hostname;
-#[macro_use]
-extern crate log;
-#[cfg(feature = "smtp-transport")]
-extern crate native_tls;
-#[cfg(feature = "smtp-transport")]
-#[macro_use]
-extern crate nom;
-#[cfg(feature = "serde-impls")]
-extern crate serde;
-#[cfg(feature = "serde-impls")]
-#[macro_use]
-extern crate serde_derive;
-#[cfg(feature = "file-transport")]
-extern crate serde_json;
-extern crate fast_chemail;
-#[cfg(feature = "connection-pool")]
-extern crate r2d2;
 
 pub mod error;
 #[cfg(feature = "file-transport")]
@@ -47,17 +24,17 @@ pub mod stub;
 
 use crate::error::EmailResult;
 use crate::error::Error;
-use fast_chemail::is_valid_email;
 #[cfg(feature = "file-transport")]
 pub use crate::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use crate::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::client::net::ClientTlsParameters;
-#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
-pub use smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+use fast_chemail::is_valid_email;
+#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
+pub use smtp::r2d2::SmtpConnectionManager;
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
@@ -67,7 +44,10 @@ use std::str::FromStr;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct EmailAddress(String);
 
 impl EmailAddress {
@@ -109,7 +89,10 @@ impl AsRef<OsStr> for EmailAddress {
 ///
 /// We only accept mailboxes, and do not support source routes (as per RFC).
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Envelope {
     /// The envelope recipients' addresses
     ///

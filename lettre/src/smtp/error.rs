@@ -1,10 +1,10 @@
 //! Error and result type for SMTP clients
 
 use self::Error::*;
+use crate::smtp::response::{Response, Severity};
 use base64::DecodeError;
 use native_tls;
 use nom;
-use crate::smtp::response::{Response, Severity};
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};

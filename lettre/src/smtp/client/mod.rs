@@ -1,12 +1,13 @@
 //! SMTP client
 
-use bufstream::BufStream;
-use nom::ErrorKind as NomErrorKind;
 use crate::smtp::authentication::{Credentials, Mechanism};
 use crate::smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::response::Response;
+use bufstream::BufStream;
+use log::debug;
+use nom::ErrorKind as NomErrorKind;
 use std::fmt::{Debug, Display};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
@@ -18,7 +19,10 @@ pub mod net;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct ClientCodec {
     escape_count: u8,
 }
