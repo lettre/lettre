@@ -13,10 +13,6 @@
     unused_import_braces
 )]
 
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-
 extern crate base64;
 extern crate email as email_format;
 extern crate lettre;
@@ -27,8 +23,7 @@ extern crate uuid;
 pub mod error;
 
 pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
-use error::Error as EmailError;
-use failure::Error;
+use error::Error;
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
 use std::fs;
@@ -263,7 +258,7 @@ impl EmailBuilder {
             filename.unwrap_or(
                 path.file_name()
                     .and_then(|x| x.to_str())
-                    .ok_or(EmailError::CannotParseFilename)?,
+                    .ok_or(Error::CannotParseFilename)?,
             ),
             content_type,
         )
@@ -416,15 +411,15 @@ impl EmailBuilder {
                                     // if it's an author group, use the first author
                                     Some(mailbox) => Ok(mailbox.address.clone()),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => Err(EmailError::Envelope {
-                                        error: LettreError::MissingFrom,
-                                    }), // empty envelope sender
+                                    None => Err(Error::Envelope(
+                                        LettreError::MissingFrom,
+                                    )), // empty envelope sender
                                 },
                             },
                             // if we don't have a from header
-                            None => Err(EmailError::Envelope {
-                                error: LettreError::MissingFrom,
-                            }), // empty envelope sender
+                            None => Err(Error::Envelope(
+                                LettreError::MissingFrom,
+                            )), // empty envelope sender
                         }
                     }
                 }?)?);
@@ -448,9 +443,9 @@ impl EmailBuilder {
                 .message
                 .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
-            Err(EmailError::Envelope {
-                error: LettreError::MissingFrom,
-            })?;
+            Err(Error::Envelope(
+                LettreError::MissingFrom,
+            ))?;
         }
         if !self.cc.is_empty() {
             self.message = self
