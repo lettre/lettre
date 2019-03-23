@@ -101,7 +101,6 @@ You can specify custom TLS settings:
 ```rust,no_run
 extern crate native_tls;
 extern crate lettre;
-extern crate lettre_email;
 
 use lettre::{
     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope, 

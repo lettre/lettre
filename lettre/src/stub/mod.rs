@@ -2,8 +2,8 @@
 //! testing purposes.
 //!
 
-use SendableEmail;
-use Transport;
+use crate::SendableEmail;
+use crate::Transport;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]

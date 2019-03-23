@@ -3,13 +3,13 @@
 //! SMTP commands
 
 use base64;
-use smtp::authentication::{Credentials, Mechanism};
-use smtp::error::Error;
-use smtp::extension::ClientId;
-use smtp::extension::{MailParameter, RcptParameter};
-use smtp::response::Response;
+use crate::smtp::authentication::{Credentials, Mechanism};
+use crate::smtp::error::Error;
+use crate::smtp::extension::ClientId;
+use crate::smtp::extension::{MailParameter, RcptParameter};
+use crate::smtp::response::Response;
 use std::fmt::{self, Display, Formatter};
-use EmailAddress;
+use crate::EmailAddress;
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
@@ -290,7 +290,7 @@ impl AuthCommand {
 #[cfg(test)]
 mod test {
     use super::*;
-    use smtp::extension::MailBodyParameter;
+    use crate::smtp::extension::MailBodyParameter;
 
     #[test]
     fn test_display() {

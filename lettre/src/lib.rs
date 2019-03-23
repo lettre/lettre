@@ -45,19 +45,19 @@ pub mod sendmail;
 pub mod smtp;
 pub mod stub;
 
-use error::EmailResult;
-use error::Error;
+use crate::error::EmailResult;
+use crate::error::Error;
 use fast_chemail::is_valid_email;
 #[cfg(feature = "file-transport")]
-pub use file::FileTransport;
+pub use crate::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
-pub use sendmail::SendmailTransport;
+pub use crate::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::client::net::ClientTlsParameters;
+pub use crate::smtp::client::net::ClientTlsParameters;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
 pub use smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;

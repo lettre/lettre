@@ -4,7 +4,7 @@ use self::Error::*;
 use base64::DecodeError;
 use native_tls;
 use nom;
-use smtp::response::{Response, Severity};
+use crate::smtp::response::{Response, Severity};
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};

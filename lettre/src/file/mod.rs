@@ -3,14 +3,14 @@
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 
-use file::error::FileResult;
+use crate::file::error::FileResult;
 use serde_json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
-use Envelope;
-use SendableEmail;
-use Transport;
+use crate::Envelope;
+use crate::SendableEmail;
+use crate::Transport;
 
 pub mod error;
 

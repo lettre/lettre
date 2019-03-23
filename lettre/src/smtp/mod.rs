@@ -14,18 +14,18 @@
 //!
 
 use native_tls::TlsConnector;
-use smtp::authentication::{
+use crate::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
-use smtp::client::net::ClientTlsParameters;
-use smtp::client::net::DEFAULT_TLS_PROTOCOLS;
-use smtp::client::InnerClient;
-use smtp::commands::*;
-use smtp::error::{Error, SmtpResult};
-use smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
+use crate::smtp::client::net::ClientTlsParameters;
+use crate::smtp::client::net::DEFAULT_TLS_PROTOCOLS;
+use crate::smtp::client::InnerClient;
+use crate::smtp::commands::*;
+use crate::smtp::error::{Error, SmtpResult};
+use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
-use {SendableEmail, Transport};
+use crate::{SendableEmail, Transport};
 
 pub mod authentication;
 pub mod client;

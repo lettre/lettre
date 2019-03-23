@@ -22,8 +22,8 @@ extern crate uuid;
 
 pub mod error;
 
-pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
-use error::Error;
+pub use crate::email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
+use crate::error::Error;
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
 use std::fs;

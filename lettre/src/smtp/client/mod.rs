@@ -2,11 +2,11 @@
 
 use bufstream::BufStream;
 use nom::ErrorKind as NomErrorKind;
-use smtp::authentication::{Credentials, Mechanism};
-use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
-use smtp::commands::*;
-use smtp::error::{Error, SmtpResult};
-use smtp::response::Response;
+use crate::smtp::authentication::{Credentials, Mechanism};
+use crate::smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
+use crate::smtp::commands::*;
+use crate::smtp::error::{Error, SmtpResult};
+use crate::smtp::response::Response;
 use std::fmt::{Debug, Display};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;

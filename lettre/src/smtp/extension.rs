@@ -1,10 +1,10 @@
 //! ESMTP features
 
 use hostname::get_hostname;
-use smtp::authentication::Mechanism;
-use smtp::error::Error;
-use smtp::response::Response;
-use smtp::util::XText;
+use crate::smtp::authentication::Mechanism;
+use crate::smtp::error::Error;
+use crate::smtp::response::Response;
+use crate::smtp::util::XText;
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -260,8 +260,8 @@ impl Display for RcptParameter {
 mod test {
 
     use super::{ClientId, Extension, ServerInfo};
-    use smtp::authentication::Mechanism;
-    use smtp::response::{Category, Code, Detail, Response, Severity};
+    use crate::smtp::authentication::Mechanism;
+    use crate::smtp::response::{Category, Code, Detail, Response, Severity};
     use std::collections::HashSet;
 
     #[test]

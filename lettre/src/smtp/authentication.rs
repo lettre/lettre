@@ -1,6 +1,6 @@
 //! Provides limited SASL authentication mechanisms
 
-use smtp::error::Error;
+use crate::smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// Accepted authentication mechanisms on an encrypted connection
