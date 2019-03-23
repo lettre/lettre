@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::write_with_newline))]
 
 //! SMTP commands
 
