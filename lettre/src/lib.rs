@@ -30,11 +30,8 @@ extern crate serde;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
-extern crate failure;
 #[cfg(feature = "file-transport")]
 extern crate serde_json;
-#[macro_use]
-extern crate failure_derive;
 extern crate fast_chemail;
 #[cfg(feature = "connection-pool")]
 extern crate r2d2;
@@ -49,8 +46,7 @@ pub mod smtp;
 pub mod stub;
 
 use error::EmailResult;
-use error::Error as EmailError;
-use failure::Error;
+use error::Error;
 use fast_chemail::is_valid_email;
 #[cfg(feature = "file-transport")]
 pub use file::FileTransport;
@@ -77,7 +73,7 @@ pub struct EmailAddress(String);
 impl EmailAddress {
     pub fn new(address: String) -> EmailResult<EmailAddress> {
         if !is_valid_email(&address) && !address.ends_with("localhost") {
-            Err(EmailError::InvalidEmailAddress)?;
+            Err(Error::InvalidEmailAddress)?;
         }
         Ok(EmailAddress(address))
     }
@@ -127,7 +123,7 @@ impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
     pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
         if to.is_empty() {
-            Err(EmailError::MissingTo)?;
+            Err(Error::MissingTo)?;
         }
         Ok(Envelope {
             forward_path: to,

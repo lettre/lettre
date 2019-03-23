@@ -1,40 +1,65 @@
 //! Error and result type for file transport
 
-use failure;
+use std::{
+    error::Error as StdError,
+    fmt::{self, Display, Formatter},
+};
 use serde_json;
 use std::io;
+use self::Error::*;
 
 /// An enum of all error kinds.
-#[derive(Fail, Debug)]
+#[derive(Debug)]
 pub enum Error {
     /// Internal client error
-    #[fail(display = "Internal client error: {}", error)]
-    Client { error: &'static str },
+    Client(&'static str),
     /// IO error
-    #[fail(display = "IO error: {}", error)]
-    Io { error: io::Error },
+    Io(io::Error),
     /// JSON serialization error
-    #[fail(display = "JSON serialization error: {}", error)]
-    JsonSerialization { error: serde_json::Error },
+    JsonSerialization(serde_json::Error),
+}
+
+impl Display for Error {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        fmt.write_str(self.description())
+    }
+}
+
+impl StdError for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Client(err) => err,
+            Io(ref err) => err.description(),
+            JsonSerialization(ref err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&StdError> {
+        match *self {
+            Io(ref err) => Some(&*err),
+            JsonSerialization(ref err) => Some(&*err),
+            _ => None,
+        }
+    }
 }
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
-        Error::Io { error: err }
+        Error::Io(err)
     }
 }
 
 impl From<serde_json::Error> for Error {
     fn from(err: serde_json::Error) -> Error {
-        Error::JsonSerialization { error: err }
+        Error::JsonSerialization(err)
     }
 }
 
 impl From<&'static str> for Error {
     fn from(string: &'static str) -> Error {
-        Error::Client { error: string }
+        Error::Client(string)
     }
 }
 
 /// SMTP result type
-pub type FileResult = Result<(), failure::Error>;
+pub type FileResult = Result<(), Error>;
