@@ -8,13 +8,13 @@ use std::process::Command;
 fn book_test() {
     let mut book_path = env::current_dir().unwrap();
     let readme = Path::new(file!())
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("../README.md");
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("../README.md");
     book_path.push(
         Path::new(file!())
             .parent()

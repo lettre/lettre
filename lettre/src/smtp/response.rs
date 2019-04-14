@@ -6,6 +6,7 @@ use nom::{crlf, ErrorKind as NomErrorKind};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::{from_utf8, FromStr};
+use std::string::ToString;
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
@@ -269,7 +270,7 @@ named!(
                 code: last_code,
                 message: lines
                     .into_iter()
-                    .map(|line| from_utf8(line).map(|s| s.to_string()))
+                    .map(|line| from_utf8(line).map(ToString::to_string))
                     .collect::<result::Result<Vec<_>, _>>()
                     .map_err(|_| ())?,
             })

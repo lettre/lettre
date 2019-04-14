@@ -5,6 +5,7 @@ use crate::sendmail::error::SendmailResult;
 use crate::SendableEmail;
 use crate::Transport;
 use log::info;
+use std::convert::AsRef;
 use std::io::prelude::*;
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -47,13 +48,7 @@ impl<'a> Transport<'a> for SendmailTransport {
         let mut process = Command::new(&self.command)
             .arg("-i")
             .arg("-f")
-            .arg(
-                email
-                    .envelope()
-                    .from()
-                    .map(|x| x.as_ref())
-                    .unwrap_or("\"\""),
-            )
+            .arg(email.envelope().from().map(AsRef::as_ref).unwrap_or("\"\""))
             .args(email.envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

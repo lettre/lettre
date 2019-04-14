@@ -19,6 +19,7 @@ use crate::error::Error;
 pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
@@ -250,7 +251,7 @@ impl EmailBuilder {
             fs::read(path)?.as_slice(),
             filename.unwrap_or(
                 path.file_name()
-                    .and_then(|x| x.to_str())
+                    .and_then(OsStr::to_str)
                     .ok_or(Error::CannotParseFilename)?,
             ),
             content_type,

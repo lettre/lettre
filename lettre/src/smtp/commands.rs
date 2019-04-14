@@ -1,4 +1,3 @@
-
 //! SMTP commands
 
 use crate::smtp::authentication::{Credentials, Mechanism};
@@ -9,6 +8,7 @@ use crate::smtp::response::Response;
 use crate::EmailAddress;
 use base64;
 use log::debug;
+use std::convert::AsRef;
 use std::fmt::{self, Display, Formatter};
 
 /// EHLO command
@@ -64,7 +64,7 @@ impl Display for MailCommand {
         write!(
             f,
             "MAIL FROM:<{}>",
-            self.sender.as_ref().map(|x| x.as_ref()).unwrap_or("")
+            self.sender.as_ref().map(AsRef::as_ref).unwrap_or("")
         )?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
