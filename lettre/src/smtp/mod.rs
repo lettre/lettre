@@ -17,7 +17,7 @@ use crate::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
 use crate::smtp::client::net::ClientTlsParameters;
-use crate::smtp::client::net::DEFAULT_TLS_PROTOCOLS;
+use crate::smtp::client::net::DEFAULT_TLS_MIN_PROTOCOL;
 use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
@@ -136,7 +136,7 @@ impl SmtpClient {
     /// to validate TLS certificates.
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
         let mut tls_builder = TlsConnector::builder();
-        tls_builder.min_protocol_version(Some(DEFAULT_TLS_PROTOCOLS[0]));
+        tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
 
         let tls_parameters =
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
