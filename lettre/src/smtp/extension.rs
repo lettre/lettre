@@ -11,7 +11,7 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 use std::result::Result;
 
 /// Default client id
-pub const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
+const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
 
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]

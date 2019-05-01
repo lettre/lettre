@@ -268,6 +268,7 @@ impl<'a> SmtpTransport {
 
         self.client.connect(
             &self.client_info.server_addr,
+            self.client_info.timeout,
             match self.client_info.security {
                 ClientSecurity::Wrapper(ref tls_parameters) => Some(tls_parameters),
                 _ => None,

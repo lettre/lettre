@@ -163,7 +163,7 @@ use lettre::smtp::commands::*;
 
 fn main() {
     let mut email_client: InnerClient<NetworkStream> = InnerClient::new();
-    let _ = email_client.connect(&("localhost", SMTP_PORT), None);
+    let _ = email_client.connect(&("localhost", SMTP_PORT), None, None);
     let _ = email_client.command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
     let _ = email_client.command(
                 MailCommand::new(Some(EmailAddress::new("user@example.com".to_string()).unwrap()), vec![])

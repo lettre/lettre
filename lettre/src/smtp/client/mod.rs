@@ -145,6 +145,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     pub fn connect<A: ToSocketAddrs>(
         &mut self,
         addr: &A,
+        timeout: Option<Duration>,
         tls_parameters: Option<&ClientTlsParameters>,
     ) -> SmtpResult {
         // Connect should not be called when the client is already connected
@@ -162,7 +163,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(Connector::connect(&server_addr, tls_parameters)?);
+        self.set_stream(Connector::connect(&server_addr, timeout, tls_parameters)?);
 
         self.read_response()
     }
