@@ -13,6 +13,18 @@
     unused_import_braces
 )]
 
+<<<<<<< HEAD
+=======
+extern crate failure;
+#[macro_use]
+extern crate failure_derive;
+
+extern crate base64;
+extern crate email as email_format;
+extern crate lettre;
+extern crate time;
+extern crate uuid;
+>>>>>>> v0.9.x
 pub extern crate mime;
 
 pub mod error;
