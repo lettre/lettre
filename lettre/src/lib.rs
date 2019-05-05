@@ -3,7 +3,7 @@
 //! This mailer contains the available transports for your emails.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre/0.9.0")]
+#![doc(html_root_url = "https://docs.rs/lettre/0.10.0-pre")]
 #![deny(
     missing_copy_implementations,
     trivial_casts,
