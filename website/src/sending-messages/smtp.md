@@ -1,4 +1,4 @@
-SMTP Transport
+#### SMTP Transport
 
 This transport uses the SMTP protocol to send emails over the network (locally or remotely).
 
