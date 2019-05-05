@@ -3,7 +3,7 @@ rust:
 - stable
 - beta
 - nightly
-- 1.26.0
+- 1.30.0
 matrix:
   allow_failures:
   - rust: nightly
@@ -19,11 +19,9 @@ addons:
     - gcc
     - binutils-dev
     - libiberty-dev
-    - npm
 before_script:
 - smtp-sink 2525 1000&
 - sudo chgrp -R postdrop /var/spool/postfix/maildrop
-- sudo npm set strict-ssl false && sudo npm install -g gitbook-cli
 script:
 - cargo test --verbose --all --all-features
 after_success:
