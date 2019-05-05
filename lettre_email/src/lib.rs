@@ -20,9 +20,9 @@ extern crate failure_derive;
 extern crate base64;
 extern crate email as email_format;
 extern crate lettre;
-extern crate mime;
 extern crate time;
 extern crate uuid;
+pub extern crate mime;
 
 pub mod error;
 
