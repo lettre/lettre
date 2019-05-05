@@ -1,3 +1,11 @@
+<a name="v0.9.1"></a>
+### v0.9.1 (2019-05-05)
+
+#### Features
+
+* **email:**
+  * Re-export mime crate ([a0c8fb9](https://github.com/lettre/lettre/commit/a0c8fb9))
+
 <a name="v0.9.0"></a>
 ### v0.9.0 (2019-03-17)
 
