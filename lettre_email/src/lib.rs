@@ -13,6 +13,8 @@
     unused_import_braces
 )]
 
+pub extern crate mime;
+
 pub mod error;
 
 use crate::error::Error;

@@ -46,10 +46,9 @@ lettre_email = "0.9"
 ```rust,no_run
 extern crate lettre;
 extern crate lettre_email;
-extern crate mime;
 
 use lettre::{SmtpClient, Transport};
-use lettre_email::Email;
+use lettre_email::{Email, mime::TEXT_PLAIN};
 use std::path::Path;
 
 fn main() {
@@ -60,7 +59,7 @@ fn main() {
         .from("user@example.com")
         .subject("Hi, Hello world")
         .text("Hello world.")
-        .attachment_from_file(Path::new("Cargo.toml"), None, &mime::TEXT_PLAIN)
+        .attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
         .unwrap()
         .build()
         .unwrap();
