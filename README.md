@@ -34,7 +34,7 @@ Lettre provides the following features:
 
 ## Example
 
-This library requires Rust 1.26 or newer.
+This library requires Rust 1.32 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml

@@ -3,7 +3,7 @@ rust:
 - stable
 - beta
 - nightly
-- 1.30.0
+- 1.32.0
 matrix:
   allow_failures:
   - rust: nightly
@@ -26,4 +26,4 @@ script:
 - cargo test --verbose --all --all-features
 after_success:
 - ./.build-scripts/codecov.sh
-- '[ "$TRAVIS_BRANCH" = "v0.9.x" ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'
+- '[ "$TRAVIS_RUST_VERSION" = "stable" ] && [ "$TRAVIS_BRANCH" = "v0.9.x" ] && [ $TRAVIS_PULL_REQUEST = false ] && ./.build-scripts/site-upload.sh'
