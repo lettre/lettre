@@ -18,9 +18,11 @@ pub extern crate mime;
 pub mod error;
 
 use crate::error::Error;
-pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
+pub use email::{Address, Header, Mailbox, mimeheaders, MimeMessage,
+                MimeMultipartType};
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
@@ -346,6 +348,109 @@ impl EmailBuilder {
         self
     }
 
+    /// Build a multipart/encrypted MIME message as specified in [RFC 1847]
+    ///
+    /// [RFC 1847]: https://tools.ietf.org/html/rfc1847
+    pub fn openpgp_encrypted<S: Into<String>>(
+        self,
+        body_octet_stream: S,
+    ) -> EmailBuilder {
+        let pgp_encrypted = PartBuilder::new()
+            .body("Version: 1")
+            .header((
+                "Content-Type",
+                // XXX: Change to mime::APPLICATION_PGP_ENCRYPTED.to_string(),
+                // when #114 is merged
+                "application/pgp-encrypted"
+            ))
+            .header((
+                "Content-Description",
+                "PGP/MIME version identification",
+            ))
+            .build();
+        let octet_stream = PartBuilder::new()
+            .body(body_octet_stream)
+            .header((
+                "Content-Type",
+                format!("{}; name=\"encrypted.asc\"",
+                        "application/octet-stream")
+                        // XXX: Change to
+                        // mime::APPLICATION_OCTET_STREAM.to_string()),
+            ))
+            .header((
+                "Content-Description",
+                "OpenPGP encrypted message",
+            ))
+            .header((
+                "Content-Disposition",
+                "inline; filename=\"encrypted.asc\"",
+            ))
+            .build();
+
+        // Update Content-Type header with the param.
+        let mut params = HashMap::new();
+        params.insert("protocol".to_string(),
+                      "\"application/pgp-encrypted\"".to_string());
+
+        let ct_header = mimeheaders::MimeContentTypeHeader {
+            content_type: MimeMultipartType::Encrypted.to_content_type(),
+            params: params
+        };
+
+        // Do not create the `EmailBuilder` from `self.message_type`,
+        // because it does not allow to add header params
+        self.header(Header::new_with_value("Content-Type".to_string(),
+                                           ct_header).unwrap())
+            .body("This is an OpenPGP/MIME encrypted message \
+                   (RFC 4880 and 3156)")
+            .child(pgp_encrypted)
+            .child(octet_stream)
+    }
+
+    /// Build a multipart/signed MIME message as specified in [RFC 1847]
+    ///
+    /// [RFC 1847]: https://tools.ietf.org/html/rfc1847
+    pub fn openpgp_signed<S, T, U>(self, body: S, body_signature: T, algo: U)
+        -> EmailBuilder
+        where S: Into<String>,
+              T: Into<String>,
+              U: AsRef<str>
+    {
+        let pgp_signed = PartBuilder::new()
+            .body(body_signature)
+            .header((
+                "Content-Type",
+                // XXX: Use mime::APPLICATION_PGP_SIGNATURE
+                "application/pgp-signature; name=\"signature.asc\"",
+            ))
+            .header((
+                "Content-Description",
+                "OpenPGP digital signature",
+            ))
+            .header((
+                "Content-Disposition",
+                "attachment; filename=\"signature.asc\"",
+            ))
+            .build();
+
+        let text_plain = PartBuilder::new()
+            .body(body)
+            .header((
+                "Content-Type",
+                mime::TEXT_PLAIN.to_string(),
+            ))
+            .build();
+
+        let ct_params = format!("multipart/signed; micalg={};
+            protocol=\"application/pgp-signature\"", algo.as_ref());
+        // Do not create the `EmailBuilder` from `self.message_type`,
+        // because it does not allow to add header params
+        self.header(Header::new("Content-Type".to_string(), ct_params))
+            .body("This is an OpenPGP/MIME signed message (RFC 4880 and 3156)")
+            .child(text_plain)
+            .child(pgp_signed)
+    }
+
     /// Sets the envelope for manual destination control
     /// If this function is not called, the envelope will be calculated
     /// from the "to" and "cc" addresses you set.
@@ -492,6 +597,7 @@ impl EmailBuilder {
 #[cfg(test)]
 mod test {
     use super::{EmailBuilder, SendableEmail};
+    use email::{MimeMessage, MimeMultipartType};
     use lettre::EmailAddress;
     use time::now;
 
@@ -643,5 +749,84 @@ mod test {
             ]
             .as_slice()
         );
+    }
+
+    #[test]
+    fn test_encrypted_email() {
+        let date_now = now();
+        let email_builder = EmailBuilder::new()
+            .from("alice@openpgp.example")
+            .to("bob@openpgp.example")
+            .subject("Encrypted Email.")
+            .date(&date_now)
+            .openpgp_encrypted("-----BEGIN PGP MESSAGE-----\n\
+                               -----END PGP MESSAGE-----");
+        let email: SendableEmail = email_builder.build().unwrap().into();
+        let email_text = email.message_to_string().unwrap();
+
+        let mime = MimeMessage::parse(&email_text).unwrap();
+
+        assert_eq!(mime.message_type.unwrap(), MimeMultipartType::Encrypted);
+        // It adds the Date and Message-ID headers
+        assert_eq!(mime.headers.len(), 7);
+        // XXX: Extra `\r\n` are added when parsing.
+        assert_eq!(mime.body,
+                   "This is an OpenPGP/MIME encrypted message \
+                    (RFC 4880 and 3156)\r\n");
+        assert_eq!(mime.children.len(), 2);
+        assert_eq!(mime.children[1].body,
+                   "-----BEGIN PGP MESSAGE-----\n\
+                    -----END PGP MESSAGE-----\r\n\r\n");
+        assert_eq!(mime.children[0].body, "Version: 1\r\n\r\n");
+
+        let mime2 = MimeMessage::parse(&mime.as_string()).unwrap();
+        assert_eq!(format!("{}\r\n", mime.body), mime2.body);
+        assert_eq!(mime.boundary, mime2.boundary);
+        assert_eq!(mime.message_type, mime2.message_type);
+        assert_eq!(format!("{}\r\n\r\n", mime.children[0].body),
+            mime2.children[0].body);
+        assert_eq!(format!("{}\r\n\r\n", mime.children[1].body),
+            format!("{}", mime2.children[1].body));
+    }
+
+    #[test]
+    fn test_openpgp_signed() {
+        let date_now = now();
+        let email_builder = EmailBuilder::new()
+            .from("alice@openpgp.example")
+            .to("bob@openpgp.example")
+            .subject("Signed Email.")
+            .date(&date_now)
+            .openpgp_signed(
+                "Body.",
+                "-----BEGIN PGP SIGNATURE-----\n-----END PGP SIGNATURE-----",
+                "pgp-sha512"
+            );
+        let email: SendableEmail = email_builder.build().unwrap().into();
+        let email_text = email.message_to_string().unwrap();
+
+        let mime = MimeMessage::parse(&email_text).unwrap();
+
+        assert_eq!(mime.message_type.unwrap(), MimeMultipartType::Signed);
+        // It adds the Date and Message-ID headers
+        assert_eq!(mime.headers.len(), 7);
+        // XXX: Extra `\r\n` are added when parsing.
+        assert_eq!(mime.body,
+                   "This is an OpenPGP/MIME signed message \
+                   (RFC 4880 and 3156)\r\n");
+        assert_eq!(mime.children.len(), 2);
+        assert_eq!(mime.children[1].body,
+                   "-----BEGIN PGP SIGNATURE-----\n\
+                    -----END PGP SIGNATURE-----\r\n\r\n");
+        assert_eq!(mime.children[0].body, "Body.\r\n\r\n");
+
+        let mime2 = MimeMessage::parse(&mime.as_string()).unwrap();
+        assert_eq!(format!("{}\r\n", mime.body), mime2.body);
+        assert_eq!(mime.boundary, mime2.boundary);
+        assert_eq!(mime.message_type, mime2.message_type);
+        assert_eq!(format!("{}\r\n\r\n", mime.children[0].body),
+            mime2.children[0].body);
+        assert_eq!(format!("{}\r\n\r\n", mime.children[1].body),
+            format!("{}", mime2.children[1].body));
     }
 }
