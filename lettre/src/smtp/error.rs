@@ -71,7 +71,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ChallengeParsing(ref err) => Some(&*err),
             Utf8Parsing(ref err) => Some(&*err),

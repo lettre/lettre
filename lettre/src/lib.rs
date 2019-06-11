@@ -126,7 +126,7 @@ impl Envelope {
 }
 
 pub enum Message {
-    Reader(Box<Read + Send>),
+    Reader(Box<dyn Read + Send>),
     Bytes(Cursor<Vec<u8>>),
 }
 
@@ -158,7 +158,7 @@ impl SendableEmail {
     pub fn new_with_reader(
         envelope: Envelope,
         message_id: String,
-        message: Box<Read + Send>,
+        message: Box<dyn Read + Send>,
     ) -> SendableEmail {
         SendableEmail {
             envelope,
