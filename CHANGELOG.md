@@ -1,3 +1,11 @@
+<a name="v0.9.2"></a>
+### v0.9.2 (2019-06-11)
+
+#### Bug Fixes
+
+* **email:**
+  * Fix compilation with Rust 1.36+ ([393ef8d](https://github.com/lettre/lettre/commit/393ef8dcd1b1c6a6119d0666d5f09b12f50f6b4b))
+
 <a name="v0.9.1"></a>
 ### v0.9.1 (2019-05-05)
 
