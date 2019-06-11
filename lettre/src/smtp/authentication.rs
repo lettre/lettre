@@ -10,7 +10,7 @@ pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mecha
 /// Accepted authentication mechanisms on an unencrypted connection
 pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
-/// Convertable to user credentials
+/// Convertible to user credentials
 pub trait IntoCredentials {
     /// Converts to a `Credentials` struct
     fn into_credentials(self) -> Credentials;

@@ -2,6 +2,7 @@
 
 use self::Error::*;
 use std::io;
+use std::string::FromUtf8Error;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
@@ -11,7 +12,9 @@ use std::{
 #[derive(Debug)]
 pub enum Error {
     /// Internal client error
-    Client(&'static str),
+    Client(String),
+    /// Error parsing UTF8in response
+    Utf8Parsing(FromUtf8Error),
     /// IO error
     Io(io::Error),
 }
@@ -25,7 +28,8 @@ impl Display for Error {
 impl StdError for Error {
     fn description(&self) -> &str {
         match *self {
-            Client(err) => err,
+            Client(ref err) => err,
+            Utf8Parsing(ref err) => err.description(),
             Io(ref err) => err.description(),
         }
     }
@@ -33,6 +37,7 @@ impl StdError for Error {
     fn cause(&self) -> Option<&StdError> {
         match *self {
             Io(ref err) => Some(&*err),
+            Utf8Parsing(ref err) => Some(&*err),
             _ => None,
         }
     }
@@ -44,9 +49,9 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<&'static str> for Error {
-    fn from(string: &'static str) -> Error {
-        Error::Client(string)
+impl From<FromUtf8Error> for Error {
+    fn from(err: FromUtf8Error) -> Error {
+        Utf8Parsing(err)
     }
 }
 

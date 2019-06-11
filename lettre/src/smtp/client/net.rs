@@ -92,8 +92,11 @@ impl Write for NetworkStream {
 /// A trait for the concept of opening a stream
 pub trait Connector: Sized {
     /// Opens a connection to the given IP socket
-    fn connect(addr: &SocketAddr, timeout: Option<Duration>, tls_parameters: Option<&ClientTlsParameters>)
-        -> io::Result<Self>;
+    fn connect(
+        addr: &SocketAddr,
+        timeout: Option<Duration>,
+        tls_parameters: Option<&ClientTlsParameters>,
+    ) -> io::Result<Self>;
     /// Upgrades to TLS connection
     fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()>;
     /// Is the NetworkStream encrypted

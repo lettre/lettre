@@ -70,8 +70,7 @@ impl<'a> Transport<'a> for SendmailTransport {
         if output.status.success() {
             Ok(())
         } else {
-            // TODO display stderr
-            Err(error::Error::Client("The message could not be sent"))?
+            Err(error::Error::Client(String::from_utf8(output.stderr)?))
         }
     }
 }

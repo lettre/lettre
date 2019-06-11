@@ -123,22 +123,19 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
 
     /// Tells if the underlying stream is currently encrypted
     pub fn is_encrypted(&self) -> bool {
-        match self.stream {
-            Some(ref stream) => stream.get_ref().is_encrypted(),
-            None => false,
-        }
+        self.stream
+            .as_ref()
+            .map(|s| s.get_ref().is_encrypted())
+            .unwrap_or(false)
     }
 
     /// Set timeout
     pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match self.stream {
-            Some(ref mut stream) => {
-                stream.get_mut().set_read_timeout(duration)?;
-                stream.get_mut().set_write_timeout(duration)?;
-                Ok(())
-            }
-            None => Ok(()),
+        if let Some(ref mut stream) = self.stream {
+            stream.get_mut().set_read_timeout(duration)?;
+            stream.get_mut().set_write_timeout(duration)?;
         }
+        Ok(())
     }
 
     /// Connects to the configured server

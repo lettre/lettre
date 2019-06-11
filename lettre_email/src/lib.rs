@@ -297,10 +297,7 @@ impl EmailBuilder {
     pub fn text<S: Into<String>>(self, body: S) -> EmailBuilder {
         let text = PartBuilder::new()
             .body(body)
-            .header((
-                "Content-Type",
-                mime::TEXT_PLAIN_UTF_8.to_string(),
-            ))
+            .header(("Content-Type", mime::TEXT_PLAIN_UTF_8.to_string()))
             .build();
         self.child(text)
     }
@@ -309,10 +306,7 @@ impl EmailBuilder {
     pub fn html<S: Into<String>>(self, body: S) -> EmailBuilder {
         let html = PartBuilder::new()
             .body(body)
-            .header((
-                "Content-Type",
-                mime::TEXT_HTML_UTF_8.to_string(),
-            ))
+            .header(("Content-Type", mime::TEXT_HTML_UTF_8.to_string()))
             .build();
         self.child(html)
     }
@@ -325,18 +319,12 @@ impl EmailBuilder {
     ) -> EmailBuilder {
         let text = PartBuilder::new()
             .body(body_text)
-            .header((
-                "Content-Type",
-                mime::TEXT_PLAIN_UTF_8.to_string(),
-            ))
+            .header(("Content-Type", mime::TEXT_PLAIN_UTF_8.to_string()))
             .build();
 
         let html = PartBuilder::new()
             .body(body_html)
-            .header((
-                "Content-Type",
-                mime::TEXT_HTML_UTF_8.to_string(),
-            ))
+            .header(("Content-Type", mime::TEXT_HTML_UTF_8.to_string()))
             .build();
 
         let alternate = PartBuilder::new()
