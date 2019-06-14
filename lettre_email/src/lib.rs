@@ -69,6 +69,8 @@ pub struct EmailBuilder {
     envelope: Option<Envelope>,
     /// Date issued
     date_issued: bool,
+    /// Message-ID
+    message_id: Option<String>,
 }
 
 /// Simple email representation
@@ -79,7 +81,7 @@ pub struct Email {
     /// Envelope
     envelope: Envelope,
     /// Message-ID
-    message_id: Uuid,
+    message_id: String,
 }
 
 impl Into<SendableEmail> for Email {
@@ -93,7 +95,7 @@ impl Into<SendableEmail> for Email {
 }
 
 impl Email {
-    /// TODO
+    /// Creates a new email builder
     pub fn builder() -> EmailBuilder {
         EmailBuilder::new()
     }
@@ -158,6 +160,7 @@ impl EmailBuilder {
             sender: None,
             envelope: None,
             date_issued: false,
+            message_id: None,
         }
     }
 
@@ -336,6 +339,13 @@ impl EmailBuilder {
             .child(alternate.build())
     }
 
+    /// Sets the `Message-ID` header
+    pub fn message_id<S: Clone + Into<String>>(mut self, id: S) -> EmailBuilder {
+        self.message = self.message.header(("Message-ID", id.clone()));
+        self.message_id = Some(id.into());
+        self
+    }
+
     /// Sets the envelope for manual destination control
     /// If this function is not called, the envelope will be calculated
     /// from the "to" and "cc" addresses you set.
@@ -454,14 +464,16 @@ impl EmailBuilder {
 
         self.message = self.message.header(("MIME-Version", "1.0"));
 
-        let message_id = Uuid::new_v4();
-
-        if let Ok(header) = Header::new_with_value(
-            "Message-ID".to_string(),
-            format!("<{}.lettre@localhost>", message_id),
-        ) {
-            self.message = self.message.header(header)
-        }
+        let message_id = match self.message_id {
+            Some(id) => id,
+            None => {
+                let message_id = Uuid::new_v4();
+                self.message = self
+                    .message
+                    .header(("Message-ID", format!("<{}.lettre@localhost>", message_id)));
+                message_id.to_string()
+            }
+        };
 
         Ok(Email {
             message: self.message.build().as_string().into_bytes(),
@@ -537,6 +549,40 @@ mod test {
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
                 date_now.rfc822z(),
                 id
+            )
+        );
+    }
+
+    #[test]
+    fn test_custom_message_id() {
+        let email_builder = EmailBuilder::new();
+        let date_now = now();
+
+        let email: SendableEmail = email_builder
+            .to("user@localhost")
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .bcc("bcc@localhost")
+            .reply_to("reply@localhost")
+            .in_reply_to("original".to_string())
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .message_id("my-shiny-id")
+            .build()
+            .unwrap()
+            .into();
+        assert_eq!(
+            email.message_to_string().unwrap(),
+            format!(
+                "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nMessage-ID: \
+                 my-shiny-id\r\nSender: <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                 <reply@localhost>\r\nIn-Reply-To: original\r\nMIME-Version: 1.0\r\n\r\nHello \
+                 World!\r\n",
+                date_now.rfc822z()
             )
         );
     }
