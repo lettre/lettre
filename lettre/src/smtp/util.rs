@@ -4,7 +4,10 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Encode a string as xtext
 #[derive(Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct XText<'a>(pub &'a str);
 
 impl<'a> Display for XText<'a> {
@@ -34,13 +37,15 @@ mod tests {
 
     #[test]
     fn test() {
-        for (input, expect) in vec![
+        for (input, expect) in [
             ("bjorn", "bjorn"),
             ("bjørn", "bjørn"),
             ("Ø+= ❤️‰", "Ø+2B+3D+20❤️‰"),
             ("+", "+2B"),
-        ] {
-            assert_eq!(format!("{}", XText(input)), expect);
+        ]
+        .iter()
+        {
+            assert_eq!(format!("{}", XText(input)), expect.to_string());
         }
     }
 }

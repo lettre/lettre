@@ -1,12 +1,13 @@
 //! SMTP client
 
+use crate::smtp::authentication::{Credentials, Mechanism};
+use crate::smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
+use crate::smtp::commands::*;
+use crate::smtp::error::{Error, SmtpResult};
+use crate::smtp::response::Response;
 use bufstream::BufStream;
+use log::debug;
 use nom::ErrorKind as NomErrorKind;
-use smtp::authentication::{Credentials, Mechanism};
-use smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
-use smtp::commands::*;
-use smtp::error::{Error, SmtpResult};
-use smtp::response::Response;
 use std::fmt::{Debug, Display};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
@@ -18,7 +19,10 @@ pub mod net;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct ClientCodec {
     escape_count: u8,
 }
@@ -88,7 +92,6 @@ macro_rules! return_err (
     })
 );
 
-#[cfg_attr(feature = "cargo-clippy", allow(new_without_default_derive))]
 impl<S: Write + Read> InnerClient<S> {
     /// Creates a new SMTP client
     ///
@@ -120,28 +123,26 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
 
     /// Tells if the underlying stream is currently encrypted
     pub fn is_encrypted(&self) -> bool {
-        match self.stream {
-            Some(ref stream) => stream.get_ref().is_encrypted(),
-            None => false,
-        }
+        self.stream
+            .as_ref()
+            .map(|s| s.get_ref().is_encrypted())
+            .unwrap_or(false)
     }
 
     /// Set timeout
     pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match self.stream {
-            Some(ref mut stream) => {
-                stream.get_mut().set_read_timeout(duration)?;
-                stream.get_mut().set_write_timeout(duration)?;
-                Ok(())
-            }
-            None => Ok(()),
+        if let Some(ref mut stream) = self.stream {
+            stream.get_mut().set_read_timeout(duration)?;
+            stream.get_mut().set_write_timeout(duration)?;
         }
+        Ok(())
     }
 
     /// Connects to the configured server
     pub fn connect<A: ToSocketAddrs>(
         &mut self,
         addr: &A,
+        timeout: Option<Duration>,
         tls_parameters: Option<&ClientTlsParameters>,
     ) -> SmtpResult {
         // Connect should not be called when the client is already connected
@@ -159,15 +160,15 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
         debug!("connecting to {}", server_addr);
 
         // Try to connect
-        self.set_stream(Connector::connect(&server_addr, tls_parameters)?);
+        self.set_stream(Connector::connect(&server_addr, timeout, tls_parameters)?);
 
         self.read_response()
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
-    #[cfg_attr(feature = "cargo-clippy", allow(wrong_self_convention))]
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
     pub fn is_connected(&mut self) -> bool {
-        self.command(NoopCommand).is_ok()
+        self.stream.is_some() && self.command(NoopCommand).is_ok()
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
@@ -193,7 +194,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     }
 
     /// Sends the message content
-    pub fn message(&mut self, message: Box<Read>) -> SmtpResult {
+    pub fn message(&mut self, message: Box<dyn Read>) -> SmtpResult {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
 
@@ -254,7 +255,13 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
                 break;
             }
             // TODO read more than one line
-            self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+            let read_count = self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+
+            // EOF is reached
+            if read_count == 0 {
+                break;
+            }
+
             response = raw_response.parse::<Response>();
         }
 

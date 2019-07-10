@@ -1,4 +1,4 @@
-SMTP Transport
+#### SMTP Transport
 
 This transport uses the SMTP protocol to send emails over the network (locally or remotely).
 
@@ -101,7 +101,6 @@ You can specify custom TLS settings:
 ```rust,no_run
 extern crate native_tls;
 extern crate lettre;
-extern crate lettre_email;
 
 use lettre::{
     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope, 
@@ -164,7 +163,7 @@ use lettre::smtp::commands::*;
 
 fn main() {
     let mut email_client: InnerClient<NetworkStream> = InnerClient::new();
-    let _ = email_client.connect(&("localhost", SMTP_PORT), None);
+    let _ = email_client.connect(&("localhost", SMTP_PORT), None, None);
     let _ = email_client.command(EhloCommand::new(ClientId::new("my_hostname".to_string())));
     let _ = email_client.command(
                 MailCommand::new(Some(EmailAddress::new("user@example.com".to_string()).unwrap()), vec![])

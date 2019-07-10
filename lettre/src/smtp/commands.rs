@@ -1,17 +1,22 @@
 //! SMTP commands
 
+use crate::smtp::authentication::{Credentials, Mechanism};
+use crate::smtp::error::Error;
+use crate::smtp::extension::ClientId;
+use crate::smtp::extension::{MailParameter, RcptParameter};
+use crate::smtp::response::Response;
+use crate::EmailAddress;
 use base64;
-use smtp::authentication::{Credentials, Mechanism};
-use smtp::error::Error;
-use smtp::extension::ClientId;
-use smtp::extension::{MailParameter, RcptParameter};
-use smtp::response::Response;
+use log::debug;
+use std::convert::AsRef;
 use std::fmt::{self, Display, Formatter};
-use EmailAddress;
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct EhloCommand {
     client_id: ClientId,
 }
@@ -31,7 +36,10 @@ impl EhloCommand {
 
 /// STARTTLS command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct StarttlsCommand;
 
 impl Display for StarttlsCommand {
@@ -42,7 +50,10 @@ impl Display for StarttlsCommand {
 
 /// MAIL command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct MailCommand {
     sender: Option<EmailAddress>,
     parameters: Vec<MailParameter>,
@@ -53,7 +64,7 @@ impl Display for MailCommand {
         write!(
             f,
             "MAIL FROM:<{}>",
-            self.sender.as_ref().map(|x| x.as_ref()).unwrap_or("")
+            self.sender.as_ref().map(AsRef::as_ref).unwrap_or("")
         )?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
@@ -71,7 +82,10 @@ impl MailCommand {
 
 /// RCPT command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct RcptCommand {
     recipient: EmailAddress,
     parameters: Vec<RcptParameter>,
@@ -99,7 +113,10 @@ impl RcptCommand {
 
 /// DATA command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct DataCommand;
 
 impl Display for DataCommand {
@@ -110,7 +127,10 @@ impl Display for DataCommand {
 
 /// QUIT command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct QuitCommand;
 
 impl Display for QuitCommand {
@@ -121,7 +141,10 @@ impl Display for QuitCommand {
 
 /// NOOP command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct NoopCommand;
 
 impl Display for NoopCommand {
@@ -132,7 +155,10 @@ impl Display for NoopCommand {
 
 /// HELP command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct HelpCommand {
     argument: Option<String>,
 }
@@ -156,13 +182,17 @@ impl HelpCommand {
 
 /// VRFY command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct VrfyCommand {
     argument: String,
 }
 
 impl Display for VrfyCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        #[cfg_attr(feature = "cargo-clippy", allow(clippy::write_with_newline))]
         write!(f, "VRFY {}\r\n", self.argument)
     }
 }
@@ -176,7 +206,10 @@ impl VrfyCommand {
 
 /// EXPN command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct ExpnCommand {
     argument: String,
 }
@@ -196,7 +229,10 @@ impl ExpnCommand {
 
 /// RSET command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct RsetCommand;
 
 impl Display for RsetCommand {
@@ -207,7 +243,10 @@ impl Display for RsetCommand {
 
 /// AUTH command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct AuthCommand {
     mechanism: Mechanism,
     credentials: Credentials,
@@ -217,7 +256,8 @@ pub struct AuthCommand {
 
 impl Display for AuthCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let encoded_response = self.response
+        let encoded_response = self
+            .response
             .as_ref()
             .map(|r| base64::encode_config(r.as_bytes(), base64::STANDARD));
 
@@ -286,7 +326,7 @@ impl AuthCommand {
 #[cfg(test)]
 mod test {
     use super::*;
-    use smtp::extension::MailBodyParameter;
+    use crate::smtp::extension::MailBodyParameter;
 
     #[test]
     fn test_display() {

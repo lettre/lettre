@@ -1,6 +1,4 @@
-extern crate glob;
-
-use self::glob::glob;
+use glob::glob;
 use std::env;
 use std::env::consts::EXE_EXTENSION;
 use std::path::Path;
@@ -9,6 +7,14 @@ use std::process::Command;
 #[test]
 fn book_test() {
     let mut book_path = env::current_dir().unwrap();
+    let readme = Path::new(file!())
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("../README.md");
     book_path.push(
         Path::new(file!())
             .parent()
@@ -23,6 +29,7 @@ fn book_test() {
     for md in glob(&format!("{}/*.md", book_path.to_str().unwrap())).unwrap() {
         skeptic_test(&md.unwrap());
     }
+    skeptic_test(&readme);
 }
 
 fn skeptic_test(path: &Path) {
@@ -36,7 +43,8 @@ fn skeptic_test(path: &Path) {
         .arg(&depdir)
         .arg(path);
 
-    let result = cmd.spawn()
+    let result = cmd
+        .spawn()
         .expect("Failed to spawn process")
         .wait()
         .expect("Failed to run process");

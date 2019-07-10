@@ -3,35 +3,15 @@
 //! This mailer contains the available transports for your emails.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre/0.9.0")]
+#![doc(html_root_url = "https://docs.rs/lettre/0.9.2")]
 #![deny(
-    missing_copy_implementations, trivial_casts, trivial_numeric_casts, unsafe_code,
-    unstable_features, unused_import_braces
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces
 )]
-#[cfg(feature = "smtp-transport")]
-extern crate base64;
-#[cfg(feature = "smtp-transport")]
-extern crate bufstream;
-#[cfg(feature = "smtp-transport")]
-extern crate hostname;
-#[macro_use]
-extern crate log;
-#[cfg(feature = "smtp-transport")]
-extern crate native_tls;
-#[cfg(feature = "smtp-transport")]
-#[macro_use]
-extern crate nom;
-#[cfg(feature = "serde-impls")]
-extern crate serde;
-#[cfg(feature = "serde-impls")]
-#[macro_use]
-extern crate serde_derive;
-extern crate failure;
-#[cfg(feature = "file-transport")]
-extern crate serde_json;
-#[macro_use]
-extern crate failure_derive;
-extern crate fast_chemail;
 
 pub mod error;
 #[cfg(feature = "file-transport")]
@@ -42,34 +22,38 @@ pub mod sendmail;
 pub mod smtp;
 pub mod stub;
 
-use error::EmailResult;
-use error::Error as EmailError;
-use failure::Error;
+use crate::error::EmailResult;
+use crate::error::Error;
 #[cfg(feature = "file-transport")]
-pub use file::FileTransport;
+pub use crate::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
-pub use sendmail::SendmailTransport;
+pub use crate::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::client::net::ClientTlsParameters;
+pub use crate::smtp::client::net::ClientTlsParameters;
+#[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
+pub use crate::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
-pub use smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+use fast_chemail::is_valid_email;
 use std::ffi::OsStr;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::io::Cursor;
 use std::io::Read;
 use std::str::FromStr;
-use fast_chemail::is_valid_email;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct EmailAddress(String);
 
 impl EmailAddress {
     pub fn new(address: String) -> EmailResult<EmailAddress> {
         if !is_valid_email(&address) && !address.ends_with("localhost") {
-            Err(EmailError::InvalidEmailAddress)?;
+            Err(Error::InvalidEmailAddress)?;
         }
         Ok(EmailAddress(address))
     }
@@ -105,7 +89,10 @@ impl AsRef<OsStr> for EmailAddress {
 ///
 /// We only accept mailboxes, and do not support source routes (as per RFC).
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Envelope {
     /// The envelope recipients' addresses
     ///
@@ -119,7 +106,7 @@ impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
     pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
         if to.is_empty() {
-            Err(EmailError::MissingTo)?;
+            Err(Error::MissingTo)?;
         }
         Ok(Envelope {
             forward_path: to,
@@ -139,7 +126,7 @@ impl Envelope {
 }
 
 pub enum Message {
-    Reader(Box<Read + Send>),
+    Reader(Box<dyn Read + Send>),
     Bytes(Cursor<Vec<u8>>),
 }
 
@@ -171,7 +158,7 @@ impl SendableEmail {
     pub fn new_with_reader(
         envelope: Envelope,
         message_id: String,
-        message: Box<Read + Send>,
+        message: Box<dyn Read + Send>,
     ) -> SendableEmail {
         SendableEmail {
             envelope,

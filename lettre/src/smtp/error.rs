@@ -1,10 +1,10 @@
 //! Error and result type for SMTP clients
 
 use self::Error::*;
+use crate::smtp::response::{Response, Severity};
 use base64::DecodeError;
 use native_tls;
 use nom;
-use smtp::response::{Response, Severity};
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -47,7 +47,7 @@ impl Display for Error {
 }
 
 impl StdError for Error {
-    #[cfg_attr(feature = "cargo-clippy", allow(match_same_arms))]
+    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
     fn description(&self) -> &str {
         match *self {
             // Try to display the first line of the server's response that usually
@@ -71,7 +71,7 @@ impl StdError for Error {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ChallengeParsing(ref err) => Some(&*err),
             Utf8Parsing(ref err) => Some(&*err),

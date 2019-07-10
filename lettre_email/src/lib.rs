@@ -1,30 +1,27 @@
 //! Lettre is a mailer written in Rust. lettre_email provides a simple email builder.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre_email/0.9.0")]
+#![doc(html_root_url = "https://docs.rs/lettre_email/0.9.2")]
 #![deny(
-    missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-    trivial_numeric_casts, unsafe_code, unstable_features, unused_import_braces
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unsafe_code,
+    unstable_features,
+    unused_import_braces
 )]
 
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-
-extern crate base64;
-extern crate email as email_format;
-extern crate lettre;
-extern crate mime;
-extern crate time;
-extern crate uuid;
+pub extern crate mime;
 
 pub mod error;
 
-pub use email_format::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
-use error::Error as EmailError;
-use failure::Error;
+use crate::error::Error;
+pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 use mime::Mime;
+use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
@@ -72,6 +69,8 @@ pub struct EmailBuilder {
     envelope: Option<Envelope>,
     /// Date issued
     date_issued: bool,
+    /// Message-ID
+    message_id: Option<String>,
 }
 
 /// Simple email representation
@@ -82,7 +81,7 @@ pub struct Email {
     /// Envelope
     envelope: Envelope,
     /// Message-ID
-    message_id: Uuid,
+    message_id: String,
 }
 
 impl Into<SendableEmail> for Email {
@@ -96,7 +95,7 @@ impl Into<SendableEmail> for Email {
 }
 
 impl Email {
-    /// TODO
+    /// Creates a new email builder
     pub fn builder() -> EmailBuilder {
         EmailBuilder::new()
     }
@@ -130,7 +129,7 @@ impl PartBuilder {
 
     /// Adds a `ContentType` header with the given MIME type
     pub fn content_type(self, content_type: &Mime) -> PartBuilder {
-        self.header(("Content-Type", format!("{}", content_type).as_ref()))
+        self.header(("Content-Type", content_type.to_string()))
     }
 
     /// Adds a child part
@@ -161,6 +160,7 @@ impl EmailBuilder {
             sender: None,
             envelope: None,
             date_issued: false,
+            message_id: None,
         }
     }
 
@@ -254,9 +254,11 @@ impl EmailBuilder {
     ) -> Result<EmailBuilder, Error> {
         self.attachment(
             fs::read(path)?.as_slice(),
-            filename.unwrap_or(path.file_name()
-                .and_then(|x| x.to_str())
-                .ok_or(EmailError::CannotParseFilename)?),
+            filename.unwrap_or(
+                path.file_name()
+                    .and_then(OsStr::to_str)
+                    .ok_or(Error::CannotParseFilename)?,
+            ),
             content_type,
         )
     }
@@ -298,10 +300,7 @@ impl EmailBuilder {
     pub fn text<S: Into<String>>(self, body: S) -> EmailBuilder {
         let text = PartBuilder::new()
             .body(body)
-            .header((
-                "Content-Type",
-                format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
-            ))
+            .header(("Content-Type", mime::TEXT_PLAIN_UTF_8.to_string()))
             .build();
         self.child(text)
     }
@@ -310,10 +309,7 @@ impl EmailBuilder {
     pub fn html<S: Into<String>>(self, body: S) -> EmailBuilder {
         let html = PartBuilder::new()
             .body(body)
-            .header((
-                "Content-Type",
-                format!("{}", mime::TEXT_HTML_UTF_8).as_ref(),
-            ))
+            .header(("Content-Type", mime::TEXT_HTML_UTF_8.to_string()))
             .build();
         self.child(html)
     }
@@ -326,18 +322,12 @@ impl EmailBuilder {
     ) -> EmailBuilder {
         let text = PartBuilder::new()
             .body(body_text)
-            .header((
-                "Content-Type",
-                format!("{}", mime::TEXT_PLAIN_UTF_8).as_ref(),
-            ))
+            .header(("Content-Type", mime::TEXT_PLAIN_UTF_8.to_string()))
             .build();
 
         let html = PartBuilder::new()
             .body(body_html)
-            .header((
-                "Content-Type",
-                format!("{}", mime::TEXT_HTML_UTF_8).as_ref(),
-            ))
+            .header(("Content-Type", mime::TEXT_HTML_UTF_8.to_string()))
             .build();
 
         let alternate = PartBuilder::new()
@@ -347,6 +337,13 @@ impl EmailBuilder {
 
         self.message_type(MimeMultipartType::Mixed)
             .child(alternate.build())
+    }
+
+    /// Sets the `Message-ID` header
+    pub fn message_id<S: Clone + Into<String>>(mut self, id: S) -> EmailBuilder {
+        self.message = self.message.header(("Message-ID", id.clone()));
+        self.message_id = Some(id.into());
+        self
     }
 
     /// Sets the envelope for manual destination control
@@ -376,7 +373,7 @@ impl EmailBuilder {
         }
         // Add the sender header, if any.
         if let Some(ref v) = self.sender {
-            self.message = self.message.header(("Sender", v.to_string().as_ref()));
+            self.message = self.message.header(("Sender", v.to_string()));
         }
         // Calculate the envelope
         let envelope = match self.envelope {
@@ -388,9 +385,11 @@ impl EmailBuilder {
                 for receiver in self.to.iter().chain(self.cc.iter()).chain(self.bcc.iter()) {
                     match *receiver {
                         Address::Mailbox(ref m) => to.push(EmailAddress::from_str(&m.address)?),
-                        Address::Group(_, ref ms) => for m in ms.iter() {
-                            to.push(EmailAddress::from_str(&m.address.clone())?);
-                        },
+                        Address::Group(_, ref ms) => {
+                            for m in ms.iter() {
+                                to.push(EmailAddress::from_str(&m.address.clone())?);
+                            }
+                        }
                     }
                 }
                 let from = Some(EmailAddress::from_str(&match self.sender {
@@ -406,15 +405,11 @@ impl EmailBuilder {
                                     // if it's an author group, use the first author
                                     Some(mailbox) => Ok(mailbox.address.clone()),
                                     // for an empty author group (the rarest of the rare cases)
-                                    None => Err(EmailError::Envelope {
-                                        error: LettreError::MissingFrom,
-                                    }), // empty envelope sender
+                                    None => Err(Error::Envelope(LettreError::MissingFrom)), // empty envelope sender
                                 },
                             },
                             // if we don't have a from header
-                            None => Err(EmailError::Envelope {
-                                error: LettreError::MissingFrom,
-                            }), // empty envelope sender
+                            None => Err(Error::Envelope(LettreError::MissingFrom)), // empty envelope sender
                         }
                     }
                 }?)?);
@@ -424,49 +419,61 @@ impl EmailBuilder {
         // Add the collected addresses as mailbox-list all at once.
         // The unwraps are fine because the conversions for Vec<Address> never errs.
         if !self.to.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("To".into(), self.to).unwrap());
         }
         if !self.from.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("From".into(), self.from).unwrap());
+        } else if let Some(from) = envelope.from() {
+            let from = vec![Address::new_mailbox(from.to_string())];
+            self.message = self
+                .message
+                .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
-            Err(EmailError::Envelope {
-                error: LettreError::MissingFrom,
-            })?;
+            Err(Error::Envelope(LettreError::MissingFrom))?;
         }
         if !self.cc.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("Cc".into(), self.cc).unwrap());
         }
         if !self.reply_to.is_empty() {
-            self.message = self.message
+            self.message = self
+                .message
                 .header(Header::new_with_value("Reply-To".into(), self.reply_to).unwrap());
         }
         if !self.in_reply_to.is_empty() {
-            self.message = self.message
-                .header(Header::new_with_value("In-Reply-To".into(), self.in_reply_to.join(" ")).unwrap());
+            self.message = self.message.header(
+                Header::new_with_value("In-Reply-To".into(), self.in_reply_to.join(" ")).unwrap(),
+            );
         }
         if !self.references.is_empty() {
-            self.message = self.message
-                .header(Header::new_with_value("References".into(), self.references.join(" ")).unwrap());
+            self.message = self.message.header(
+                Header::new_with_value("References".into(), self.references.join(" ")).unwrap(),
+            );
         }
 
         if !self.date_issued {
-            self.message = self.message
-                .header(("Date", Tm::rfc822z(&now()).to_string().as_ref()));
+            self.message = self
+                .message
+                .header(("Date", Tm::rfc822z(&now()).to_string()));
         }
 
         self.message = self.message.header(("MIME-Version", "1.0"));
 
-        let message_id = Uuid::new_v4();
-
-        if let Ok(header) = Header::new_with_value(
-            "Message-ID".to_string(),
-            format!("<{}.lettre@localhost>", message_id),
-        ) {
-            self.message = self.message.header(header)
-        }
+        let message_id = match self.message_id {
+            Some(id) => id,
+            None => {
+                let message_id = Uuid::new_v4();
+                self.message = self
+                    .message
+                    .header(("Message-ID", format!("<{}.lettre@localhost>", message_id)));
+                message_id.to_string()
+            }
+        };
 
         Ok(Email {
             message: self.message.build().as_string().into_bytes(),
@@ -547,6 +554,40 @@ mod test {
     }
 
     #[test]
+    fn test_custom_message_id() {
+        let email_builder = EmailBuilder::new();
+        let date_now = now();
+
+        let email: SendableEmail = email_builder
+            .to("user@localhost")
+            .from("user@localhost")
+            .cc(("cc@localhost", "Alias"))
+            .bcc("bcc@localhost")
+            .reply_to("reply@localhost")
+            .in_reply_to("original".to_string())
+            .sender("sender@localhost")
+            .body("Hello World!")
+            .date(&date_now)
+            .subject("Hello")
+            .header(("X-test", "value"))
+            .message_id("my-shiny-id")
+            .build()
+            .unwrap()
+            .into();
+        assert_eq!(
+            email.message_to_string().unwrap(),
+            format!(
+                "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nMessage-ID: \
+                 my-shiny-id\r\nSender: <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
+                 <reply@localhost>\r\nIn-Reply-To: original\r\nMIME-Version: 1.0\r\n\r\nHello \
+                 World!\r\n",
+                date_now.rfc822z()
+            )
+        );
+    }
+
+    #[test]
     fn test_email_sendable() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
@@ -576,7 +617,8 @@ mod test {
                 EmailAddress::new("user@localhost".to_string()).unwrap(),
                 EmailAddress::new("cc@localhost".to_string()).unwrap(),
                 EmailAddress::new("bcc@localhost".to_string()).unwrap(),
-            ].as_slice()
+            ]
+            .as_slice()
         );
     }
 

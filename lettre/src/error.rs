@@ -1,18 +1,35 @@
-use failure;
+use self::Error::*;
+use std::{
+    error::Error as StdError,
+    fmt::{self, Display, Formatter},
+};
 
 /// Error type for email content
-#[derive(Fail, Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum Error {
     /// Missing from in envelope
-    #[fail(display = "missing source address, invalid envelope")]
     MissingFrom,
     /// Missing to in envelope
-    #[fail(display = "missing destination address, invalid envelope")]
     MissingTo,
     /// Invalid email
-    #[fail(display = "invalid email address")]
     InvalidEmailAddress,
 }
 
+impl Display for Error {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        fmt.write_str(&match *self {
+            MissingFrom => "missing source address, invalid envelope".to_owned(),
+            MissingTo => "missing destination address, invalid envelope".to_owned(),
+            InvalidEmailAddress => "invalid email address".to_owned(),
+        })
+    }
+}
+
+impl StdError for Error {
+    fn cause(&self) -> Option<&dyn StdError> {
+        None
+    }
+}
+
 /// Email result type
-pub type EmailResult<T> = Result<T, failure::Error>;
+pub type EmailResult<T> = Result<T, Error>;

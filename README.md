@@ -8,7 +8,7 @@
 
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
 [![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
-[![Required Rust version](https://img.shields.io/badge/rustc-1.20-green.svg)]()
+[![Required Rust version](https://img.shields.io/badge/rustc-1.32-green.svg)]()
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 [![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
@@ -34,39 +34,40 @@ Lettre provides the following features:
 
 ## Example
 
-This library requires Rust 1.20 or newer.
+This library requires Rust 1.32 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.8"
-lettre_email = "0.8"
+lettre = "0.9"
+lettre_email = "0.9"
 ```
 
 ```rust,no_run
 extern crate lettre;
 extern crate lettre_email;
 
-use lettre::{EmailTransport, SmtpTransport};
-use lettre_email::EmailBuilder;
+use lettre::{SmtpClient, Transport};
+use lettre_email::{Email, mime::TEXT_PLAIN};
 use std::path::Path;
 
 fn main() {
-    let email = EmailBuilder::new()
+    let email = Email::builder()
         // Addresses can be specified by the tuple (email, alias)
         .to(("user@example.org", "Firstname Lastname"))
         // ... or by an address only
         .from("user@example.com")
         .subject("Hi, Hello world")
         .text("Hello world.")
+        .attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
+        .unwrap()
         .build()
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpTransport::builder_unencrypted_localhost().unwrap()
-                                                                   .build();
+    let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
-    let result = mailer.send(&email);
+    let result = mailer.send(email.into());
 
     if result.is_ok() {
         println!("Email sent");

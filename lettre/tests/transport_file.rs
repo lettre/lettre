@@ -1,9 +1,6 @@
-extern crate lettre;
-
 #[cfg(test)]
 #[cfg(feature = "file-transport")]
 mod test {
-
     use lettre::file::FileTransport;
     use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
     use std::env::temp_dir;
@@ -18,7 +15,8 @@ mod test {
             Envelope::new(
                 Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
                 vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            ).unwrap(),
+            )
+            .unwrap(),
             "id".to_string(),
             "Hello ß☺ example".to_string().into_bytes(),
         );

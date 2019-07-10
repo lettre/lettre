@@ -1,14 +1,19 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
+use nom::*;
 use nom::{crlf, ErrorKind as NomErrorKind};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
 use std::str::{from_utf8, FromStr};
+use std::string::ToString;
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum Severity {
     /// 2yx
     PositiveCompletion = 2,
@@ -28,7 +33,10 @@ impl Display for Severity {
 
 /// Second digit
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum Category {
     /// x0z
     Syntax = 0,
@@ -52,7 +60,10 @@ impl Display for Category {
 
 /// The detail digit of a response code (third digit)
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum Detail {
     #[allow(missing_docs)]
     Zero = 0,
@@ -84,7 +95,10 @@ impl Display for Detail {
 
 /// Represents a 3 digit SMTP response code
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Code {
     /// First digit of the response code
     pub severity: Severity,
@@ -115,7 +129,10 @@ impl Code {
 ///
 /// The text message is optional, only the code is mandatory
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Response {
     /// Response code
     pub code: Code,
@@ -157,7 +174,7 @@ impl Response {
     /// Returns only the first word of the message if possible
     pub fn first_word(&self) -> Option<&str> {
         self.message
-            .get(0)
+            .first()
             .and_then(|line| line.split_whitespace().next())
     }
 
@@ -253,7 +270,7 @@ named!(
                 code: last_code,
                 message: lines
                     .into_iter()
-                    .map(|line| from_utf8(line).map(|s| s.to_string()))
+                    .map(|line| from_utf8(line).map(ToString::to_string))
                     .collect::<result::Result<Vec<_>, _>>()
                     .map_err(|_| ())?,
             })
@@ -331,20 +348,19 @@ mod test {
 
     #[test]
     fn test_response_is_positive() {
-        assert!(
-            Response::new(
-                Code {
-                    severity: Severity::PositiveCompletion,
-                    category: Category::MailSystem,
-                    detail: Detail::Zero,
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).is_positive()
-        );
+        assert!(Response::new(
+            Code {
+                severity: Severity::PositiveCompletion,
+                category: Category::MailSystem,
+                detail: Detail::Zero,
+            },
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        )
+        .is_positive());
         assert!(!Response::new(
             Code {
                 severity: Severity::TransientNegativeCompletion,
@@ -356,25 +372,25 @@ mod test {
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).is_positive());
+        )
+        .is_positive());
     }
 
     #[test]
     fn test_response_has_code() {
-        assert!(
-            Response::new(
-                Code {
-                    severity: Severity::TransientNegativeCompletion,
-                    category: Category::MailSystem,
-                    detail: Detail::One,
-                },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
-            ).has_code(451)
-        );
+        assert!(Response::new(
+            Code {
+                severity: Severity::TransientNegativeCompletion,
+                category: Category::MailSystem,
+                detail: Detail::One,
+            },
+            vec![
+                "me".to_string(),
+                "8BITMIME".to_string(),
+                "SIZE 42".to_string(),
+            ],
+        )
+        .has_code(451));
         assert!(!Response::new(
             Code {
                 severity: Severity::TransientNegativeCompletion,
@@ -386,7 +402,8 @@ mod test {
                 "8BITMIME".to_string(),
                 "SIZE 42".to_string(),
             ],
-        ).has_code(251));
+        )
+        .has_code(251));
     }
 
     #[test]
@@ -403,7 +420,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_word(),
+            )
+            .first_word(),
             Some("me")
         );
         assert_eq!(
@@ -418,7 +436,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_word(),
+            )
+            .first_word(),
             Some("me")
         );
         assert_eq!(
@@ -429,7 +448,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -440,7 +460,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![" ".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -451,7 +472,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["  ".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
         assert_eq!(
@@ -462,7 +484,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["".to_string()],
-            ).first_word(),
+            )
+            .first_word(),
             None
         );
     }
@@ -481,7 +504,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_line(),
+            )
+            .first_line(),
             Some("me")
         );
         assert_eq!(
@@ -496,7 +520,8 @@ mod test {
                     "8BITMIME".to_string(),
                     "SIZE 42".to_string(),
                 ],
-            ).first_line(),
+            )
+            .first_line(),
             Some("me mo")
         );
         assert_eq!(
@@ -507,7 +532,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![],
-            ).first_line(),
+            )
+            .first_line(),
             None
         );
         assert_eq!(
@@ -518,7 +544,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![" ".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some(" ")
         );
         assert_eq!(
@@ -529,7 +556,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["  ".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some("  ")
         );
         assert_eq!(
@@ -540,7 +568,8 @@ mod test {
                     detail: Detail::One,
                 },
                 vec!["".to_string()],
-            ).first_line(),
+            )
+            .first_line(),
             Some("")
         );
     }

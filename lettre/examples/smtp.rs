@@ -10,7 +10,8 @@ fn main() {
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-        ).unwrap(),
+        )
+        .unwrap(),
         "id".to_string(),
         "Hello ß☺ example".to_string().into_bytes(),
     );

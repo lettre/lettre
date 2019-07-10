@@ -10,10 +10,10 @@ Lettre is an email library that allows creating and sending messages. It provide
 The `lettre_email` crate allows you to compose messages, and the `lettre`
 provide transports to send them.
 
-Lettre requires Rust 1.20 or newer. Add the following to your `Cargo.toml`:
+Lettre requires Rust 1.32 or newer. Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.8"
-lettre_email = "0.8"
+lettre = "0.9"
+lettre_email = "0.9"
 ```

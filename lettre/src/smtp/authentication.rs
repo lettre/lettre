@@ -1,6 +1,6 @@
 //! Provides limited SASL authentication mechanisms
 
-use smtp::error::Error;
+use crate::smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 /// Accepted authentication mechanisms on an encrypted connection
@@ -10,7 +10,7 @@ pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mecha
 /// Accepted authentication mechanisms on an unencrypted connection
 pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
-/// Convertable to user credentials
+/// Convertible to user credentials
 pub trait IntoCredentials {
     /// Converts to a `Credentials` struct
     fn into_credentials(self) -> Credentials;
@@ -31,7 +31,10 @@ impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
 
 /// Contains user credentials
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Credentials {
     authentication_identity: String,
     secret: String,
@@ -49,7 +52,10 @@ impl Credentials {
 
 /// Represents authentication mechanisms
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub enum Mechanism {
     /// PLAIN authentication mechanism
     /// RFC 4616: https://tools.ietf.org/html/rfc4616
@@ -79,8 +85,8 @@ impl Display for Mechanism {
 
 impl Mechanism {
     /// Does the mechanism supports initial response
-    pub fn supports_initial_response(&self) -> bool {
-        match *self {
+    pub fn supports_initial_response(self) -> bool {
+        match self {
             Mechanism::Plain | Mechanism::Xoauth2 => true,
             Mechanism::Login => false,
         }
@@ -89,11 +95,11 @@ impl Mechanism {
     /// Returns the string to send to the server, using the provided username, password and
     /// challenge in some cases
     pub fn response(
-        &self,
+        self,
         credentials: &Credentials,
         challenge: Option<&str>,
     ) -> Result<String, Error> {
-        match *self {
+        match self {
             Mechanism::Plain => match challenge {
                 Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
                 None => Ok(format!(

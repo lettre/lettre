@@ -1,18 +1,23 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use sendmail::error::SendmailResult;
+use crate::sendmail::error::SendmailResult;
+use crate::SendableEmail;
+use crate::Transport;
+use log::info;
+use std::convert::AsRef;
 use std::io::prelude::*;
 use std::io::Read;
 use std::process::{Command, Stdio};
-use SendableEmail;
-use Transport;
 
 pub mod error;
 
 /// Sends an email using the `sendmail` command
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde-impls", derive(Serialize, Deserialize))]
+#[cfg_attr(
+    feature = "serde-impls",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct SendmailTransport {
     command: String,
 }
@@ -43,13 +48,7 @@ impl<'a> Transport<'a> for SendmailTransport {
         let mut process = Command::new(&self.command)
             .arg("-i")
             .arg("-f")
-            .arg(
-                email
-                    .envelope()
-                    .from()
-                    .map(|x| x.as_ref())
-                    .unwrap_or("\"\""),
-            )
+            .arg(email.envelope().from().map(AsRef::as_ref).unwrap_or("\"\""))
             .args(email.envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -71,10 +70,7 @@ impl<'a> Transport<'a> for SendmailTransport {
         if output.status.success() {
             Ok(())
         } else {
-            // TODO display stderr
-            Err(error::Error::Client {
-                error: "The message could not be sent",
-            })?
+            Err(error::Error::Client(String::from_utf8(output.stderr)?))
         }
     }
 }
