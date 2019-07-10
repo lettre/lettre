@@ -144,7 +144,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
         addr: &A,
         timeout: Option<Duration>,
         tls_parameters: Option<&ClientTlsParameters>,
-    ) -> SmtpResult {
+    ) -> Result<(), Error> {
         // Connect should not be called when the client is already connected
         if self.stream.is_some() {
             return_err!("The connection is already established", self);
@@ -161,8 +161,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
 
         // Try to connect
         self.set_stream(Connector::connect(&server_addr, timeout, tls_parameters)?);
-
-        self.read_response()
+        Ok(())
     }
 
     /// Checks if the server is connected using the NOOP SMTP command
@@ -246,7 +245,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     }
 
     /// Gets the SMTP response
-    fn read_response(&mut self) -> SmtpResult {
+    pub fn read_response(&mut self) -> SmtpResult {
         let mut raw_response = String::new();
         let mut response = raw_response.parse::<Response>();
 
