@@ -232,7 +232,8 @@ impl EmailBuilder {
 
     /// Adds a `Subject` header
     pub fn subject<S: AsRef<str>>(mut self, subject: S) -> EmailBuilder {
-        self.message = self.message.header(("Subject".to_string(), format!("=?utf-8?B?{}?=", base64::encode(subject.as_ref()))));
+        let subject = format!("=?utf-8?B?{}?=", base64::encode(subject.as_ref()));
+        self.message = self.message.header(("Subject".to_string(), subject));
         self
     }
 
