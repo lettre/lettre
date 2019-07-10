@@ -231,9 +231,8 @@ impl EmailBuilder {
     }
 
     /// Adds a `Subject` header
-    pub fn subject<S: AsRef<str>>(mut self, subject: S) -> EmailBuilder {
-        let subject = format!("=?utf-8?B?{}?=", base64::encode(subject.as_ref()));
-        self.message = self.message.header(("Subject".to_string(), subject));
+    pub fn subject<S: Into<String>>(mut self, subject: S) -> EmailBuilder {
+        self.message = self.message.header(("Subject".to_string(), subject.into()));
         self
     }
 
@@ -508,7 +507,7 @@ mod test {
         assert_eq!(
             email.message_to_string().unwrap(),
             format!(
-                "Date: {}\r\nSubject: =?utf-8?B?SW52aXRhdGlvbg==?=\r\nSender: \
+                "Date: {}\r\nSubject: Invitation\r\nSender: \
                  <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
                  <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
                  1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
@@ -542,7 +541,7 @@ mod test {
         assert_eq!(
             email.message_to_string().unwrap(),
             format!(
-                "Date: {}\r\nSubject: =?utf-8?B?SGVsbG8=?=\r\nX-test: value\r\nSender: \
+                "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
                  <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
                  Reply-To: <reply@localhost>\r\nIn-Reply-To: original\r\n\
