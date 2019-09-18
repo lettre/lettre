@@ -7,7 +7,6 @@ use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::response::Response;
 use bufstream::BufStream;
 use log::debug;
-use nom::ErrorKind as NomErrorKind;
 use std::fmt::{Debug, Display};
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
@@ -250,7 +249,9 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
         let mut response = raw_response.parse::<Response>();
 
         while response.is_err() {
-            if response.as_ref().err().unwrap() != &NomErrorKind::Complete {
+            if let Error::Parsing(nom::error::ErrorKind::Complete) =
+                response.as_ref().err().unwrap()
+            {
                 break;
             }
             // TODO read more than one line
