@@ -96,6 +96,8 @@ pub struct SmtpClient {
     smtp_utf8: bool,
     /// Optional enforced authentication mechanism
     authentication_mechanism: Option<Mechanism>,
+    /// Force use of the set authentication mechanism even if server does not report to support it
+    force_set_auth: bool,
     /// Define network timeout
     /// It can be changed later for specific needs (like a different timeout for each SMTP command)
     timeout: Option<Duration>,
@@ -125,6 +127,7 @@ impl SmtpClient {
                 connection_reuse: ConnectionReuseParameters::NoReuse,
                 hello_name: ClientId::hostname(),
                 authentication_mechanism: None,
+                force_set_auth: false,
                 timeout: Some(Duration::new(60, 0)),
             }),
             None => Err(Error::Resolution),
@@ -179,6 +182,12 @@ impl SmtpClient {
     /// Set the authentication mechanism to use
     pub fn authentication_mechanism(mut self, mechanism: Mechanism) -> SmtpClient {
         self.authentication_mechanism = Some(mechanism);
+        self
+    }
+
+    /// Set if the set authentication mechanism should be force
+    pub fn force_set_auth(mut self, force: bool) -> SmtpClient {
+        self.force_set_auth = force;
         self
     }
 
@@ -311,33 +320,42 @@ impl<'a> SmtpTransport {
         if self.client_info.credentials.is_some() {
             let mut found = false;
 
-            // Compute accepted mechanism
-            let accepted_mechanisms = match self.client_info.authentication_mechanism {
-                Some(mechanism) => vec![mechanism],
-                None => {
-                    if self.client.is_encrypted() {
-                        DEFAULT_ENCRYPTED_MECHANISMS.to_vec()
-                    } else {
-                        DEFAULT_UNENCRYPTED_MECHANISMS.to_vec()
+            if !self.client_info.force_set_auth {
+                // Compute accepted mechanism
+                let accepted_mechanisms = match self.client_info.authentication_mechanism {
+                    Some(mechanism) => vec![mechanism],
+                    None => {
+                        if self.client.is_encrypted() {
+                            DEFAULT_ENCRYPTED_MECHANISMS.to_vec()
+                        } else {
+                            DEFAULT_UNENCRYPTED_MECHANISMS.to_vec()
+                        }
                     }
-                }
-            };
+                };
 
-            for mechanism in accepted_mechanisms {
-                if self
-                    .server_info
-                    .as_ref()
-                    .unwrap()
-                    .supports_auth_mechanism(mechanism)
-                {
-                    found = true;
-                    try_smtp!(
+                for mechanism in accepted_mechanisms {
+                    if self
+                        .server_info
+                        .as_ref()
+                        .unwrap()
+                        .supports_auth_mechanism(mechanism)
+                    {
+                        found = true;
+                        try_smtp!(
                         self.client
                             .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
                         self
                     );
-                    break;
+                        break;
+                    }
                 }
+            } else {
+                try_smtp!(
+                self.client.auth(self.client_info.authentication_mechanism.expect(
+                    "force_set_auth set to true, but no authentication mechanism set"), self.client_info.credentials.as_ref().unwrap(),),
+                    self
+                );
+                found = true;
             }
 
             if !found {
