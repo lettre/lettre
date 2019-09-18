@@ -354,6 +354,12 @@ impl EmailBuilder {
         self
     }
 
+    /// Only builds the body, this can be used to encrypt or sign
+    /// using S/MIME
+    pub fn build_body(self) -> Result<Vec<u8>, Error> {
+        Ok(self.message.build().as_string().into_bytes())
+    }
+
     /// Builds the Email
     pub fn build(mut self) -> Result<Email, Error> {
         // If there are multiple addresses in "From", the "Sender" is required.
@@ -586,6 +592,24 @@ mod test {
             )
         );
     }
+
+    #[test]
+    fn test_email_builder_body() {
+        let date_now = now();
+        let email_builder = EmailBuilder::new()
+            .text("TestTest")
+            .subject("A Subject")
+            .to("user@localhost")
+            .date(&date_now);
+
+        let body_res = email_builder.build_body();
+        assert_eq!(body_res.is_ok(), true);
+
+        let string_res = std::string::String::from_utf8(body_res.unwrap());
+        assert_eq!(string_res.is_ok(), true);
+        assert!(string_res.unwrap().starts_with("Subject: A Subject"));
+    }
+
 
     #[test]
     fn test_email_sendable() {
