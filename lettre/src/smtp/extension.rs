@@ -127,8 +127,6 @@ impl ServerInfo {
 
         let mut features: HashSet<Extension> = HashSet::new();
 
-        let mut supports_any_auth = false;
-
         for line in response.message.as_slice() {
             if line.is_empty() {
                 continue;
@@ -150,15 +148,12 @@ impl ServerInfo {
                         match mechanism {
                             "PLAIN" => {
                                 features.insert(Extension::Authentication(Mechanism::Plain));
-                                supports_any_auth = true;
                             }
                             "LOGIN" => {
                                 features.insert(Extension::Authentication(Mechanism::Login));
-                                supports_any_auth = true;
                             }
                             "XOAUTH2" => {
                                 features.insert(Extension::Authentication(Mechanism::Xoauth2));
-                                supports_any_auth = true;
                             }
                             _ => (),
                         }
@@ -166,11 +161,6 @@ impl ServerInfo {
                 }
                 _ => (),
             };
-        }
-
-        // If the server did not send any `AUTH` features, assume Plain is supported
-        if !supports_any_auth {
-            features.insert(Extension::Authentication(Mechanism::Plain));
         }
 
         Ok(ServerInfo {
