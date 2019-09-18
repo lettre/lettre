@@ -276,6 +276,7 @@ impl<'a> SmtpTransport {
         )?;
 
         self.client.set_timeout(self.client_info.timeout)?;
+        let _response = self.client.read_response()?;
 
         // Log the connection
         info!("connection established to {}", self.client_info.server_addr);
