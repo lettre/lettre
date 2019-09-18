@@ -610,7 +610,6 @@ mod test {
         assert!(string_res.unwrap().starts_with("Subject: A Subject"));
     }
 
-
     #[test]
     fn test_email_sendable() {
         let email_builder = EmailBuilder::new();

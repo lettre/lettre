@@ -37,7 +37,7 @@ pub enum Error {
     /// TLS error
     Tls(native_tls::Error),
     /// Parsing error
-    Parsing(nom::ErrorKind),
+    Parsing(nom::error::ErrorKind),
 }
 
 impl Display for Error {
@@ -94,9 +94,13 @@ impl From<native_tls::Error> for Error {
     }
 }
 
-impl From<nom::ErrorKind> for Error {
-    fn from(err: nom::ErrorKind) -> Error {
-        Parsing(err)
+impl From<nom::Err<(&str, nom::error::ErrorKind)>> for Error {
+    fn from(err: nom::Err<(&str, nom::error::ErrorKind)>) -> Error {
+        Parsing(match err {
+            nom::Err::Incomplete(_) => nom::error::ErrorKind::Complete,
+            nom::Err::Failure((_, k)) => k,
+            nom::Err::Error((_, k)) => k,
+        })
     }
 }
 

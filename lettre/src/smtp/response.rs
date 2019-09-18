@@ -1,11 +1,18 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use nom::*;
-use nom::{crlf, ErrorKind as NomErrorKind};
+use crate::smtp::Error;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take_until},
+    combinator::{complete, map},
+    multi::many0,
+    sequence::{preceded, tuple},
+    IResult,
+};
 use std::fmt::{Display, Formatter, Result};
 use std::result;
-use std::str::{from_utf8, FromStr};
+use std::str::FromStr;
 use std::string::ToString;
 
 /// First digit indicates severity
@@ -142,13 +149,10 @@ pub struct Response {
 }
 
 impl FromStr for Response {
-    type Err = NomErrorKind;
+    type Err = Error;
 
-    fn from_str(s: &str) -> result::Result<Response, NomErrorKind> {
-        match parse_response(s.as_bytes()) {
-            Ok((_, res)) => Ok(res),
-            Err(e) => Err(e.into_error_kind()),
-        }
+    fn from_str(s: &str) -> result::Result<Response, Error> {
+        parse_response(s).map(|(_, r)| r).map_err(|e| e.into())
     }
 }
 
@@ -186,97 +190,88 @@ impl Response {
 
 // Parsers (originally from tokio-smtp)
 
-named!(
-    parse_code<Code>,
-    map!(
-        tuple!(parse_severity, parse_category, parse_detail),
-        |(severity, category, detail)| Code {
+fn parse_code(i: &str) -> IResult<&str, Code> {
+    let (i, severity) = parse_severity(i)?;
+    let (i, category) = parse_category(i)?;
+    let (i, detail) = parse_detail(i)?;
+    Ok((
+        i,
+        Code {
             severity,
             category,
             detail,
-        }
-    )
-);
+        },
+    ))
+}
 
-named!(
-    parse_severity<Severity>,
-    alt!(
-        tag!("2") => { |_| Severity::PositiveCompletion } |
-        tag!("3") => { |_| Severity::PositiveIntermediate } |
-        tag!("4") => { |_| Severity::TransientNegativeCompletion } |
-        tag!("5") => { |_| Severity::PermanentNegativeCompletion }
-    )
-);
+fn parse_severity(i: &str) -> IResult<&str, Severity> {
+    alt((
+        map(tag("2"), |_| Severity::PositiveCompletion),
+        map(tag("3"), |_| Severity::PositiveIntermediate),
+        map(tag("4"), |_| Severity::TransientNegativeCompletion),
+        map(tag("5"), |_| Severity::PermanentNegativeCompletion),
+    ))(i)
+}
 
-named!(
-    parse_category<Category>,
-    alt!(
-        tag!("0") => { |_| Category::Syntax } |
-        tag!("1") => { |_| Category::Information } |
-        tag!("2") => { |_| Category::Connections } |
-        tag!("3") => { |_| Category::Unspecified3 } |
-        tag!("4") => { |_| Category::Unspecified4 } |
-        tag!("5") => { |_| Category::MailSystem }
-    )
-);
+fn parse_category(i: &str) -> IResult<&str, Category> {
+    alt((
+        map(tag("0"), |_| Category::Syntax),
+        map(tag("1"), |_| Category::Information),
+        map(tag("2"), |_| Category::Connections),
+        map(tag("3"), |_| Category::Unspecified3),
+        map(tag("4"), |_| Category::Unspecified4),
+        map(tag("5"), |_| Category::MailSystem),
+    ))(i)
+}
 
-named!(
-    parse_detail<Detail>,
-    alt!(
-        tag!("0") => { |_| Detail::Zero } |
-        tag!("1") => { |_| Detail::One } |
-        tag!("2") => { |_| Detail::Two } |
-        tag!("3") => { |_| Detail::Three } |
-        tag!("4") => { |_| Detail::Four} |
-        tag!("5") => { |_| Detail::Five } |
-        tag!("6") => { |_| Detail::Six} |
-        tag!("7") => { |_| Detail::Seven } |
-        tag!("8") => { |_| Detail::Eight } |
-        tag!("9") => { |_| Detail::Nine }
-    )
-);
+fn parse_detail(i: &str) -> IResult<&str, Detail> {
+    alt((
+        map(tag("0"), |_| Detail::Zero),
+        map(tag("1"), |_| Detail::One),
+        map(tag("2"), |_| Detail::Two),
+        map(tag("3"), |_| Detail::Three),
+        map(tag("4"), |_| Detail::Four),
+        map(tag("5"), |_| Detail::Five),
+        map(tag("6"), |_| Detail::Six),
+        map(tag("7"), |_| Detail::Seven),
+        map(tag("8"), |_| Detail::Eight),
+        map(tag("9"), |_| Detail::Nine),
+    ))(i)
+}
 
-named!(
-    parse_response<Response>,
-    map_res!(
-        tuple!(
-            // Parse any number of continuation lines.
-            many0!(tuple!(
-                parse_code,
-                preceded!(char!('-'), take_until_and_consume!(b"\r\n".as_ref()))
-            )),
-            // Parse the final line.
-            tuple!(
-                parse_code,
-                terminated!(
-                    opt!(preceded!(char!(' '), take_until!(b"\r\n".as_ref()))),
-                    crlf
-                )
-            )
-        ),
-        |(lines, (last_code, last_line)): (Vec<_>, _)| {
-            // Check that all codes are equal.
-            if !lines.iter().all(|&(ref code, _)| *code == last_code) {
-                return Err(());
-            }
+fn parse_response(i: &str) -> IResult<&str, Response> {
+    let (i, lines) = many0(tuple((
+        parse_code,
+        preceded(tag("-"), take_until("\r\n")),
+        tag("\r\n"),
+    )))(i)?;
+    let (i, (last_code, last_line)) =
+        tuple((parse_code, preceded(tag(" "), take_until("\r\n"))))(i)?;
+    let (i, _) = complete(tag("\r\n"))(i)?;
 
-            // Extract text from lines, and append last line.
-            let mut lines = lines.into_iter().map(|(_, text)| text).collect::<Vec<_>>();
-            if let Some(text) = last_line {
-                lines.push(text);
-            }
+    // Check that all codes are equal.
+    if !lines.iter().all(|&(ref code, _, _)| *code == last_code) {
+        return Err(nom::Err::Failure(("", nom::error::ErrorKind::Not)));
+    }
 
-            Ok(Response {
-                code: last_code,
-                message: lines
-                    .into_iter()
-                    .map(|line| from_utf8(line).map(ToString::to_string))
-                    .collect::<result::Result<Vec<_>, _>>()
-                    .map_err(|_| ())?,
-            })
-        }
-    )
-);
+    // Extract text from lines, and append last line.
+    let mut lines: Vec<&str> = lines
+        .into_iter()
+        .map(|(_, text, _)| text)
+        .collect::<Vec<_>>();
+    lines.push(last_line);
+
+    Ok((
+        i,
+        Response {
+            code: last_code,
+            message: lines
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<String>>(),
+        },
+    ))
+}
 
 #[cfg(test)]
 mod test {
