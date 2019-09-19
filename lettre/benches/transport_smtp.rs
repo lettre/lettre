@@ -1,49 +1,52 @@
-#![feature(test)]
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use lettre::{
+    smtp::ConnectionReuseParameters, ClientSecurity, EmailAddress, Envelope, SendableEmail,
+    SmtpClient, Transport,
+};
 
-extern crate test;
-
-use lettre::smtp::ConnectionReuseParameters;
-use lettre::{ClientSecurity, Envelope, SmtpClient};
-use lettre::{EmailAddress, SendableEmail, Transport};
-
-#[bench]
-fn bench_simple_send(b: &mut test::Bencher) {
+fn bench_simple_send(c: &mut Criterion) {
     let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
         .transport();
-    b.iter(|| {
-        let email = SendableEmail::new(
-            Envelope::new(
-                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            )
-            .unwrap(),
-            "id".to_string(),
-            "Hello ß☺ example".to_string().into_bytes(),
-        );
-        let result = sender.send(email);
-        assert!(result.is_ok());
+
+    c.bench_function("send email", move |b| {
+        b.iter(|| {
+            let email = SendableEmail::new(
+                Envelope::new(
+                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+                )
+                .unwrap(),
+                "id".to_string(),
+                "Hello ß☺ example".to_string().into_bytes(),
+            );
+            let result = black_box(sender.send(email));
+            assert!(result.is_ok());
+        })
     });
 }
 
-#[bench]
-fn bench_reuse_send(b: &mut test::Bencher) {
+fn bench_reuse_send(c: &mut Criterion) {
     let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
         .unwrap()
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
         .transport();
-    b.iter(|| {
-        let email = SendableEmail::new(
-            Envelope::new(
-                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            )
-            .unwrap(),
-            "id".to_string(),
-            "Hello ß☺ example".to_string().into_bytes(),
-        );
-        let result = sender.send(email);
-        assert!(result.is_ok());
+    c.bench_function("send email with connection reuse", move |b| {
+        b.iter(|| {
+            let email = SendableEmail::new(
+                Envelope::new(
+                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+                )
+                .unwrap(),
+                "id".to_string(),
+                "Hello ß☺ example".to_string().into_bytes(),
+            );
+            let result = black_box(sender.send(email));
+            assert!(result.is_ok());
+        })
     });
-    sender.close()
 }
+
+criterion_group!(benches, bench_simple_send, bench_reuse_send);
+criterion_main!(benches);
