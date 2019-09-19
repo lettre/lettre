@@ -34,7 +34,12 @@ r2d2 = { version = "^0.8", optional = true}
 
 [dev-dependencies]
 env_logger = "^0.6"
-glob = "0.3"
+glob = "^0.3"
+criterion = "^0.3"
+
+[[bench]]
+name = "transport_smtp"
+harness = false
 
 [features]
 default = ["file-transport", "smtp-transport", "sendmail-transport"]
