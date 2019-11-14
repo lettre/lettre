@@ -342,17 +342,21 @@ impl<'a> SmtpTransport {
                     {
                         found = true;
                         try_smtp!(
-                        self.client
-                            .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
-                        self
-                    );
+                            self.client
+                                .auth(mechanism, self.client_info.credentials.as_ref().unwrap(),),
+                            self
+                        );
                         break;
                     }
                 }
             } else {
                 try_smtp!(
-                self.client.auth(self.client_info.authentication_mechanism.expect(
-                    "force_set_auth set to true, but no authentication mechanism set"), self.client_info.credentials.as_ref().unwrap(),),
+                    self.client.auth(
+                        self.client_info.authentication_mechanism.expect(
+                            "force_set_auth set to true, but no authentication mechanism set"
+                        ),
+                        self.client_info.credentials.as_ref().unwrap(),
+                    ),
                     self
                 );
                 found = true;

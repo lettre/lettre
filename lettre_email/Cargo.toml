@@ -27,6 +27,6 @@ glob = "0.3"
 email = "^0.0.20"
 mime = "^0.3"
 time = "^0.1"
-uuid = { version = "^0.7", features = ["v4"] }
+uuid = { version = "^0.8", features = ["v4"] }
 lettre = { version = "^0.9", path = "../lettre", default-features = false }
-base64 = "^0.10"
+base64 = "^0.11"
