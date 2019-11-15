@@ -16,7 +16,7 @@ pub mod error;
 #[derive(Debug, Default)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct SendmailTransport {
     command: String,

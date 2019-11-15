@@ -15,7 +15,7 @@ use std::fmt::{self, Display, Formatter};
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct EhloCommand {
     client_id: ClientId,
@@ -38,7 +38,7 @@ impl EhloCommand {
 #[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct StarttlsCommand;
 
@@ -52,7 +52,7 @@ impl Display for StarttlsCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct MailCommand {
     sender: Option<EmailAddress>,
@@ -84,7 +84,7 @@ impl MailCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct RcptCommand {
     recipient: EmailAddress,
@@ -115,7 +115,7 @@ impl RcptCommand {
 #[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct DataCommand;
 
@@ -129,7 +129,7 @@ impl Display for DataCommand {
 #[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct QuitCommand;
 
@@ -143,7 +143,7 @@ impl Display for QuitCommand {
 #[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct NoopCommand;
 
@@ -157,7 +157,7 @@ impl Display for NoopCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct HelpCommand {
     argument: Option<String>,
@@ -184,7 +184,7 @@ impl HelpCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct VrfyCommand {
     argument: String,
@@ -208,7 +208,7 @@ impl VrfyCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct ExpnCommand {
     argument: String,
@@ -231,7 +231,7 @@ impl ExpnCommand {
 #[derive(PartialEq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct RsetCommand;
 
@@ -245,7 +245,7 @@ impl Display for RsetCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct AuthCommand {
     mechanism: Mechanism,

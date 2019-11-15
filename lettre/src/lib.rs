@@ -46,7 +46,7 @@ use std::str::FromStr;
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct EmailAddress(String);
 
@@ -91,7 +91,7 @@ impl AsRef<OsStr> for EmailAddress {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct Envelope {
     /// The envelope recipients' addresses

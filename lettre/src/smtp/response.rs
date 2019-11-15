@@ -19,7 +19,7 @@ use std::string::ToString;
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Severity {
     /// 2yx
@@ -42,7 +42,7 @@ impl Display for Severity {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Category {
     /// x0z
@@ -69,7 +69,7 @@ impl Display for Category {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Detail {
     #[allow(missing_docs)]
@@ -104,7 +104,7 @@ impl Display for Detail {
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct Code {
     /// First digit of the response code
@@ -138,7 +138,7 @@ impl Code {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct Response {
     /// Response code

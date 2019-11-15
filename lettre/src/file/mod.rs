@@ -18,7 +18,7 @@ pub mod error;
 #[derive(Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct FileTransport {
     path: PathBuf,
@@ -36,7 +36,7 @@ impl FileTransport {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 struct SerializableEmail {
     envelope: Envelope,

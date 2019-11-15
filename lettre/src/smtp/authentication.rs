@@ -33,7 +33,7 @@ impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct Credentials {
     authentication_identity: String,
@@ -54,7 +54,7 @@ impl Credentials {
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Mechanism {
     /// PLAIN authentication mechanism
