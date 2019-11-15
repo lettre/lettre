@@ -67,7 +67,7 @@ pub enum ClientSecurity {
 #[derive(Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum ConnectionReuseParameters {
     /// Unlimited connection reuse

@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 #[derive(Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct XText<'a>(pub &'a str);
 

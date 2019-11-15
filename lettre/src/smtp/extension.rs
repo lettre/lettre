@@ -16,7 +16,7 @@ const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum ClientId {
     /// A fully-qualified domain name
@@ -59,7 +59,7 @@ impl ClientId {
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum Extension {
     /// 8BITMIME keyword
@@ -93,7 +93,7 @@ impl Display for Extension {
 #[derive(Clone, Debug, Eq, PartialEq)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct ServerInfo {
     /// Server name
@@ -189,7 +189,7 @@ impl ServerInfo {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum MailParameter {
     /// `BODY` parameter
@@ -229,7 +229,7 @@ impl Display for MailParameter {
 #[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum MailBodyParameter {
     /// `7BIT`
@@ -251,7 +251,7 @@ impl Display for MailBodyParameter {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub enum RcptParameter {
     /// Custom parameter

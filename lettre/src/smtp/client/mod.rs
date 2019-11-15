@@ -20,7 +20,7 @@ pub mod net;
 #[derive(Default, Clone, Copy, Debug)]
 #[cfg_attr(
     feature = "serde-impls",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 pub struct ClientCodec {
     escape_count: u8,
