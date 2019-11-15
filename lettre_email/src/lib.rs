@@ -399,7 +399,7 @@ impl EmailBuilder {
                     }
                 }
                 let from = Some(EmailAddress::from_str(&match self.sender {
-                    Some(x) => Ok(x.address.clone()), // if we have a sender_header, use it
+                    Some(x) => Ok(x.address), // if we have a sender_header, use it
                     None => {
                         // use a from header
                         debug_assert!(self.from.len() <= 1); // else we'd have sender_header
