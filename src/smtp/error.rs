@@ -3,6 +3,7 @@
 use self::Error::*;
 use crate::smtp::response::{Response, Severity};
 use base64::DecodeError;
+#[cfg(feature = "native-tls")]
 use native_tls;
 use nom;
 use std::error::Error as StdError;
@@ -35,9 +36,12 @@ pub enum Error {
     /// IO error
     Io(io::Error),
     /// TLS error
+    #[cfg(feature = "native-tls")]
     Tls(native_tls::Error),
     /// Parsing error
     Parsing(nom::error::ErrorKind),
+    /// Invalid hostname
+    InvalidDNSName(webpki::InvalidDNSNameError),
 }
 
 impl Display for Error {
@@ -66,8 +70,10 @@ impl StdError for Error {
             Resolution => "could not resolve hostname",
             Client(err) => err,
             Io(ref err) => err.description(),
+            #[cfg(feature = "native-tls")]
             Tls(ref err) => err.description(),
             Parsing(ref err) => err.description(),
+            InvalidDNSName(ref err) => err.description(),
         }
     }
 
@@ -76,6 +82,7 @@ impl StdError for Error {
             ChallengeParsing(ref err) => Some(&*err),
             Utf8Parsing(ref err) => Some(&*err),
             Io(ref err) => Some(&*err),
+            #[cfg(feature = "native-tls")]
             Tls(ref err) => Some(&*err),
             _ => None,
         }
@@ -88,6 +95,7 @@ impl From<io::Error> for Error {
     }
 }
 
+#[cfg(feature = "native-tls")]
 impl From<native_tls::Error> for Error {
     fn from(err: native_tls::Error) -> Error {
         Tls(err)
@@ -113,6 +121,12 @@ impl From<DecodeError> for Error {
 impl From<FromUtf8Error> for Error {
     fn from(err: FromUtf8Error) -> Error {
         Utf8Parsing(err)
+    }
+}
+
+impl From<webpki::InvalidDNSNameError> for Error {
+    fn from(err: webpki::InvalidDNSNameError) -> Error {
+        InvalidDNSName(err)
     }
 }
 

@@ -8,6 +8,7 @@ use std::fmt::{self, Display, Formatter};
 pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Accepted authentication mechanisms on an unencrypted connection
+// FIXME remove
 pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
 
 /// Convertible to user credentials

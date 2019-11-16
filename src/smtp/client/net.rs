@@ -1,9 +1,16 @@
 //! A trait to represent a stream
 
 use crate::smtp::client::mock::MockStream;
+use crate::smtp::error::Error;
+#[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector, TlsStream};
-use std::io::{self, ErrorKind, Read, Write};
+#[cfg(feature = "rustls")]
+use rustls::{ClientConfig, ClientSession};
+#[cfg(feature = "native-tls")]
+use std::io::ErrorKind;
+use std::io::{self, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
+use std::sync::Arc;
 use std::time::Duration;
 
 /// Parameters to use for secure clients
@@ -11,29 +18,43 @@ use std::time::Duration;
 #[allow(missing_debug_implementations)]
 pub struct ClientTlsParameters {
     /// A connector from `native-tls`
+    #[cfg(feature = "native-tls")]
     pub connector: TlsConnector,
+    /// A client from `rustls`
+    #[cfg(feature = "rustls")]
+    pub connector: ClientConfig,
     /// The domain name which is expected in the TLS certificate from the server
     pub domain: String,
 }
 
 impl ClientTlsParameters {
     /// Creates a `ClientTlsParameters`
-    pub fn new(domain: String, connector: TlsConnector) -> ClientTlsParameters {
+    #[cfg(feature = "native-tls")]
+    pub fn new(domain: String, connector: TlsConnector) -> Self {
+        ClientTlsParameters { connector, domain }
+    }
+
+    /// Creates a `ClientTlsParameters`
+    #[cfg(feature = "rustls")]
+    pub fn new(domain: String, connector: ClientConfig) -> Self {
         ClientTlsParameters { connector, domain }
     }
 }
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
+#[cfg(feature = "native-tls")]
 pub const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
 
-#[derive(Debug)]
 /// Represents the different types of underlying network streams
 pub enum NetworkStream {
     /// Plain TCP stream
     Tcp(TcpStream),
     /// Encrypted TCP stream
+    #[cfg(feature = "native-tls")]
     Tls(Box<TlsStream<TcpStream>>),
+    #[cfg(feature = "rustls")]
+    Tls(rustls::StreamOwned<ClientSession, TcpStream>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -43,6 +64,9 @@ impl NetworkStream {
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
         match *self {
             NetworkStream::Tcp(ref s) => s.peer_addr(),
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tls(ref s) => s.get_ref().peer_addr(),
+            #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref s) => s.get_ref().peer_addr(),
             NetworkStream::Mock(_) => Ok(SocketAddr::V4(SocketAddrV4::new(
                 Ipv4Addr::new(127, 0, 0, 1),
@@ -55,6 +79,9 @@ impl NetworkStream {
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref s) => s.shutdown(how),
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tls(ref s) => s.get_ref().shutdown(how),
+            #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref s) => s.get_ref().shutdown(how),
             NetworkStream::Mock(_) => Ok(()),
         }
@@ -65,6 +92,9 @@ impl Read for NetworkStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.read(buf),
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tls(ref mut s) => s.read(buf),
+            #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref mut s) => s.read(buf),
             NetworkStream::Mock(ref mut s) => s.read(buf),
         }
@@ -75,6 +105,9 @@ impl Write for NetworkStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.write(buf),
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tls(ref mut s) => s.write(buf),
+            #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref mut s) => s.write(buf),
             NetworkStream::Mock(ref mut s) => s.write(buf),
         }
@@ -83,6 +116,9 @@ impl Write for NetworkStream {
     fn flush(&mut self) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut s) => s.flush(),
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tls(ref mut s) => s.flush(),
+            #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref mut s) => s.flush(),
             NetworkStream::Mock(ref mut s) => s.flush(),
         }
@@ -96,9 +132,9 @@ pub trait Connector: Sized {
         addr: &SocketAddr,
         timeout: Option<Duration>,
         tls_parameters: Option<&ClientTlsParameters>,
-    ) -> io::Result<Self>;
+    ) -> Result<Self, Error>;
     /// Upgrades to TLS connection
-    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()>;
+    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> Result<(), Error>;
     /// Is the NetworkStream encrypted
     fn is_encrypted(&self) -> bool;
 }
@@ -108,25 +144,35 @@ impl Connector for NetworkStream {
         addr: &SocketAddr,
         timeout: Option<Duration>,
         tls_parameters: Option<&ClientTlsParameters>,
-    ) -> io::Result<NetworkStream> {
+    ) -> Result<NetworkStream, Error> {
         let tcp_stream = match timeout {
             Some(duration) => TcpStream::connect_timeout(addr, duration)?,
             None => TcpStream::connect(addr)?,
         };
 
         match tls_parameters {
+            #[cfg(feature = "native-tls")]
             Some(context) => context
                 .connector
                 .connect(context.domain.as_ref(), tcp_stream)
                 .map(|tls| NetworkStream::Tls(Box::new(tls)))
                 .map_err(|e| io::Error::new(ErrorKind::Other, e)),
+            #[cfg(feature = "rustls")]
+            Some(context) => {
+                let domain = webpki::DNSNameRef::try_from_ascii_str(&context.domain)?;
+
+                Ok(NetworkStream::Tls(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(context.connector.clone()), domain),
+                    tcp_stream,
+                )))
+            }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
-    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
+    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> Result<(), Error> {
         *self = match *self {
+            #[cfg(feature = "native-tls")]
             NetworkStream::Tcp(ref mut stream) => match tls_parameters
                 .connector
                 .connect(tls_parameters.domain.as_ref(), stream.try_clone().unwrap())
@@ -134,19 +180,25 @@ impl Connector for NetworkStream {
                 Ok(tls_stream) => NetworkStream::Tls(Box::new(tls_stream)),
                 Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
             },
-            NetworkStream::Tls(_) => return Ok(()),
-            NetworkStream::Mock(_) => return Ok(()),
+            #[cfg(feature = "rustls")]
+            NetworkStream::Tcp(ref mut stream) => {
+                let domain = webpki::DNSNameRef::try_from_ascii_str(&tls_parameters.domain)?;
+
+                NetworkStream::Tls(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(tls_parameters.connector.clone()), domain),
+                    stream.try_clone().unwrap(),
+                ))
+            }
+            NetworkStream::Tls(_) | NetworkStream::Mock(_) => return Ok(()),
         };
 
         Ok(())
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
     fn is_encrypted(&self) -> bool {
         match *self {
-            NetworkStream::Tcp(_) => false,
+            NetworkStream::Tcp(_) | NetworkStream::Mock(_) => false,
             NetworkStream::Tls(_) => true,
-            NetworkStream::Mock(_) => false,
         }
     }
 }

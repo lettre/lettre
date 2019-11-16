@@ -17,6 +17,8 @@ use crate::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
 use crate::smtp::client::net::ClientTlsParameters;
+#[cfg(feature = "native-tls")]
+// TODO RUSTLS
 use crate::smtp::client::net::DEFAULT_TLS_MIN_PROTOCOL;
 use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
@@ -24,6 +26,7 @@ use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use crate::{SendableEmail, Transport};
 use log::{debug, info};
+#[cfg(feature = "native-tls")]
 use native_tls::TlsConnector;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
@@ -134,6 +137,7 @@ impl SmtpClient {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
+    #[cfg(feature = "native-tls")]
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
         let mut tls_builder = TlsConnector::builder();
         tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
@@ -215,7 +219,7 @@ struct State {
 #[allow(missing_debug_implementations)]
 pub struct SmtpTransport {
     /// Information about the server
-    /// Value is None before HELO/EHLO
+    /// Value is None before EHLO
     server_info: Option<ServerInfo>,
     /// SmtpTransport variable states
     state: State,
@@ -302,15 +306,19 @@ impl<'a> SmtpTransport {
             (&ClientSecurity::Opportunistic(_), false) => (),
             (&ClientSecurity::None, _) => (),
             (&ClientSecurity::Wrapper(_), _) => (),
+            #[cfg(feature = "native-tls")]
             (&ClientSecurity::Opportunistic(ref tls_parameters), true)
             | (&ClientSecurity::Required(ref tls_parameters), true) => {
                 try_smtp!(self.client.command(StarttlsCommand), self);
                 try_smtp!(self.client.upgrade_tls_stream(tls_parameters), self);
-
                 debug!("connection encrypted");
-
                 // Send EHLO again
                 self.ehlo()?;
+            }
+            #[cfg(not(feature = "native-tls"))]
+            (&ClientSecurity::Opportunistic(_), true) | (&ClientSecurity::Required(_), true) => {
+                // FIXME dedicated error variant
+                return Err(From::from("Encryption required but no TLS support enabled"));
             }
         }
 

@@ -1,7 +1,8 @@
 //! SMTP client
 
 use crate::smtp::authentication::{Credentials, Mechanism};
-use crate::smtp::client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout};
+use crate::smtp::client::net::ClientTlsParameters;
+use crate::smtp::client::net::{Connector, NetworkStream, Timeout};
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::response::Response;
@@ -73,7 +74,7 @@ fn escape_crlf(string: &str) -> String {
 }
 
 /// Structure that implements the SMTP client
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct InnerClient<S: Write + Read = NetworkStream> {
     /// TCP stream between client and server
     /// Value is None before connection
@@ -95,7 +96,7 @@ impl<S: Write + Read> InnerClient<S> {
     }
 }
 
-impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
+impl<S: Connector + Write + Read + Timeout> InnerClient<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.command(QuitCommand);
@@ -108,6 +109,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     }
 
     /// Upgrades the underlying connection to SSL/TLS
+    #[cfg(feature = "native-tls")]
     pub fn upgrade_tls_stream(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
         match self.stream {
             Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_parameters),
@@ -155,6 +157,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
 
         // Try to connect
         self.set_stream(Connector::connect(&server_addr, timeout, tls_parameters)?);
+
         Ok(())
     }
 
