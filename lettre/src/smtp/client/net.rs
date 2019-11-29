@@ -33,7 +33,7 @@ pub enum NetworkStream {
     /// Plain TCP stream
     Tcp(TcpStream),
     /// Encrypted TCP stream
-    Tls(TlsStream<TcpStream>),
+    Tls(Box<TlsStream<TcpStream>>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -118,7 +118,7 @@ impl Connector for NetworkStream {
             Some(context) => context
                 .connector
                 .connect(context.domain.as_ref(), tcp_stream)
-                .map(NetworkStream::Tls)
+                .map(|tls| NetworkStream::Tls(Box::new(tls)))
                 .map_err(|e| io::Error::new(ErrorKind::Other, e)),
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
@@ -131,7 +131,7 @@ impl Connector for NetworkStream {
                 .connector
                 .connect(tls_parameters.domain.as_ref(), stream.try_clone().unwrap())
             {
-                Ok(tls_stream) => NetworkStream::Tls(tls_stream),
+                Ok(tls_stream) => NetworkStream::Tls(Box::new(tls_stream)),
                 Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
             },
             NetworkStream::Tls(_) => return Ok(()),
