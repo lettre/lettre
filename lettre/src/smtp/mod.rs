@@ -407,7 +407,9 @@ impl<'a> Transport<'a> for SmtpTransport {
         feature = "cargo-clippy",
         allow(clippy::match_same_arms, clippy::cyclomatic_complexity)
     )]
-    fn send(&mut self, email: SendableEmail) -> SmtpResult {
+    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> SmtpResult {
+        let email = email.into();
+
         let message_id = email.message_id().to_string();
 
         if !self.client.is_connected() {

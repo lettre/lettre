@@ -41,7 +41,9 @@ impl SendmailTransport {
 impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send(&mut self, email: SendableEmail) -> SendmailResult {
+    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> SendmailResult {
+        let email = email.into();
+
         let message_id = email.message_id().to_string();
 
         // Spawn the sendmail command

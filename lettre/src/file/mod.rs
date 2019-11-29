@@ -47,7 +47,9 @@ struct SerializableEmail {
 impl<'a> Transport<'a> for FileTransport {
     type Result = FileResult;
 
-    fn send(&mut self, email: SendableEmail) -> FileResult {
+    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> FileResult {
+        let email = email.into();
+
         let message_id = email.message_id().to_string();
         let envelope = email.envelope().clone();
 
