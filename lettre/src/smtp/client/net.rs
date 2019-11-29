@@ -12,7 +12,7 @@ use std::time::Duration;
 pub struct ClientTlsParameters {
     /// A connector from `native-tls`
     pub connector: TlsConnector,
-    /// The domain to send during the TLS handshake
+    /// The domain name which is expected in the TLS certificate from the server
     pub domain: String,
 }
 
