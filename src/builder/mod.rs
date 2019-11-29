@@ -1,25 +1,6 @@
-//! Lettre is a mailer written in Rust. lettre_email provides a simple email builder.
-//!
-
-#![doc(html_root_url = "https://docs.rs/lettre_email/0.9.2")]
-#![deny(
-    missing_docs,
-    missing_debug_implementations,
-    missing_copy_implementations,
-    trivial_casts,
-    trivial_numeric_casts,
-    unsafe_code,
-    unstable_features,
-    unused_import_braces
-)]
-
-pub extern crate mime;
-
-pub mod error;
-
-use crate::error::Error;
+use crate::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
-use lettre::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
+use error::Error;
 use mime::Mime;
 use std::ffi::OsStr;
 use std::fs;
@@ -27,6 +8,14 @@ use std::path::Path;
 use std::str::FromStr;
 use time::{now, Tm};
 use uuid::Uuid;
+
+pub mod error;
+
+impl From<EmailAddress> for email::Mailbox {
+    fn from(addr: EmailAddress) -> Self {
+        Mailbox::new(addr.into_inner())
+    }
+}
 
 /// Builds a `MimeMessage` structure
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -492,7 +481,7 @@ impl EmailBuilder {
 #[cfg(test)]
 mod test {
     use super::{EmailBuilder, SendableEmail};
-    use lettre::EmailAddress;
+    use crate::EmailAddress;
     use time::now;
 
     #[test]

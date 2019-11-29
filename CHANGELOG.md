@@ -1,3 +1,10 @@
+<a name="Unreleased"></a>
+### Unreleased
+
+#### Features
+* Merged `lettre_email` into `lettre`. To migrate just replace `lettre_email` with `lettre::builder` and make sure to
+  enable `builder` feature (it's enabled by default).
+
 <a name="v0.9.2"></a>
 ### v0.9.2 (2019-06-11)
 
