@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - run: cargo install mdbook mdbook-linkcheck
+    - run: cargo install mdbook
     - run: cd website && mdbook build
     - run: echo "lettre.at" > website/_book/html/CNAME
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v2.5.0
+      uses: peaceiris/actions-gh-pages@v2.5.1
       env:
-        ACTIONS_DEPLOY_KEY: ${{ secrets.GH_PAT }}
+        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         PUBLISH_BRANCH: gh-pages
-        PUBLISH_DIR: ./website/_book
+        PUBLISH_DIR: ./website/_book/html
