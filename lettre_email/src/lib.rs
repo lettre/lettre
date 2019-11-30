@@ -439,7 +439,7 @@ impl EmailBuilder {
                 .message
                 .header(Header::new_with_value("From".into(), from).unwrap());
         } else {
-            Err(Error::Envelope(LettreError::MissingFrom))?;
+            return Err(Error::Envelope(LettreError::MissingFrom));
         }
         if !self.cc.is_empty() {
             self.message = self

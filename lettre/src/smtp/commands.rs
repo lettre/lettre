@@ -20,6 +20,7 @@ pub struct EhloCommand {
 
 impl Display for EhloCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        #[allow(clippy::write_with_newline)]
         write!(f, "EHLO {}\r\n", self.client_id)
     }
 }
@@ -165,7 +166,7 @@ pub struct VrfyCommand {
 
 impl Display for VrfyCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        #[cfg_attr(feature = "cargo-clippy", allow(clippy::write_with_newline))]
+        #[allow(clippy::write_with_newline)]
         write!(f, "VRFY {}\r\n", self.argument)
     }
 }
@@ -186,6 +187,7 @@ pub struct ExpnCommand {
 
 impl Display for ExpnCommand {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        #[allow(clippy::write_with_newline)]
         write!(f, "EXPN {}\r\n", self.argument)
     }
 }

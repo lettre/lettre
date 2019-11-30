@@ -50,7 +50,7 @@ pub struct EmailAddress(String);
 impl EmailAddress {
     pub fn new(address: String) -> EmailResult<EmailAddress> {
         if !EmailAddress::is_valid(&address) {
-            Err(Error::InvalidEmailAddress)?;
+            return Err(Error::InvalidEmailAddress);
         }
         Ok(EmailAddress(address))
     }
@@ -108,7 +108,7 @@ impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
     pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
         if to.is_empty() {
-            Err(Error::MissingTo)?;
+            return Err(Error::MissingTo);
         }
         Ok(Envelope {
             forward_path: to,
