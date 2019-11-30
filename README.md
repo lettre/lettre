@@ -34,21 +34,18 @@ Lettre provides the following features:
 
 ## Example
 
-This library requires Rust 1.34 or newer.
+This library requires Rust 1.36 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 lettre = "0.9"
-lettre_email = "0.9"
 ```
 
 ```rust,no_run
 extern crate lettre;
-extern crate lettre_email;
 
-use lettre::{SmtpClient, Transport};
-use lettre_email::{Email, mime::TEXT_PLAIN};
+use lettre::{SmtpClient, Transport, Email, mime::TEXT_PLAIN};
 use std::path::Path;
 
 fn main() {

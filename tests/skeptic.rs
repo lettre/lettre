@@ -13,8 +13,6 @@ fn book_test() {
             .unwrap()
             .parent()
             .unwrap()
-            .parent()
-            .unwrap()
             .join("../website/content/sending-messages"),
     ); // For some reasons, calling .parent() once more gives us None...
 

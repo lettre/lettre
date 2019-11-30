@@ -1,9 +1,5 @@
-extern crate lettre;
-extern crate lettre_email;
-extern crate mime;
-
+use lettre::builder::Email;
 use lettre::{SmtpClient, Transport};
-use lettre_email::Email;
 use std::path::Path;
 
 fn main() {

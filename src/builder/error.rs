@@ -1,18 +1,17 @@
 //! Error and result type for emails
 
 use self::Error::*;
-use lettre;
-use std::io;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
+    io,
 };
 
 /// An enum of all error kinds.
 #[derive(Debug)]
 pub enum Error {
     /// Envelope error
-    Envelope(lettre::error::Error),
+    Envelope(crate::error::Error),
     /// Unparseable filename for attachment
     CannotParseFilename,
     /// IO error
@@ -45,8 +44,8 @@ impl From<io::Error> for Error {
     }
 }
 
-impl From<lettre::error::Error> for Error {
-    fn from(err: lettre::error::Error) -> Error {
+impl From<crate::error::Error> for Error {
+    fn from(err: crate::error::Error) -> Error {
         Error::Envelope(err)
     }
 }

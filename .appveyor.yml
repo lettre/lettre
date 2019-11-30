@@ -9,8 +9,6 @@ install:
   - cargo -vV
 build: false
 test_script:
-  - cargo clean -p lettre
-  - cargo build --verbose --manifest-path lettre/Cargo.toml
-  - cargo clean -p lettre_email -p lettre
-  - cargo test --verbose --manifest-path lettre_email/Cargo.toml
+  - cargo build --verbose
+  - cargo test --verbose
   

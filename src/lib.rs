@@ -13,6 +13,8 @@
     unused_import_braces
 )]
 
+#[cfg(feature = "builder")]
+pub mod builder;
 pub mod error;
 #[cfg(feature = "file-transport")]
 pub mod file;
