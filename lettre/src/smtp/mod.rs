@@ -65,10 +65,7 @@ pub enum ClientSecurity {
 
 /// Configures connection reuse behavior
 #[derive(Clone, Debug, Copy)]
-#[cfg_attr(
-    feature = "serde-impls",
-    derive(serde::Serialize, serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
 pub enum ConnectionReuseParameters {
     /// Unlimited connection reuse
     ReuseUnlimited,

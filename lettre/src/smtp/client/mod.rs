@@ -18,10 +18,7 @@ pub mod net;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
-#[cfg_attr(
-    feature = "serde-impls",
-    derive(serde::Serialize, serde::Deserialize)
-)]
+#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClientCodec {
     escape_count: u8,
 }
