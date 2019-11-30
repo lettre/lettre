@@ -2,7 +2,7 @@
 
 **Lettre is a mailer library for Rust.**
 
-[![Build Status](https://travis-ci.org/lettre/lettre.svg?branch=master)](https://travis-ci.org/lettre/lettre)
+![](https://github.com/lettre/lettre/workflows/.github/workflows/test.yml/badge.svg)
 [![Build status](https://ci.appveyor.com/api/projects/status/mpwglemugjtkps2d/branch/master?svg=true)](https://ci.appveyor.com/project/amousset/lettre/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/lettre/lettre/badge.svg?branch=master)](https://coveralls.io/github/lettre/lettre?branch=master)
 

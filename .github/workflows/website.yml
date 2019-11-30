@@ -3,7 +3,7 @@ name: Website
 on:
   push:
     branches:
-    - master
+    - v0.9.x
 
 jobs:
   build-deploy:
