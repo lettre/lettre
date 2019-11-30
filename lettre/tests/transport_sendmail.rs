@@ -23,5 +23,4 @@ mod test {
         println!("{:?}", result);
         assert!(result.is_ok());
     }
-
 }

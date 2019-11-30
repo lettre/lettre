@@ -40,5 +40,4 @@ mod test {
 
         remove_file(file).unwrap();
     }
-
 }

@@ -30,11 +30,11 @@ extern crate serde;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
-#[cfg(feature = "file-transport")]
-extern crate serde_json;
 extern crate fast_chemail;
 #[cfg(feature = "connection-pool")]
 extern crate r2d2;
+#[cfg(feature = "file-transport")]
+extern crate serde_json;
 
 pub mod error;
 #[cfg(feature = "file-transport")]

@@ -23,5 +23,4 @@ mod test {
             .send(email)
             .unwrap();
     }
-
 }
