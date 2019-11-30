@@ -23,8 +23,8 @@ jobs:
         with:
           command: check
 
-  fmt:
-    name: Rustfmt
+  test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -32,6 +32,28 @@ jobs:
           - stable
           - beta
           - 1.36.0
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - uses: mstksg/get-package@v1
+        with:
+          apt-get: postfix
+      - run: smtp-sink 2525 1000&
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
@@ -53,7 +75,6 @@ jobs:
         rust:
           - stable
           - beta
-          - 1.36.0
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
