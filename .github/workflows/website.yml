@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - run: cargo install mdbook
+    - run: cargo install mdbook --no-default-features --features output,search
     - run: cd website && mdbook build
     - run: echo "lettre.at" > website/_book/html/CNAME
     - name: Deploy
