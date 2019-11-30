@@ -39,9 +39,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-      - uses: mstksg/get-package@v1
-        with:
-          apt-get: postfix
+      - run: sudo apt-get install postfix
       - run: smtp-sink 2525 1000&
       - uses: actions-rs/cargo@v1
         with:
@@ -74,7 +72,6 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
