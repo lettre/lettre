@@ -23,7 +23,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: clean
-          args: -p lettre lettre_email
+          args: -p lettre -p lettre_email
       - uses: actions-rs/cargo@v1
         with:
           command: check
