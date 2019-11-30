@@ -192,5 +192,5 @@ pub trait Transport<'a> {
     type Result;
 
     /// Sends the email
-    fn send(&mut self, email: SendableEmail) -> Self::Result;
+    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> Self::Result;
 }

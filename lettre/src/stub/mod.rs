@@ -30,7 +30,9 @@ pub type StubResult = Result<(), ()>;
 impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
-    fn send(&mut self, email: SendableEmail) -> StubResult {
+    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> StubResult {
+        let email = email.into();
+
         info!(
             "{}: from=<{}> to=<{:?}>",
             email.message_id(),

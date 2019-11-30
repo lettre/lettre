@@ -22,7 +22,7 @@ fn main() {
     // Open a local connection on port 25
     let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
-    let result = mailer.send(email.into());
+    let result = mailer.send(email);
 
     if result.is_ok() {
         println!("Email sent");
