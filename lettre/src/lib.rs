@@ -52,10 +52,18 @@ pub struct EmailAddress(String);
 
 impl EmailAddress {
     pub fn new(address: String) -> EmailResult<EmailAddress> {
-        if !is_valid_email(&address) && !address.ends_with("localhost") {
+        if !EmailAddress::is_valid(&address) {
             Err(Error::InvalidEmailAddress)?;
         }
         Ok(EmailAddress(address))
+    }
+
+    pub fn is_valid(addr: &str) -> bool {
+        is_valid_email(addr) || addr.ends_with("localhost")
+    }
+
+    pub fn into_inner(self) -> String {
+        self.0
     }
 }
 
