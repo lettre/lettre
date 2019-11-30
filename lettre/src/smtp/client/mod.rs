@@ -28,9 +28,7 @@ impl ClientCodec {
     pub fn new() -> Self {
         ClientCodec::default()
     }
-}
 
-impl ClientCodec {
     /// Adds transparency
     /// TODO: replace CR and LF by CRLF
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) -> Result<(), Error> {

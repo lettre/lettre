@@ -470,7 +470,7 @@ impl<'a> Transport<'a> for SmtpTransport {
         // Message content
         let result = self.client.message(Box::new(email.message()));
 
-        if result.is_ok() {
+        if let Ok(ref result) = result {
             // Increment the connection reuse counter
             self.state.connection_reuse_count += 1;
 
@@ -480,9 +480,6 @@ impl<'a> Transport<'a> for SmtpTransport {
                 message_id,
                 self.state.connection_reuse_count,
                 result
-                    .as_ref()
-                    .ok()
-                    .unwrap()
                     .message
                     .iter()
                     .next()
