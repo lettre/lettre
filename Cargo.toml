@@ -12,8 +12,6 @@ keywords = ["email", "smtp", "mailer"]
 edition = "2018"
 
 [badges]
-travis-ci = { repository = "lettre/lettre" }
-appveyor = { repository = "lettre/lettre" }
 maintenance = { status = "actively-developed" }
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
 is-it-maintained-open-issues = { repository = "lettre/lettre" }

@@ -3,7 +3,6 @@
 **Lettre is a mailer library for Rust.**
 
 ![](https://github.com/lettre/lettre/workflows/Continuous%20integration/badge.svg)
-[![Build status](https://ci.appveyor.com/api/projects/status/mpwglemugjtkps2d/branch/master?svg=true)](https://ci.appveyor.com/project/amousset/lettre/branch/master)
 [![Coverage Status](https://coveralls.io/repos/github/lettre/lettre/badge.svg?branch=master)](https://coveralls.io/github/lettre/lettre?branch=master)
 
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
