@@ -14,7 +14,7 @@ pub mod error;
 
 /// Sends an email using the `sendmail` command
 #[derive(Debug, Default)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SendmailTransport {
     command: String,
 }

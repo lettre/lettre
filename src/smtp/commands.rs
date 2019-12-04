@@ -13,7 +13,7 @@ use std::fmt::{self, Display, Formatter};
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EhloCommand {
     client_id: ClientId,
 }
@@ -34,7 +34,7 @@ impl EhloCommand {
 
 /// STARTTLS command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StarttlsCommand;
 
 impl Display for StarttlsCommand {
@@ -45,7 +45,7 @@ impl Display for StarttlsCommand {
 
 /// MAIL command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MailCommand {
     sender: Option<EmailAddress>,
     parameters: Vec<MailParameter>,
@@ -74,7 +74,7 @@ impl MailCommand {
 
 /// RCPT command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RcptCommand {
     recipient: EmailAddress,
     parameters: Vec<RcptParameter>,
@@ -102,7 +102,7 @@ impl RcptCommand {
 
 /// DATA command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DataCommand;
 
 impl Display for DataCommand {
@@ -113,7 +113,7 @@ impl Display for DataCommand {
 
 /// QUIT command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct QuitCommand;
 
 impl Display for QuitCommand {
@@ -124,7 +124,7 @@ impl Display for QuitCommand {
 
 /// NOOP command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NoopCommand;
 
 impl Display for NoopCommand {
@@ -135,7 +135,7 @@ impl Display for NoopCommand {
 
 /// HELP command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HelpCommand {
     argument: Option<String>,
 }
@@ -159,7 +159,7 @@ impl HelpCommand {
 
 /// VRFY command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct VrfyCommand {
     argument: String,
 }
@@ -180,7 +180,7 @@ impl VrfyCommand {
 
 /// EXPN command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ExpnCommand {
     argument: String,
 }
@@ -201,7 +201,7 @@ impl ExpnCommand {
 
 /// RSET command
 #[derive(PartialEq, Clone, Debug, Copy)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RsetCommand;
 
 impl Display for RsetCommand {
@@ -212,7 +212,7 @@ impl Display for RsetCommand {
 
 /// AUTH command
 #[derive(PartialEq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AuthCommand {
     mechanism: Mechanism,
     credentials: Credentials,

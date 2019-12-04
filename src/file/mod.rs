@@ -16,7 +16,7 @@ pub mod error;
 
 /// Writes the content and the envelope information to a file
 #[derive(Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FileTransport {
     path: PathBuf,
 }
@@ -31,7 +31,7 @@ impl FileTransport {
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct SerializableEmail {
     envelope: Envelope,
     message_id: String,
