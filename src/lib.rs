@@ -46,7 +46,7 @@ use std::str::FromStr;
 
 /// Email address
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EmailAddress(String);
 
 impl EmailAddress {
@@ -96,7 +96,7 @@ impl AsRef<OsStr> for EmailAddress {
 ///
 /// We only accept mailboxes, and do not support source routes (as per RFC).
 #[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Envelope {
     /// The envelope recipients' addresses
     ///
