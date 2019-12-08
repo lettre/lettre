@@ -19,12 +19,13 @@ use std::time::Duration;
 pub struct ClientTlsParameters {
     /// A connector from `native-tls`
     #[cfg(feature = "native-tls")]
-    pub connector: TlsConnector,
+    connector: TlsConnector,
     /// A client from `rustls`
     #[cfg(feature = "rustls")]
-    pub connector: ClientConfig,
+    // TODO use the same in all transports of the client
+    connector: Box<ClientConfig>,
     /// The domain name which is expected in the TLS certificate from the server
-    pub domain: String,
+    domain: String,
 }
 
 impl ClientTlsParameters {
@@ -37,14 +38,18 @@ impl ClientTlsParameters {
     /// Creates a `ClientTlsParameters`
     #[cfg(feature = "rustls")]
     pub fn new(domain: String, connector: ClientConfig) -> Self {
-        ClientTlsParameters { connector, domain }
+        ClientTlsParameters {
+            connector: Box::new(connector),
+            domain,
+        }
     }
 }
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
+/// This is also rustls' default behavior
 #[cfg(feature = "native-tls")]
-pub const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
+const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
 
 /// Represents the different types of underlying network streams
 pub enum NetworkStream {
@@ -54,7 +59,7 @@ pub enum NetworkStream {
     #[cfg(feature = "native-tls")]
     Tls(Box<TlsStream<TcpStream>>),
     #[cfg(feature = "rustls")]
-    Tls(rustls::StreamOwned<ClientSession, TcpStream>),
+    Tls(Box<rustls::StreamOwned<ClientSession, TcpStream>>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -161,10 +166,10 @@ impl Connector for NetworkStream {
             Some(context) => {
                 let domain = webpki::DNSNameRef::try_from_ascii_str(&context.domain)?;
 
-                Ok(NetworkStream::Tls(rustls::StreamOwned::new(
-                    ClientSession::new(&Arc::new(context.connector.clone()), domain),
+                Ok(NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(*context.connector.clone()), domain),
                     tcp_stream,
-                )))
+                ))))
             }
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
@@ -184,10 +189,10 @@ impl Connector for NetworkStream {
             NetworkStream::Tcp(ref mut stream) => {
                 let domain = webpki::DNSNameRef::try_from_ascii_str(&tls_parameters.domain)?;
 
-                NetworkStream::Tls(rustls::StreamOwned::new(
-                    ClientSession::new(&Arc::new(tls_parameters.connector.clone()), domain),
+                NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(*tls_parameters.connector.clone()), domain),
                     stream.try_clone().unwrap(),
-                ))
+                )))
             }
             NetworkStream::Tls(_) | NetworkStream::Mock(_) => return Ok(()),
         };

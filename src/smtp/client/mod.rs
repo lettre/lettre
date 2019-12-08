@@ -109,8 +109,11 @@ impl<S: Connector + Write + Read + Timeout> InnerClient<S> {
     }
 
     /// Upgrades the underlying connection to SSL/TLS
-    #[cfg(feature = "native-tls")]
-    pub fn upgrade_tls_stream(&mut self, tls_parameters: &ClientTlsParameters) -> io::Result<()> {
+    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    pub fn upgrade_tls_stream(
+        &mut self,
+        tls_parameters: &ClientTlsParameters,
+    ) -> Result<(), Error> {
         match self.stream {
             Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_parameters),
             None => Ok(()),

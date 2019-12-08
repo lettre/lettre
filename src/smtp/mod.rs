@@ -18,7 +18,6 @@ use crate::smtp::authentication::{
 };
 use crate::smtp::client::net::ClientTlsParameters;
 #[cfg(feature = "native-tls")]
-// TODO RUSTLS
 use crate::smtp::client::net::DEFAULT_TLS_MIN_PROTOCOL;
 use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
@@ -306,7 +305,7 @@ impl<'a> SmtpTransport {
             (&ClientSecurity::Opportunistic(_), false) => (),
             (&ClientSecurity::None, _) => (),
             (&ClientSecurity::Wrapper(_), _) => (),
-            #[cfg(feature = "native-tls")]
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
             (&ClientSecurity::Opportunistic(ref tls_parameters), true)
             | (&ClientSecurity::Required(ref tls_parameters), true) => {
                 try_smtp!(self.client.command(StarttlsCommand), self);
@@ -315,10 +314,11 @@ impl<'a> SmtpTransport {
                 // Send EHLO again
                 self.ehlo()?;
             }
-            #[cfg(not(feature = "native-tls"))]
+            #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
             (&ClientSecurity::Opportunistic(_), true) | (&ClientSecurity::Required(_), true) => {
-                // FIXME dedicated error variant
-                return Err(From::from("Encryption required but no TLS support enabled"));
+                // This should never happen as `ClientSecurity` can only be created
+                // when a TLS library is enabled
+                unreachable!("TLS support required but not supported");
             }
         }
 
