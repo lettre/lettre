@@ -8,9 +8,11 @@ The `email` part builds email messages. For now, it does not support attachments
 An email is built using an `EmailBuilder`. The simplest email could be:
 
 ```rust
-extern crate lettre_email;
+# #[cfg(feature = "builder")]
+# {
+extern crate lettre;
 
-use lettre_email::Email;
+use lettre::Email;
 
 fn main() {
     // Create an email
@@ -22,9 +24,10 @@ fn main() {
         .subject("Hi, Hello world")
         .alternative("<h2>Hi, Hello world.</h2>", "Hi, Hello world.")
         .build();
-    
+
     assert!(email.is_ok());
 }
+# }
 ```
 
 When the `build` method is called, the `EmailBuilder` will add the missing headers (like

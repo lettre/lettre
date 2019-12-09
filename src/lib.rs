@@ -24,6 +24,8 @@ pub mod sendmail;
 pub mod smtp;
 pub mod stub;
 
+#[cfg(feature = "builder")]
+pub use crate::builder::Email;
 use crate::error::EmailResult;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]

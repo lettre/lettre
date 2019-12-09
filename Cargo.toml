@@ -38,6 +38,7 @@ webpki = { version = "^0.21", optional = true }
 criterion = "^0.3"
 env_logger = "^0.7"
 glob = "^0.3"
+walkdir = "^2"
 
 [[bench]]
 harness = false
@@ -46,12 +47,11 @@ name = "transport_smtp"
 [features]
 builder = ["email", "mime", "time", "base64", "uuid"]
 connection-pool = ["r2d2"]
-default = ["file-transport", "smtp-transport", "sendmail-transport", "ssl-rustls", "builder"]
+default = ["file-transport", "smtp-transport", "sendmail-transport", "rustls-tls", "builder"]
 file-transport = ["serde", "serde_json"]
+rustls-tls = ["webpki", "rustls"]
 sendmail-transport = []
 smtp-transport = ["bufstream", "base64", "nom", "hostname"]
-ssl-native = ["native-tls"]
-ssl-rustls = ["rustls", "webpki"]
 unstable = []
 
 [[example]]

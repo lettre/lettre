@@ -44,7 +44,7 @@ lettre = "0.9"
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SmtpClient, Transport, Email, mime::TEXT_PLAIN};
+use lettre::{SmtpClient, Transport, Email, builder::mime::TEXT_PLAIN};
 use std::path::Path;
 
 fn main() {

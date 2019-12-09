@@ -1,23 +1,21 @@
-use glob::glob;
-use std::env;
-use std::env::consts::EXE_EXTENSION;
+use std::env::{self, consts::EXE_EXTENSION};
 use std::path::Path;
 use std::process::Command;
+use walkdir::WalkDir;
 
 #[test]
 fn book_test() {
-    let mut book_path = env::current_dir().unwrap();
-    book_path.push(
-        Path::new(file!())
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("../website/content/sending-messages"),
-    ); // For some reasons, calling .parent() once more gives us None...
+    skeptic_test(Path::new("README.md"));
 
-    for md in glob(&format!("{}/*.md", book_path.to_str().unwrap())).unwrap() {
-        skeptic_test(&md.unwrap());
+    for entry in WalkDir::new("website").into_iter().filter(|e| {
+        e.as_ref()
+            .unwrap()
+            .path()
+            .extension()
+            .map(|ex| ex == "md")
+            .unwrap_or(false)
+    }) {
+        skeptic_test(entry.unwrap().path());
     }
 }
 

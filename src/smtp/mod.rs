@@ -17,8 +17,6 @@ use crate::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
 use crate::smtp::client::net::ClientTlsParameters;
-#[cfg(feature = "native-tls")]
-use crate::smtp::client::net::DEFAULT_TLS_MIN_PROTOCOL;
 use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
@@ -26,7 +24,9 @@ use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParamet
 use crate::{SendableEmail, Transport};
 use log::{debug, info};
 #[cfg(feature = "native-tls")]
-use native_tls::TlsConnector;
+use native_tls::{Protocol, TlsConnector};
+#[cfg(feature = "rustls")]
+use rustls::ClientConfig;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -50,6 +50,12 @@ pub const SMTP_PORT: u16 = 25;
 pub const SUBMISSION_PORT: u16 = 587;
 /// Default submission over TLS port
 pub const SUBMISSIONS_PORT: u16 = 465;
+
+/// Accepted protocols by default.
+/// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
+/// This is also rustls' default behavior
+#[cfg(feature = "native-tls")]
+const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
@@ -143,6 +149,16 @@ impl SmtpClient {
 
         let tls_parameters =
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
+
+        SmtpClient::new(
+            (domain, SUBMISSIONS_PORT),
+            ClientSecurity::Wrapper(tls_parameters),
+        )
+    }
+
+    #[cfg(feature = "rustls")]
+    pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
+        let tls_parameters = ClientTlsParameters::new(domain.to_string(), ClientConfig::new());
 
         SmtpClient::new(
             (domain, SUBMISSIONS_PORT),

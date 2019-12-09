@@ -3,6 +3,8 @@
 The sendmail transport sends the email using the local sendmail command.
 
 ```rust,no_run
+# #[cfg(feature = "sendmail-transport")]
+# {
 extern crate lettre;
 
 use lettre::sendmail::SendmailTransport;
@@ -17,9 +19,10 @@ fn main() {
         "id".to_string(),
         "Hello world".to_string().into_bytes(),
     );
-    
+
     let mut sender = SendmailTransport::new();
     let result = sender.send(email);
     assert!(result.is_ok());
 }
+# }
 ```

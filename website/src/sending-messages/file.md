@@ -5,6 +5,8 @@ The file transport writes the emails to the given directory. The name of the fil
 It can be useful for testing purposes, or if you want to keep track of sent messages.
 
 ```rust
+# #[cfg(feature = "file-transport")]
+# {
 extern crate lettre;
 
 use std::env::temp_dir;
@@ -23,10 +25,11 @@ fn main() {
         "id".to_string(),
         "Hello world".to_string().into_bytes(),
     );
-    
+
     let result = sender.send(email);
     assert!(result.is_ok());
 }
+# }
 ```
 
 Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.txt`:
