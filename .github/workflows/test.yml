@@ -25,6 +25,7 @@ jobs:
         with:
           command: test
           args: --no-default-features --features=native-tls,builder,r2d2,smtp-transport,file-transport,sendmail-transport
+      - run: rm target/debug/deps/liblettre-*
       - uses: actions-rs/cargo@v1
         with:
           command: test
