@@ -18,6 +18,8 @@ The relay server can be the local email server, a specific host or a third-party
 This is the most basic example of usage:
 
 ```rust,no_run
+# #[cfg(feature = "transport-smtp")]
+# {
 extern crate lettre;
 
 use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpClient};
@@ -40,11 +42,14 @@ fn main() {
 
     assert!(result.is_ok());
 }
+# }
 ```
 
 #### Complete example
 
 ```rust,no_run
+# #[cfg(feature = "transport-smtp")]
+# {
 extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
@@ -94,6 +99,7 @@ fn main() {
     // Explicitly close the SMTP transaction as we enabled connection reuse
     mailer.close();
 }
+# }
 ```
 
 You can specify custom TLS settings:
@@ -155,6 +161,8 @@ You can also send commands, here is a simple email transaction without
 error handling:
 
 ```rust,no_run
+# #[cfg(feature = "transport-smtp")]
+# {
 extern crate lettre;
 
 use lettre::EmailAddress;
@@ -178,5 +186,5 @@ fn main() {
     let _ = email_client.message(Box::new("Test email".as_bytes()));
     let _ = email_client.command(QuitCommand);
 }
+# }
 ```
-

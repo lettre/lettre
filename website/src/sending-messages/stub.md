@@ -18,7 +18,7 @@ fn main() {
         "id".to_string(),
         "Hello world".to_string().into_bytes(),
     );
-    
+
     let mut sender = StubTransport::new_positive();
     let result = sender.send(email);
     assert!(result.is_ok());
