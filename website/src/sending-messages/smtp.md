@@ -31,13 +31,13 @@ fn main() {
         "id".to_string(),
         "Hello world".to_string().into_bytes(),
     );
-    
+
     // Open a local connection on port 25
     let mut mailer =
     SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
     let result = mailer.send(email);
-    
+
     assert!(result.is_ok());
 }
 ```
@@ -61,7 +61,7 @@ fn main() {
         "id1".to_string(),
         "Hello world".to_string().into_bytes(),
     );
-    
+
     let email_2 = SendableEmail::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
@@ -70,7 +70,7 @@ fn main() {
         "id2".to_string(),
         "Hello world a second time".to_string().into_bytes(),
     );
-    
+
     // Connect to a remote server on a custom port
     let mut mailer = SmtpClient::new_simple("server.tld").unwrap()
         // Set the name sent during EHLO/HELO, default is `localhost`
@@ -83,14 +83,14 @@ fn main() {
         .authentication_mechanism(Mechanism::Plain)
         // Enable connection reuse
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
-    
+
     let result_1 = mailer.send(email_1);
     assert!(result_1.is_ok());
-    
+
     // The second email will use the same connection
     let result_2 = mailer.send(email_2);
     assert!(result_2.is_ok());
-    
+
     // Explicitly close the SMTP transaction as we enabled connection reuse
     mailer.close();
 }
@@ -99,6 +99,8 @@ fn main() {
 You can specify custom TLS settings:
 
 ```rust,no_run
+# #[cfg(feature = "native-tls")]
+# {
 extern crate native_tls;
 extern crate lettre;
 
@@ -144,6 +146,7 @@ fn main() {
 
     mailer.close();
 }
+# }
 ```
 
 #### Lower level

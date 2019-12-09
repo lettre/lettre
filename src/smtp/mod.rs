@@ -27,6 +27,8 @@ use crate::{SendableEmail, Transport};
 use log::{debug, info};
 #[cfg(feature = "native-tls")]
 use native_tls::TlsConnector;
+#[cfg(feature = "rustls")]
+use rustls::ClientConfig;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 
@@ -143,6 +145,16 @@ impl SmtpClient {
 
         let tls_parameters =
             ClientTlsParameters::new(domain.to_string(), tls_builder.build().unwrap());
+
+        SmtpClient::new(
+            (domain, SUBMISSIONS_PORT),
+            ClientSecurity::Wrapper(tls_parameters),
+        )
+    }
+
+    #[cfg(feature = "rustls")]
+    pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
+        let tls_parameters = ClientTlsParameters::new(domain.to_string(), ClientConfig::new());
 
         SmtpClient::new(
             (domain, SUBMISSIONS_PORT),

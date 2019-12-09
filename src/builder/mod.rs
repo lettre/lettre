@@ -1,6 +1,7 @@
 use crate::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
 pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use error::Error;
+pub use mime;
 use mime::Mime;
 use std::ffi::OsStr;
 use std::fs;
