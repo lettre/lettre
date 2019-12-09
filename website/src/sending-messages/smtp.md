@@ -18,7 +18,7 @@ The relay server can be the local email server, a specific host or a third-party
 This is the most basic example of usage:
 
 ```rust,no_run
-# #[cfg(feature = "transport-smtp")]
+# #[cfg(feature = "smtp-transport")]
 # {
 extern crate lettre;
 
@@ -48,7 +48,7 @@ fn main() {
 #### Complete example
 
 ```rust,no_run
-# #[cfg(feature = "transport-smtp")]
+# #[cfg(feature = "smtp-transport")]
 # {
 extern crate lettre;
 
@@ -161,7 +161,7 @@ You can also send commands, here is a simple email transaction without
 error handling:
 
 ```rust,no_run
-# #[cfg(feature = "transport-smtp")]
+# #[cfg(feature = "smtp-transport")]
 # {
 extern crate lettre;
 
