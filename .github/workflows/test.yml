@@ -24,7 +24,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --no-default-features --features=native-tls,builder,r2d2
+          args: --no-default-features --features=native-tls,builder,r2d2,smtp-transport
       - uses: actions-rs/cargo@v1
         with:
           command: test
