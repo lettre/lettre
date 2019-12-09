@@ -41,6 +41,7 @@ pub enum Error {
     /// Parsing error
     Parsing(nom::error::ErrorKind),
     /// Invalid hostname
+    #[cfg(feature = "rustls-tls")]
     InvalidDNSName(webpki::InvalidDNSNameError),
 }
 
