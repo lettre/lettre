@@ -3,13 +3,14 @@
 use crate::smtp::client::mock::MockStream;
 use crate::smtp::error::Error;
 #[cfg(feature = "native-tls")]
-use native_tls::{Protocol, TlsConnector, TlsStream};
+use native_tls::{TlsConnector, TlsStream};
 #[cfg(feature = "rustls")]
 use rustls::{ClientConfig, ClientSession};
 #[cfg(feature = "native-tls")]
 use std::io::ErrorKind;
 use std::io::{self, Read, Write};
 use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
+#[cfg(feature = "rustls")]
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -44,12 +45,6 @@ impl ClientTlsParameters {
         }
     }
 }
-
-/// Accepted protocols by default.
-/// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
-/// This is also rustls' default behavior
-#[cfg(feature = "native-tls")]
-const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
 
 /// Represents the different types of underlying network streams
 pub enum NetworkStream {
@@ -161,7 +156,7 @@ impl Connector for NetworkStream {
                 .connector
                 .connect(context.domain.as_ref(), tcp_stream)
                 .map(|tls| NetworkStream::Tls(Box::new(tls)))
-                .map_err(|e| io::Error::new(ErrorKind::Other, e)),
+                .map_err(|e| Error::Io(io::Error::new(ErrorKind::Other, e))),
             #[cfg(feature = "rustls")]
             Some(context) => {
                 let domain = webpki::DNSNameRef::try_from_ascii_str(&context.domain)?;
@@ -183,7 +178,7 @@ impl Connector for NetworkStream {
                 .connect(tls_parameters.domain.as_ref(), stream.try_clone().unwrap())
             {
                 Ok(tls_stream) => NetworkStream::Tls(Box::new(tls_stream)),
-                Err(err) => return Err(io::Error::new(ErrorKind::Other, err)),
+                Err(err) => return Err(Error::Io(io::Error::new(ErrorKind::Other, err))),
             },
             #[cfg(feature = "rustls")]
             NetworkStream::Tcp(ref mut stream) => {

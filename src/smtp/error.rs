@@ -74,6 +74,7 @@ impl StdError for Error {
             #[cfg(feature = "native-tls")]
             Tls(ref err) => err.description(),
             Parsing(ref err) => err.description(),
+            #[cfg(feature = "rustls-tls")]
             InvalidDNSName(ref err) => err.description(),
         }
     }
@@ -125,6 +126,7 @@ impl From<FromUtf8Error> for Error {
     }
 }
 
+#[cfg(feature = "rustls-tls")]
 impl From<webpki::InvalidDNSNameError> for Error {
     fn from(err: webpki::InvalidDNSNameError) -> Error {
         InvalidDNSName(err)
