@@ -47,7 +47,7 @@ name = "transport_smtp"
 [features]
 builder = ["email", "mime", "time", "base64", "uuid"]
 connection-pool = ["r2d2"]
-default = ["file-transport", "smtp-transport", "sendmail-transport", "rustls-tls", "builder"]
+default = ["file-transport", "smtp-transport", "sendmail-transport", "native-tls", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "rustls"]
 sendmail-transport = []
