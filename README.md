@@ -11,12 +11,12 @@
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 [![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/lettre/lettre.svg)](http://isitmaintained.com/project/lettre/lettre "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/lettre/lettre.svg)](http://isitmaintained.com/project/lettre/lettre "Percentage of issues still open")
+[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/lettre/lettre.svg)](https://isitmaintained.com/project/lettre/lettre "Average time to resolve an issue")
+[![Percentage of issues still open](https://isitmaintained.com/badge/open/lettre/lettre.svg)](https://isitmaintained.com/project/lettre/lettre "Percentage of issues still open")
 
 Useful links:
 
-* [User documentation](http://lettre.at/)
+* [User documentation](https://lettre.at/)
 * [API documentation](https://docs.rs/lettre/)
 * [Changelog](https://github.com/lettre/lettre/blob/master/CHANGELOG.md)
 
