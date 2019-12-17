@@ -8,7 +8,9 @@ use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::response::Response;
 use bufstream::BufStream;
 use log::debug;
-use std::fmt::{Debug, Display};
+#[cfg(feature = "serde-impls")]
+use std::fmt::Debug;
+use std::fmt::Display;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
