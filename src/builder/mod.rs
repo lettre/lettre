@@ -1,9 +1,11 @@
 use crate::{error::Error as LettreError, Email, EmailAddress, Envelope};
-pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
+pub use email::{Address, Header, Mailbox as OriginalMailbox, MimeMessage, MimeMultipartType};
 use error::Error;
 pub use mime;
 use mime::Mime;
+use std::borrow::Cow;
 use std::ffi::OsStr;
+use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
@@ -12,9 +14,85 @@ use uuid::Uuid;
 
 pub mod error;
 
-impl From<EmailAddress> for email::Mailbox {
+// From rust-email, allows adding rfc2047 encoding
+
+/// Represents an RFC 5322 mailbox
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct Mailbox {
+    inner: OriginalMailbox,
+}
+
+impl Mailbox {
+    /// Create a new Mailbox without a display name
+    pub fn new(address: String) -> Mailbox {
+        Mailbox {
+            inner: OriginalMailbox::new(address),
+        }
+    }
+
+    /// Create a new Mailbox with a display name
+    pub fn new_with_name(name: String, address: String) -> Mailbox {
+        Mailbox {
+            inner: OriginalMailbox::new_with_name(encode_rfc2047(&name).to_string(), address),
+        }
+    }
+
+    fn original(self) -> OriginalMailbox {
+        self.inner
+    }
+}
+
+impl fmt::Display for Mailbox {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "{}", self.inner)
+    }
+}
+
+impl<'a> From<&'a str> for Mailbox {
+    fn from(mailbox: &'a str) -> Mailbox {
+        Mailbox::new(mailbox.into())
+    }
+}
+
+impl From<String> for Mailbox {
+    fn from(mailbox: String) -> Mailbox {
+        Mailbox::new(mailbox)
+    }
+}
+
+impl<S: Into<String>, T: Into<String>> From<(S, T)> for Mailbox {
+    fn from(header: (S, T)) -> Mailbox {
+        let (address, alias) = header;
+        Mailbox::new_with_name(alias.into(), address.into())
+    }
+}
+
+/// Encode a UTF-8 string according to RFC 2047, if need be.
+///
+/// Currently, this only uses "B" encoding, when pure ASCII cannot represent the
+/// string accurately.
+///
+/// Can be used on header content.
+pub fn encode_rfc2047(text: &str) -> Cow<str> {
+    if text.is_ascii() {
+        Cow::Borrowed(text)
+    } else {
+        Cow::Owned(
+            base64::encode_config(text.as_bytes(), base64::STANDARD)
+                // base64 so ascii
+                .as_bytes()
+                // Max length - wrapping chars
+                .chunks(75 - 12)
+                .map(|d| format!("=?utf-8?B?{}?=", std::str::from_utf8(d).unwrap()))
+                .collect::<Vec<String>>()
+                .join("\r\n"),
+        )
+    }
+}
+
+impl From<EmailAddress> for OriginalMailbox {
     fn from(addr: EmailAddress) -> Self {
-        Mailbox::new(addr.into_inner())
+        OriginalMailbox::new(addr.into_inner())
     }
 }
 
@@ -54,7 +132,7 @@ pub struct EmailBuilder {
     /// The References ids for the mail header
     references: Vec<MessageId>,
     /// The sender address for the mail header
-    sender: Option<Mailbox>,
+    sender: Option<OriginalMailbox>,
     /// The envelope
     envelope: Option<Envelope>,
     /// Date issued
@@ -141,35 +219,35 @@ impl EmailBuilder {
     /// Adds a `From` header and stores the sender address
     pub fn from<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.from.push(Address::Mailbox(mailbox));
+        self.from.push(Address::Mailbox(mailbox.original()));
         self
     }
 
     /// Adds a `To` header and stores the recipient address
     pub fn to<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.to.push(Address::Mailbox(mailbox));
+        self.to.push(Address::Mailbox(mailbox.original()));
         self
     }
 
     /// Adds a `Cc` header and stores the recipient address
     pub fn cc<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.cc.push(Address::Mailbox(mailbox));
+        self.cc.push(Address::Mailbox(mailbox.original()));
         self
     }
 
     /// Adds a `Bcc` header and stores the recipient address
     pub fn bcc<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.bcc.push(Address::Mailbox(mailbox));
+        self.bcc.push(Address::Mailbox(mailbox.original()));
         self
     }
 
     /// Adds a `Reply-To` header
     pub fn reply_to<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.reply_to.push(Address::Mailbox(mailbox));
+        self.reply_to.push(Address::Mailbox(mailbox.original()));
         self
     }
 
@@ -188,13 +266,16 @@ impl EmailBuilder {
     /// Adds a `Sender` header
     pub fn sender<A: Into<Mailbox>>(mut self, address: A) -> EmailBuilder {
         let mailbox = address.into();
-        self.sender = Some(mailbox);
+        self.sender = Some(mailbox.original());
         self
     }
 
     /// Adds a `Subject` header
     pub fn subject<S: Into<String>>(mut self, subject: S) -> EmailBuilder {
-        self.message = self.message.header(("Subject".to_string(), subject.into()));
+        self.message = self.message.header((
+            "Subject".to_string(),
+            encode_rfc2047(subject.into().as_ref()),
+        ));
         self
     }
 
@@ -453,9 +534,21 @@ impl EmailBuilder {
 
 #[cfg(test)]
 mod test {
-    use super::{Email, EmailBuilder};
+    use super::*;
     use crate::EmailAddress;
     use time::now;
+
+    #[test]
+    fn test_encode_rfc2047() {
+        assert_eq!(encode_rfc2047("test"), "test");
+        assert_eq!(encode_rfc2047("testà"), "=?utf-8?B?dGVzdMOg?=");
+        assert_eq!(
+            encode_rfc2047(
+                "testàtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest"
+            ),
+            "=?utf-8?B?dGVzdMOgdGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0dGVzdHR?=\r\n=?utf-8?B?lc3R0ZXN0dGVzdHRlc3R0ZXN0dGVzdHRlc3R0ZXN0?="
+        );
+    }
 
     #[test]
     fn test_multiple_from() {
@@ -494,6 +587,7 @@ mod test {
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
+            .cc(("cc2@localhost", "Aliäs"))
             .bcc("bcc@localhost")
             .reply_to("reply@localhost")
             .in_reply_to("original".to_string())
@@ -511,7 +605,7 @@ mod test {
             format!(
                 "Date: {}\r\nSubject: Hello\r\nX-test: value\r\nSender: \
                  <sender@localhost>\r\nTo: <user@localhost>\r\nFrom: \
-                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\n\
+                 <user@localhost>\r\nCc: \"Alias\" <cc@localhost>, \"=?utf-8?B?QWxpw6Rz?=\" <cc2@localhost>\r\n\
                  Reply-To: <reply@localhost>\r\nIn-Reply-To: original\r\n\
                  MIME-Version: 1.0\r\nMessage-ID: \
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
@@ -563,13 +657,22 @@ mod test {
             .subject("A Subject")
             .to("user@localhost")
             .date(&date_now);
+        let string_res = String::from_utf8(email_builder.build_body().unwrap());
+        assert!(string_res.unwrap().starts_with("Subject: A Subject\r\n"));
+    }
 
-        let body_res = email_builder.build_body();
-        assert_eq!(body_res.is_ok(), true);
-
-        let string_res = std::string::String::from_utf8(body_res.unwrap());
-        assert_eq!(string_res.is_ok(), true);
-        assert!(string_res.unwrap().starts_with("Subject: A Subject"));
+    #[test]
+    fn test_email_subject_encoding() {
+        let date_now = now();
+        let email_builder = EmailBuilder::new()
+            .text("TestTest")
+            .subject("A ö Subject")
+            .to("user@localhost")
+            .date(&date_now);
+        let string_res = String::from_utf8(email_builder.build_body().unwrap());
+        assert!(string_res
+            .unwrap()
+            .starts_with("Subject: =?utf-8?B?QSDDtiBTdWJqZWN0?=\r\n"));
     }
 
     #[test]
