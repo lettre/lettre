@@ -1,9 +1,32 @@
-<a name="Unreleased"></a>
-### Unreleased
+<a name="v0.10.0"></a>
+### v0.10.0 (unreleased)
 
 #### Features
+
+* Add `rustls` support ([29e4829](https://github.com/lettre/lettre/commit/29e4829), [39a0686](https://github.com/lettre/lettre/commit/39a0686))
+* Allow providing a custom message id ([50d96ad](https://github.com/lettre/lettre/commit/50d96ad))
+* Add `EmailAddress::is_valid` and `into_inner` ([e5a1248](https://github.com/lettre/lettre/commit/e5a1248))
+* Accept `Into<SendableEmail>` ([86e5181](https://github.com/lettre/lettre/commit/86e5181))
+* Allow forcing of a specific auth ([bf2adca](https://github.com/lettre/lettre/commit/bf2adca))
+* Add `build_body` ([e927d0b](https://github.com/lettre/lettre/commit/e927d0b))
+
+#### Changes
+
+* Move CI to Github Actions ([3eef024](https://github.com/lettre/lettre/commit/3eef024))
+* MSRV is now 1.36 ([d227cd4](https://github.com/lettre/lettre/commit/d227cd4))
 * Merged `lettre_email` into `lettre`. To migrate just replace `lettre_email` with `lettre::builder` and make sure to
-  enable `builder` feature (it's enabled by default).
+  enable `builder` feature (it's enabled by default) ([0f3f27f](https://github.com/lettre/lettre/commit/0f3f27f))
+* Rename `serde-impls` feature to `serde` ([aac3e00](https://github.com/lettre/lettre/commit/aac3e00))
+* Use criterion for benchmarks ([eda7fc1](https://github.com/lettre/lettre/commit/eda7fc1))
+* Update to nom 5 ([5bc1cba](https://github.com/lettre/lettre/commit/5bc1cba))
+* Change website url schemes to https ([6014f5c](https://github.com/lettre/lettre/commit/6014f5c))
+* Use serde's `derive` feature instead of the `serde_derive` crate ([4fbe700](https://github.com/lettre/lettre/commit/4fbe700))
+
+#### Bug Fixes
+
+* Timeout bug causing infinite hang ([6eff9d3](https://github.com/lettre/lettre/commit/6eff9d3))
+* Fix doc tests in website ([947af0a](https://github.com/lettre/lettre/commit/947af0a))
+* Fix docs for `domain` field ([0e05e0e](https://github.com/lettre/lettre/commit/0e05e0e))
 
 <a name="v0.9.2"></a>
 ### v0.9.2 (2019-06-11)
