@@ -1,6 +1,16 @@
 <a name="v0.10.0"></a>
 ### v0.10.0 (unreleased)
 
+#### Upgrade notes
+
+Several breaking changes were made between 0.9 and 0.10, but changes should be straightforward:
+
+* The `lettre_email` crate has been merged into `lettre`. To migrate, replace `lettre_email` with `lettre::builder`
+  and make sure to enable the `builder` feature (it's enabled by default).
+* `SendableEmail` has been renamed to `Email` and `EmailBuilder::build()` produces it directly. To migrate,
+  rename `SendableEmail` to `Email`.
+* The `serde-impls` feature has been renamed to `serde`. To migrate, rename the feature.
+
 #### Features
 
 * Add `rustls` support ([29e4829](https://github.com/lettre/lettre/commit/29e4829), [39a0686](https://github.com/lettre/lettre/commit/39a0686))
@@ -14,13 +24,13 @@
 
 * Move CI to Github Actions ([3eef024](https://github.com/lettre/lettre/commit/3eef024))
 * MSRV is now 1.36 ([d227cd4](https://github.com/lettre/lettre/commit/d227cd4))
-* Merged `lettre_email` into `lettre`. To migrate just replace `lettre_email` with `lettre::builder` and make sure to
-  enable `builder` feature (it's enabled by default) ([0f3f27f](https://github.com/lettre/lettre/commit/0f3f27f))
+* Merged `lettre_email` into `lettre` ([0f3f27f](https://github.com/lettre/lettre/commit/0f3f27f))
 * Rename `serde-impls` feature to `serde` ([aac3e00](https://github.com/lettre/lettre/commit/aac3e00))
 * Use criterion for benchmarks ([eda7fc1](https://github.com/lettre/lettre/commit/eda7fc1))
 * Update to nom 5 ([5bc1cba](https://github.com/lettre/lettre/commit/5bc1cba))
 * Change website url schemes to https ([6014f5c](https://github.com/lettre/lettre/commit/6014f5c))
 * Use serde's `derive` feature instead of the `serde_derive` crate ([4fbe700](https://github.com/lettre/lettre/commit/4fbe700))
+* Merge `Email` and `SendableEmail` into `lettre::Email` ([ce37464](https://github.com/lettre/lettre/commit/ce37464))
 
 #### Bug Fixes
 
