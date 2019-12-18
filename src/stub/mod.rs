@@ -2,7 +2,7 @@
 //! testing purposes.
 //!
 
-use crate::SendableEmail;
+use crate::Email;
 use crate::Transport;
 use log::info;
 
@@ -30,7 +30,7 @@ pub type StubResult = Result<(), ()>;
 impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
-    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> StubResult {
+    fn send<E: Into<Email>>(&mut self, email: E) -> StubResult {
         let email = email.into();
 
         info!(

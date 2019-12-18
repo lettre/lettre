@@ -25,7 +25,7 @@ pub mod smtp;
 pub mod stub;
 
 #[cfg(feature = "builder")]
-pub use crate::builder::Email;
+use crate::builder::EmailBuilder;
 use crate::error::EmailResult;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]
@@ -146,15 +146,21 @@ impl Read for Message {
 }
 
 /// Sendable email structure
-pub struct SendableEmail {
+pub struct Email {
     envelope: Envelope,
     message_id: String,
     message: Message,
 }
 
-impl SendableEmail {
-    pub fn new(envelope: Envelope, message_id: String, message: Vec<u8>) -> SendableEmail {
-        SendableEmail {
+impl Email {
+    /// Creates a new email builder
+    #[cfg(feature = "builder")]
+    pub fn builder() -> EmailBuilder {
+        EmailBuilder::new()
+    }
+
+    pub fn new(envelope: Envelope, message_id: String, message: Vec<u8>) -> Email {
+        Email {
             envelope,
             message_id,
             message: Message::Bytes(Cursor::new(message)),
@@ -165,8 +171,8 @@ impl SendableEmail {
         envelope: Envelope,
         message_id: String,
         message: Box<dyn Read + Send>,
-    ) -> SendableEmail {
-        SendableEmail {
+    ) -> Email {
+        Email {
             envelope,
             message_id,
             message: Message::Reader(message),
@@ -198,5 +204,5 @@ pub trait Transport<'a> {
     type Result;
 
     /// Sends the email
-    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> Self::Result;
+    fn send<E: Into<Email>>(&mut self, email: E) -> Self::Result;
 }

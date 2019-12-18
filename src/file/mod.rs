@@ -4,8 +4,8 @@
 //!
 
 use crate::file::error::FileResult;
+use crate::Email;
 use crate::Envelope;
-use crate::SendableEmail;
 use crate::Transport;
 use serde_json;
 use std::fs::File;
@@ -41,7 +41,7 @@ struct SerializableEmail {
 impl<'a> Transport<'a> for FileTransport {
     type Result = FileResult;
 
-    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> FileResult {
+    fn send<E: Into<Email>>(&mut self, email: E) -> FileResult {
         let email = email.into();
 
         let message_id = email.message_id().to_string();

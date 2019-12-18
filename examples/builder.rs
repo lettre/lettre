@@ -1,4 +1,4 @@
-use lettre::builder::Email;
+use lettre::Email;
 use lettre::{SmtpClient, Transport};
 use std::path::Path;
 

@@ -23,10 +23,10 @@ fn build_with_envelope_without_from_test() {
         vec![EmailAddress::new("to@example.org".to_string()).unwrap()],
     )
     .unwrap();
-    let _email = EmailBuilder::new()
+    assert!(EmailBuilder::new()
         .envelope(e)
         .subject("subject")
         .text("message")
         .build()
-        .unwrap_err();
+        .is_err());
 }

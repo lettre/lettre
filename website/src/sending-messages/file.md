@@ -12,12 +12,12 @@ extern crate lettre;
 use std::env::temp_dir;
 
 use lettre::file::FileTransport;
-use lettre::{Transport, Envelope, EmailAddress, SendableEmail};
+use lettre::{Transport, Envelope, EmailAddress, Email};
 
 fn main() {
     // Write to the local temp directory
     let mut sender = FileTransport::new(temp_dir());
-    let email = SendableEmail::new(
+    let email = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

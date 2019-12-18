@@ -1,11 +1,11 @@
 use lettre::stub::StubTransport;
-use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
+use lettre::{Email, EmailAddress, Envelope, Transport};
 
 #[test]
 fn stub_transport() {
     let mut sender_ok = StubTransport::new_positive();
     let mut sender_ko = StubTransport::new(Err(()));
-    let email_ok = SendableEmail::new(
+    let email_ok = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
@@ -14,7 +14,7 @@ fn stub_transport() {
         "id".to_string(),
         "Hello ß☺ example".to_string().into_bytes(),
     );
-    let email_ko = SendableEmail::new(
+    let email_ko = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

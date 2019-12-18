@@ -2,12 +2,12 @@
 #[cfg(feature = "sendmail-transport")]
 mod test {
     use lettre::sendmail::SendmailTransport;
-    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
+    use lettre::{Email, EmailAddress, Envelope, Transport};
 
     #[test]
     fn sendmail_transport_simple() {
         let mut sender = SendmailTransport::new();
-        let email = SendableEmail::new(
+        let email = Email::new(
             Envelope::new(
                 Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
                 vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

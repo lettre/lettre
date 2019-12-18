@@ -22,10 +22,10 @@ This is the most basic example of usage:
 # {
 extern crate lettre;
 
-use lettre::{SendableEmail, EmailAddress, Transport, Envelope, SmtpClient};
+use lettre::{Email, EmailAddress, Transport, Envelope, SmtpClient};
 
 fn main() {
-    let email = SendableEmail::new(
+    let email = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
@@ -53,12 +53,12 @@ fn main() {
 extern crate lettre;
 
 use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::{SendableEmail, Envelope, EmailAddress, Transport, SmtpClient};
+use lettre::{Email, Envelope, EmailAddress, Transport, SmtpClient};
 use lettre::smtp::extension::ClientId;
 use lettre::smtp::ConnectionReuseParameters;
 
 fn main() {
-    let email_1 = SendableEmail::new(
+    let email_1 = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
@@ -67,7 +67,7 @@ fn main() {
         "Hello world".to_string().into_bytes(),
     );
 
-    let email_2 = SendableEmail::new(
+    let email_2 = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
@@ -112,14 +112,14 @@ extern crate lettre;
 
 use lettre::{
     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope, 
-    SendableEmail, SmtpClient, Transport,
+    Email, SmtpClient, Transport,
 };
 use lettre::smtp::authentication::{Credentials, Mechanism};
 use lettre::smtp::ConnectionReuseParameters;
 use native_tls::{Protocol, TlsConnector};
 
 fn main() {
-    let email = SendableEmail::new(
+    let email = Email::new(
         Envelope::new(
             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

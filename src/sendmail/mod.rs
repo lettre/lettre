@@ -2,7 +2,7 @@
 //!
 
 use crate::sendmail::error::SendmailResult;
-use crate::SendableEmail;
+use crate::Email;
 use crate::Transport;
 use log::info;
 use std::convert::AsRef;
@@ -38,7 +38,7 @@ impl SendmailTransport {
 impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> SendmailResult {
+    fn send<E: Into<Email>>(&mut self, email: E) -> SendmailResult {
         let email = email.into();
 
         let message_id = email.message_id().to_string();
