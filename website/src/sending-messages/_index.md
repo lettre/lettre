@@ -3,7 +3,7 @@
 This section explains how to manipulate emails you have created.
 
 This mailer contains several different transports for your emails. To be sendable, the
-emails have to implement `SendableEmail`, which is the case for emails created with `lettre_email`.
+emails have to implement `SendableEmail`, which is the case for emails created with `lettre::builder`.
 
 The following transports are available:
 

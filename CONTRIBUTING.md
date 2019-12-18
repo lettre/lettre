@@ -33,3 +33,11 @@ Any line of the commit message cannot be longer 72 characters.
     all
 
 The body explains the change, and the footer contains relevant changelog notes and references to fixed issues.
+
+### Release process
+
+Releases are made using `cargo-release`:
+
+```bash
+cargo release --dry-run 0.10.0 --prev-tag-name v0.9.2 -v
+```

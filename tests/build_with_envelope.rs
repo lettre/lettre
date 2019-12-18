@@ -1,5 +1,5 @@
+use lettre::builder::EmailBuilder;
 use lettre::{EmailAddress, Envelope};
-use lettre_email::EmailBuilder;
 
 #[test]
 fn build_with_envelope_test() {
