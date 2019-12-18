@@ -8,7 +8,7 @@ use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::response::Response;
 use bufstream::BufStream;
 use log::debug;
-#[cfg(feature = "serde-impls")]
+#[cfg(feature = "serde")]
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::io::{self, BufRead, BufReader, Read, Write};
@@ -21,7 +21,7 @@ pub mod net;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde-impls", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClientCodec {
     escape_count: u8,
 }
