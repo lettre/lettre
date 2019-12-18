@@ -2,7 +2,7 @@
 #[cfg(feature = "file-transport")]
 mod test {
     use lettre::file::FileTransport;
-    use lettre::{EmailAddress, Envelope, SendableEmail, Transport};
+    use lettre::{Email, EmailAddress, Envelope, Transport};
     use std::env::temp_dir;
     use std::fs::remove_file;
     use std::fs::File;
@@ -11,7 +11,7 @@ mod test {
     #[test]
     fn file_transport() {
         let mut sender = FileTransport::new(temp_dir());
-        let email = SendableEmail::new(
+        let email = Email::new(
             Envelope::new(
                 Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
                 vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

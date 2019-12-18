@@ -1,4 +1,4 @@
-use crate::{error::Error as LettreError, EmailAddress, Envelope, SendableEmail};
+use crate::{error::Error as LettreError, Email, EmailAddress, Envelope};
 pub use email::{Address, Header, Mailbox, MimeMessage, MimeMultipartType};
 use error::Error;
 pub use mime;
@@ -61,34 +61,6 @@ pub struct EmailBuilder {
     date_issued: bool,
     /// Message-ID
     message_id: Option<String>,
-}
-
-/// Simple email representation
-#[derive(PartialEq, Eq, Clone, Debug)]
-pub struct Email {
-    /// Message
-    message: Vec<u8>,
-    /// Envelope
-    envelope: Envelope,
-    /// Message-ID
-    message_id: String,
-}
-
-impl Into<SendableEmail> for Email {
-    fn into(self) -> SendableEmail {
-        SendableEmail::new(
-            self.envelope.clone(),
-            self.message_id.to_string(),
-            self.message,
-        )
-    }
-}
-
-impl Email {
-    /// Creates a new email builder
-    pub fn builder() -> EmailBuilder {
-        EmailBuilder::new()
-    }
 }
 
 impl PartBuilder {
@@ -471,17 +443,17 @@ impl EmailBuilder {
             }
         };
 
-        Ok(Email {
-            message: self.message.build().as_string().into_bytes(),
+        Ok(Email::new(
             envelope,
             message_id,
-        })
+            self.message.build().as_string().into_bytes(),
+        ))
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{EmailBuilder, SendableEmail};
+    use super::{Email, EmailBuilder};
     use crate::EmailAddress;
     use time::now;
 
@@ -489,7 +461,7 @@ mod test {
     fn test_multiple_from() {
         let email_builder = EmailBuilder::new();
         let date_now = now();
-        let email: SendableEmail = email_builder
+        let email: Email = email_builder
             .to("anna@example.com")
             .from("dieter@example.com")
             .from("joachim@example.com")
@@ -518,7 +490,7 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email: SendableEmail = email_builder
+        let email: Email = email_builder
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
@@ -554,7 +526,7 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email: SendableEmail = email_builder
+        let email: Email = email_builder
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))
@@ -605,7 +577,7 @@ mod test {
         let email_builder = EmailBuilder::new();
         let date_now = now();
 
-        let email: SendableEmail = email_builder
+        let email: Email = email_builder
             .to("user@localhost")
             .from("user@localhost")
             .cc(("cc@localhost", "Alias"))

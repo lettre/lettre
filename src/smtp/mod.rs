@@ -21,7 +21,7 @@ use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
-use crate::{SendableEmail, Transport};
+use crate::{Email, Transport};
 use log::{debug, info};
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
@@ -428,7 +428,7 @@ impl<'a> Transport<'a> for SmtpTransport {
         feature = "cargo-clippy",
         allow(clippy::match_same_arms, clippy::cyclomatic_complexity)
     )]
-    fn send<E: Into<SendableEmail>>(&mut self, email: E) -> SmtpResult {
+    fn send<E: Into<Email>>(&mut self, email: E) -> SmtpResult {
         let email = email.into();
 
         let message_id = email.message_id().to_string();

@@ -1,11 +1,11 @@
 #[cfg(test)]
 #[cfg(feature = "smtp-transport")]
 mod test {
-    use lettre::{ClientSecurity, EmailAddress, Envelope, SendableEmail, SmtpClient, Transport};
+    use lettre::{ClientSecurity, Email, EmailAddress, Envelope, SmtpClient, Transport};
 
     #[test]
     fn smtp_transport_simple() {
-        let email = SendableEmail::new(
+        let email = Email::new(
             Envelope::new(
                 Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
                 vec![EmailAddress::new("root@localhost".to_string()).unwrap()],

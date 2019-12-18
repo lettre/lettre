@@ -5,7 +5,7 @@ This section explains how to create emails.
 #### Simple example
 
 The `email` part builds email messages. For now, it does not support attachments.
-An email is built using an `EmailBuilder`. The simplest email could be:
+An email is built using an `Email` builder. The simplest email could be:
 
 ```rust
 # #[cfg(feature = "builder")]
@@ -30,7 +30,7 @@ fn main() {
 # }
 ```
 
-When the `build` method is called, the `EmailBuilder` will add the missing headers (like
+When the `build` method is called, the builder will add the missing headers (like
 `Message-ID` or `Date`) and check for missing necessary ones (like `From` or `To`). It will
 then generate an `Email` that can be sent.
 
