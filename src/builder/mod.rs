@@ -9,10 +9,12 @@ use std::fmt;
 use std::fs;
 use std::path::Path;
 use std::str::FromStr;
-use time::{now, Tm};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub mod error;
+
+const DT_RFC822Z: &str = "%a, %d %b %Y %T %z";
 
 // From rust-email, allows adding rfc2047 encoding
 
@@ -280,8 +282,8 @@ impl EmailBuilder {
     }
 
     /// Adds a `Date` header with the given date
-    pub fn date(mut self, date: &Tm) -> EmailBuilder {
-        self.message = self.message.header(("Date", Tm::rfc822z(date).to_string()));
+    pub fn date(mut self, date: &OffsetDateTime) -> EmailBuilder {
+        self.message = self.message.header(("Date", date.format(DT_RFC822Z)));
         self.date_issued = true;
         self
     }
@@ -508,7 +510,7 @@ impl EmailBuilder {
         if !self.date_issued {
             self.message = self
                 .message
-                .header(("Date", Tm::rfc822z(&now()).to_string()));
+                .header(("Date", OffsetDateTime::now().format(DT_RFC822Z)));
         }
 
         self.message = self.message.header(("MIME-Version", "1.0"));
@@ -536,7 +538,7 @@ impl EmailBuilder {
 mod test {
     use super::*;
     use crate::EmailAddress;
-    use time::now;
+    use time::OffsetDateTime;
 
     #[test]
     fn test_encode_rfc2047() {
@@ -553,7 +555,7 @@ mod test {
     #[test]
     fn test_multiple_from() {
         let email_builder = EmailBuilder::new();
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
         let email: Email = email_builder
             .to("anna@example.com")
             .from("dieter@example.com")
@@ -572,7 +574,7 @@ mod test {
                  <dieter@example.com>\r\nTo: <anna@example.com>\r\nFrom: \
                  <dieter@example.com>, <joachim@example.com>\r\nMIME-Version: \
                  1.0\r\nMessage-ID: <{}.lettre@localhost>\r\n\r\nWe invite you!\r\n",
-                date_now.rfc822z(),
+                date_now.format(DT_RFC822Z),
                 id
             )
         );
@@ -581,7 +583,7 @@ mod test {
     #[test]
     fn test_email_builder() {
         let email_builder = EmailBuilder::new();
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
 
         let email: Email = email_builder
             .to("user@localhost")
@@ -609,7 +611,7 @@ mod test {
                  Reply-To: <reply@localhost>\r\nIn-Reply-To: original\r\n\
                  MIME-Version: 1.0\r\nMessage-ID: \
                  <{}.lettre@localhost>\r\n\r\nHello World!\r\n",
-                date_now.rfc822z(),
+                date_now.format(DT_RFC822Z),
                 id
             )
         );
@@ -618,7 +620,7 @@ mod test {
     #[test]
     fn test_custom_message_id() {
         let email_builder = EmailBuilder::new();
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
 
         let email: Email = email_builder
             .to("user@localhost")
@@ -644,14 +646,14 @@ mod test {
                  <user@localhost>\r\nCc: \"Alias\" <cc@localhost>\r\nReply-To: \
                  <reply@localhost>\r\nIn-Reply-To: original\r\nMIME-Version: 1.0\r\n\r\nHello \
                  World!\r\n",
-                date_now.rfc822z()
+                date_now.format(DT_RFC822Z)
             )
         );
     }
 
     #[test]
     fn test_email_builder_body() {
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
         let email_builder = EmailBuilder::new()
             .text("TestTest")
             .subject("A Subject")
@@ -663,7 +665,7 @@ mod test {
 
     #[test]
     fn test_email_subject_encoding() {
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
         let email_builder = EmailBuilder::new()
             .text("TestTest")
             .subject("A ö Subject")
@@ -678,7 +680,7 @@ mod test {
     #[test]
     fn test_email_sendable() {
         let email_builder = EmailBuilder::new();
-        let date_now = now();
+        let date_now = OffsetDateTime::now();
 
         let email: Email = email_builder
             .to("user@localhost")

@@ -7,7 +7,7 @@ Lettre is an email library that allows creating and sending messages. It provide
 * Unicode support (for emails and transports, including for sender et recipient addresses when compatible)
 * Secure defaults (emails are only sent encrypted by default)
 
-Lettre requires Rust 1.36 or newer. Add the following to your `Cargo.toml`:
+Lettre requires Rust 1.40 or newer. Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
