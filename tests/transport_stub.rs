@@ -1,5 +1,6 @@
 use lettre::stub::StubTransport;
-use lettre::{Email, EmailAddress, Envelope, Transport};
+use lettre::{Address, Email, Envelope, Transport};
+use std::str::FromStr;
 
 #[test]
 fn stub_transport() {
@@ -7,8 +8,8 @@ fn stub_transport() {
     let mut sender_ko = StubTransport::new(Err(()));
     let email_ok = Email::new(
         Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+            Some(Address::from_str("user@localhost").unwrap()),
+            vec![Address::from_str("root@localhost").unwrap()],
         )
         .unwrap(),
         "id".to_string(),
@@ -16,8 +17,8 @@ fn stub_transport() {
     );
     let email_ko = Email::new(
         Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+            Some(Address::from_str("user@localhost").unwrap()),
+            vec![Address::from_str("root@localhost").unwrap()],
         )
         .unwrap(),
         "id".to_string(),

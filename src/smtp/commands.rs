@@ -5,7 +5,7 @@ use crate::smtp::error::Error;
 use crate::smtp::extension::ClientId;
 use crate::smtp::extension::{MailParameter, RcptParameter};
 use crate::smtp::response::Response;
-use crate::EmailAddress;
+use crate::Address;
 use base64;
 use log::debug;
 use std::convert::AsRef;
@@ -47,7 +47,7 @@ impl Display for StarttlsCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MailCommand {
-    sender: Option<EmailAddress>,
+    sender: Option<Address>,
     parameters: Vec<MailParameter>,
 }
 
@@ -56,7 +56,7 @@ impl Display for MailCommand {
         write!(
             f,
             "MAIL FROM:<{}>",
-            self.sender.as_ref().map(AsRef::as_ref).unwrap_or("")
+            self.sender.as_ref().map(|s| s.as_ref()).unwrap_or("")
         )?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
@@ -67,7 +67,7 @@ impl Display for MailCommand {
 
 impl MailCommand {
     /// Creates a MAIL command
-    pub fn new(sender: Option<EmailAddress>, parameters: Vec<MailParameter>) -> MailCommand {
+    pub fn new(sender: Option<Address>, parameters: Vec<MailParameter>) -> MailCommand {
         MailCommand { sender, parameters }
     }
 }
@@ -76,7 +76,7 @@ impl MailCommand {
 #[derive(PartialEq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RcptCommand {
-    recipient: EmailAddress,
+    recipient: Address,
     parameters: Vec<RcptParameter>,
 }
 
@@ -92,7 +92,7 @@ impl Display for RcptCommand {
 
 impl RcptCommand {
     /// Creates an RCPT command
-    pub fn new(recipient: EmailAddress, parameters: Vec<RcptParameter>) -> RcptCommand {
+    pub fn new(recipient: Address, parameters: Vec<RcptParameter>) -> RcptCommand {
         RcptCommand {
             recipient,
             parameters,
@@ -293,11 +293,12 @@ impl AuthCommand {
 mod test {
     use super::*;
     use crate::smtp::extension::MailBodyParameter;
+    use std::str::FromStr;
 
     #[test]
     fn test_display() {
         let id = ClientId::Domain("localhost".to_string());
-        let email = EmailAddress::new("test@example.com".to_string()).unwrap();
+        let email = Address::from_str("test@example.com").unwrap();
         let mail_parameter = MailParameter::Other {
             keyword: "TEST".to_string(),
             value: Some("value".to_string()),

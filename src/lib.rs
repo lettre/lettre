@@ -1,18 +1,20 @@
-//! Lettre is a mailer written in Rust. It provides a simple email builder and several transports.
-//!
-//! This mailer contains the available transports for your emails.
+//! Lettre provides an email builder and several email transports.
 //!
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
+#![doc(html_favicon_url = "https://blog.lettre.at/favicon.ico")]
+#![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![deny(
     missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
-    unsafe_code,
+// FIXME remove unsafe?
+//    unsafe_code,
     unstable_features,
     unused_import_braces
 )]
 
+pub mod address;
 #[cfg(feature = "builder")]
 pub mod builder;
 pub mod error;
@@ -24,9 +26,9 @@ pub mod sendmail;
 pub mod smtp;
 pub mod stub;
 
-#[cfg(feature = "builder")]
-use crate::builder::EmailBuilder;
-use crate::error::EmailResult;
+pub use crate::address::Address;
+//#[cfg(feature = "builder")]
+//pub use crate::builder::Message;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]
 pub use crate::file::FileTransport;
@@ -38,61 +40,7 @@ pub use crate::smtp::client::net::ClientTlsParameters;
 pub use crate::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
-use fast_chemail::is_valid_email;
-use std::ffi::OsStr;
-use std::fmt::{self, Display, Formatter};
-use std::io;
-use std::io::Cursor;
-use std::io::Read;
-use std::str::FromStr;
-
-/// Email address
-#[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct EmailAddress(String);
-
-impl EmailAddress {
-    pub fn new(address: String) -> EmailResult<EmailAddress> {
-        if !EmailAddress::is_valid(&address) {
-            return Err(Error::InvalidEmailAddress);
-        }
-        Ok(EmailAddress(address))
-    }
-
-    pub fn is_valid(addr: &str) -> bool {
-        is_valid_email(addr) || addr.ends_with("localhost")
-    }
-
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl FromStr for EmailAddress {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        EmailAddress::new(s.to_string())
-    }
-}
-
-impl Display for EmailAddress {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        f.write_str(&self.0)
-    }
-}
-
-impl AsRef<str> for EmailAddress {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl AsRef<OsStr> for EmailAddress {
-    fn as_ref(&self) -> &OsStr {
-        self.0.as_ref()
-    }
-}
+use std::io::{self, Cursor, Read};
 
 /// Simple email envelope representation
 ///
@@ -103,14 +51,14 @@ pub struct Envelope {
     /// The envelope recipients' addresses
     ///
     /// This can not be empty.
-    forward_path: Vec<EmailAddress>,
+    forward_path: Vec<Address>,
     /// The envelope sender address
-    reverse_path: Option<EmailAddress>,
+    reverse_path: Option<Address>,
 }
 
 impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
-    pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
+    pub fn new(from: Option<Address>, to: Vec<Address>) -> Result<Envelope, Error> {
         if to.is_empty() {
             return Err(Error::MissingTo);
         }
@@ -121,16 +69,17 @@ impl Envelope {
     }
 
     /// Destination addresses of the envelope
-    pub fn to(&self) -> &[EmailAddress] {
+    pub fn to(&self) -> &[Address] {
         self.forward_path.as_slice()
     }
 
     /// Source address of the envelope
-    pub fn from(&self) -> Option<&EmailAddress> {
+    pub fn from(&self) -> Option<&Address> {
         self.reverse_path.as_ref()
     }
 }
 
+// FIXME merge with emailmessage payload?
 pub enum Message {
     Reader(Box<dyn Read + Send>),
     Bytes(Cursor<Vec<u8>>),
@@ -154,10 +103,10 @@ pub struct Email {
 
 impl Email {
     /// Creates a new email builder
-    #[cfg(feature = "builder")]
-    pub fn builder() -> EmailBuilder {
-        EmailBuilder::new()
-    }
+    //#[cfg(feature = "builder")]
+    //pub fn builder() -> EmailBuilder {
+    //    EmailBuilder::new()
+    //}
 
     pub fn new(envelope: Envelope, message_id: String, message: Vec<u8>) -> Email {
         Email {

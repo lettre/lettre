@@ -1,13 +1,14 @@
 extern crate lettre;
 
 use lettre::smtp::authentication::Credentials;
-use lettre::{Email, EmailAddress, Envelope, SmtpClient, Transport};
+use lettre::{Address, Email, Envelope, SmtpClient, Transport};
+use std::str::FromStr;
 
 fn main() {
     let email = Email::new(
         Envelope::new(
-            Some(EmailAddress::new("from@gmail.com".to_string()).unwrap()),
-            vec![EmailAddress::new("to@example.com".to_string()).unwrap()],
+            Some(Address::from_str("user@gmail.com").unwrap()),
+            vec![Address::from_str("root@example.com").unwrap()],
         )
         .unwrap(),
         "id".to_string(),

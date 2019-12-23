@@ -1,8 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use lettre::{
-    smtp::ConnectionReuseParameters, ClientSecurity, Email, EmailAddress, Envelope, SmtpClient,
+    smtp::ConnectionReuseParameters, Address, ClientSecurity, Email, Envelope, SmtpClient,
     Transport,
 };
+use std::str::FromStr;
 
 fn bench_simple_send(c: &mut Criterion) {
     let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
@@ -13,8 +14,8 @@ fn bench_simple_send(c: &mut Criterion) {
         b.iter(|| {
             let email = Email::new(
                 Envelope::new(
-                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+                    Some(Address::from_str("user@gmail.com").unwrap()),
+                    vec![Address::from_str("root@example.com").unwrap()],
                 )
                 .unwrap(),
                 "id".to_string(),
@@ -35,8 +36,8 @@ fn bench_reuse_send(c: &mut Criterion) {
         b.iter(|| {
             let email = Email::new(
                 Envelope::new(
-                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+                    Some(Address::from_str("user@gmail.com").unwrap()),
+                    vec![Address::from_str("root@example.com").unwrap()],
                 )
                 .unwrap(),
                 "id".to_string(),

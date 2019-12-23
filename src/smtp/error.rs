@@ -46,15 +46,9 @@ pub enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
-    }
-}
-
-impl StdError for Error {
     #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
-    fn description(&self) -> &str {
-        match *self {
+    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+        fmt.write_str(match *self {
             // Try to display the first line of the server's response that usually
             // contains a short humanly readable error message
             Transient(ref err) => match err.first_line() {
@@ -76,9 +70,11 @@ impl StdError for Error {
             Parsing(ref err) => err.description(),
             #[cfg(feature = "rustls-tls")]
             InvalidDNSName(ref err) => err.description(),
-        }
+        })
     }
+}
 
+impl StdError for Error {
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ChallengeParsing(ref err) => Some(&*err),

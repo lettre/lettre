@@ -6,7 +6,7 @@ readme = "README.md"
 homepage = "https://lettre.at"
 repository = "https://github.com/lettre/lettre"
 license = "MIT"
-authors = ["Alexis Mousset <contact@amousset.me>"]
+authors = ["Alexis Mousset <contact@amousset.me>", "Kayo <kayo@illumium.org>"]
 categories = ["email"]
 keywords = ["email", "smtp", "mailer"]
 edition = "2018"
@@ -19,20 +19,24 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 base64 = { version = "^0.11", optional = true }
 bufstream = { version = "^0.1", optional = true }
-email = { version = "^0.0.20", optional = true }
-fast_chemail = "^0.9"
 hostname = { version = "^0.3", optional = true }
 log = "^0.4"
 mime = { version = "^0.3", optional = true }
 native-tls = { version = "^0.2", optional = true }
-nom = { version = "^5.0", optional = true }
+nom = { version = "^5", optional = true }
 r2d2 = { version = "^0.8", optional = true }
 rustls = { version = "^0.16", optional = true }
-serde = { version = "^1.0", optional = true, features = ["derive"] }
-serde_json = { version = "^1.0", optional = true }
-time = { version = "^0.2", optional = true }
-uuid = { version = "^0.8", features = ["v4"], optional = true }
+serde = { version = "^1", optional = true, features = ["derive"] }
+serde_json = { version = "^1", optional = true }
 webpki = { version = "^0.21", optional = true }
+quoted_printable = { version = "^0.4", optional = true }
+idna = "^0.2"
+once_cell = "^1"
+regex = "^1"
+textnonce = { version = "^0.7", optional = true }
+# TODO update these
+bytes = { version = "^0.4", optional = true }
+hyperx = { version = "^0.13", optional = true }
 
 [dev-dependencies]
 criterion = "^0.3"
@@ -45,7 +49,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-builder = ["email", "mime", "time", "base64", "uuid"]
+builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable", "bytes"]
 connection-pool = ["r2d2"]
 default = ["file-transport", "smtp-transport", "sendmail-transport", "native-tls", "builder"]
 file-transport = ["serde", "serde_json"]
@@ -62,6 +66,6 @@ required-features = ["smtp-transport"]
 name = "smtp_gmail"
 required-features = ["smtp-transport", "native-tls"]
 
-[[example]]
-name = "builder"
-required-features = ["builder"]
+#[[example]]
+#name = "builder"
+#required-features = ["builder"]

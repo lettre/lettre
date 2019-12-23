@@ -88,4 +88,7 @@ this GitHub repository, must follow our [code of conduct](https://github.com/let
 
 This program is distributed under the terms of the MIT license.
 
+The builder comes from [emailmessage-rs](https://github.com/katyo/emailmessage-rs) by
+Kayo, under MIT license.
+
 See [LICENSE](./LICENSE) for details.
