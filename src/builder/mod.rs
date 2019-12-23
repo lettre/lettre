@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 pub mod error;
 
-const DT_RFC822Z: &'static str = "%a, %d %b %Y %T %z";
+const DT_RFC822Z: &str = "%a, %d %b %Y %T %z";
 
 // From rust-email, allows adding rfc2047 encoding
 
