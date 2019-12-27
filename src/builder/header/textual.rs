@@ -1,6 +1,6 @@
 use crate::builder::utf8_b;
 use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, Raw},
+    header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
 };
 use std::fmt::Result as FmtResult;
@@ -16,7 +16,11 @@ macro_rules! text_header {
                 $header_name
             }
 
-            fn parse_header(raw: &Raw) -> HyperResult<$type_name> {
+            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<$type_name>
+            where
+                T: RawLike<'a>,
+                Self: Sized,
+            {
                 raw.one()
                     .ok_or(HyperError::Header)
                     .and_then(parse_text)
