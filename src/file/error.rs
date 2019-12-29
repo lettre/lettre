@@ -21,20 +21,16 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
+        match *self {
+            Client(err) => fmt.write_str(err),
+            Io(ref err) => err.fmt(fmt),
+            JsonSerialization(ref err) => err.fmt(fmt),
+        }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Client(err) => err,
-            Io(ref err) => err.description(),
-            JsonSerialization(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
             Io(ref err) => Some(&*err),
             JsonSerialization(ref err) => Some(&*err),

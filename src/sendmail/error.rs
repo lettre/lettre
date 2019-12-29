@@ -13,7 +13,7 @@ use std::{
 pub enum Error {
     /// Internal client error
     Client(String),
-    /// Error parsing UTF8in response
+    /// Error parsing UTF8 in response
     Utf8Parsing(FromUtf8Error),
     /// IO error
     Io(io::Error),
@@ -21,20 +21,16 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
+        match *self {
+            Client(ref err) => err.fmt(fmt),
+            Utf8Parsing(ref err) => err.fmt(fmt),
+            Io(ref err) => err.fmt(fmt),
+        }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Client(ref err) => err,
-            Utf8Parsing(ref err) => err.description(),
-            Io(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
             Io(ref err) => Some(&*err),
             Utf8Parsing(ref err) => Some(&*err),
