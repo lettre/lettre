@@ -10,6 +10,8 @@ pub enum Error {
     MissingFrom,
     /// Missing to in envelope
     MissingTo,
+    /// Can only be one from in envelope
+    TooManyFrom,
     /// Invalid email: missing at
     EmailMissingAt,
     /// Invalid email: missing local part
@@ -27,6 +29,7 @@ impl Display for Error {
         fmt.write_str(&match self {
             Error::MissingFrom => "missing source address, invalid envelope".to_string(),
             Error::MissingTo => "missing destination address, invalid envelope".to_string(),
+            Error::TooManyFrom => "there can only be one source address".to_string(),
             Error::EmailMissingAt => "missing @ in email address".to_string(),
             Error::EmailMissingLocalPart => "missing local part in email address".to_string(),
             Error::EmailMissingDomain => "missing domain in email address".to_string(),

@@ -27,7 +27,13 @@ pub mod smtp;
 pub mod stub;
 
 pub use crate::address::Address;
-//#[cfg(feature = "builder")]
+#[cfg(feature = "builder")]
+use crate::builder::{
+    header::{self, Headers},
+    Mailboxes,
+};
+#[cfg(feature = "builder")]
+use std::convert::TryFrom;
 //pub use crate::builder::Message;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]
@@ -76,6 +82,39 @@ impl Envelope {
     /// Source address of the envelope
     pub fn from(&self) -> Option<&Address> {
         self.reverse_path.as_ref()
+    }
+}
+
+impl TryFrom<&Headers> for Envelope {
+    type Error = Error;
+
+    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
+        let from = match headers.get::<header::Sender>() {
+            // If there is a Sender, use it
+            Some(header::Sender(a)) => Some(a.email.clone()),
+            // ... else use the first From address
+            None => match headers.get::<header::From>() {
+                Some(header::From(ref a)) => Some(a.iter().next().unwrap().email.clone()),
+                None => None,
+            },
+        };
+
+        fn add_addresses_from_mailboxes(
+            addresses: &mut Vec<Address>,
+            mailboxes: Option<&Mailboxes>,
+        ) {
+            if let Some(mailboxes) = mailboxes {
+                for mailbox in mailboxes.iter() {
+                    addresses.push(mailbox.email.clone());
+                }
+            }
+        }
+        let mut to = vec![];
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| &h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| &h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| &h.0));
+
+        Self::new(from, to)
     }
 }
 
@@ -154,4 +193,63 @@ pub trait Transport<'a> {
 
     /// Sends the email
     fn send<E: Into<Email>>(&mut self, email: E) -> Self::Result;
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::builder::{header, Mailbox, Mailboxes};
+    use hyperx::Headers;
+
+    #[test]
+    fn envelope_from_headers() {
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
+
+        let mut headers = Headers::new();
+        headers.set(header::From(from));
+        headers.set(header::To(to));
+
+        assert_eq!(
+            Envelope::try_from(&headers).unwrap(),
+            Envelope::new(
+                Some(Address::new("kayo", "example.com").unwrap()),
+                vec![Address::new("amousset", "example.com").unwrap()]
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn envelope_from_headers_sender() {
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
+        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
+
+        let mut headers = Headers::new();
+        headers.set(header::From(from));
+        headers.set(header::Sender(sender));
+        headers.set(header::To(to));
+
+        assert_eq!(
+            Envelope::try_from(&headers).unwrap(),
+            Envelope::new(
+                Some(Address::new("kayo2", "example.com").unwrap()),
+                vec![Address::new("amousset", "example.com").unwrap()]
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn envelope_from_headers_no_to() {
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
+
+        let mut headers = Headers::new();
+        headers.set(header::From(from));
+        headers.set(header::Sender(sender));
+
+        assert!(Envelope::try_from(&headers).is_err(),);
+    }
 }
