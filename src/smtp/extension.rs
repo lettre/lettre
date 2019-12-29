@@ -42,6 +42,7 @@ impl ClientId {
 
     /// Defines a `ClientId` with the current hostname, of `localhost` if hostname could not be
     /// found
+    #[cfg(feature = "hostname")]
     pub fn hostname() -> ClientId {
         ClientId::Domain(
             hostname::get()

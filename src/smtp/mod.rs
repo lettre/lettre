@@ -130,7 +130,10 @@ impl SmtpClient {
                 smtp_utf8: false,
                 credentials: None,
                 connection_reuse: ConnectionReuseParameters::NoReuse,
+                #[cfg(feature = "hostname")]
                 hello_name: ClientId::hostname(),
+                #[cfg(not(feature = "hostname"))]
+                hello_name: ClientId::new("localhost".to_string()),
                 authentication_mechanism: None,
                 force_set_auth: false,
                 timeout: Some(Duration::new(60, 0)),
