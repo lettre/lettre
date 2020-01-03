@@ -1,6 +1,8 @@
 use crate::builder::header::{self, EmailDate, Header, Headers, MailboxesHeader};
 use crate::builder::Mailbox;
+use crate::{Envelope, Error as EmailError};
 use bytes::Bytes;
+use std::convert::TryFrom;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use std::time::SystemTime;
 
@@ -196,6 +198,11 @@ impl<B> Message<B> {
     #[inline]
     pub fn body_ref(&self) -> &B {
         &self.body
+    }
+
+    /// Try to extract envelope data from `Message` headers
+    pub fn envelope(&self) -> Result<Envelope, EmailError> {
+        Envelope::try_from(&self.headers)
     }
 }
 

@@ -54,7 +54,7 @@ fn fmt_text(s: &str, f: &mut HeaderFormatter) -> FmtResult {
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use hyperx::Headers;
+    use hyperx::header::Headers;
 
     #[test]
     fn format_ascii() {

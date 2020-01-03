@@ -57,7 +57,7 @@ impl Header for MimeVersion {
 #[cfg(test)]
 mod test {
     use super::{MimeVersion, MIME_VERSION_1_0};
-    use hyperx::Headers;
+    use hyperx::header::Headers;
 
     #[test]
     fn format_mime_version() {

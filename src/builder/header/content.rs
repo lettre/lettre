@@ -77,7 +77,7 @@ impl Header for ContentTransferEncoding {
 #[cfg(test)]
 mod test {
     use super::ContentTransferEncoding;
-    use hyperx::Headers;
+    use hyperx::header::Headers;
 
     #[test]
     fn format_content_transfer_encoding() {

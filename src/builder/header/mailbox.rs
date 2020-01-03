@@ -165,7 +165,7 @@ fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter) -> FmtR
 #[cfg(test)]
 mod test {
     use super::{From, Mailbox, Mailboxes};
-    use hyperx::Headers;
+    use hyperx::header::Headers;
 
     #[test]
     fn format_single_without_name() {

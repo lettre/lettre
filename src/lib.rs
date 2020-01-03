@@ -199,7 +199,7 @@ pub trait Transport<'a> {
 mod test {
     use super::*;
     use crate::builder::{header, Mailbox, Mailboxes};
-    use hyperx::Headers;
+    use hyperx::header::Headers;
 
     #[test]
     fn envelope_from_headers() {
