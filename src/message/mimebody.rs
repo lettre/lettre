@@ -1,5 +1,5 @@
-use crate::builder::encoder::codec;
-use crate::builder::header::{ContentTransferEncoding, ContentType, Header, Headers};
+use crate::message::encoder::codec;
+use crate::message::header::{ContentTransferEncoding, ContentType, Header, Headers};
 use bytes::{Bytes, IntoBuf};
 use mime::Mime;
 use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
@@ -435,7 +435,7 @@ where
 #[cfg(test)]
 mod test {
     use super::{MultiPart, Part, SinglePart};
-    use crate::builder::header;
+    use crate::message::header;
 
     #[test]
     fn single_part_binary() {

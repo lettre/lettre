@@ -7,8 +7,8 @@ homepage = "https://lettre.at"
 repository = "https://github.com/lettre/lettre"
 license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Kayo <kayo@illumium.org>"]
-categories = ["email"]
-keywords = ["email", "smtp", "mailer"]
+categories = ["email", "network-programming"]
+keywords = ["email", "smtp", "mailer", "message", "sendmail"]
 edition = "2018"
 
 [badges]

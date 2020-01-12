@@ -1,5 +1,5 @@
-use crate::builder::header::{self, EmailDate, Header, Headers, MailboxesHeader};
-use crate::builder::Mailbox;
+use crate::message::header::{self, EmailDate, Header, Headers, MailboxesHeader};
+use crate::message::Mailbox;
 use crate::{Envelope, Error as EmailError};
 use bytes::Bytes;
 use std::convert::TryFrom;
@@ -157,6 +157,11 @@ impl MessageBuilder {
     pub fn mime_body<T>(self, body: T) -> Message<T> {
         self.mime_1_0().join(body)
     }
+
+    /// Try to extract envelope data from `Message` headers
+    pub fn envelope(&self) -> Result<Envelope, EmailError> {
+        Envelope::try_from(&self.headers)
+    }
 }
 
 /// Email message which can be formatted or streamed
@@ -227,9 +232,9 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::builder::header;
-    use crate::builder::mailbox::Mailbox;
-    use crate::builder::message::Message;
+    use crate::message::header;
+    use crate::message::mailbox::Mailbox;
+    use crate::message::message::Message;
 
     #[test]
     fn date_header() {

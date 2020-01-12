@@ -1,4 +1,4 @@
-use crate::builder::{Mailbox, Mailboxes};
+use crate::message::{Mailbox, Mailboxes};
 use serde::{
     de::{Deserializer, Error as DeError, MapAccess, SeqAccess, Visitor},
     ser::Serializer,

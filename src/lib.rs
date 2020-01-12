@@ -15,11 +15,11 @@
 )]
 
 pub mod address;
-#[cfg(feature = "builder")]
-pub mod builder;
 pub mod error;
 #[cfg(feature = "file-transport")]
 pub mod file;
+#[cfg(feature = "builder")]
+pub mod message;
 #[cfg(feature = "sendmail-transport")]
 pub mod sendmail;
 #[cfg(feature = "smtp-transport")]
@@ -28,13 +28,13 @@ pub mod stub;
 
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
-use crate::builder::{
+use crate::message::{
     header::{self, Headers},
     Mailboxes,
 };
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
-//pub use crate::builder::Message;
+//pub use crate::message::Message;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]
 pub use crate::file::FileTransport;
@@ -198,7 +198,7 @@ pub trait Transport<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::builder::{header, Mailbox, Mailboxes};
+    use crate::message::{header, Mailbox, Mailboxes};
     use hyperx::header::Headers;
 
     #[test]

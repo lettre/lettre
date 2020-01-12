@@ -1,5 +1,5 @@
 use crate::address::{Address, AddressError};
-use crate::builder::utf8_b;
+use crate::message::utf8_b;
 use std::convert::TryFrom;
 use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 use std::slice::Iter;

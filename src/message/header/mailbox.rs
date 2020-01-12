@@ -1,5 +1,5 @@
-use crate::builder::mailbox::{Mailbox, Mailboxes};
-use crate::builder::utf8_b;
+use crate::message::mailbox::{Mailbox, Mailboxes};
+use crate::message::utf8_b;
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
