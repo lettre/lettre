@@ -329,6 +329,54 @@ impl EmailBuilder {
         Ok(self.message_type(MimeMultipartType::Mixed).child(content))
     }
 
+    /// Embed file so it can be referenced by Content-ID
+    ///
+    /// If not specified, the filename will be extracted from the file path.
+    pub fn embed_from_file(
+        self,
+        path: &Path,
+        filename: Option<&str>,
+        content_type: &Mime,
+        content_id: &str,
+    ) -> Result<EmailBuilder, Error> {
+        self.embed(
+            fs::read(path)?.as_slice(),
+            filename.unwrap_or(
+                path.file_name()
+                    .and_then(OsStr::to_str)
+                    .ok_or(Error::CannotParseFilename)?,
+            ),
+            content_type,
+            content_id,
+        )
+    }
+
+    /// Adds an embed to the email from a vector of bytes.
+    pub fn embed(
+        self,
+        body: &[u8],
+        filename: &str,
+        content_type: &Mime,
+        content_id: &str,
+    ) -> Result<EmailBuilder, Error> {
+        let encoded_body = base64::encode(&body);
+        let content = PartBuilder::new()
+            .body(encoded_body)
+            .header((
+                "Content-Disposition",
+                format!("inline; filename=\"{}\"", filename),
+            ))
+            .header((
+                "Content-Type",
+                format!("{}; name=\"{}\"", content_type, filename),
+            ))
+            .header(("Content-Transfer-Encoding", "base64"))
+            .header(("Content-ID", format!("<{}>", content_id)))
+            .build();
+
+        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
+    }
+
     /// Set the message type
     pub fn message_type(mut self, message_type: MimeMultipartType) -> EmailBuilder {
         self.message = self.message.message_type(message_type);
