@@ -22,6 +22,7 @@ bufstream = { version = "^0.1", optional = true }
 email = { version = "^0.0.20", optional = true }
 fast_chemail = "^0.9"
 hostname = { version = "^0.3", optional = true }
+line-wrap = { version = "^0.1", optional = true }
 log = "^0.4"
 mime = { version = "^0.3", optional = true }
 native-tls = { version = "^0.2", optional = true }
@@ -45,7 +46,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-builder = ["email", "mime", "time", "base64", "uuid"]
+builder = ["email", "mime", "time", "base64", "uuid", "line-wrap"]
 connection-pool = ["r2d2"]
 default = ["file-transport", "smtp-transport", "sendmail-transport", "native-tls", "builder"]
 file-transport = ["serde", "serde_json"]

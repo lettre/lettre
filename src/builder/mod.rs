@@ -315,7 +315,15 @@ impl EmailBuilder {
         filename: &str,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {
-        let encoded_body = base64::encode(&body);
+        use line_wrap::*;
+        const LINE_LENGTH: usize = 78; //The maximum length of each line
+        let buffer_len = body.len() * 4 / 3 + 4; // Base64 expansion
+        let buffer_len = buffer_len * (LINE_LENGTH + 2) / LINE_LENGTH + 1; // Expansion due to line wrapping. 1 is added for good measure
+        let mut body_buf = vec![0; buffer_len];
+        let base64_len = base64::encode_config_slice(body, base64::STANDARD, &mut body_buf);
+        let encoded_len = base64_len + line_wrap(&mut body_buf, base64_len, LINE_LENGTH, &crlf());
+        body_buf.resize(encoded_len, 0); // resize the vector to fit the contents
+        let encoded_body = String::from_utf8(body_buf).unwrap(); // base64 encoding is guaranteed to return utf-8, so this won't panic
         let content = PartBuilder::new()
             .body(encoded_body)
             .header((
