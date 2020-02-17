@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 base64 = { version = "^0.11", optional = true }
 bufstream = { version = "^0.1", optional = true }
-email = { version = "^0.0.20", optional = true }
+email = { version = "^0.0.21", optional = true }
 fast_chemail = "^0.9"
 hostname = { version = "^0.3", optional = true }
 log = "^0.4"
