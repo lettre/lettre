@@ -1,7 +1,6 @@
 //! Error and result type for file transport
 
 use self::Error::*;
-use serde_json;
 use std::io;
 use std::{
     error::Error as StdError,
@@ -20,20 +19,16 @@ pub enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        match *self {
+            Client(err) => write!(f, "{}", err),
+            Io(ref err) => write!(f, "{}", err),
+            JsonSerialization(ref err) => write!(f, "{}", err),
+        }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Client(err) => err,
-            Io(ref err) => err.description(),
-            JsonSerialization(ref err) => err.description(),
-        }
-    }
-
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Io(ref err) => Some(&*err),

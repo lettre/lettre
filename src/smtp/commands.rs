@@ -6,7 +6,6 @@ use crate::smtp::extension::ClientId;
 use crate::smtp::extension::{MailParameter, RcptParameter};
 use crate::smtp::response::Response;
 use crate::EmailAddress;
-use base64;
 use log::debug;
 use std::convert::AsRef;
 use std::fmt::{self, Display, Formatter};
@@ -247,7 +246,7 @@ impl AuthCommand {
         challenge: Option<String>,
     ) -> Result<AuthCommand, Error> {
         let response = if mechanism.supports_initial_response() || challenge.is_some() {
-            Some(mechanism.response(&credentials, challenge.as_ref().map(String::as_str))?)
+            Some(mechanism.response(&credentials, challenge.as_deref())?)
         } else {
             None
         };

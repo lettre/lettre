@@ -4,8 +4,6 @@ use self::Error::*;
 use crate::smtp::response::{Response, Severity};
 use base64::DecodeError;
 #[cfg(feature = "native-tls")]
-use native_tls;
-use nom;
 use std::error::Error as StdError;
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -46,39 +44,34 @@ pub enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
-    }
-}
-
-impl StdError for Error {
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
-    fn description(&self) -> &str {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
         match *self {
             // Try to display the first line of the server's response that usually
             // contains a short humanly readable error message
             Transient(ref err) => match err.first_line() {
-                Some(line) => line,
-                None => "undetailed transient error during SMTP transaction",
+                Some(line) => write!(f, "{}", line),
+                None => write!(f, "undetailed transient error during SMTP transaction"),
             },
             Permanent(ref err) => match err.first_line() {
-                Some(line) => line,
-                None => "undetailed permanent error during SMTP transaction",
+                Some(line) => write!(f, "{}", line),
+                None => write!(f, "undetailed permanent error during SMTP transaction"),
             },
-            ResponseParsing(err) => err,
-            ChallengeParsing(ref err) => err.description(),
-            Utf8Parsing(ref err) => err.description(),
-            Resolution => "could not resolve hostname",
-            Client(err) => err,
-            Io(ref err) => err.description(),
+            ResponseParsing(err) => write!(f, "{}", err),
+            ChallengeParsing(ref err) => write!(f, "{}", err),
+            Utf8Parsing(ref err) => write!(f, "{}", err),
+            Resolution => write!(f, "could not resolve hostname"),
+            Client(err) => write!(f, "{}", err),
+            Io(ref err) => write!(f, "{}", err),
             #[cfg(feature = "native-tls")]
-            Tls(ref err) => err.description(),
-            Parsing(ref err) => err.description(),
+            Tls(ref err) => write!(f, "{}", err),
+            Parsing(ref err) => write!(f, "{}", err.description()),
             #[cfg(feature = "rustls-tls")]
-            InvalidDNSName(ref err) => err.description(),
+            InvalidDNSName(ref err) => write!(f, "{}", err),
         }
     }
+}
 
+impl StdError for Error {
     fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ChallengeParsing(ref err) => Some(&*err),

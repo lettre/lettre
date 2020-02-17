@@ -7,7 +7,6 @@ use crate::file::error::FileResult;
 use crate::Email;
 use crate::Envelope;
 use crate::Transport;
-use serde_json;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
