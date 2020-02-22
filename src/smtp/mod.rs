@@ -467,16 +467,6 @@ impl<'a> Transport<'a> for SmtpTransport {
             self
         );
 
-        // Log the mail command
-        info!(
-            "{}: from=<{}>",
-            message_id,
-            match email.envelope().from() {
-                Some(address) => address.to_string(),
-                None => "".to_string(),
-            }
-        );
-
         // Recipient
         for to_address in email.envelope().to() {
             try_smtp!(
@@ -484,8 +474,6 @@ impl<'a> Transport<'a> for SmtpTransport {
                     .command(RcptCommand::new(to_address.clone(), vec![])),
                 self
             );
-            // Log the rcpt command
-            info!("{}: to=<{}>", message_id, to_address);
         }
 
         // Data
