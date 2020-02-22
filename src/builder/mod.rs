@@ -297,7 +297,7 @@ impl EmailBuilder {
         filename: Option<&str>,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {
-        self.attachment(
+        Ok(self.attachment(
             fs::read(path)?.as_slice(),
             filename.unwrap_or(
                 path.file_name()
@@ -305,16 +305,11 @@ impl EmailBuilder {
                     .ok_or(Error::CannotParseFilename)?,
             ),
             content_type,
-        )
+        ))
     }
 
     /// Adds an attachment to the email from a vector of bytes.
-    pub fn attachment(
-        self,
-        body: &[u8],
-        filename: &str,
-        content_type: &Mime,
-    ) -> Result<EmailBuilder, Error> {
+    pub fn attachment(self, body: &[u8], filename: &str, content_type: &Mime) -> EmailBuilder {
         let encoded_body = base64::encode(&body);
         let content = PartBuilder::new()
             .body(encoded_body)
@@ -326,7 +321,7 @@ impl EmailBuilder {
             .header(("Content-Transfer-Encoding", "base64"))
             .build();
 
-        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
+        self.message_type(MimeMultipartType::Mixed).child(content)
     }
 
     /// Embed file so it can be referenced by Content-ID
@@ -339,7 +334,7 @@ impl EmailBuilder {
         content_type: &Mime,
         content_id: &str,
     ) -> Result<EmailBuilder, Error> {
-        self.embed(
+        Ok(self.embed(
             fs::read(path)?.as_slice(),
             filename.unwrap_or(
                 path.file_name()
@@ -348,7 +343,7 @@ impl EmailBuilder {
             ),
             content_type,
             content_id,
-        )
+        ))
     }
 
     /// Adds an embed to the email from a vector of bytes.
@@ -358,7 +353,7 @@ impl EmailBuilder {
         filename: &str,
         content_type: &Mime,
         content_id: &str,
-    ) -> Result<EmailBuilder, Error> {
+    ) -> EmailBuilder {
         let encoded_body = base64::encode(&body);
         let content = PartBuilder::new()
             .body(encoded_body)
@@ -374,7 +369,7 @@ impl EmailBuilder {
             .header(("Content-ID", format!("<{}>", content_id)))
             .build();
 
-        Ok(self.message_type(MimeMultipartType::Mixed).child(content))
+        self.message_type(MimeMultipartType::Mixed).child(content)
     }
 
     /// Set the message type
@@ -449,8 +444,8 @@ impl EmailBuilder {
 
     /// Only builds the body, this can be used to encrypt or sign
     /// using S/MIME
-    pub fn build_body(self) -> Result<Vec<u8>, Error> {
-        Ok(self.message.build().as_string().into_bytes())
+    pub fn build_body(self) -> Vec<u8> {
+        self.message.build().as_string().into_bytes()
     }
 
     /// Builds the Email
@@ -707,7 +702,7 @@ mod test {
             .subject("A Subject")
             .to("user@localhost")
             .date(&date_now);
-        let string_res = String::from_utf8(email_builder.build_body().unwrap());
+        let string_res = String::from_utf8(email_builder.build_body());
         assert!(string_res.unwrap().starts_with("Subject: A Subject\r\n"));
     }
 
@@ -719,7 +714,7 @@ mod test {
             .subject("A ö Subject")
             .to("user@localhost")
             .date(&date_now);
-        let string_res = String::from_utf8(email_builder.build_body().unwrap());
+        let string_res = String::from_utf8(email_builder.build_body());
         assert!(string_res
             .unwrap()
             .starts_with("Subject: =?utf-8?B?QSDDtiBTdWJqZWN0?=\r\n"));
