@@ -21,14 +21,16 @@ use crate::smtp::client::InnerClient;
 use crate::smtp::commands::*;
 use crate::smtp::error::{Error, SmtpResult};
 use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
-use crate::{Email, Transport};
+use crate::{Message, Transport};
 use log::{debug, info};
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls")]
 use rustls::ClientConfig;
+use std::fmt::Display;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
+use uuid::Uuid;
 
 pub mod authentication;
 pub mod client;
@@ -423,7 +425,7 @@ impl<'a> SmtpTransport {
     }
 }
 
-impl<'a> Transport<'a> for SmtpTransport {
+impl<'a, B> Transport<'a, B> for SmtpTransport {
     type Result = SmtpResult;
 
     /// Sends an email
@@ -431,10 +433,12 @@ impl<'a> Transport<'a> for SmtpTransport {
         feature = "cargo-clippy",
         allow(clippy::match_same_arms, clippy::cyclomatic_complexity)
     )]
-    fn send<E: Into<Email>>(&mut self, email: E) -> SmtpResult {
-        let email = email.into();
-
-        let message_id = email.message_id().to_string();
+    fn send(&mut self, email: Message<B>) -> Self::Result
+    where
+        B: Display,
+    {
+        let email_id = Uuid::new_v4();
+        let envelope = email.envelope();
 
         if !self.client.is_connected() {
             self.connect()?;
@@ -463,39 +467,37 @@ impl<'a> Transport<'a> for SmtpTransport {
         }
 
         try_smtp!(
-            self.client.command(MailCommand::new(
-                email.envelope().from().cloned(),
-                mail_options,
-            )),
+            self.client
+                .command(MailCommand::new(envelope.from().cloned(), mail_options,)),
             self
         );
 
         // Log the mail command
         info!(
             "{}: from=<{}>",
-            message_id,
-            match email.envelope().from() {
+            email_id,
+            match envelope.from() {
                 Some(address) => address.to_string(),
                 None => "".to_string(),
             }
         );
 
         // Recipient
-        for to_address in email.envelope().to() {
+        for to_address in envelope.to() {
             try_smtp!(
                 self.client
                     .command(RcptCommand::new(to_address.clone(), vec![])),
                 self
             );
             // Log the rcpt command
-            info!("{}: to=<{}>", message_id, to_address);
+            info!("{}: to=<{}>", email_id, to_address);
         }
 
         // Data
         try_smtp!(self.client.command(DataCommand), self);
 
         // Message content
-        let result = self.client.message(Box::new(email.message()));
+        let result = self.client.message(email.to_string().as_bytes());
 
         if let Ok(ref result) = result {
             // Increment the connection reuse counter
@@ -504,7 +506,7 @@ impl<'a> Transport<'a> for SmtpTransport {
             // Log the message
             info!(
                 "{}: conn_use={}, status=sent ({})",
-                message_id,
+                email_id,
                 self.state.connection_reuse_count,
                 result
                     .message

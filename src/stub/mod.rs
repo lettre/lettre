@@ -2,9 +2,9 @@
 //! testing purposes.
 //!
 
-use crate::Email;
-use crate::Transport;
+use crate::{Message, Transport};
 use log::info;
+use std::fmt::Display;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
@@ -27,15 +27,18 @@ impl StubTransport {
 /// SMTP result type
 pub type StubResult = Result<(), ()>;
 
-impl<'a> Transport<'a> for StubTransport {
+impl<'a, B> Transport<'a, B> for StubTransport
+where
+    B: Display,
+{
     type Result = StubResult;
 
-    fn send<E: Into<Email>>(&mut self, email: E) -> StubResult {
-        let email = email.into();
-
+    fn send(&mut self, email: Message<B>) -> Self::Result
+    where
+        B: Display,
+    {
         info!(
-            "{}: from=<{}> to=<{:?}>",
-            email.message_id(),
+            "from=<{}> to=<{:?}>",
             match email.envelope().from() {
                 Some(address) => address.to_string(),
                 None => "".to_string(),

@@ -4,13 +4,13 @@
 //!
 
 use crate::file::error::FileResult;
-use crate::Email;
-use crate::Envelope;
-use crate::Transport;
+use crate::{Envelope, Message, Transport};
 use serde_json;
+use std::fmt::Display;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
+use uuid::Uuid;
 
 pub mod error;
 
@@ -34,26 +34,24 @@ impl FileTransport {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct SerializableEmail {
     envelope: Envelope,
-    message_id: String,
     message: Vec<u8>,
 }
 
-impl<'a> Transport<'a> for FileTransport {
+impl<'a, B> Transport<'a, B> for FileTransport {
     type Result = FileResult;
 
-    fn send<E: Into<Email>>(&mut self, email: E) -> FileResult {
-        let email = email.into();
-
-        let message_id = email.message_id().to_string();
-        let envelope = email.envelope().clone();
+    fn send(&mut self, email: Message<B>) -> Self::Result
+    where
+        B: Display,
+    {
+        let email_id = Uuid::new_v4();
 
         let mut file = self.path.clone();
-        file.push(format!("{}.json", message_id));
+        file.push(format!("{}.json", email_id));
 
         let serialized = serde_json::to_string(&SerializableEmail {
-            envelope,
-            message_id,
-            message: email.message_to_string()?.as_bytes().to_vec(),
+            envelope: email.envelope().clone(),
+            message: email.to_string().into_bytes(),
         })?;
 
         File::create(file.as_path())?.write_all(serialized.as_bytes())?;

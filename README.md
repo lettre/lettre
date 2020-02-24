@@ -38,25 +38,25 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.9"
+lettre = "0.10"
 ```
 
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SmtpClient, Transport, Email, builder::mime::TEXT_PLAIN};
-use std::path::Path;
+use lettre::{SmtpClient, Transport, Message};
+use std::convert::TryInto;
 
 fn main() {
-    let email = Email::builder()
+    let email = Message::builder()
         // Addresses can be specified by the tuple (email, alias)
-        .to(("user@example.org", "Firstname Lastname"))
+        .to(("user@example.org", "Firstname Lastname").try_into().unwrap())
         // ... or by an address only
-        .from("user@example.com")
+        .from("user@example.com".parse().unwrap())
         .subject("Hi, Hello world")
-        .text("Hello world.")
-        .attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
-        .unwrap()
+        .body("Hello world.")
+        //.attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
+        // FIXME add back attachment example
         .build()
         .unwrap();
 

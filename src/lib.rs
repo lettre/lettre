@@ -28,9 +28,9 @@ pub mod stub;
 
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
-use crate::message::{
+pub use crate::message::{
     header::{self, Headers},
-    Mailboxes,
+    Mailboxes, Message,
 };
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
@@ -46,7 +46,10 @@ pub use crate::smtp::client::net::ClientTlsParameters;
 pub use crate::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
-use std::io::{self, Cursor, Read};
+use std::fmt::Display;
+use std::io::{Cursor, Read};
+use std::string::ToString;
+use uuid::Uuid;
 
 /// Simple email envelope representation
 ///
@@ -118,81 +121,28 @@ impl TryFrom<&Headers> for Envelope {
     }
 }
 
-// FIXME merge with emailmessage payload?
-pub enum Message {
-    Reader(Box<dyn Read + Send>),
-    Bytes(Cursor<Vec<u8>>),
-}
-
-impl Read for Message {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        match *self {
-            Message::Reader(ref mut rdr) => rdr.read(buf),
-            Message::Bytes(ref mut rdr) => rdr.read(buf),
-        }
-    }
-}
-
-/// Sendable email structure
-pub struct Email {
-    envelope: Envelope,
-    message_id: String,
-    message: Message,
-}
-
-impl Email {
-    /// Creates a new email builder
-    //#[cfg(feature = "builder")]
-    //pub fn builder() -> EmailBuilder {
-    //    EmailBuilder::new()
-    //}
-
-    pub fn new(envelope: Envelope, message_id: String, message: Vec<u8>) -> Email {
-        Email {
-            envelope,
-            message_id,
-            message: Message::Bytes(Cursor::new(message)),
-        }
-    }
-
-    pub fn new_with_reader(
-        envelope: Envelope,
-        message_id: String,
-        message: Box<dyn Read + Send>,
-    ) -> Email {
-        Email {
-            envelope,
-            message_id,
-            message: Message::Reader(message),
-        }
-    }
-
-    pub fn envelope(&self) -> &Envelope {
-        &self.envelope
-    }
-
-    pub fn message_id(&self) -> &str {
-        &self.message_id
-    }
-
-    pub fn message(self) -> Message {
-        self.message
-    }
-
-    pub fn message_to_string(mut self) -> Result<String, io::Error> {
-        let mut message_content = String::new();
-        self.message.read_to_string(&mut message_content)?;
-        Ok(message_content)
-    }
-}
+// FIXME generate random log id
 
 /// Transport method for emails
-pub trait Transport<'a> {
+pub trait Transport<'a, B> {
     /// Result type for the transport
     type Result;
 
     /// Sends the email
-    fn send<E: Into<Email>>(&mut self, email: E) -> Self::Result;
+    /// FIXME not mut
+    fn send(&mut self, email: Message<B>) -> Self::Result
+    where
+        B: Display;
+    /*
+    {
+        &mut self,
+        Box::new(Cursor::new(email.to_string().as_bytes())),
+            email.envelope(),
+            Uuid::new_v4().to_string(),
+
+    }*/
+
+    // TODO allow sending generic data
 }
 
 #[cfg(test)]

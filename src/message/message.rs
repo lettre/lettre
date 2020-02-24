@@ -132,35 +132,34 @@ impl MessageBuilder {
 
     /// Create message using body
     #[inline]
-    pub fn body<T>(self, body: T) -> Message<T> {
-        Message {
+    pub fn body<T>(self, body: T) -> Result<Message<T>, EmailError> {
+        let envelope = Envelope::try_from(&self.headers)?;
+        Ok(Message {
             headers: self.headers,
             split: true,
             body,
-        }
+            envelope,
+        })
     }
 
     /// Create message by joining content
     #[inline]
-    pub fn join<T>(self, body: T) -> Message<T> {
-        Message {
+    pub fn join<T>(self, body: T) -> Result<Message<T>, EmailError> {
+        let envelope = Envelope::try_from(&self.headers)?;
+        Ok(Message {
             headers: self.headers,
             split: false,
             body,
-        }
+            envelope,
+        })
     }
 
     /// Create message using mime body ([`MultiPart`](::MultiPart) or [`SinglePart`](::SinglePart))
     ///
     /// Shortcut for `self.mime_1_0().join(body)`.
     #[inline]
-    pub fn mime_body<T>(self, body: T) -> Message<T> {
+    pub fn mime_body<T>(self, body: T) -> Result<Message<T>, EmailError> {
         self.mime_1_0().join(body)
-    }
-
-    /// Try to extract envelope data from `Message` headers
-    pub fn envelope(&self) -> Result<Envelope, EmailError> {
-        Envelope::try_from(&self.headers)
     }
 }
 
@@ -170,6 +169,7 @@ pub struct Message<B = Bytes> {
     headers: Headers,
     split: bool,
     body: B,
+    envelope: Envelope,
 }
 
 impl Message<()> {
@@ -187,18 +187,6 @@ impl<B> Message<B> {
         &self.headers
     }
 
-    /// Get a mutable reference to the headers
-    #[inline]
-    pub fn headers_mut(&mut self) -> &mut Headers {
-        &mut self.headers
-    }
-
-    /// Set the body
-    #[inline]
-    pub fn set_body<T: Into<B>>(&mut self, body: T) {
-        self.body = body.into();
-    }
-
     /// Read the body
     #[inline]
     pub fn body_ref(&self) -> &B {
@@ -206,8 +194,9 @@ impl<B> Message<B> {
     }
 
     /// Try to extract envelope data from `Message` headers
-    pub fn envelope(&self) -> Result<Envelope, EmailError> {
-        Envelope::try_from(&self.headers)
+    #[inline]
+    pub fn envelope(&self) -> &Envelope {
+        &self.envelope
     }
 }
 
@@ -230,6 +219,8 @@ where
     }
 }
 
+// An email is Message + Envelope
+
 #[cfg(test)]
 mod test {
     use crate::message::header;
@@ -240,7 +231,7 @@ mod test {
     fn date_header() {
         let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
 
-        let email = Message::builder().date(date).body("");
+        let email = Message::builder().date(date).body("").unwrap();
 
         assert_eq!(
             format!("{}", email),
@@ -265,7 +256,8 @@ mod test {
                 vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
             ))
             .header(header::Subject("яңа ел белән!".into()))
-            .body("Happy new year!");
+            .body("Happy new year!")
+            .unwrap();
 
         assert_eq!(
             format!("{}", email),

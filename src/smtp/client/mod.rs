@@ -195,31 +195,11 @@ impl<S: Connector + Write + Read + Timeout> InnerClient<S> {
     }
 
     /// Sends the message content
-    pub fn message(&mut self, message: Box<dyn Read>) -> SmtpResult {
+    pub fn message(&mut self, message: &[u8]) -> SmtpResult {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
-
-        let mut message_reader = BufReader::new(message);
-
-        loop {
-            out_buf.clear();
-
-            let consumed = match message_reader.fill_buf() {
-                Ok(bytes) => {
-                    codec.encode(bytes, &mut out_buf)?;
-                    bytes.len()
-                }
-                Err(ref err) => panic!("Failed with: {}", err),
-            };
-            message_reader.consume(consumed);
-
-            if consumed == 0 {
-                break;
-            }
-
-            self.write(out_buf.as_slice())?;
-        }
-
+        codec.encode(message, &mut out_buf)?;
+        self.write(out_buf.as_slice())?;
         self.write(b"\r\n.\r\n")?;
         self.read_response()
     }

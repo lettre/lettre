@@ -30,14 +30,13 @@ fn skeptic_test(path: &Path) {
         .arg(&depdir)
         .arg(path);
 
-    let _result = cmd
+    let result = cmd
         .spawn()
         .expect("Failed to spawn process")
         .wait()
         .expect("Failed to run process");
-    // FIXME reenable
-    /*    assert!(
+    assert!(
         result.success(),
         format!("Failed to run rustdoc tests on {:?}", path)
-    );*/
+    );
 }

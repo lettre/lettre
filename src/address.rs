@@ -3,6 +3,7 @@
 use idna::domain_to_ascii;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use std::convert::TryFrom;
 use std::error::Error;
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter, Result as FmtResult};
@@ -22,6 +23,19 @@ pub struct Address {
     pub domain: String,
     /// Complete address
     complete: String,
+}
+
+impl<U, D> TryFrom<(U, D)> for Address
+where
+    U: Into<String>,
+    D: Into<String>,
+{
+    type Error = AddressError;
+
+    fn try_from(from: (U, D)) -> Result<Self, Self::Error> {
+        let (user, domain) = from;
+        Self::new(user, domain)
+    }
 }
 
 // Regex from the specs

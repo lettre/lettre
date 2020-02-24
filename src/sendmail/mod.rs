@@ -2,13 +2,14 @@
 //!
 
 use crate::sendmail::error::SendmailResult;
-use crate::Email;
+use crate::Message;
 use crate::Transport;
 use log::info;
 use std::convert::AsRef;
+use std::fmt::Display;
 use std::io::prelude::*;
-use std::io::Read;
 use std::process::{Command, Stdio};
+use uuid::Uuid;
 
 pub mod error;
 
@@ -35,13 +36,14 @@ impl SendmailTransport {
     }
 }
 
-impl<'a> Transport<'a> for SendmailTransport {
+impl<'a, B> Transport<'a, B> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send<E: Into<Email>>(&mut self, email: E) -> SendmailResult {
-        let email = email.into();
-
-        let message_id = email.message_id().to_string();
+    fn send(&mut self, email: Message<B>) -> Self::Result
+    where
+        B: Display,
+    {
+        let email_id = Uuid::new_v4();
 
         // Spawn the sendmail command
         let mut process = Command::new(&self.command)
@@ -54,21 +56,18 @@ impl<'a> Transport<'a> for SendmailTransport {
                     .map(|f| f.as_ref())
                     .unwrap_or("\"\""),
             )
-            .args(email.envelope.to())
+            .args(email.envelope().to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
-
-        let mut message_content = String::new();
-        let _ = email.message().read_to_string(&mut message_content);
 
         process
             .stdin
             .as_mut()
             .unwrap()
-            .write_all(message_content.as_bytes())?;
+            .write_all(email.to_string().as_bytes())?;
 
-        info!("Wrote {} message to stdin", message_id);
+        info!("Wrote {} message to stdin", email_id);
 
         let output = process.wait_with_output()?;
 
