@@ -35,7 +35,7 @@ impl FileTransport {
 struct SerializableEmail {
     envelope: Envelope,
     message_id: String,
-    message: Vec<u8>,
+    message: String,
 }
 
 impl<'a> Transport<'a> for FileTransport {
@@ -53,7 +53,7 @@ impl<'a> Transport<'a> for FileTransport {
         let serialized = serde_json::to_string(&SerializableEmail {
             envelope,
             message_id,
-            message: email.message_to_string()?.as_bytes().to_vec(),
+            message: email.message_to_string()?,
         })?;
 
         File::create(file.as_path())?.write_all(serialized.as_bytes())?;
