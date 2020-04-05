@@ -55,6 +55,6 @@ impl<'a, B> Transport<'a, B> for FileTransport {
         })?;
 
         File::create(file.as_path())?.write_all(serialized.as_bytes())?;
-        Ok(())
+        Ok(email_id.to_string())
     }
 }

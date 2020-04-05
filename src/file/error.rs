@@ -57,5 +57,7 @@ impl From<&'static str> for Error {
     }
 }
 
+type Id = String;
+
 /// SMTP result type
-pub type FileResult = Result<(), Error>;
+pub type FileResult = Result<Id, Error>;

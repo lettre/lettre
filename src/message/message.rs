@@ -228,18 +228,6 @@ mod test {
     use crate::message::message::Message;
 
     #[test]
-    fn date_header() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
-
-        let email = Message::builder().date(date).body("").unwrap();
-
-        assert_eq!(
-            format!("{}", email),
-            "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n\r\n"
-        );
-    }
-
-    #[test]
     fn email_message() {
         let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
 

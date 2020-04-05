@@ -19,7 +19,8 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
-        .body("Be happy!");
+        .body("Be happy!")
+        .unwrap();
 
     println!("{}", m);
 }
@@ -62,7 +63,8 @@ fn main() {
                     "text/plain; charset=utf8".parse().unwrap(),
                 )).header(header::ContentTransferEncoding::QuotedPrintable)
                 .body("Привет, мир!"),
-        );
+        )
+        .unwrap();
 
     println!("{}", m);
 }
@@ -140,7 +142,7 @@ fn main() {
                              })
                 .body("int main() { return 0; }")
             )
-        );
+        ).unwrap();
 
     println!("{}", m);
 }

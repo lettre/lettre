@@ -31,6 +31,11 @@ Lettre provides the following features:
 * Secure delivery with SMTP using encryption and authentication
 * Easy email builders
 
+Lettre does not provide (for now):
+
+* Async support
+* Email parsing
+
 ## Example
 
 This library requires Rust 1.40 or newer.
