@@ -2,9 +2,11 @@ use crate::message::header::ContentTransferEncoding;
 use base64;
 use bytes::{Buf, BufMut, Bytes, BytesMut, IntoBuf};
 use quoted_printable;
-use std::cmp::min;
-use std::error::Error;
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
+use std::{
+    cmp::min,
+    error::Error,
+    fmt::{Debug, Display, Formatter, Result as FmtResult},
+};
 
 /// Content encoding error
 #[derive(Debug, Clone)]

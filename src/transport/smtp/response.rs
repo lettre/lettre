@@ -10,10 +10,12 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-use std::fmt::{Display, Formatter, Result};
-use std::result;
-use std::str::FromStr;
-use std::string::ToString;
+use std::{
+    fmt::{Display, Formatter, Result},
+    result,
+    str::FromStr,
+    string::ToString,
+};
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]

@@ -1,13 +1,14 @@
 //! ESMTP features
 
-use crate::transport::smtp::authentication::Mechanism;
-use crate::transport::smtp::error::Error;
-use crate::transport::smtp::response::Response;
-use crate::transport::smtp::util::XText;
-use std::collections::HashSet;
-use std::fmt::{self, Display, Formatter};
-use std::net::{Ipv4Addr, Ipv6Addr};
-use std::result::Result;
+use crate::transport::smtp::{
+    authentication::Mechanism, error::Error, response::Response, util::XText,
+};
+use std::{
+    collections::HashSet,
+    fmt::{self, Display, Formatter},
+    net::{Ipv4Addr, Ipv6Addr},
+    result::Result,
+};
 
 /// Default client id
 const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
@@ -265,8 +266,10 @@ impl Display for RcptParameter {
 mod test {
 
     use super::{ClientId, Extension, ServerInfo};
-    use crate::transport::smtp::authentication::Mechanism;
-    use crate::transport::smtp::response::{Category, Code, Detail, Response, Severity};
+    use crate::transport::smtp::{
+        authentication::Mechanism,
+        response::{Category, Code, Detail, Response, Severity},
+    };
     use std::collections::HashSet;
 
     #[test]

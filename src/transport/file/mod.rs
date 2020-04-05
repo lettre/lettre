@@ -3,13 +3,14 @@
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 
-use crate::transport::file::error::FileResult;
-use crate::{Envelope, Message, Transport};
+use crate::{transport::file::error::FileResult, Envelope, Message, Transport};
 use serde_json;
-use std::fmt::Display;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::{Path, PathBuf};
+use std::{
+    fmt::Display,
+    fs::File,
+    io::prelude::*,
+    path::{Path, PathBuf},
+};
 use uuid::Uuid;
 
 pub mod error;

@@ -1,12 +1,12 @@
 #[cfg(test)]
 #[cfg(feature = "file-transport")]
 mod test {
-    use lettre::transport::file::FileTransport;
-    use lettre::{Message, Transport};
-    use std::env::temp_dir;
-    use std::fs::remove_file;
-    use std::fs::File;
-    use std::io::Read;
+    use lettre::{transport::file::FileTransport, Message, Transport};
+    use std::{
+        env::temp_dir,
+        fs::{remove_file, File},
+        io::Read,
+    };
 
     #[test]
     fn file_transport() {

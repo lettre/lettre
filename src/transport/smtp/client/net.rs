@@ -1,18 +1,19 @@
 //! A trait to represent a stream
 
-use crate::transport::smtp::client::mock::MockStream;
-use crate::transport::smtp::error::Error;
+use crate::transport::smtp::{client::mock::MockStream, error::Error};
 #[cfg(feature = "native-tls")]
 use native_tls::{TlsConnector, TlsStream};
 #[cfg(feature = "rustls")]
 use rustls::{ClientConfig, ClientSession};
 #[cfg(feature = "native-tls")]
 use std::io::ErrorKind;
-use std::io::{self, Read, Write};
-use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream};
 #[cfg(feature = "rustls")]
 use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    io::{self, Read, Write},
+    net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream},
+    time::Duration,
+};
 
 /// Parameters to use for secure clients
 #[derive(Clone)]

@@ -1,10 +1,16 @@
-use crate::message::header::{self, EmailDate, Header, Headers, MailboxesHeader};
-use crate::message::Mailbox;
-use crate::{Envelope, Error as EmailError};
+use crate::{
+    message::{
+        header::{self, EmailDate, Header, Headers, MailboxesHeader},
+        Mailbox,
+    },
+    Envelope, Error as EmailError,
+};
 use bytes::Bytes;
-use std::convert::TryFrom;
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::time::SystemTime;
+use std::{
+    convert::TryFrom,
+    fmt::{Display, Formatter, Result as FmtResult},
+    time::SystemTime,
+};
 
 /// A builder for messages
 #[derive(Debug, Clone)]
@@ -223,9 +229,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::message::header;
-    use crate::message::mailbox::Mailbox;
-    use crate::message::message::Message;
+    use crate::message::{header, mailbox::Mailbox, message::Message};
 
     #[test]
     fn email_message() {

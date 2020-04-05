@@ -2,8 +2,7 @@ use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
 };
-use std::fmt::Result as FmtResult;
-use std::str::from_utf8;
+use std::{fmt::Result as FmtResult, str::from_utf8};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct MimeVersion {

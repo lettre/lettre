@@ -3,8 +3,7 @@ use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
 };
-use std::fmt::Result as FmtResult;
-use std::str::from_utf8;
+use std::{fmt::Result as FmtResult, str::from_utf8};
 
 macro_rules! text_header {
     ( $type_name: ident, $header_name: expr ) => {

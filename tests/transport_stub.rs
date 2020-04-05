@@ -1,5 +1,4 @@
-use lettre::transport::stub::StubTransport;
-use lettre::{Message, Transport};
+use lettre::{transport::stub::StubTransport, Message, Transport};
 
 #[test]
 fn stub_transport() {

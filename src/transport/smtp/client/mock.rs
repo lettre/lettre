@@ -1,8 +1,10 @@
 #![allow(missing_docs)]
 // Comes from https://github.com/inre/rust-mq/blob/master/netopt
 
-use std::io::{self, Cursor, Read, Write};
-use std::sync::{Arc, Mutex};
+use std::{
+    io::{self, Cursor, Read, Write},
+    sync::{Arc, Mutex},
+};
 
 pub type MockCursor = Cursor<Vec<u8>>;
 

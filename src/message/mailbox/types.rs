@@ -1,9 +1,13 @@
-use crate::address::{Address, AddressError};
-use crate::message::utf8_b;
-use std::convert::TryFrom;
-use std::fmt::{Display, Formatter, Result as FmtResult, Write};
-use std::slice::Iter;
-use std::str::FromStr;
+use crate::{
+    address::{Address, AddressError},
+    message::utf8_b,
+};
+use std::{
+    convert::TryFrom,
+    fmt::{Display, Formatter, Result as FmtResult, Write},
+    slice::Iter,
+    str::FromStr,
+};
 
 /// Email address with optional addressee name
 ///

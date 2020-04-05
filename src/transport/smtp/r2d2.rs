@@ -1,5 +1,4 @@
-use crate::transport::smtp::error::Error;
-use crate::transport::smtp::{ConnectionReuseParameters, SmtpClient, SmtpTransport};
+use crate::transport::smtp::{error::Error, ConnectionReuseParameters, SmtpClient, SmtpTransport};
 use r2d2::ManageConnection;
 
 pub struct SmtpConnectionManager {

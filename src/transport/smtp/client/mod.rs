@@ -1,20 +1,23 @@
 //! SMTP client
 
-use crate::transport::smtp::authentication::{Credentials, Mechanism};
-use crate::transport::smtp::client::net::ClientTlsParameters;
-use crate::transport::smtp::client::net::{Connector, NetworkStream, Timeout};
-use crate::transport::smtp::commands::*;
-use crate::transport::smtp::error::{Error, SmtpResult};
-use crate::transport::smtp::response::Response;
+use crate::transport::smtp::{
+    authentication::{Credentials, Mechanism},
+    client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout},
+    commands::*,
+    error::{Error, SmtpResult},
+    response::Response,
+};
 use bufstream::BufStream;
 use log::debug;
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
-use std::fmt::Display;
-use std::io::{self, BufRead, Read, Write};
-use std::net::ToSocketAddrs;
-use std::string::String;
-use std::time::Duration;
+use std::{
+    fmt::Display,
+    io::{self, BufRead, Read, Write},
+    net::ToSocketAddrs,
+    string::String,
+    time::Duration,
+};
 
 pub mod mock;
 pub mod net;

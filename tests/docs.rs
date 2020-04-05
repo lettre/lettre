@@ -1,6 +1,8 @@
-use std::env::{self, consts::EXE_EXTENSION};
-use std::path::Path;
-use std::process::Command;
+use std::{
+    env::{self, consts::EXE_EXTENSION},
+    path::Path,
+    process::Command,
+};
 use walkdir::WalkDir;
 
 #[test]

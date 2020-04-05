@@ -1,8 +1,7 @@
 #[cfg(test)]
 #[cfg(feature = "sendmail-transport")]
 mod test {
-    use lettre::transport::sendmail::SendmailTransport;
-    use lettre::{Message, Transport};
+    use lettre::{transport::sendmail::SendmailTransport, Message, Transport};
 
     #[test]
     fn sendmail_transport_simple() {

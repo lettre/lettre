@@ -1,7 +1,6 @@
 extern crate lettre;
 
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpClient, Transport};
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpClient, Transport};
 
 fn main() {
     let email = Message::builder()

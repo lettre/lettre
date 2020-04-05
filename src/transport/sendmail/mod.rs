@@ -1,14 +1,14 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use crate::transport::sendmail::error::SendmailResult;
-use crate::Message;
-use crate::Transport;
+use crate::{transport::sendmail::error::SendmailResult, Message, Transport};
 use log::info;
-use std::convert::AsRef;
-use std::fmt::Display;
-use std::io::prelude::*;
-use std::process::{Command, Stdio};
+use std::{
+    convert::AsRef,
+    fmt::Display,
+    io::prelude::*,
+    process::{Command, Stdio},
+};
 use uuid::Uuid;
 
 pub mod error;

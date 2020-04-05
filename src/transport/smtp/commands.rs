@@ -1,15 +1,20 @@
 //! SMTP commands
 
-use crate::transport::smtp::authentication::{Credentials, Mechanism};
-use crate::transport::smtp::error::Error;
-use crate::transport::smtp::extension::ClientId;
-use crate::transport::smtp::extension::{MailParameter, RcptParameter};
-use crate::transport::smtp::response::Response;
-use crate::Address;
+use crate::{
+    transport::smtp::{
+        authentication::{Credentials, Mechanism},
+        error::Error,
+        extension::{ClientId, MailParameter, RcptParameter},
+        response::Response,
+    },
+    Address,
+};
 use base64;
 use log::debug;
-use std::convert::AsRef;
-use std::fmt::{self, Display, Formatter};
+use std::{
+    convert::AsRef,
+    fmt::{self, Display, Formatter},
+};
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]

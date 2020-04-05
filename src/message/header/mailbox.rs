@@ -1,12 +1,12 @@
-use crate::message::mailbox::{Mailbox, Mailboxes};
-use crate::message::utf8_b;
+use crate::message::{
+    mailbox::{Mailbox, Mailboxes},
+    utf8_b,
+};
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
 };
-use std::fmt::Result as FmtResult;
-use std::slice::Iter;
-use std::str::from_utf8;
+use std::{fmt::Result as FmtResult, slice::Iter, str::from_utf8};
 
 /// Header which can contains multiple mailboxes
 pub trait MailboxesHeader {

@@ -3,12 +3,14 @@
 use idna::domain_to_ascii;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use std::convert::TryFrom;
-use std::error::Error;
-use std::ffi::OsStr;
-use std::fmt::{Display, Formatter, Result as FmtResult};
-use std::net::IpAddr;
-use std::str::FromStr;
+use std::{
+    convert::TryFrom,
+    error::Error,
+    ffi::OsStr,
+    fmt::{Display, Formatter, Result as FmtResult},
+    net::IpAddr,
+    str::FromStr,
+};
 
 /// Email address
 ///

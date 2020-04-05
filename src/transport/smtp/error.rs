@@ -6,11 +6,13 @@ use base64::DecodeError;
 #[cfg(feature = "native-tls")]
 use native_tls;
 use nom;
-use std::error::Error as StdError;
-use std::fmt;
-use std::fmt::{Display, Formatter};
-use std::io;
-use std::string::FromUtf8Error;
+use std::{
+    error::Error as StdError,
+    fmt,
+    fmt::{Display, Formatter},
+    io,
+    string::FromUtf8Error,
+};
 
 /// An enum of all error kinds.
 #[derive(Debug)]

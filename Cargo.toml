@@ -66,7 +66,3 @@ required-features = ["smtp-transport"]
 [[example]]
 name = "smtp_gmail"
 required-features = ["smtp-transport", "native-tls"]
-
-#[[example]]
-#name = "builder"
-#required-features = ["builder"]

@@ -1,9 +1,13 @@
-use crate::message::encoder::codec;
-use crate::message::header::{ContentTransferEncoding, ContentType, Header, Headers};
+use crate::message::{
+    encoder::codec,
+    header::{ContentTransferEncoding, ContentType, Header, Headers},
+};
 use bytes::{Bytes, IntoBuf};
 use mime::Mime;
-use std::fmt::{Display, Error as FmtError, Formatter, Result as FmtResult};
-use std::str::from_utf8;
+use std::{
+    fmt::{Display, Error as FmtError, Formatter, Result as FmtResult},
+    str::from_utf8,
+};
 use textnonce::TextNonce;
 
 /// MIME part variants

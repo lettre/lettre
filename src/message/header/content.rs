@@ -2,8 +2,10 @@ use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
     Error as HyperError, Result as HyperResult,
 };
-use std::fmt::{Display, Formatter as FmtFormatter, Result as FmtResult};
-use std::str::{from_utf8, FromStr};
+use std::{
+    fmt::{Display, Formatter as FmtFormatter, Result as FmtResult},
+    str::{from_utf8, FromStr},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentTransferEncoding {
