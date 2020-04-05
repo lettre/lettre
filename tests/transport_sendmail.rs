@@ -2,8 +2,7 @@
 #[cfg(feature = "sendmail-transport")]
 mod test {
     use lettre::sendmail::SendmailTransport;
-    use lettre::{Address, Envelope, Message, Transport};
-    use std::str::FromStr;
+    use lettre::{Message, Transport};
 
     #[test]
     fn sendmail_transport_simple() {

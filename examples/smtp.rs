@@ -1,8 +1,7 @@
 extern crate env_logger;
 extern crate lettre;
 
-use lettre::{Address, Envelope, Message, SmtpClient, Transport};
-use std::str::FromStr;
+use lettre::{Message, SmtpClient, Transport};
 
 fn main() {
     env_logger::init();

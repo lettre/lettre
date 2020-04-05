@@ -7,17 +7,16 @@ testing purposes.
 extern crate lettre;
 
 use lettre::stub::StubTransport;
-use lettre::{Email, Envelope, EmailAddress, Transport};
+use lettre::{Message, Envelope, Transport};
 
 fn main() {
-    let email = Email::new(
-        Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-        ).unwrap(),
-        "id".to_string(),
-        "Hello world".to_string().into_bytes(),
-    );
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .subject("Happy new year")
+        .body("Be happy!")
+        .unwrap();
 
     let mut sender = StubTransport::new_positive();
     let result = sender.send(email);

@@ -1,8 +1,7 @@
 #[cfg(test)]
 #[cfg(feature = "smtp-transport")]
 mod test {
-    use lettre::{Address, ClientSecurity, Envelope, Message, SmtpClient, Transport};
-    use std::str::FromStr;
+    use lettre::{ClientSecurity, Message, SmtpClient, Transport};
 
     #[test]
     fn smtp_transport_simple() {

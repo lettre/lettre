@@ -47,9 +47,6 @@ pub use crate::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use std::fmt::Display;
-use std::io::{Cursor, Read};
-use std::string::ToString;
-use uuid::Uuid;
 
 /// Simple email envelope representation
 ///

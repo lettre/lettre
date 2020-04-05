@@ -1,6 +1,5 @@
 use lettre::stub::StubTransport;
-use lettre::{Address, Envelope, Message, Transport};
-use std::str::FromStr;
+use lettre::{Message, Transport};
 
 #[test]
 fn stub_transport() {

@@ -2,12 +2,11 @@
 #[cfg(feature = "file-transport")]
 mod test {
     use lettre::file::FileTransport;
-    use lettre::{Address, Envelope, Message, Transport};
+    use lettre::{Message, Transport};
     use std::env::temp_dir;
     use std::fs::remove_file;
     use std::fs::File;
     use std::io::Read;
-    use std::str::FromStr;
 
     #[test]
     fn file_transport() {
@@ -30,9 +29,7 @@ mod test {
 
         assert_eq!(
             buffer,
-            "{\"envelope\":{\"forward_path\":[\"root@localhost\"],\"reverse_path\":\"user@localhost\"},\"message_id\":\"id\",\"message\":[72,101,108,108,111,32,195,159,226,152,186,32,101,120,97,109,112,108,101]}"
-        );
-
+            "{\"envelope\":{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"},\"message\":[70,114,111,109,58,32,78,111,66,111,100,121,32,60,110,111,98,111,100,121,64,100,111,109,97,105,110,46,116,108,100,62,13,10,82,101,112,108,121,45,84,111,58,32,89,117,105,110,32,60,121,117,105,110,64,100,111,109,97,105,110,46,116,108,100,62,13,10,84,111,58,32,72,101,105,32,60,104,101,105,64,100,111,109,97,105,110,46,116,108,100,62,13,10,83,117,98,106,101,99,116,58,32,72,97,112,112,121,32,110,101,119,32,121,101,97,114,13,10,13,10,66,101,32,104,97,112,112,121,33]}");
         remove_file(file).unwrap();
     }
 }

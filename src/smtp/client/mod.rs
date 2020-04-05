@@ -11,7 +11,7 @@ use log::debug;
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
 use std::fmt::Display;
-use std::io::{self, BufRead, BufReader, Read, Write};
+use std::io::{self, BufRead, Read, Write};
 use std::net::ToSocketAddrs;
 use std::string::String;
 use std::time::Duration;
