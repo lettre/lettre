@@ -1,9 +1,9 @@
 //! ESMTP features
 
-use crate::smtp::authentication::Mechanism;
-use crate::smtp::error::Error;
-use crate::smtp::response::Response;
-use crate::smtp::util::XText;
+use crate::transport::smtp::authentication::Mechanism;
+use crate::transport::smtp::error::Error;
+use crate::transport::smtp::response::Response;
+use crate::transport::smtp::util::XText;
 use std::collections::HashSet;
 use std::fmt::{self, Display, Formatter};
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -265,8 +265,8 @@ impl Display for RcptParameter {
 mod test {
 
     use super::{ClientId, Extension, ServerInfo};
-    use crate::smtp::authentication::Mechanism;
-    use crate::smtp::response::{Category, Code, Detail, Response, Severity};
+    use crate::transport::smtp::authentication::Mechanism;
+    use crate::transport::smtp::response::{Category, Code, Detail, Response, Severity};
     use std::collections::HashSet;
 
     #[test]

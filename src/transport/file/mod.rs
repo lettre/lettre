@@ -3,7 +3,7 @@
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 
-use crate::file::error::FileResult;
+use crate::transport::file::error::FileResult;
 use crate::{Envelope, Message, Transport};
 use serde_json;
 use std::fmt::Display;

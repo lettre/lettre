@@ -1,7 +1,7 @@
 //! A trait to represent a stream
 
-use crate::smtp::client::mock::MockStream;
-use crate::smtp::error::Error;
+use crate::transport::smtp::client::mock::MockStream;
+use crate::transport::smtp::error::Error;
 #[cfg(feature = "native-tls")]
 use native_tls::{TlsConnector, TlsStream};
 #[cfg(feature = "rustls")]

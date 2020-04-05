@@ -1,4 +1,4 @@
-use lettre::stub::StubTransport;
+use lettre::transport::stub::StubTransport;
 use lettre::{Message, Transport};
 
 #[test]

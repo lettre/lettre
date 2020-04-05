@@ -16,15 +16,9 @@
 
 pub mod address;
 pub mod error;
-#[cfg(feature = "file-transport")]
-pub mod file;
 #[cfg(feature = "builder")]
 pub mod message;
-#[cfg(feature = "sendmail-transport")]
-pub mod sendmail;
-#[cfg(feature = "smtp-transport")]
-pub mod smtp;
-pub mod stub;
+pub mod transport;
 
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
@@ -37,15 +31,15 @@ use std::convert::TryFrom;
 //pub use crate::message::Message;
 use crate::error::Error;
 #[cfg(feature = "file-transport")]
-pub use crate::file::FileTransport;
+pub use crate::transport::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
-pub use crate::sendmail::SendmailTransport;
+pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use crate::smtp::client::net::ClientTlsParameters;
+pub use crate::transport::smtp::client::net::ClientTlsParameters;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
-pub use crate::smtp::r2d2::SmtpConnectionManager;
+pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
-pub use crate::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+pub use crate::transport::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 use std::fmt::Display;
 
 /// Simple email envelope representation

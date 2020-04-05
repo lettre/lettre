@@ -1,6 +1,6 @@
 extern crate lettre;
 
-use lettre::smtp::authentication::Credentials;
+use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpClient, Transport};
 
 fn main() {

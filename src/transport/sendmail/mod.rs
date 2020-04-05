@@ -1,7 +1,7 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use crate::sendmail::error::SendmailResult;
+use crate::transport::sendmail::error::SendmailResult;
 use crate::Message;
 use crate::Transport;
 use log::info;

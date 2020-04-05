@@ -13,14 +13,14 @@
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 
-use crate::smtp::authentication::{
+use crate::transport::smtp::authentication::{
     Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
 };
-use crate::smtp::client::net::ClientTlsParameters;
-use crate::smtp::client::InnerClient;
-use crate::smtp::commands::*;
-use crate::smtp::error::{Error, SmtpResult};
-use crate::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
+use crate::transport::smtp::client::net::ClientTlsParameters;
+use crate::transport::smtp::client::InnerClient;
+use crate::transport::smtp::commands::*;
+use crate::transport::smtp::error::{Error, SmtpResult};
+use crate::transport::smtp::extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo};
 use crate::{Message, Transport};
 use log::{debug, info};
 #[cfg(feature = "native-tls")]

@@ -1,5 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lettre::{smtp::ConnectionReuseParameters, ClientSecurity, Message, SmtpClient, Transport};
+use lettre::{
+    transport::smtp::ConnectionReuseParameters, ClientSecurity, Message, SmtpClient, Transport,
+};
 
 fn bench_simple_send(c: &mut Criterion) {
     let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)

@@ -1,7 +1,7 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use crate::smtp::Error;
+use crate::transport::smtp::Error;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_until},

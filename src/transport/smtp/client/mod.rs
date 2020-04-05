@@ -1,11 +1,11 @@
 //! SMTP client
 
-use crate::smtp::authentication::{Credentials, Mechanism};
-use crate::smtp::client::net::ClientTlsParameters;
-use crate::smtp::client::net::{Connector, NetworkStream, Timeout};
-use crate::smtp::commands::*;
-use crate::smtp::error::{Error, SmtpResult};
-use crate::smtp::response::Response;
+use crate::transport::smtp::authentication::{Credentials, Mechanism};
+use crate::transport::smtp::client::net::ClientTlsParameters;
+use crate::transport::smtp::client::net::{Connector, NetworkStream, Timeout};
+use crate::transport::smtp::commands::*;
+use crate::transport::smtp::error::{Error, SmtpResult};
+use crate::transport::smtp::response::Response;
 use bufstream::BufStream;
 use log::debug;
 #[cfg(feature = "serde")]

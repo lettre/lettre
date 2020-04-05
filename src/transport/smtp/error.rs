@@ -1,7 +1,7 @@
 //! Error and result type for SMTP clients
 
 use self::Error::*;
-use crate::smtp::response::{Response, Severity};
+use crate::transport::smtp::response::{Response, Severity};
 use base64::DecodeError;
 #[cfg(feature = "native-tls")]
 use native_tls;

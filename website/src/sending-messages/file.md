@@ -11,7 +11,7 @@ extern crate lettre;
 
 use std::env::temp_dir;
 
-use lettre::file::FileTransport;
+use lettre::transport::file::FileTransport;
 use lettre::{Transport, Envelope, EmailAddress, Message};
 
 fn main() {

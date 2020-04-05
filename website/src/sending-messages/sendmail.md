@@ -7,7 +7,7 @@ The sendmail transport sends the email using the local sendmail command.
 # {
 extern crate lettre;
 
-use lettre::sendmail::SendmailTransport;
+use lettre::transport::sendmail::SendmailTransport;
 use lettre::{Message, Envelope, EmailAddress, Transport};
 
 fn main() {

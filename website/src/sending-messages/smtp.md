@@ -51,10 +51,10 @@ fn main() {
 # {
 extern crate lettre;
 
-use lettre::smtp::authentication::{Credentials, Mechanism};
+use lettre::transport::smtp::authentication::{Credentials, Mechanism};
 use lettre::{Email, Envelope, EmailAddress, Transport, SmtpClient};
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::ConnectionReuseParameters;
+use lettre::transport::smtp::extension::ClientId;
+use lettre::transport::smtp::ConnectionReuseParameters;
 
 fn main() {
     let email_1 = Email::new(
@@ -113,8 +113,8 @@ use lettre::{
     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope,
     Email, SmtpClient, Transport,
 };
-use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::smtp::ConnectionReuseParameters;
+use lettre::transport::smtp::authentication::{Credentials, Mechanism};
+use lettre::transport::smtp::ConnectionReuseParameters;
 use native_tls::{Protocol, TlsConnector};
 
 fn main() {
@@ -165,11 +165,11 @@ error handling:
 extern crate lettre;
 
 use lettre::EmailAddress;
-use lettre::smtp::SMTP_PORT;
-use lettre::smtp::client::InnerClient;
-use lettre::smtp::client::net::NetworkStream;
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::commands::*;
+use lettre::transport::smtp::SMTP_PORT;
+use lettre::transport::smtp::client::InnerClient;
+use lettre::transport::smtp::client::net::NetworkStream;
+use lettre::transport::smtp::extension::ClientId;
+use lettre::transport::smtp::commands::*;
 
 fn main() {
     let mut email_client: InnerClient<NetworkStream> = InnerClient::new();

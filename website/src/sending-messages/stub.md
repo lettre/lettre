@@ -6,7 +6,7 @@ testing purposes.
 ```rust
 extern crate lettre;
 
-use lettre::stub::StubTransport;
+use lettre::transport::stub::StubTransport;
 use lettre::{Message, Envelope, Transport};
 
 fn main() {

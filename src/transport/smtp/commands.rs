@@ -1,10 +1,10 @@
 //! SMTP commands
 
-use crate::smtp::authentication::{Credentials, Mechanism};
-use crate::smtp::error::Error;
-use crate::smtp::extension::ClientId;
-use crate::smtp::extension::{MailParameter, RcptParameter};
-use crate::smtp::response::Response;
+use crate::transport::smtp::authentication::{Credentials, Mechanism};
+use crate::transport::smtp::error::Error;
+use crate::transport::smtp::extension::ClientId;
+use crate::transport::smtp::extension::{MailParameter, RcptParameter};
+use crate::transport::smtp::response::Response;
 use crate::Address;
 use base64;
 use log::debug;
@@ -292,7 +292,7 @@ impl AuthCommand {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::smtp::extension::MailBodyParameter;
+    use crate::transport::smtp::extension::MailBodyParameter;
     use std::str::FromStr;
 
     #[test]
