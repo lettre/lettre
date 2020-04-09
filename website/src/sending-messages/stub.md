@@ -4,7 +4,7 @@ The stub transport only logs message envelope and drops the content. It can be u
 testing purposes.
 
 ```rust
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::transport::stub::StubTransport;
 use lettre::{Message, Envelope, Transport};
