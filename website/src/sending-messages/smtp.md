@@ -20,7 +20,7 @@ This is the most basic example of usage:
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::{Message, EmailAddress, Transport, Envelope, SmtpClient};
 
@@ -49,7 +49,7 @@ fn main() {
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::transport::smtp::authentication::{Credentials, Mechanism};
 use lettre::{Email, Envelope, EmailAddress, Transport, SmtpClient};
@@ -106,8 +106,8 @@ You can specify custom TLS settings:
 ```rust,no_run
 # #[cfg(feature = "native-tls")]
 # {
-extern crate native_tls;
-extern crate lettre;
+# extern crate native_tls;
+# extern crate lettre;
 
 use lettre::{
     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope,
@@ -162,7 +162,7 @@ error handling:
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::EmailAddress;
 use lettre::transport::smtp::SMTP_PORT;

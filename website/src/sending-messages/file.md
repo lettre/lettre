@@ -7,7 +7,7 @@ It can be useful for testing purposes, or if you want to keep track of sent mess
 ```rust
 # #[cfg(feature = "file-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use std::env::temp_dir;
 

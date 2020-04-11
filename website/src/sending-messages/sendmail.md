@@ -5,7 +5,7 @@ The sendmail transport sends the email using the local sendmail command.
 ```rust,no_run
 # #[cfg(feature = "sendmail-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::transport::sendmail::SendmailTransport;
 use lettre::{Message, Envelope, EmailAddress, Transport};
