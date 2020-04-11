@@ -44,7 +44,7 @@ impl MessageBuilder {
         }
     }
 
-    /// Add `Date:` header to message
+    /// Add `Date` header to message
     ///
     /// Shortcut for `self.header(header::Date(date))`.
     #[inline]
@@ -52,7 +52,7 @@ impl MessageBuilder {
         self.header(header::Date(date))
     }
 
-    /// Set `Date:` header using current date/time
+    /// Set `Date` header using current date/time
     ///
     /// Shortcut for `self.date(SystemTime::now())`.
     #[inline]
@@ -60,7 +60,7 @@ impl MessageBuilder {
         self.date(SystemTime::now().into())
     }
 
-    /// Set `Subject:` header to message
+    /// Set `Subject` header to message
     ///
     /// Shortcut for `self.header(header::Subject(subject.into()))`.
     #[inline]
@@ -68,7 +68,7 @@ impl MessageBuilder {
         self.header(header::Subject(subject.into()))
     }
 
-    /// Set `Mime-Version:` header to 1.0
+    /// Set `Mime-Version` header to 1.0
     ///
     /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
     #[inline]
@@ -76,7 +76,7 @@ impl MessageBuilder {
         self.header(header::MIME_VERSION_1_0)
     }
 
-    /// Set `Sender:` header
+    /// Set `Sender` header
     ///
     /// Shortcut for `self.header(header::Sender(mbox))`.
     #[inline]
@@ -84,7 +84,7 @@ impl MessageBuilder {
         self.header(header::Sender(mbox))
     }
 
-    /// Set or add mailbox to `From:` header
+    /// Set or add mailbox to `From` header
     ///
     /// Shortcut for `self.mailbox(header::From(mbox))`.
     #[inline]
@@ -92,7 +92,7 @@ impl MessageBuilder {
         self.mailbox(header::From(mbox.into()))
     }
 
-    /// Set or add mailbox to `ReplyTo:` header
+    /// Set or add mailbox to `ReplyTo` header
     ///
     /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
     #[inline]
@@ -100,7 +100,7 @@ impl MessageBuilder {
         self.mailbox(header::ReplyTo(mbox.into()))
     }
 
-    /// Set or add mailbox to `To:` header
+    /// Set or add mailbox to `To` header
     ///
     /// Shortcut for `self.mailbox(header::To(mbox))`.
     #[inline]
@@ -108,7 +108,7 @@ impl MessageBuilder {
         self.mailbox(header::To(mbox.into()))
     }
 
-    /// Set or add mailbox to `Cc:` header
+    /// Set or add mailbox to `Cc` header
     ///
     /// Shortcut for `self.mailbox(header::Cc(mbox))`.
     #[inline]
@@ -116,7 +116,7 @@ impl MessageBuilder {
         self.mailbox(header::Cc(mbox.into()))
     }
 
-    /// Set or add mailbox to `Bcc:` header
+    /// Set or add mailbox to `Bcc` header
     ///
     /// Shortcut for `self.mailbox(header::Bcc(mbox))`.
     #[inline]
@@ -124,17 +124,27 @@ impl MessageBuilder {
         self.mailbox(header::Bcc(mbox.into()))
     }
 
-    // FIXME we need to:
-    //
-    // * add shortcuts for attachment support
-    // * add shortcuts for embedded images
+    /// Set or add message id to [`In-Reply-To`
+    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    #[inline]
+    pub fn in_reply_to(self, id: String) -> Self {
+        self.header(header::InReplyTo(id))
+    }
 
-    // Add a build() method (optional, also allow raw message) to:
+    /// Set or add message id to [`References`
+    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    #[inline]
+    pub fn references(self, id: String) -> Self {
+        self.header(header::References(id))
+    }
+
+    // TODO
     //
-    // * check the validity of our headers
-    // * by default use TextNone for message-id
+    // * High-level methods for attachments and embedded files
+    //
+    // * check the validity of headers
+    // * by default use TextNonce for message-id
     // * insert missing ones (date, message-id, sender, etc.)
-    // * extract an envelope (add en envelope builder in the MessageBuilder probably)
 
     /// Create message using body
     #[inline]

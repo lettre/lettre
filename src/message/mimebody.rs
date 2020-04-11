@@ -269,7 +269,7 @@ impl MultiPartBuilder {
         self
     }
 
-    /// Set `Content-Type:` header using [`MultiPartKind`]
+    /// Set `Content-Type` header using [`MultiPartKind`]
     #[inline]
     pub fn kind(self, kind: MultiPartKind) -> Self {
         self.header(ContentType(kind.into()))

@@ -80,7 +80,7 @@ macro_rules! mailboxes_header {
 mailbox_header! {
     /**
 
-    `Sender:` header
+    `Sender` header
 
     This header contains [`Mailbox`](::Mailbox) associated with sender.
 
@@ -94,7 +94,7 @@ mailbox_header! {
 mailboxes_header! {
     /**
 
-    `From:` header
+    `From` header
 
     This header contains [`Mailboxes`](::Mailboxes).
 
@@ -105,7 +105,7 @@ mailboxes_header! {
 mailboxes_header! {
     /**
 
-    `Reply-To:` header
+    `Reply-To` header
 
     This header contains [`Mailboxes`](::Mailboxes).
 
@@ -116,7 +116,7 @@ mailboxes_header! {
 mailboxes_header! {
     /**
 
-    `To:` header
+    `To` header
 
     This header contains [`Mailboxes`](::Mailboxes).
 
@@ -127,7 +127,7 @@ mailboxes_header! {
 mailboxes_header! {
     /**
 
-    `Cc:` header
+    `Cc` header
 
     This header contains [`Mailboxes`](::Mailboxes).
 
@@ -138,7 +138,7 @@ mailboxes_header! {
 mailboxes_header! {
     /**
 
-    `Bcc:` header
+    `Bcc` header
 
     This header contains [`Mailboxes`](::Mailboxes).
 
