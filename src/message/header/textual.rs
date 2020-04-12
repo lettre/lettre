@@ -38,6 +38,8 @@ text_header!(Comments, "Comments");
 text_header!(Keywords, "Keywords");
 text_header!(InReplyTo, "In-Reply-To");
 text_header!(References, "References");
+text_header!(MessageId, "Message-Id");
+text_header!(UserAgent, "User-Agent");
 
 fn parse_text(raw: &[u8]) -> HyperResult<String> {
     if let Ok(src) = from_utf8(raw) {

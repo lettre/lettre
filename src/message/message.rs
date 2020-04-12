@@ -11,6 +11,10 @@ use std::{
     fmt::{Display, Formatter, Result as FmtResult},
     time::SystemTime,
 };
+use uuid::Uuid;
+
+#[cfg(feature = "hostname")]
+const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 
 /// A builder for messages
 #[derive(Debug, Clone)]
@@ -138,13 +142,56 @@ impl MessageBuilder {
         self.header(header::References(id))
     }
 
+    /// Set [Message-Id
+    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    ///
+    /// Should generally be inserted by the mail relay.
+    ///
+    /// If `None` is provided, an id will be generated in the
+    /// `<UUID@HOSTNAME>`.
+    #[inline]
+    pub fn message_id(self, id: Option<String>) -> Self {
+        match id {
+            Some(i) => self.header(header::MessageId(i)),
+            None => {
+                #[cfg(feature = "hostname")]
+                let hostname = hostname::get()
+                    .map_err(|_| ())
+                    .and_then(|s| s.into_string().map_err(|_| ()))
+                    .unwrap_or_else(|_| DEFAULT_MESSAGE_ID_DOMAIN.to_string());
+                #[cfg(not(feature = "hostname"))]
+                let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_string();
+
+                self.header(header::MessageId(
+                    // https://tools.ietf.org/html/rfc5322#section-3.6.4
+                    format!("<{}@{}>", Uuid::new_v4(), hostname),
+                ))
+            }
+        }
+    }
+
+    /// Set [User-Agent
+    /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
+    #[inline]
+    pub fn user_agent(self, id: String) -> Self {
+        self.header(header::UserAgent(id))
+    }
+
+    fn check_headers(self) -> Result<Self, EmailError> {
+        // Insert Date if missing
+        let res = if self.headers.get::<header::Date>().is_none() {
+            self.date_now()
+        } else {
+            self
+        };
+        // TODO insert sender if needed
+        Ok(res)
+    }
+
     // TODO
     //
     // * High-level methods for attachments and embedded files
-    //
-    // * check the validity of headers
-    // * by default use TextNonce for message-id
-    // * insert missing ones (date, message-id, sender, etc.)
+    // * Add methods to avoid checks
 
     /// Create message using body
     #[inline]
@@ -179,7 +226,7 @@ impl MessageBuilder {
     }
 }
 
-/// Email message which can be formatted or streamed
+/// Email message which can be formatted
 #[derive(Clone, Debug)]
 pub struct Message<B = Bytes> {
     headers: Headers,
