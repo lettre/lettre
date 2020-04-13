@@ -1,7 +1,6 @@
 //! Error and result type for file transport
 
 use self::Error::*;
-use serde_json;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},

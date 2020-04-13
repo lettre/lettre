@@ -36,7 +36,6 @@ impl ClientCodec {
     }
 
     /// Adds transparency
-    /// TODO: replace CR and LF by CRLF
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) -> Result<(), Error> {
         match frame.len() {
             0 => {
@@ -177,7 +176,7 @@ impl<S: Connector + Write + Read + Timeout> InnerClient<S> {
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
     pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
-        // TODO
+        // Limit challenges to avoid blocking
         let mut challenges = 10;
         let mut response = self.command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
 

@@ -1,7 +1,5 @@
 use crate::message::header::ContentTransferEncoding;
-use base64;
 use bytes::{Buf, BufMut, Bytes, BytesMut, IntoBuf};
-use quoted_printable;
 use std::{
     cmp::min,
     error::Error,

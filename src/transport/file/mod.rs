@@ -4,7 +4,6 @@
 //!
 
 use crate::{transport::file::error::FileResult, Envelope, Message, Transport};
-use serde_json;
 use std::{
     fmt::Display,
     fs::File,

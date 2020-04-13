@@ -2,14 +2,12 @@
 //!
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
-#![doc(html_favicon_url = "https://blog.lettre.at/favicon.ico")]
+#![doc(html_favicon_url = "https://lettre.at/favicon.png")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![deny(
     missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
-// FIXME remove unsafe?
-//    unsafe_code,
     unstable_features,
     unused_import_braces
 )]
@@ -21,15 +19,12 @@ pub mod message;
 pub mod transport;
 
 pub use crate::address::Address;
+use crate::error::Error;
 #[cfg(feature = "builder")]
 pub use crate::message::{
     header::{self, Headers},
     Mailboxes, Message,
 };
-#[cfg(feature = "builder")]
-use std::convert::TryFrom;
-//pub use crate::message::Message;
-use crate::error::Error;
 #[cfg(feature = "file-transport")]
 pub use crate::transport::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
@@ -40,6 +35,8 @@ pub use crate::transport::smtp::client::net::ClientTlsParameters;
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+#[cfg(feature = "builder")]
+use std::convert::TryFrom;
 use std::fmt::Display;
 
 /// Simple email envelope representation

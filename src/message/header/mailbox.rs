@@ -4,7 +4,7 @@ use crate::message::{
 };
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HyperError, Result as HyperResult,
+    Error as HeaderError, Result as HyperResult,
 };
 use std::{fmt::Result as FmtResult, slice::Iter, str::from_utf8};
 
@@ -28,10 +28,10 @@ macro_rules! mailbox_header {
     T: RawLike<'a>,
     Self: Sized {
                 raw.one()
-                    .ok_or(HyperError::Header)
+                    .ok_or(HeaderError::Header)
                     .and_then(parse_mailboxes)
                     .and_then(|mbs| {
-                        mbs.into_single().ok_or(HyperError::Header)
+                        mbs.into_single().ok_or(HeaderError::Header)
                     }).map($type_name)
             }
 
@@ -65,7 +65,7 @@ macro_rules! mailboxes_header {
                 Self: Sized,
             {
                 raw.one()
-                    .ok_or(HyperError::Header)
+                    .ok_or(HeaderError::Header)
                     .and_then(parse_mailboxes)
                     .map($type_name)
             }
@@ -152,7 +152,7 @@ fn parse_mailboxes(raw: &[u8]) -> HyperResult<Mailboxes> {
             return Ok(mbs);
         }
     }
-    Err(HyperError::Header)
+    Err(HeaderError::Header)
 }
 
 fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter) -> FmtResult {

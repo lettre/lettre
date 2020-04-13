@@ -1,6 +1,6 @@
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HyperError, Result as HyperResult,
+    Error as HeaderError, Result as HyperResult,
 };
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
@@ -34,16 +34,16 @@ impl Header for MimeVersion {
         T: RawLike<'a>,
         Self: Sized,
     {
-        raw.one().ok_or(HyperError::Header).and_then(|r| {
+        raw.one().ok_or(HeaderError::Header).and_then(|r| {
             let s: Vec<&str> = from_utf8(r)
-                .map_err(|_| HyperError::Header)?
+                .map_err(|_| HeaderError::Header)?
                 .split('.')
                 .collect();
             if s.len() != 2 {
-                return Err(HyperError::Header);
+                return Err(HeaderError::Header);
             }
-            let major = s[0].parse().map_err(|_| HyperError::Header)?;
-            let minor = s[1].parse().map_err(|_| HyperError::Header)?;
+            let major = s[0].parse().map_err(|_| HeaderError::Header)?;
+            let minor = s[1].parse().map_err(|_| HeaderError::Header)?;
             Ok(MimeVersion::new(major, minor))
         })
     }

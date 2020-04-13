@@ -210,7 +210,7 @@ pub enum MultiPartKind {
 }
 
 impl MultiPartKind {
-    fn to_mime<S: AsRef<str>>(&self, boundary: Option<S>) -> Mime {
+    fn to_mime<S: AsRef<str>>(self, boundary: Option<S>) -> Mime {
         let boundary = boundary
             .map(|s| s.as_ref().into())
             .unwrap_or_else(|| TextNonce::sized(68).unwrap().into_string());
@@ -218,7 +218,7 @@ impl MultiPartKind {
         use self::MultiPartKind::*;
         format!(
             "multipart/{}; boundary=\"{}\"",
-            match *self {
+            match self {
                 Mixed => "mixed",
                 Alternative => "alternative",
                 Related => "related",

@@ -1,4 +1,3 @@
-use base64;
 use std::str::from_utf8;
 
 fn allowed_char(c: char) -> bool {

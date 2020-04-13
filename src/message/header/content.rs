@@ -1,6 +1,6 @@
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HyperError, Result as HyperResult,
+    Error as HeaderError, Result as HyperResult,
 };
 use std::{
     fmt::{Display, Formatter as FmtFormatter, Result as FmtResult},
@@ -56,18 +56,18 @@ impl Header for ContentTransferEncoding {
         "Content-Transfer-Encoding"
     }
 
-    // FIXME HyperError->HeaderError, same for result
+    // FIXME HeaderError->HeaderError, same for result
     fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
     where
         T: RawLike<'a>,
         Self: Sized,
     {
         raw.one()
-            .ok_or(HyperError::Header)
-            .and_then(|r| from_utf8(r).map_err(|_| HyperError::Header))
+            .ok_or(HeaderError::Header)
+            .and_then(|r| from_utf8(r).map_err(|_| HeaderError::Header))
             .and_then(|s| {
                 s.parse::<ContentTransferEncoding>()
-                    .map_err(|_| HyperError::Header)
+                    .map_err(|_| HeaderError::Header)
             })
     }
 

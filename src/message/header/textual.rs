@@ -1,7 +1,7 @@
 use crate::message::utf8_b;
 use hyperx::{
     header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HyperError, Result as HyperResult,
+    Error as HeaderError, Result as HyperResult,
 };
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
@@ -21,7 +21,7 @@ macro_rules! text_header {
                 Self: Sized,
             {
                 raw.one()
-                    .ok_or(HyperError::Header)
+                    .ok_or(HeaderError::Header)
                     .and_then(parse_text)
                     .map($type_name)
             }
@@ -47,7 +47,7 @@ fn parse_text(raw: &[u8]) -> HyperResult<String> {
             return Ok(txt);
         }
     }
-    Err(HyperError::Header)
+    Err(HeaderError::Header)
 }
 
 fn fmt_text(s: &str, f: &mut HeaderFormatter) -> FmtResult {

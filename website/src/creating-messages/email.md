@@ -14,15 +14,13 @@ The easiest way how we can create email message with simple string.
 # extern crate lettre;
 use lettre::message::Message;
 
-fn main() {
-    let m: Message<&str> = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-        .to("Hei <hei@domain.tld>".parse().unwrap())
-        .subject("Happy new year")
-        .body("Be happy!")
-        .unwrap();
-}
+let m: Message<&str> = Message::builder()
+    .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+    .to("Hei <hei@domain.tld>".parse().unwrap())
+    .subject("Happy new year")
+    .body("Be happy!")
+    .unwrap();
 ```
 
 Will produce:
@@ -42,28 +40,25 @@ The unicode header data will be encoded using _UTF8-Base64_ encoding.
 
 ##### Single part
 
-The more complex way is using MIME contents
-(see [format\_mime.rs](examples/format_mime.rs)).
+The more complex way is using MIME contents.
 
 ```rust
 # extern crate lettre;
 use lettre::message::{header, Message, SinglePart};
 
-fn main() {
-    let m: Message<SinglePart<&str>> = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-        .to("Hei <hei@domain.tld>".parse().unwrap())
-        .subject("Happy new year")
-        .mime_body(
-            SinglePart::builder()
-                .header(header::ContentType(
-                    "text/plain; charset=utf8".parse().unwrap(),
-                )).header(header::ContentTransferEncoding::QuotedPrintable)
-                .body("Привет, мир!"),
-        )
-        .unwrap();
-}
+let m: Message<SinglePart<&str>> = Message::builder()
+    .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+    .to("Hei <hei@domain.tld>".parse().unwrap())
+    .subject("Happy new year")
+    .mime_body(
+        SinglePart::builder()
+            .header(header::ContentType(
+                "text/plain; charset=utf8".parse().unwrap(),
+            )).header(header::ContentTransferEncoding::QuotedPrintable)
+            .body("Привет, мир!"),
+    )
+    .unwrap();
 ```
 
 The body will be encoded using selected `Content-Transfer-Encoding`.
@@ -83,62 +78,59 @@ Content-Transfer-Encoding: quoted-printable
 
 ##### Multiple parts
 
-And more advanced way of building message by using multipart MIME contents
-(see [format\_multipart.rs](examples/format_multipart.rs)).
+And more advanced way of building message by using multipart MIME contents.
 
 ```rust
 # extern crate lettre;
 use lettre::message::{header, Message, MultiPart, SinglePart};
 
-fn main() {
-    let m: Message<MultiPart<&str>> = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-        .to("Hei <hei@domain.tld>".parse().unwrap())
-        .subject("Happy new year")
-        .mime_body(
-            MultiPart::mixed()
-            .multipart(
-                MultiPart::alternative()
-                .singlepart(
-                    SinglePart::quoted_printable()
-                    .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
-                    .body("Привет, мир!")
-                )
-                .multipart(
-                    MultiPart::related()
-                    .singlepart(
-                        SinglePart::eight_bit()
-                        .header(header::ContentType("text/html; charset=utf8".parse().unwrap()))
-                        .body("<p><b>Hello</b>, <i>world</i>! <img src=smile.png></p>")
-                    )
-                    .singlepart(
-                        SinglePart::base64()
-                        .header(header::ContentType("image/png".parse().unwrap()))
-                        .header(header::ContentDisposition {
-                            disposition: header::DispositionType::Inline,
-                            parameters: vec![],
-                        })
-                        .body("<smile-raw-image-data>")
-                    )
-                )
-            )
+let m: Message<MultiPart<&str>> = Message::builder()
+    .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+    .to("Hei <hei@domain.tld>".parse().unwrap())
+    .subject("Happy new year")
+    .mime_body(
+        MultiPart::mixed()
+        .multipart(
+            MultiPart::alternative()
             .singlepart(
-                SinglePart::seven_bit()
+                SinglePart::quoted_printable()
                 .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
-                .header(header::ContentDisposition {
-                                 disposition: header::DispositionType::Attachment,
-                                 parameters: vec![
-                                     header::DispositionParam::Filename(
-                                         header::Charset::Ext("utf-8".into()),
-                                         None, "example.c".as_bytes().into()
-                                     )
-                                 ]
-                             })
-                .body("int main() { return 0; }")
+                .body("Привет, мир!")
             )
-        ).unwrap();
-}
+            .multipart(
+                MultiPart::related()
+                .singlepart(
+                    SinglePart::eight_bit()
+                    .header(header::ContentType("text/html; charset=utf8".parse().unwrap()))
+                    .body("<p><b>Hello</b>, <i>world</i>! <img src=smile.png></p>")
+                )
+                .singlepart(
+                    SinglePart::base64()
+                    .header(header::ContentType("image/png".parse().unwrap()))
+                    .header(header::ContentDisposition {
+                        disposition: header::DispositionType::Inline,
+                        parameters: vec![],
+                    })
+                    .body("<smile-raw-image-data>")
+                )
+            )
+        )
+        .singlepart(
+            SinglePart::seven_bit()
+            .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+            .header(header::ContentDisposition {
+                disposition: header::DispositionType::Attachment,
+                parameters: vec![
+                    header::DispositionParam::Filename(
+                        header::Charset::Ext("utf-8".into()),
+                        None, "example.c".as_bytes().into()
+                    )
+                ]
+            })
+            .body("int main() { return 0; }")
+        )
+    ).unwrap();
 ```
 
 ```sh
