@@ -67,7 +67,6 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
