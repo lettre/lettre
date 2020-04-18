@@ -6,9 +6,9 @@ readme = "README.md"
 homepage = "https://lettre.at"
 repository = "https://github.com/lettre/lettre"
 license = "MIT"
-authors = ["Alexis Mousset <contact@amousset.me>"]
-categories = ["email"]
-keywords = ["email", "smtp", "mailer"]
+authors = ["Alexis Mousset <contact@amousset.me>", "Kayo <kayo@illumium.org>"]
+categories = ["email", "network-programming"]
+keywords = ["email", "smtp", "mailer", "message", "sendmail"]
 edition = "2018"
 
 [badges]
@@ -17,41 +17,46 @@ is-it-maintained-open-issues = { repository = "lettre/lettre" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-base64 = { version = "^0.11", optional = true }
-bufstream = { version = "^0.1", optional = true }
-email = { version = "^0.0.20", optional = true }
-fast_chemail = "^0.9"
-hostname = { version = "^0.3", optional = true }
-log = "^0.4"
-mime = { version = "^0.3", optional = true }
-native-tls = { version = "^0.2", optional = true }
-nom = { version = "^5.0", optional = true }
-r2d2 = { version = "^0.8", optional = true }
-rustls = { version = "^0.16", optional = true }
-serde = { version = "^1.0", optional = true, features = ["derive"] }
-serde_json = { version = "^1.0", optional = true }
-time = { version = "^0.2", optional = true }
-uuid = { version = "^0.8", features = ["v4"], optional = true }
-webpki = { version = "^0.21", optional = true }
+base64 = { version = "0.12", optional = true }
+bufstream = { version = "0.1", optional = true }
+# TODO to 0.5
+bytes = { version = "0.4", optional = true }
+hostname = { version = "0.3", optional = true }
+hyperx = { version = "1", optional = true, features = ["headers"] }
+idna = "0.2"
+log = "0.4"
+uuid = { version = "0.8", features = ["v4"] }
+mime = { version = "0.3", optional = true }
+native-tls = { version = "0.2", optional = true }
+nom = { version = "5", optional = true }
+once_cell = "1"
+quoted_printable = { version = "0.4", optional = true }
+r2d2 = { version = "0.8", optional = true }
+regex = "1"
+rustls = { version = "0.17", optional = true }
+serde = { version = "1", optional = true, features = ["derive"] }
+serde_json = { version = "1", optional = true }
+textnonce = { version = "0.7", optional = true }
+webpki = { version = "0.21", optional = true }
 
 [dev-dependencies]
-criterion = "^0.3"
-env_logger = "^0.7"
-glob = "^0.3"
-walkdir = "^2"
+criterion = "0.3"
+env_logger = "0.7"
+glob = "0.3"
+walkdir = "2"
 
 [[bench]]
 harness = false
 name = "transport_smtp"
 
 [features]
-builder = ["email", "mime", "time", "base64", "uuid"]
+builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable", "bytes"]
 connection-pool = ["r2d2"]
-default = ["file-transport", "smtp-transport", "sendmail-transport", "native-tls", "builder"]
+default = ["file-transport", "smtp-transport", "hostname", "sendmail-transport", "native-tls", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "rustls"]
 sendmail-transport = []
-smtp-transport = ["bufstream", "base64", "nom", "hostname"]
+smtp-transport = ["bufstream", "base64", "nom"]
 unstable = []
 
 [[example]]
@@ -61,7 +66,3 @@ required-features = ["smtp-transport"]
 [[example]]
 name = "smtp_gmail"
 required-features = ["smtp-transport", "native-tls"]
-
-[[example]]
-name = "builder"
-required-features = ["builder"]

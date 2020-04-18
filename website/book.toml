@@ -1,11 +1,10 @@
 [book]
-title = "Lettre"
-author = "Alexis Mousset"
+title = "Lettre documentation"
+authors = ["Alexis Mousset"]
 description = "The user documentation of the Lettre crate."
 
-[build]
-build-dir = "_book"
-
 [output.html]
+default-theme = "Ayu"
+no-section-label = true
 
 [output.linkcheck]

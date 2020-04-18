@@ -5,20 +5,19 @@ The sendmail transport sends the email using the local sendmail command.
 ```rust,no_run
 # #[cfg(feature = "sendmail-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
-use lettre::sendmail::SendmailTransport;
-use lettre::{Email, Envelope, EmailAddress, Transport};
+use lettre::transport::sendmail::SendmailTransport;
+use lettre::{Message, Envelope, EmailAddress, Transport};
 
 fn main() {
-    let email = Email::new(
-        Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-        ).unwrap(),
-        "id".to_string(),
-        "Hello world".to_string().into_bytes(),
-    );
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .subject("Happy new year")
+        .body("Be happy!")
+        .unwrap();
 
     let mut sender = SendmailTransport::new();
     let result = sender.send(email);

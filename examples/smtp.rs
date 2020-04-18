@@ -1,20 +1,17 @@
 extern crate env_logger;
 extern crate lettre;
 
-use lettre::{Email, EmailAddress, Envelope, SmtpClient, Transport};
+use lettre::{Message, SmtpClient, Transport};
 
 fn main() {
     env_logger::init();
-
-    let email = Email::new(
-        Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-        )
-        .unwrap(),
-        "id".to_string(),
-        "Hello ß☺ example".to_string().into_bytes(),
-    );
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .subject("Happy new year")
+        .body("Be happy!")
+        .unwrap();
 
     // Open a local connection on port 25
     let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();

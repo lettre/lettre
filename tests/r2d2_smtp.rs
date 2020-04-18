@@ -1,10 +1,10 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "connection-pool"))]
 mod test {
-    use lettre::{ClientSecurity, Email, EmailAddress, Envelope, SmtpClient};
-    use lettre::{SmtpConnectionManager, Transport};
+    use lettre::{
+        ClientSecurity, Email, EmailAddress, Envelope, SmtpClient, SmtpConnectionManager, Transport,
+    };
     use r2d2::Pool;
-    use std::sync::mpsc;
-    use std::thread;
+    use std::{sync::mpsc, thread};
 
     fn email(message: &str) -> Email {
         Email::new(

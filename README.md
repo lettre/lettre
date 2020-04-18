@@ -31,6 +31,11 @@ Lettre provides the following features:
 * Secure delivery with SMTP using encryption and authentication
 * Easy email builders
 
+Lettre does not provide (for now):
+
+* Async support
+* Email parsing
+
 ## Example
 
 This library requires Rust 1.40 or newer.
@@ -38,25 +43,25 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.9"
+lettre = "0.10"
 ```
 
 ```rust,no_run
 extern crate lettre;
 
-use lettre::{SmtpClient, Transport, Email, builder::mime::TEXT_PLAIN};
-use std::path::Path;
+use lettre::{SmtpClient, Transport, Message};
+use std::convert::TryInto;
 
 fn main() {
-    let email = Email::builder()
+    let email = Message::builder()
         // Addresses can be specified by the tuple (email, alias)
-        .to(("user@example.org", "Firstname Lastname"))
+        .to(("user@example.org", "Firstname Lastname").try_into().unwrap())
         // ... or by an address only
-        .from("user@example.com")
+        .from("user@example.com".parse().unwrap())
         .subject("Hi, Hello world")
-        .text("Hello world.")
-        .attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
-        .unwrap()
+        .body("Hello world.")
+        //.attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
+        // FIXME add back attachment example
         .build()
         .unwrap();
 
@@ -87,5 +92,8 @@ this GitHub repository, must follow our [code of conduct](https://github.com/let
 ## License
 
 This program is distributed under the terms of the MIT license.
+
+The builder comes from [emailmessage-rs](https://github.com/katyo/emailmessage-rs) by
+Kayo, under MIT license.
 
 See [LICENSE](./LICENSE) for details.

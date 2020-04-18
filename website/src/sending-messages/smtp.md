@@ -20,19 +20,18 @@ This is the most basic example of usage:
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
-use lettre::{Email, EmailAddress, Transport, Envelope, SmtpClient};
+use lettre::{Message, EmailAddress, Transport, Envelope, SmtpClient};
 
 fn main() {
-    let email = Email::new(
-        Envelope::new(
-            Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-            vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-        ).unwrap(),
-        "id".to_string(),
-        "Hello world".to_string().into_bytes(),
-    );
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .subject("Happy new year")
+        .body("Be happy!")
+        .unwrap();
 
     // Open a local connection on port 25
     let mut mailer =
@@ -50,12 +49,12 @@ fn main() {
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
-use lettre::smtp::authentication::{Credentials, Mechanism};
+use lettre::transport::smtp::authentication::{Credentials, Mechanism};
 use lettre::{Email, Envelope, EmailAddress, Transport, SmtpClient};
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::ConnectionReuseParameters;
+use lettre::transport::smtp::extension::ClientId;
+use lettre::transport::smtp::ConnectionReuseParameters;
 
 fn main() {
     let email_1 = Email::new(
@@ -107,15 +106,15 @@ You can specify custom TLS settings:
 ```rust,no_run
 # #[cfg(feature = "native-tls")]
 # {
-extern crate native_tls;
-extern crate lettre;
+# extern crate native_tls;
+# extern crate lettre;
 
 use lettre::{
-    ClientSecurity, ClientTlsParameters, EmailAddress, Envelope, 
+    ClientSecurity, ClientTlsParameters, EmailAddress, Envelope,
     Email, SmtpClient, Transport,
 };
-use lettre::smtp::authentication::{Credentials, Mechanism};
-use lettre::smtp::ConnectionReuseParameters;
+use lettre::transport::smtp::authentication::{Credentials, Mechanism};
+use lettre::transport::smtp::ConnectionReuseParameters;
 use native_tls::{Protocol, TlsConnector};
 
 fn main() {
@@ -163,14 +162,14 @@ error handling:
 ```rust,no_run
 # #[cfg(feature = "smtp-transport")]
 # {
-extern crate lettre;
+# extern crate lettre;
 
 use lettre::EmailAddress;
-use lettre::smtp::SMTP_PORT;
-use lettre::smtp::client::InnerClient;
-use lettre::smtp::client::net::NetworkStream;
-use lettre::smtp::extension::ClientId;
-use lettre::smtp::commands::*;
+use lettre::transport::smtp::SMTP_PORT;
+use lettre::transport::smtp::client::InnerClient;
+use lettre::transport::smtp::client::net::NetworkStream;
+use lettre::transport::smtp::extension::ClientId;
+use lettre::transport::smtp::commands::*;
 
 fn main() {
     let mut email_client: InnerClient<NetworkStream> = InnerClient::new();
