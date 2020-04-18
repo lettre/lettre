@@ -24,7 +24,6 @@ use std::{
 };
 use uuid::Uuid;
 
-#[cfg(feature = "hostname")]
 const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 
 /// A builder for messages
