@@ -42,36 +42,31 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
+        match *self {
+            // Try to display the first line of the server's response that usually
+            // contains a short humanly readable error message
+            Transient(ref err) => fmt.write_str(match err.first_line() {
+                Some(line) => line,
+                None => "transient error during SMTP transaction",
+            }),
+            Permanent(ref err) => fmt.write_str(match err.first_line() {
+                Some(line) => line,
+                None => "permanent error during SMTP transaction",
+            }),
+            ResponseParsing(err) => fmt.write_str(err),
+            ChallengeParsing(ref err) => err.fmt(fmt),
+            Utf8Parsing(ref err) => err.fmt(fmt),
+            Resolution => fmt.write_str("could not resolve hostname"),
+            Client(err) => fmt.write_str(err),
+            Io(ref err) => err.fmt(fmt),
+            Tls(ref err) => err.fmt(fmt),
+            Parsing(ref err) => fmt.write_str(err.description()),
+        }
     }
 }
 
 impl StdError for Error {
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
-    fn description(&self) -> &str {
-        match *self {
-            // Try to display the first line of the server's response that usually
-            // contains a short humanly readable error message
-            Transient(ref err) => match err.first_line() {
-                Some(line) => line,
-                None => "undetailed transient error during SMTP transaction",
-            },
-            Permanent(ref err) => match err.first_line() {
-                Some(line) => line,
-                None => "undetailed permanent error during SMTP transaction",
-            },
-            ResponseParsing(err) => err,
-            ChallengeParsing(ref err) => err.description(),
-            Utf8Parsing(ref err) => err.description(),
-            Resolution => "could not resolve hostname",
-            Client(err) => err,
-            Io(ref err) => err.description(),
-            Tls(ref err) => err.description(),
-            Parsing(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             ChallengeParsing(ref err) => Some(&*err),
             Utf8Parsing(ref err) => Some(&*err),

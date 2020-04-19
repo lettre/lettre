@@ -1,11 +1,11 @@
 //! Error and result type for sendmail transport
 
+use self::Error::*;
+use std::io;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
 };
-use self::Error::*;
-use std::io;
 
 /// An enum of all error kinds.
 #[derive(Debug)]
@@ -18,19 +18,15 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
-        fmt.write_str(self.description())
+        match *self {
+            Client(ref err) => err.fmt(fmt),
+            Io(ref err) => err.fmt(fmt),
+        }
     }
 }
 
 impl StdError for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Client(err) => err,
-            Io(ref err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             Io(ref err) => Some(&*err),
             _ => None,

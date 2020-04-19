@@ -193,7 +193,7 @@ impl<S: Connector + Write + Read + Timeout + Debug> InnerClient<S> {
     }
 
     /// Sends the message content
-    pub fn message(&mut self, message: Box<Read>) -> SmtpResult {
+    pub fn message(&mut self, message: Box<dyn Read>) -> SmtpResult {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
 

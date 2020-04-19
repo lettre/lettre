@@ -72,7 +72,7 @@ impl<'a> Transport<'a> for SendmailTransport {
             Ok(())
         } else {
             // TODO display stderr
-            Err(error::Error::Client("The message could not be sent"))?
+            Err(error::Error::Client("The message could not be sent"))
         }
     }
 }

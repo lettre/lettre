@@ -1,8 +1,8 @@
+use self::Error::*;
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
 };
-use self::Error::*;
 
 /// Error type for email content
 #[derive(Debug, Clone, Copy)]

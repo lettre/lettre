@@ -30,11 +30,11 @@ extern crate serde;
 #[cfg(feature = "serde-impls")]
 #[macro_use]
 extern crate serde_derive;
-#[cfg(feature = "file-transport")]
-extern crate serde_json;
 extern crate fast_chemail;
 #[cfg(feature = "connection-pool")]
 extern crate r2d2;
+#[cfg(feature = "file-transport")]
+extern crate serde_json;
 
 pub mod error;
 #[cfg(feature = "file-transport")]
@@ -73,7 +73,7 @@ pub struct EmailAddress(String);
 impl EmailAddress {
     pub fn new(address: String) -> EmailResult<EmailAddress> {
         if !is_valid_email(&address) && !address.ends_with("localhost") {
-            Err(Error::InvalidEmailAddress)?;
+            return Err(Error::InvalidEmailAddress);
         }
         Ok(EmailAddress(address))
     }
@@ -123,7 +123,7 @@ impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
     pub fn new(from: Option<EmailAddress>, to: Vec<EmailAddress>) -> EmailResult<Envelope> {
         if to.is_empty() {
-            Err(Error::MissingTo)?;
+            return Err(Error::MissingTo);
         }
         Ok(Envelope {
             forward_path: to,
@@ -143,7 +143,7 @@ impl Envelope {
 }
 
 pub enum Message {
-    Reader(Box<Read + Send>),
+    Reader(Box<dyn Read + Send>),
     Bytes(Cursor<Vec<u8>>),
 }
 
@@ -175,7 +175,7 @@ impl SendableEmail {
     pub fn new_with_reader(
         envelope: Envelope,
         message_id: String,
-        message: Box<Read + Send>,
+        message: Box<dyn Read + Send>,
     ) -> SendableEmail {
         SendableEmail {
             envelope,
