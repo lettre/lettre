@@ -36,6 +36,8 @@ use std::{
     time::Duration,
 };
 use uuid::Uuid;
+#[cfg(feature = "rustls")]
+use webpki_roots::TLS_SERVER_ROOTS;
 
 pub mod authentication;
 pub mod client;
@@ -168,7 +170,12 @@ impl SmtpClient {
 
     #[cfg(feature = "rustls")]
     pub fn new_simple(domain: &str) -> Result<SmtpClient, Error> {
-        let tls_parameters = ClientTlsParameters::new(domain.to_string(), ClientConfig::new());
+        let mut tls = ClientConfig::new();
+        tls.config
+            .root_store
+            .add_server_trust_anchors(&TLS_SERVER_ROOTS);
+
+        let tls_parameters = ClientTlsParameters::new(domain.to_string(), tls);
 
         SmtpClient::new(
             (domain, SUBMISSIONS_PORT),
