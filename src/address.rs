@@ -4,7 +4,7 @@ use idna::domain_to_ascii;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::{
-    convert::TryFrom,
+    convert::{TryFrom, TryInto},
     error::Error,
     ffi::OsStr,
     fmt::{Display, Formatter, Result as FmtResult},
@@ -36,7 +36,16 @@ where
 
     fn try_from(from: (U, D)) -> Result<Self, Self::Error> {
         let (user, domain) = from;
-        Self::new(user, domain)
+        let user = user.into();
+        Address::check_user(&user)?;
+        let domain = domain.into();
+        Address::check_domain(&domain)?;
+        let complete = format!("{}@{}", &user, &domain);
+        Ok(Address {
+            user,
+            domain,
+            complete,
+        })
     }
 }
 
@@ -58,19 +67,10 @@ impl Address {
     /// Create email address from parts
     #[inline]
     pub fn new<U: Into<String>, D: Into<String>>(user: U, domain: D) -> Result<Self, AddressError> {
-        let user = user.into();
-        Address::check_user(&user)?;
-        let domain = domain.into();
-        Address::check_domain(&domain)?;
-        let complete = format!("{}@{}", &user, &domain);
-        Ok(Address {
-            user,
-            domain,
-            complete,
-        })
+        (user, domain).try_into()
     }
 
-    pub fn check_user(user: &str) -> Result<(), AddressError> {
+    fn check_user(user: &str) -> Result<(), AddressError> {
         if USER_RE.is_match(user) {
             Ok(())
         } else {
@@ -78,7 +78,7 @@ impl Address {
         }
     }
 
-    pub fn check_domain(domain: &str) -> Result<(), AddressError> {
+    fn check_domain(domain: &str) -> Result<(), AddressError> {
         Address::check_domain_ascii(domain).or_else(|_| {
             domain_to_ascii(domain)
                 .map_err(|_| AddressError::InvalidDomain)
@@ -280,3 +280,5 @@ pub mod serde {
         }
     }
 }
+
+// FIXME test serializer deserializer
