@@ -1,3 +1,14 @@
+<a name="v0.9.3"></a>
+### v0.9.3 (2020-04-19)
+
+#### Bug Fixes
+
+* **all:**
+  * Fix compilation warnings ([9b591ff](https://github.com/lettre/lettre/commit/9b591ff932e35947f793aaaeec0e3f06e8818449))
+
+* **email**
+  * Update `rust-email` to 0.0.21 ([eff4e169](https://github.com/lettre/lettre/commit/eff4e1693f5e65430b851707fdfd18046bc796e3))
+
 <a name="v0.9.2"></a>
 ### v0.9.2 (2019-06-11)
 
