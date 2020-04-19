@@ -7,7 +7,7 @@
 
 [![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
 [![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
-[![Required Rust version](https://img.shields.io/badge/rustc-1.40-green.svg)]()
+[![Required Rust version](https://img.shields.io/badge/rustc-1.20-green.svg)]()
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 [![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
@@ -38,46 +38,44 @@ Lettre does not provide (for now):
 
 ## Example
 
-This library requires Rust 1.40 or newer.
+This library requires Rust 1.20 or newer.
 To use this library, add the following to your `Cargo.toml`:
+
 
 ```toml
 [dependencies]
-lettre = "0.10"
+lettre = "0.9"
+lettre_email = "0.9"
 ```
 
 ```rust,no_run
-extern crate lettre;
+use lettre::{EmailTransport, SmtpTransport};
+use lettre_email::EmailBuilder;
+use std::path::Path;
 
-use lettre::{SmtpClient, Transport, Message};
-use std::convert::TryInto;
+let email = EmailBuilder::new()
+    // Addresses can be specified by the tuple (email, alias)
+    .to(("user@example.org", "Firstname Lastname"))
+    // ... or by an address only
+    .from("user@example.com")
+    .subject("Hi, Hello world")
+    .text("Hello world.")
+    .build()
+    .unwrap();
 
-fn main() {
-    let email = Message::builder()
-        // Addresses can be specified by the tuple (email, alias)
-        .to(("user@example.org", "Firstname Lastname").try_into().unwrap())
-        // ... or by an address only
-        .from("user@example.com".parse().unwrap())
-        .subject("Hi, Hello world")
-        .body("Hello world.")
-        //.attachment_from_file(Path::new("Cargo.toml"), None, &TEXT_PLAIN)
-        // FIXME add back attachment example
-        .build()
-        .unwrap();
+// Open a local connection on port 25
+let mut mailer = SmtpTransport::builder_unencrypted_localhost().unwrap()
+                                                                   .build();
+// Send the email
+let result = mailer.send(&email);
 
-    // Open a local connection on port 25
-    let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
-    // Send the email
-    let result = mailer.send(email);
-
-    if result.is_ok() {
-        println!("Email sent");
-    } else {
-        println!("Could not send email: {:?}", result);
-    }
-
-    assert!(result.is_ok());
+if result.is_ok() {
+    println!("Email sent");
+} else {
+    println!("Could not send email: {:?}", result);
 }
+
+assert!(result.is_ok());
 ```
 
 ## Testing
