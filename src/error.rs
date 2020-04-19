@@ -3,6 +3,7 @@ use std::{
     fmt::{self, Display, Formatter},
 };
 
+// FIXME message-specific errors
 /// Error type for email content
 #[derive(Debug)]
 pub enum Error {
@@ -45,8 +46,4 @@ impl From<std::io::Error> for Error {
     }
 }
 
-impl StdError for Error {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        None
-    }
-}
+impl StdError for Error {}
