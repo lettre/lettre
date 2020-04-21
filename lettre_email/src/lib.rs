@@ -1,7 +1,7 @@
 //! Lettre is a mailer written in Rust. lettre_email provides a simple email builder.
 //!
 
-#![doc(html_root_url = "https://docs.rs/lettre_email/0.9.3")]
+#![doc(html_root_url = "https://docs.rs/lettre_email/0.9.4")]
 #![deny(
     missing_docs,
     missing_debug_implementations,

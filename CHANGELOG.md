@@ -1,3 +1,11 @@
+<a name="v0.9.4"></a>
+### v0.9.4 (2020-04-21)
+
+#### Bug Fixes
+
+* **email**
+  * Go back to `rust-email` 0.0.20 as upgrade broke message formatting ([6a40f4a](https://github.com/lettre/lettre/commit/6a40f4a)
+
 <a name="v0.9.3"></a>
 ### v0.9.3 (2020-04-19)
 
