@@ -2,7 +2,8 @@
 //! testing purposes.
 //!
 
-use crate::{Message, Transport};
+use crate::Envelope;
+use crate::Transport;
 use log::info;
 use std::fmt::Display;
 
@@ -33,17 +34,14 @@ where
 {
     type Result = StubResult;
 
-    fn send(&mut self, email: Message<B>) -> Self::Result
-    where
-        B: Display,
-    {
+    fn send_raw(&mut self, envelope: &Envelope, _email: &[u8]) -> Self::Result {
         info!(
             "from=<{}> to=<{:?}>",
-            match email.envelope().from() {
+            match envelope.from() {
                 Some(address) => address.to_string(),
                 None => "".to_string(),
             },
-            email.envelope().to()
+            envelope.to()
         );
         self.response
     }

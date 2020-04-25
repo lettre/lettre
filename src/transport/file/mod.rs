@@ -3,9 +3,8 @@
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 
-use crate::{transport::file::error::FileResult, Envelope, Message, Transport};
+use crate::{transport::file::error::FileResult, Envelope, Transport};
 use std::{
-    fmt::Display,
     fs::File,
     io::prelude::*,
     path::{Path, PathBuf},
@@ -40,18 +39,15 @@ struct SerializableEmail {
 impl<'a, B> Transport<'a, B> for FileTransport {
     type Result = FileResult;
 
-    fn send(&mut self, email: Message<B>) -> Self::Result
-    where
-        B: Display,
-    {
+    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {
         let email_id = Uuid::new_v4();
 
         let mut file = self.path.clone();
         file.push(format!("{}.json", email_id));
 
         let serialized = serde_json::to_string(&SerializableEmail {
-            envelope: email.envelope().clone(),
-            message: email.to_string().into_bytes(),
+            envelope: envelope.clone(),
+            message: email.to_vec(),
         })?;
 
         File::create(file.as_path())?.write_all(serialized.as_bytes())?;

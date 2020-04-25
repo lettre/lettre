@@ -118,17 +118,16 @@ pub trait Transport<'a, B> {
 
     /// Sends the email
     /// FIXME not mut
-    fn send(&mut self, email: Message<B>) -> Self::Result
-    where
-        B: Display;
-    /*
-    {
-        &mut self,
-        Box::new(Cursor::new(email.to_string().as_bytes())),
-            email.envelope(),
-            Uuid::new_v4().to_string(),
 
-    }*/
+    // email = message (bytes) + envelope
+    fn send(&mut self, message: Message<B>) -> Self::Result
+    where
+        B: Display,
+    {
+        self.send_raw(message.envelope(), message.to_string().as_bytes())
+    }
+
+    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result;
 
     // TODO allow sending generic data
 }

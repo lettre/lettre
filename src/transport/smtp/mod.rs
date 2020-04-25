@@ -13,6 +13,7 @@
 //! * SMTPUTF8 ([RFC 6531](http://tools.ietf.org/html/rfc6531))
 //!
 
+use crate::Envelope;
 use crate::{
     transport::smtp::{
         authentication::{
@@ -23,7 +24,7 @@ use crate::{
         error::{Error, SmtpResult},
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
     },
-    Message, Transport,
+    Transport,
 };
 use log::{debug, info};
 #[cfg(feature = "native-tls")]
@@ -31,7 +32,6 @@ use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls")]
 use rustls::ClientConfig;
 use std::{
-    fmt::Display,
     net::{SocketAddr, ToSocketAddrs},
     time::Duration,
 };
@@ -445,12 +445,9 @@ impl<'a, B> Transport<'a, B> for SmtpTransport {
         feature = "cargo-clippy",
         allow(clippy::match_same_arms, clippy::cyclomatic_complexity)
     )]
-    fn send(&mut self, email: Message<B>) -> Self::Result
-    where
-        B: Display,
-    {
+    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {
         let email_id = Uuid::new_v4();
-        let envelope = email.envelope();
+        let envelope = envelope;
 
         if !self.client.is_connected() {
             self.connect()?;
@@ -509,7 +506,7 @@ impl<'a, B> Transport<'a, B> for SmtpTransport {
         try_smtp!(self.client.command(DataCommand), self);
 
         // Message content
-        let result = self.client.message(email.to_string().as_bytes());
+        let result = self.client.message(email);
 
         if let Ok(ref result) = result {
             // Increment the connection reuse counter
