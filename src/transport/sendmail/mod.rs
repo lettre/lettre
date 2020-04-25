@@ -1,11 +1,11 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use crate::{transport::sendmail::error::SendmailResult, Message, Transport};
+use crate::Envelope;
+use crate::{transport::sendmail::error::SendmailResult, Transport};
 use log::info;
 use std::{
     convert::AsRef,
-    fmt::Display,
     io::prelude::*,
     process::{Command, Stdio},
 };
@@ -39,33 +39,20 @@ impl SendmailTransport {
 impl<'a, B> Transport<'a, B> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send(&mut self, email: Message<B>) -> Self::Result
-    where
-        B: Display,
-    {
+    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {
         let email_id = Uuid::new_v4();
 
         // Spawn the sendmail command
         let mut process = Command::new(&self.command)
             .arg("-i")
             .arg("-f")
-            .arg(
-                email
-                    .envelope()
-                    .from()
-                    .map(|f| f.as_ref())
-                    .unwrap_or("\"\""),
-            )
-            .args(email.envelope().to())
+            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()?;
 
-        process
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(email.to_string().as_bytes())?;
+        process.stdin.as_mut().unwrap().write_all(email)?;
 
         info!("Wrote {} message to stdin", email_id);
 
