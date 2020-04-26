@@ -25,7 +25,6 @@ pub struct Mailbox {
 
 impl Mailbox {
     /// Create new mailbox using email address and addressee name
-    #[inline]
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
     }
@@ -110,32 +109,27 @@ pub struct Mailboxes(Vec<Mailbox>);
 
 impl Mailboxes {
     /// Create mailboxes list
-    #[inline]
     pub fn new() -> Self {
         Mailboxes(Vec::new())
     }
 
     /// Add mailbox to a list
-    #[inline]
     pub fn with(mut self, mbox: Mailbox) -> Self {
         self.0.push(mbox);
         self
     }
 
     /// Add mailbox to a list
-    #[inline]
     pub fn push(&mut self, mbox: Mailbox) {
         self.0.push(mbox);
     }
 
     /// Extract first mailbox
-    #[inline]
     pub fn into_single(self) -> Option<Mailbox> {
         self.into()
     }
 
     /// Iterate over mailboxes
-    #[inline]
     pub fn iter(&self) -> Iter<Mailbox> {
         self.0.iter()
     }

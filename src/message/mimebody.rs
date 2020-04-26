@@ -1,43 +1,45 @@
 use crate::message::{
     encoder::codec,
     header::{ContentTransferEncoding, ContentType, Header, Headers},
+    EmailFormat,
 };
-use bytes::{Bytes, IntoBuf};
 use mime::Mime;
-use std::{
-    fmt::{Display, Error as FmtError, Formatter, Result as FmtResult},
-    str::from_utf8,
-};
 use textnonce::TextNonce;
 
 /// MIME part variants
 ///
 #[derive(Debug, Clone)]
-pub enum Part<B = Bytes> {
+pub enum Part {
     /// Single part with content
     ///
-    Single(SinglePart<B>),
+    Single(SinglePart),
 
     /// Multiple parts of content
     ///
-    Multi(MultiPart<B>),
+    Multi(MultiPart),
 }
 
-impl<B> Display for Part<B>
-where
-    B: AsRef<str>,
-{
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        match *self {
-            Part::Single(ref part) => part.fmt(f),
-            Part::Multi(ref part) => part.fmt(f),
+impl EmailFormat for Part {
+    fn format(&self, out: &mut Vec<u8>) {
+        match self {
+            Part::Single(part) => part.format(out),
+            Part::Multi(part) => part.format(out),
         }
+    }
+}
+
+impl Part {
+    /// Get message content formatted for SMTP
+    pub fn formatted(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        self.format(&mut out);
+        out
     }
 }
 
 /// Parts of multipart body
 ///
-pub type Parts<B = Bytes> = Vec<Part<B>>;
+pub type Parts = Vec<Part>;
 
 /// Creates builder for single part
 ///
@@ -55,18 +57,16 @@ impl SinglePartBuilder {
     }
 
     /// Set the header to singlepart
-    #[inline]
     pub fn header<H: Header>(mut self, header: H) -> Self {
         self.headers.set(header);
         self
     }
 
     /// Build singlepart using body
-    #[inline]
-    pub fn body<T>(self, body: T) -> SinglePart<T> {
+    pub fn body<T: Into<Vec<u8>>>(self, body: T) -> SinglePart {
         SinglePart {
             headers: self.headers,
-            body,
+            body: body.into(),
         }
     }
 }
@@ -94,12 +94,12 @@ impl Default for SinglePartBuilder {
 /// ```
 ///
 #[derive(Debug, Clone)]
-pub struct SinglePart<B = Bytes> {
+pub struct SinglePart {
     headers: Headers,
-    body: B,
+    body: Vec<u8>,
 }
 
-impl SinglePart<()> {
+impl SinglePart {
     /// Creates a default builder for singlepart
     pub fn builder() -> SinglePartBuilder {
         SinglePartBuilder::new()
@@ -129,7 +129,6 @@ impl SinglePart<()> {
     /// Creates a singlepart builder with 8-bit encoding
     ///
     /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::EightBit)`.
-    #[inline]
     pub fn eight_bit() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::EightBit)
     }
@@ -137,55 +136,38 @@ impl SinglePart<()> {
     /// Creates a singlepart builder with binary encoding
     ///
     /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::Binary)`.
-    #[inline]
     pub fn binary() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::Binary)
     }
-}
-
-impl<B> SinglePart<B> {
-    /// Get the transfer encoding
-    #[inline]
-    pub fn encoding(&self) -> Option<&ContentTransferEncoding> {
-        self.headers.get()
-    }
 
     /// Get the headers from singlepart
-    #[inline]
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
-    /// Get a mutable reference to the headers
-    #[inline]
-    pub fn headers_mut(&mut self) -> &mut Headers {
-        &mut self.headers
+    /// Read the body from singlepart
+    pub fn body_ref(&self) -> &[u8] {
+        &self.body
     }
 
-    /// Read the body from singlepart
-    #[inline]
-    pub fn body_ref(&self) -> &B {
-        &self.body
+    /// Get message content formatted for SMTP
+    pub fn formatted(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        self.format(&mut out);
+        out
     }
 }
 
-impl<B> Display for SinglePart<B>
-where
-    B: AsRef<str>,
-{
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        self.headers.fmt(f)?;
-        "\r\n".fmt(f)?;
+impl EmailFormat for SinglePart {
+    fn format(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(self.headers.to_string().as_bytes());
+        out.extend_from_slice(b"\r\n");
 
-        let body = self.body.as_ref();
-        let mut encoder = codec(self.encoding());
-        let result = encoder
-            .encode_all(&body.into_buf())
-            .map_err(|_| FmtError::default())?;
-        let body = from_utf8(&result).map_err(|_| FmtError::default())?;
+        let encoding = self.headers.get::<ContentTransferEncoding>();
+        let mut encoder = codec(encoding);
 
-        body.fmt(f)?;
-        "\r\n".fmt(f)
+        out.extend_from_slice(&encoder.encode(&self.body));
+        out.extend_from_slice(b"\r\n");
     }
 }
 
@@ -255,7 +237,6 @@ pub struct MultiPartBuilder {
 
 impl MultiPartBuilder {
     /// Creates default multipart builder
-    #[inline]
     pub fn new() -> Self {
         Self {
             headers: Headers::new(),
@@ -263,14 +244,12 @@ impl MultiPartBuilder {
     }
 
     /// Set a header
-    #[inline]
     pub fn header<H: Header>(mut self, header: H) -> Self {
         self.headers.set(header);
         self
     }
 
     /// Set `Content-Type` header using [`MultiPartKind`]
-    #[inline]
     pub fn kind(self, kind: MultiPartKind) -> Self {
         self.header(ContentType(kind.into()))
     }
@@ -286,8 +265,7 @@ impl MultiPartBuilder {
     }
 
     /// Creates multipart without parts
-    #[inline]
-    pub fn build<B>(self) -> MultiPart<B> {
+    pub fn build(self) -> MultiPart {
         MultiPart {
             headers: self.headers,
             parts: Vec::new(),
@@ -295,20 +273,17 @@ impl MultiPartBuilder {
     }
 
     /// Creates multipart using part
-    #[inline]
-    pub fn part<B>(self, part: Part<B>) -> MultiPart<B> {
+    pub fn part(self, part: Part) -> MultiPart {
         self.build().part(part)
     }
 
     /// Creates multipart using singlepart
-    #[inline]
-    pub fn singlepart<B>(self, part: SinglePart<B>) -> MultiPart<B> {
+    pub fn singlepart(self, part: SinglePart) -> MultiPart {
         self.build().singlepart(part)
     }
 
     /// Creates multipart using multipart
-    #[inline]
-    pub fn multipart<B>(self, part: MultiPart<B>) -> MultiPart<B> {
+    pub fn multipart(self, part: MultiPart) -> MultiPart {
         self.build().multipart(part)
     }
 }
@@ -322,14 +297,13 @@ impl Default for MultiPartBuilder {
 /// Multipart variant with parts
 ///
 #[derive(Debug, Clone)]
-pub struct MultiPart<B = Bytes> {
+pub struct MultiPart {
     headers: Headers,
-    parts: Parts<B>,
+    parts: Parts,
 }
 
-impl MultiPart<()> {
+impl MultiPart {
     /// Creates multipart builder
-    #[inline]
     pub fn builder() -> MultiPartBuilder {
         MultiPartBuilder::new()
     }
@@ -337,7 +311,6 @@ impl MultiPart<()> {
     /// Creates mixed multipart builder
     ///
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Mixed)`
-    #[inline]
     pub fn mixed() -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Mixed)
     }
@@ -345,7 +318,6 @@ impl MultiPart<()> {
     /// Creates alternative multipart builder
     ///
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Alternative)`
-    #[inline]
     pub fn alternative() -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Alternative)
     }
@@ -353,97 +325,90 @@ impl MultiPart<()> {
     /// Creates related multipart builder
     ///
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Related)`
-    #[inline]
     pub fn related() -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Related)
     }
-}
 
-impl<B> MultiPart<B> {
     /// Add part to multipart
-    #[inline]
-    pub fn part(mut self, part: Part<B>) -> Self {
+    pub fn part(mut self, part: Part) -> Self {
         self.parts.push(part);
         self
     }
 
     /// Add single part to multipart
-    #[inline]
-    pub fn singlepart(mut self, part: SinglePart<B>) -> Self {
+    pub fn singlepart(mut self, part: SinglePart) -> Self {
         self.parts.push(Part::Single(part));
         self
     }
 
     /// Add multi part to multipart
-    #[inline]
-    pub fn multipart(mut self, part: MultiPart<B>) -> Self {
+    pub fn multipart(mut self, part: MultiPart) -> Self {
         self.parts.push(Part::Multi(part));
         self
     }
 
     /// Get the boundary of multipart contents
-    #[inline]
     pub fn boundary(&self) -> String {
         let content_type = &self.headers.get::<ContentType>().unwrap().0;
         content_type.get_param("boundary").unwrap().as_str().into()
     }
 
     /// Get the headers from the multipart
-    #[inline]
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
     /// Get a mutable reference to the headers
-    #[inline]
     pub fn headers_mut(&mut self) -> &mut Headers {
         &mut self.headers
     }
 
     /// Get the parts from the multipart
-    #[inline]
-    pub fn parts(&self) -> &Parts<B> {
+    pub fn parts(&self) -> &Parts {
         &self.parts
     }
 
     /// Get a mutable reference to the parts
-    #[inline]
-    pub fn parts_mut(&mut self) -> &mut Parts<B> {
+    pub fn parts_mut(&mut self) -> &mut Parts {
         &mut self.parts
+    }
+
+    /// Get message content formatted for SMTP
+    pub fn formatted(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        self.format(&mut out);
+        out
     }
 }
 
-impl<B> Display for MultiPart<B>
-where
-    B: AsRef<str>,
-{
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        self.headers.fmt(f)?;
-        "\r\n".fmt(f)?;
+impl EmailFormat for MultiPart {
+    fn format(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(self.headers.to_string().as_bytes());
+        out.extend_from_slice(b"\r\n");
 
         let boundary = self.boundary();
 
         for part in &self.parts {
-            "--".fmt(f)?;
-            boundary.fmt(f)?;
-            "\r\n".fmt(f)?;
-            part.fmt(f)?;
+            out.extend_from_slice(b"--");
+            out.extend_from_slice(boundary.as_bytes());
+            out.extend_from_slice(b"\r\n");
+            part.format(out);
         }
 
-        "--".fmt(f)?;
-        boundary.fmt(f)?;
-        "--\r\n".fmt(f)
+        out.extend_from_slice(b"--");
+        out.extend_from_slice(boundary.as_bytes());
+        out.extend_from_slice(b"--\r\n");
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::{MultiPart, Part, SinglePart};
+    use super::*;
     use crate::message::header;
 
     #[test]
     fn single_part_binary() {
-        let part: SinglePart<String> = SinglePart::builder()
+        let part = SinglePart::builder()
             .header(header::ContentType(
                 "text/plain; charset=utf8".parse().unwrap(),
             ))
@@ -451,7 +416,7 @@ mod test {
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
-            format!("{}", part),
+            String::from_utf8(part.formatted()).unwrap(),
             concat!(
                 "Content-Type: text/plain; charset=utf8\r\n",
                 "Content-Transfer-Encoding: binary\r\n",
@@ -463,7 +428,7 @@ mod test {
 
     #[test]
     fn single_part_quoted_printable() {
-        let part: SinglePart<String> = SinglePart::builder()
+        let part = SinglePart::builder()
             .header(header::ContentType(
                 "text/plain; charset=utf8".parse().unwrap(),
             ))
@@ -471,7 +436,7 @@ mod test {
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
-            format!("{}", part),
+            String::from_utf8(part.formatted()).unwrap(),
             concat!(
                 "Content-Type: text/plain; charset=utf8\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
@@ -484,7 +449,7 @@ mod test {
 
     #[test]
     fn single_part_base64() {
-        let part: SinglePart<String> = SinglePart::builder()
+        let part = SinglePart::builder()
             .header(header::ContentType(
                 "text/plain; charset=utf8".parse().unwrap(),
             ))
@@ -492,7 +457,7 @@ mod test {
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
-            format!("{}", part),
+            String::from_utf8(part.formatted()).unwrap(),
             concat!(
                 "Content-Type: text/plain; charset=utf8\r\n",
                 "Content-Transfer-Encoding: base64\r\n",
@@ -504,7 +469,7 @@ mod test {
 
     #[test]
     fn multi_part_mixed() {
-        let part: MultiPart<String> = MultiPart::mixed()
+        let part = MultiPart::mixed()
             .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
             .part(Part::Single(
                 SinglePart::builder()
@@ -531,7 +496,7 @@ mod test {
                     .body(String::from("int main() { return 0; }")),
             );
 
-        assert_eq!(format!("{}", part),
+        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
                    concat!("Content-Type: multipart/mixed;",
                            " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
                            "\r\n",
@@ -551,7 +516,7 @@ mod test {
 
     #[test]
     fn multi_part_alternative() {
-        let part: MultiPart<String> = MultiPart::alternative()
+        let part = MultiPart::alternative()
             .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
             .part(Part::Single(SinglePart::builder()
                              .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
@@ -562,7 +527,7 @@ mod test {
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
-        assert_eq!(format!("{}", part),
+        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
                    concat!("Content-Type: multipart/alternative;",
                            " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
                            "\r\n",
@@ -581,7 +546,7 @@ mod test {
 
     #[test]
     fn multi_part_mixed_related() {
-        let part: MultiPart<String> = MultiPart::mixed()
+        let part = MultiPart::mixed()
             .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
             .multipart(MultiPart::related()
                             .boundary("E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh")
@@ -603,7 +568,7 @@ mod test {
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("int main() { return 0; }")));
 
-        assert_eq!(format!("{}", part),
+        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
                    concat!("Content-Type: multipart/mixed;",
                            " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
                            "\r\n",

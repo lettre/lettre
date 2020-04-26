@@ -36,7 +36,7 @@ impl SendmailTransport {
     }
 }
 
-impl<'a, B> Transport<'a, B> for SendmailTransport {
+impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
     fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {

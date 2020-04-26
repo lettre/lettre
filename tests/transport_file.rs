@@ -20,7 +20,7 @@ mod test {
             .body("Be happy!")
             .unwrap();
 
-        let result = sender.send(email);
+        let result = sender.send(&email);
         let id = result.unwrap();
 
         let file = temp_dir().join(format!("{}.json", id));

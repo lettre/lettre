@@ -15,7 +15,7 @@ mod test {
         SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
             .unwrap()
             .transport()
-            .send(email)
+            .send(&email)
             .unwrap();
     }
 }

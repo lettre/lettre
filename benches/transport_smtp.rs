@@ -17,7 +17,7 @@ fn bench_simple_send(c: &mut Criterion) {
                 .subject("Happy new year")
                 .body("Be happy!")
                 .unwrap();
-            let result = black_box(sender.send(email));
+            let result = black_box(sender.send(&email));
             assert!(result.is_ok());
         })
     });
@@ -37,7 +37,7 @@ fn bench_reuse_send(c: &mut Criterion) {
                 .subject("Happy new year")
                 .body("Be happy!")
                 .unwrap();
-            let result = black_box(sender.send(email));
+            let result = black_box(sender.send(&email));
             assert!(result.is_ok());
         })
     });

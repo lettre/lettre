@@ -65,7 +65,6 @@ static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\
 
 impl Address {
     /// Create email address from parts
-    #[inline]
     pub fn new<U: Into<String>, D: Into<String>>(user: U, domain: D) -> Result<Self, AddressError> {
         (user, domain).try_into()
     }
