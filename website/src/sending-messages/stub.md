@@ -19,7 +19,7 @@ fn main() {
         .unwrap();
 
     let mut sender = StubTransport::new_positive();
-    let result = sender.send(email);
+    let result = sender.send(&email);
     assert!(result.is_ok());
 }
 ```

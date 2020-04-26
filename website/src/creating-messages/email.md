@@ -14,7 +14,7 @@ The easiest way how we can create email message with simple string.
 # extern crate lettre;
 use lettre::message::Message;
 
-let m: Message<&str> = Message::builder()
+let m = Message::builder()
     .from("NoBody <nobody@domain.tld>".parse().unwrap())
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
@@ -44,14 +44,14 @@ The more complex way is using MIME contents.
 
 ```rust
 # extern crate lettre;
-use lettre::message::{header, Message, SinglePart};
+use lettre::message::{header, Message, SinglePart, Part};
 
-let m: Message<SinglePart<&str>> = Message::builder()
+let m = Message::builder()
     .from("NoBody <nobody@domain.tld>".parse().unwrap())
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
     .subject("Happy new year")
-    .mime_body(
+    .singlepart(
         SinglePart::builder()
             .header(header::ContentType(
                 "text/plain; charset=utf8".parse().unwrap(),
@@ -82,14 +82,14 @@ And more advanced way of building message by using multipart MIME contents.
 
 ```rust
 # extern crate lettre;
-use lettre::message::{header, Message, MultiPart, SinglePart};
+use lettre::message::{header, Message, MultiPart, SinglePart, Part};
 
-let m: Message<MultiPart<&str>> = Message::builder()
+let m = Message::builder()
     .from("NoBody <nobody@domain.tld>".parse().unwrap())
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
     .subject("Happy new year")
-    .mime_body(
+    .multipart(
         MultiPart::mixed()
         .multipart(
             MultiPart::alternative()

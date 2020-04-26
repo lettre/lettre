@@ -19,11 +19,10 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 base64 = { version = "0.12", optional = true }
 bufstream = { version = "0.1", optional = true }
-# TODO to 0.5
-bytes = { version = "0.4", optional = true }
 hostname = { version = "0.3", optional = true }
 hyperx = { version = "1", optional = true, features = ["headers"] }
 idna = "0.2"
+line-wrap = "0.1"
 log = "0.4"
 uuid = { version = "0.8", features = ["v4"] }
 mime = { version = "0.3", optional = true }
@@ -50,7 +49,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable", "bytes"]
+builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable"]
 connection-pool = ["r2d2"]
 default = ["file-transport", "smtp-transport", "hostname", "sendmail-transport", "native-tls", "builder"]
 file-transport = ["serde", "serde_json"]

@@ -36,7 +36,7 @@ struct SerializableEmail {
     message: Vec<u8>,
 }
 
-impl<'a, B> Transport<'a, B> for FileTransport {
+impl<'a> Transport<'a> for FileTransport {
     type Result = FileResult;
 
     fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {

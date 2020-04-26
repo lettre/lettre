@@ -37,7 +37,7 @@ fn main() {
     let mut mailer =
     SmtpClient::new_unencrypted_localhost().unwrap().transport();
     // Send the email
-    let result = mailer.send(email);
+    let result = mailer.send(&email);
 
     assert!(result.is_ok());
 }
@@ -88,11 +88,11 @@ fn main() {
         // Enable connection reuse
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
 
-    let result_1 = mailer.send(email_1);
+    let result_1 = mailer.send(&email_1);
     assert!(result_1.is_ok());
 
     // The second email will use the same connection
-    let result_2 = mailer.send(email_2);
+    let result_2 = mailer.send(&email_2);
     assert!(result_2.is_ok());
 
     // Explicitly close the SMTP transaction as we enabled connection reuse
@@ -145,7 +145,7 @@ fn main() {
         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
         .transport();
 
-    let result = mailer.send(email);
+    let result = mailer.send(&email);
 
     assert!(result.is_ok());
 

@@ -23,6 +23,8 @@ pub enum Error {
     CannotParseFilename,
     /// IO error
     Io(std::io::Error),
+    /// Non-ASCII chars
+    NonAsciiChars,
 }
 
 impl Display for Error {
@@ -35,6 +37,7 @@ impl Display for Error {
             Error::EmailMissingLocalPart => "missing local part in email address".to_string(),
             Error::EmailMissingDomain => "missing domain in email address".to_string(),
             Error::CannotParseFilename => "could not parse attachment filename".to_string(),
+            Error::NonAsciiChars => "contains non-ASCII chars".to_string(),
             Error::Io(e) => e.to_string(),
         })
     }

@@ -12,6 +12,6 @@ fn stub_transport() {
         .body("Be happy!")
         .unwrap();
 
-    sender_ok.send(email.clone()).unwrap();
-    sender_ko.send(email).unwrap_err();
+    sender_ok.send(&email.clone()).unwrap();
+    sender_ko.send(&email).unwrap_err();
 }
