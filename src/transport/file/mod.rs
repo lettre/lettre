@@ -8,6 +8,7 @@ use std::{
     fs::File,
     io::prelude::*,
     path::{Path, PathBuf},
+    str,
 };
 use uuid::Uuid;
 
@@ -31,9 +32,10 @@ impl FileTransport {
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-struct SerializableEmail {
+struct SerializableEmail<'a> {
     envelope: Envelope,
-    message: Vec<u8>,
+    raw_message: Option<&'a [u8]>,
+    message: Option<&'a str>,
 }
 
 impl<'a> Transport<'a> for FileTransport {
@@ -45,10 +47,19 @@ impl<'a> Transport<'a> for FileTransport {
         let mut file = self.path.clone();
         file.push(format!("{}.json", email_id));
 
-        let serialized = serde_json::to_string(&SerializableEmail {
-            envelope: envelope.clone(),
-            message: email.to_vec(),
-        })?;
+        let serialized = match str::from_utf8(email) {
+            // Serialize as UTF-8 string if possible
+            Ok(m) => serde_json::to_string(&SerializableEmail {
+                envelope: envelope.clone(),
+                message: Some(m),
+                raw_message: None,
+            }),
+            Err(_) => serde_json::to_string(&SerializableEmail {
+                envelope: envelope.clone(),
+                message: None,
+                raw_message: Some(email),
+            }),
+        }?;
 
         File::create(file.as_path())?.write_all(serialized.as_bytes())?;
         Ok(email_id.to_string())
