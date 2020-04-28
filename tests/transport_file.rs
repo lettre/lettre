@@ -30,7 +30,7 @@ mod test {
 
         assert_eq!(
             buffer,
-            "{\"envelope\":{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"},\"message\":[70,114,111,109,58,32,78,111,66,111,100,121,32,60,110,111,98,111,100,121,64,100,111,109,97,105,110,46,116,108,100,62,13,10,82,101,112,108,121,45,84,111,58,32,89,117,105,110,32,60,121,117,105,110,64,100,111,109,97,105,110,46,116,108,100,62,13,10,84,111,58,32,72,101,105,32,60,104,101,105,64,100,111,109,97,105,110,46,116,108,100,62,13,10,83,117,98,106,101,99,116,58,32,72,97,112,112,121,32,110,101,119,32,121,101,97,114,13,10,68,97,116,101,58,32,84,117,101,44,32,49,53,32,78,111,118,32,49,57,57,52,32,48,56,58,49,50,58,51,49,32,71,77,84,13,10,13,10,66,101,32,104,97,112,112,121,33]}");
+            "{\"envelope\":{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"},\"raw_message\":null,\"message\":\"From: NoBody <nobody@domain.tld>\\r\\nReply-To: Yuin <yuin@domain.tld>\\r\\nTo: Hei <hei@domain.tld>\\r\\nSubject: Happy new year\\r\\nDate: Tue, 15 Nov 1994 08:12:31 GMT\\r\\nContent-Transfer-Encoding: quoted-printable\\r\\n\\r\\nBe happy!\"}");
         remove_file(file).unwrap();
     }
 }
