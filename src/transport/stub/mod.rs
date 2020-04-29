@@ -6,7 +6,6 @@ use crate::Envelope;
 use crate::Transport;
 use log::info;
 
-
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
 pub struct StubTransport {

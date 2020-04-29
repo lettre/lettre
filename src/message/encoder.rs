@@ -1,6 +1,6 @@
 use crate::message::header::ContentTransferEncoding;
+use line_wrap::{crlf, line_wrap, LineEnding};
 use std::io::Write;
-use line_wrap::{line_wrap, crlf, LineEnding};
 
 /// Encoder trait
 pub trait EncoderCodec: Send {
@@ -162,8 +162,7 @@ mod test {
 
         assert_eq!(
             &String::from_utf8(c.encode("Привет, мир!".as_bytes())).unwrap(),
-                "=D0=9F=D1=80=D0=B8=D0=B2=D0=B5=D1=82, =D0=BC=D0=B8=D1=80!"
-            
+            "=D0=9F=D1=80=D0=B8=D0=B2=D0=B5=D1=82, =D0=BC=D0=B8=D1=80!"
         );
 
         assert_eq!(&String::from_utf8(c.encode("Текст письма в уникоде".as_bytes())).unwrap(),
@@ -185,9 +184,8 @@ mod test {
                 "0KLQtdC60YHRgiDQv9C40YHRjNC80LAg0LIg0YPQvdC40LrQ",
                 "vtC00LUg0L/QvtC00LvQuNC90L3Q\r\ntdC1Lg=="
             )
-            
         );
-    
+
         assert_eq!(
             &String::from_utf8(c.encode(
                 "Ну прямо супер-длинный текст письма в уникоде, который уж точно ну никак не поместиться в 78 байт, как ни крути, я гарантирую.".as_bytes()
@@ -201,15 +199,13 @@ mod test {
         assert_eq!(
             &String::from_utf8(c.encode(
                 "Ну прямо супер-длинный текст письма в уникоде, который уж точно ну никак не поместиться в 78 байт, как ни крути, я гарантирую это.".as_bytes()
-                    
             )).unwrap(),
-            
+
                 concat!("0J3RgyDQv9GA0Y/QvNC+INGB0YPQv9C10YAt0LTQu9C40L3QvdGL0Lkg0YLQtdC60YHRgiDQv9C4\r\n",
                         "0YHRjNC80LAg0LIg0YPQvdC40LrQvtC00LUsINC60L7RgtC+0YDRi9C5INGD0LYg0YLQvtGH0L3Q\r\n",
                         "viDQvdGDINC90LjQutCw0Log0L3QtSDQv9C+0LzQtdGB0YLQuNGC0YzRgdGPINCyIDc4INCx0LDQ\r\n",
                         "udGCLCDQutCw0Log0L3QuCDQutGA0YPRgtC4LCDRjyDQs9Cw0YDQsNC90YLQuNGA0YPRjiDRjdGC\r\n",
                         "0L4u")
-            
         );
     }
 
@@ -228,13 +224,13 @@ mod test {
         let mut c = EightBitCodec::new();
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, world!".as_bytes())
-).unwrap(),            "Hello, world!"
+            &String::from_utf8(c.encode("Hello, world!".as_bytes())).unwrap(),
+            "Hello, world!"
         );
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, мир!".as_bytes())
-).unwrap(),            "Hello, мир!"
+            &String::from_utf8(c.encode("Hello, мир!".as_bytes())).unwrap(),
+            "Hello, мир!"
         );
     }
 
@@ -243,13 +239,13 @@ mod test {
         let mut c = BinaryCodec::new();
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, world!".as_bytes())
-).unwrap(),            "Hello, world!"
+            &String::from_utf8(c.encode("Hello, world!".as_bytes())).unwrap(),
+            "Hello, world!"
         );
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, мир!".as_bytes())
-).unwrap(),            "Hello, мир!"
+            &String::from_utf8(c.encode("Hello, мир!".as_bytes())).unwrap(),
+            "Hello, мир!"
         );
     }
 }
