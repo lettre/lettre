@@ -1,5 +1,7 @@
 use std::str::from_utf8;
 
+// https://tools.ietf.org/html/rfc1522
+
 fn allowed_char(c: char) -> bool {
     c >= 1 as char && c <= 9 as char
         || c == 11 as char

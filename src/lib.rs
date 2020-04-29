@@ -9,7 +9,8 @@
     trivial_casts,
     trivial_numeric_casts,
     unstable_features,
-    unused_import_braces
+    unused_import_braces,
+    unsafe_code
 )]
 
 pub mod address;
@@ -23,7 +24,7 @@ use crate::error::Error;
 #[cfg(feature = "builder")]
 pub use crate::message::{
     header::{self, Headers},
-    Mailboxes, Message,
+    EmailFormat, Mailboxes, Message,
 };
 #[cfg(feature = "file-transport")]
 pub use crate::transport::file::FileTransport;
@@ -37,7 +38,6 @@ pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 pub use crate::transport::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
-use std::fmt::Display;
 
 /// Simple email envelope representation
 ///
@@ -109,27 +109,20 @@ impl TryFrom<&Headers> for Envelope {
     }
 }
 
-// FIXME generate random log id
-
 /// Transport method for emails
-pub trait Transport<'a, B> {
+pub trait Transport<'a> {
     /// Result type for the transport
     type Result;
 
     /// Sends the email
     /// FIXME not mut
 
-    // email = message (bytes) + envelope
-    fn send(&mut self, message: Message<B>) -> Self::Result
-    where
-        B: Display,
-    {
-        self.send_raw(message.envelope(), message.to_string().as_bytes())
+    fn send(&mut self, message: &Message) -> Self::Result {
+        let raw = message.formatted();
+        self.send_raw(message.envelope(), &raw)
     }
 
     fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result;
-
-    // TODO allow sending generic data
 }
 
 #[cfg(test)]

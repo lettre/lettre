@@ -14,7 +14,7 @@ mod test {
             .body("Be happy!")
             .unwrap();
 
-        let result = sender.send(email);
+        let result = sender.send(&email);
         println!("{:?}", result);
         assert!(result.is_ok());
     }

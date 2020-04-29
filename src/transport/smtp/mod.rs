@@ -437,7 +437,7 @@ impl<'a> SmtpTransport {
     }
 }
 
-impl<'a, B> Transport<'a, B> for SmtpTransport {
+impl<'a> Transport<'a> for SmtpTransport {
     type Result = SmtpResult;
 
     /// Sends an email

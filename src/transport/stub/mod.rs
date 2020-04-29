@@ -5,7 +5,6 @@
 use crate::Envelope;
 use crate::Transport;
 use log::info;
-use std::fmt::Display;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
@@ -28,10 +27,7 @@ impl StubTransport {
 /// SMTP result type
 pub type StubResult = Result<(), ()>;
 
-impl<'a, B> Transport<'a, B> for StubTransport
-where
-    B: Display,
-{
+impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
     fn send_raw(&mut self, envelope: &Envelope, _email: &[u8]) -> Self::Result {
