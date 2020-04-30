@@ -79,7 +79,7 @@ fn escape_crlf(string: &str) -> String {
 
 /// Structure that implements the SMTP client
 #[derive(Default)]
-pub struct InnerClient<S: Write + Read = NetworkStream> {
+pub struct SmtpConnection<S: Write + Read = NetworkStream> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: Option<BufStream<S>>,
@@ -91,16 +91,16 @@ macro_rules! return_err (
     })
 );
 
-impl<S: Write + Read> InnerClient<S> {
+impl<S: Write + Read> SmtpConnection<S> {
     /// Creates a new SMTP client
     ///
     /// It does not connects to the server, but only creates the `Client`
-    pub fn new() -> InnerClient<S> {
-        InnerClient { stream: None }
+    pub fn new() -> SmtpConnection<S> {
+        SmtpConnection { stream: None }
     }
 }
 
-impl<S: Connector + Write + Read + Timeout> InnerClient<S> {
+impl<S: Connector + Write + Read + Timeout> SmtpConnection<S> {
     /// Closes the SMTP transaction if possible
     pub fn close(&mut self) {
         let _ = self.command(QuitCommand);

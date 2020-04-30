@@ -19,7 +19,7 @@ use crate::{
         authentication::{
             Credentials, Mechanism, DEFAULT_ENCRYPTED_MECHANISMS, DEFAULT_UNENCRYPTED_MECHANISMS,
         },
-        client::{net::ClientTlsParameters, InnerClient},
+        client::{net::ClientTlsParameters, SmtpConnection},
         commands::*,
         error::{Error, SmtpResult},
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
@@ -258,7 +258,7 @@ pub struct SmtpTransport {
     /// Information about the client
     client_info: SmtpClient,
     /// Low level client
-    client: InnerClient,
+    client: SmtpConnection,
 }
 
 macro_rules! try_smtp (
@@ -281,7 +281,7 @@ impl<'a> SmtpTransport {
     ///
     /// It does not connect to the server, but only creates the `SmtpTransport`
     pub fn new(builder: SmtpClient) -> SmtpTransport {
-        let client = InnerClient::new();
+        let client = SmtpConnection::new();
 
         SmtpTransport {
             client,
