@@ -12,18 +12,14 @@
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //!
 
-#[cfg(feature = "r2d2")]
-use crate::transport::smtp::r2d2::SmtpConnectionManager;
-use crate::Envelope;
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
         client::{net::TlsParameters, SmtpConnection},
-        commands::*,
         error::{Error, SmtpResult},
-        extension::{ClientId, Extension, MailBodyParameter, MailParameter},
+        extension::ClientId,
     },
-    Transport,
+    Envelope, Transport,
 };
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
@@ -31,8 +27,8 @@ use native_tls::{Protocol, TlsConnector};
 use r2d2::Pool;
 #[cfg(feature = "rustls")]
 use rustls::ClientConfig;
+use std::ops::DerefMut;
 use std::time::Duration;
-
 #[cfg(feature = "rustls")]
 use webpki_roots::TLS_SERVER_ROOTS;
 
@@ -41,8 +37,8 @@ pub mod client;
 pub mod commands;
 pub mod error;
 pub mod extension;
-#[cfg(feature = "connection-pool")]
-pub mod r2d2;
+#[cfg(feature = "r2d2")]
+pub mod pool;
 pub mod response;
 pub mod util;
 
@@ -101,20 +97,8 @@ pub struct SmtpTransport {
     timeout: Option<Duration>,
     /// Connection pool
     #[cfg(feature = "r2d2")]
-    pool: Option<Pool>,
+    pool: Option<Pool<SmtpTransport>>,
 }
-
-macro_rules! try_smtp (
-    ($err: expr, $client: ident) => ({
-        match $err {
-            Ok(val) => val,
-            Err(err) => {
-                $client.abort();
-                return Err(From::from(err))
-            },
-        }
-    })
-);
 
 /// Builder for the SMTP `SmtpTransport`
 impl SmtpTransport {
@@ -155,9 +139,7 @@ impl SmtpTransport {
         #[cfg(feature = "rustls")]
         let mut tls = ClientConfig::new();
         #[cfg(feature = "rustls")]
-        tls.config
-            .root_store
-            .add_server_trust_anchors(&TLS_SERVER_ROOTS);
+        tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
         #[cfg(feature = "rustls")]
         let tls_parameters = TlsParameters::new(relay.to_string(), tls);
 
@@ -167,8 +149,9 @@ impl SmtpTransport {
 
         #[cfg(feature = "r2d2")]
         // Pool with default configuration
-        let new = new.pool(Pool::new(SmtpConnectionManager))?;
-
+        // FIXME avoid clone
+        let tpool = new.clone();
+        let new = new.pool(Pool::new(tpool)?);
         Ok(new)
     }
 
@@ -217,8 +200,8 @@ impl SmtpTransport {
 
     /// Set the TLS settings to use
     #[cfg(feature = "r2d2")]
-    pub fn pool(mut self, pool: Pool) -> Self {
-        self.pool = pool;
+    pub fn pool(mut self, pool: Pool<SmtpTransport>) -> Self {
+        self.pool = Some(pool);
         self
     }
 
@@ -240,22 +223,19 @@ impl SmtpTransport {
             #[cfg(any(feature = "native-tls", feature = "rustls"))]
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
-                    try_smtp!(conn.starttls(tls_parameters, &self.hello_name), conn);
+                    conn.starttls(tls_parameters, &self.hello_name)?;
                 }
             }
             #[cfg(any(feature = "native-tls", feature = "rustls"))]
             Tls::Required(ref tls_parameters) => {
-                try_smtp!(conn.starttls(tls_parameters, &self.hello_name), conn);
+                conn.starttls(tls_parameters, &self.hello_name)?;
             }
             _ => (),
         }
 
         match &self.credentials {
             Some(credentials) => {
-                try_smtp!(
-                    conn.auth(self.authentication.as_slice(), &credentials),
-                    conn
-                );
+                conn.auth(self.authentication.as_slice(), &credentials)?;
             }
             None => (),
         }
@@ -270,43 +250,23 @@ impl<'a> Transport<'a> for SmtpTransport {
     /// Sends an email
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
         #[cfg(feature = "r2d2")]
-        let mut conn = match self.pool {
-            Some(p) => p.get()?,
-            None => self.connection()?,
+        let mut conn: Box<dyn DerefMut<Target = SmtpConnection>> = match self.pool {
+            Some(ref p) => Box::new(p.get()?),
+            None => Box::new(Box::new(self.connection()?)),
         };
         #[cfg(not(feature = "r2d2"))]
         let mut conn = self.connection()?;
 
-        // Mail
-        let mut mail_options = vec![];
-
-        if conn.server_info().supports_feature(Extension::EightBitMime) {
-            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
-        }
-        try_smtp!(
-            conn.command(Mail::new(envelope.from().cloned(), mail_options,)),
-            conn
-        );
-
-        // Recipient
-        for to_address in envelope.to() {
-            try_smtp!(conn.command(Rcpt::new(to_address.clone(), vec![])), conn);
-        }
-
-        // Data
-        try_smtp!(conn.command(Data), conn);
-
-        // Message content
-        let result = try_smtp!(conn.message(email), conn);
+        let result = conn.send(envelope, email)?;
 
         #[cfg(feature = "r2d2")]
         {
             if self.pool.is_none() {
-                try_smtp!(conn.command(Quit), conn);
+                conn.quit()?;
             }
         }
         #[cfg(not(feature = "r2d2"))]
-        try_smtp!(conn.command(Quit), conn);
+        conn.quit()?;
 
         Ok(result)
     }

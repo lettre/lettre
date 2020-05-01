@@ -24,7 +24,6 @@ pub struct Ehlo {
 
 impl Display for Ehlo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        #[allow(clippy::write_with_newline)]
         write!(f, "EHLO {}\r\n", self.client_id)
     }
 }

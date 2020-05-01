@@ -5,9 +5,10 @@ use crate::transport::smtp::{
     client::net::{NetworkStream, TlsParameters},
     commands::*,
     error::{Error, SmtpResult},
-    extension::{ClientId, Extension, ServerInfo},
+    extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
     response::Response,
 };
+use crate::Envelope;
 use bufstream::BufStream;
 use log::debug;
 #[cfg(feature = "serde")]
@@ -151,6 +152,31 @@ impl SmtpConnection {
         Ok(conn)
     }
 
+    pub fn send(&mut self, envelope: &Envelope, email: &[u8]) -> SmtpResult {
+        // Mail
+        let mut mail_options = vec![];
+
+        if self.server_info().supports_feature(Extension::EightBitMime) {
+            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
+        }
+        try_smtp!(
+            self.command(Mail::new(envelope.from().cloned(), mail_options,)),
+            self
+        );
+
+        // Recipient
+        for to_address in envelope.to() {
+            try_smtp!(self.command(Rcpt::new(to_address.clone(), vec![])), self);
+        }
+
+        // Data
+        try_smtp!(self.command(Data), self);
+
+        // Message content
+        let result = try_smtp!(self.message(email), self);
+        Ok(result)
+    }
+
     pub fn has_broken(&self) -> bool {
         self.panic
     }
@@ -172,7 +198,8 @@ impl SmtpConnection {
                 try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
                 debug!("connection encrypted");
                 // Send EHLO again
-                self.ehlo(hello_name)
+                try_smtp!(self.ehlo(hello_name), self);
+                Ok(())
             }
             #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
             // This should never happen as `Tls` can only be created
@@ -191,6 +218,10 @@ impl SmtpConnection {
         );
         self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
         Ok(())
+    }
+
+    pub fn quit(&mut self) -> SmtpResult {
+        Ok(try_smtp!(self.command(Quit), self))
     }
 
     pub fn abort(&mut self) {
@@ -239,11 +270,14 @@ impl SmtpConnection {
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
-            response = self.command(Auth::new_from_response(
-                mechanism,
-                credentials.clone(),
-                &response,
-            )?)?;
+            response = try_smtp!(
+                self.command(Auth::new_from_response(
+                    mechanism,
+                    credentials.clone(),
+                    &response,
+                )?),
+                self
+            );
         }
 
         if challenges == 0 {

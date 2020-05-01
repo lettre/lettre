@@ -3,11 +3,9 @@
 use self::Error::*;
 use crate::transport::smtp::response::{Response, Severity};
 use base64::DecodeError;
-#[cfg(feature = "native-tls")]
 use std::{
     error::Error as StdError,
-    fmt,
-    fmt::{Display, Formatter},
+    fmt::{self, Display, Formatter},
     io,
     string::FromUtf8Error,
 };
@@ -43,10 +41,11 @@ pub enum Error {
     /// Invalid hostname
     #[cfg(feature = "rustls-tls")]
     InvalidDNSName(webpki::InvalidDNSNameError),
+    #[cfg(feature = "r2d2")]
+    Pool(r2d2::Error),
 }
 
 impl Display for Error {
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::match_same_arms))]
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
         match *self {
             // Try to display the first line of the server's response that usually
@@ -70,6 +69,7 @@ impl Display for Error {
             Parsing(ref err) => fmt.write_str(err.description()),
             #[cfg(feature = "rustls-tls")]
             InvalidDNSName(ref err) => err.fmt(fmt),
+            Pool(ref err) => err.fmt(fmt),
         }
     }
 }
@@ -126,6 +126,13 @@ impl From<FromUtf8Error> for Error {
 impl From<webpki::InvalidDNSNameError> for Error {
     fn from(err: webpki::InvalidDNSNameError) -> Error {
         InvalidDNSName(err)
+    }
+}
+
+#[cfg(feature = "r2d2")]
+impl From<r2d2::Error> for Error {
+    fn from(err: r2d2::Error) -> Error {
+        Pool(err)
     }
 }
 
