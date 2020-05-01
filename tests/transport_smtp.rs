@@ -1,7 +1,7 @@
 #[cfg(test)]
 #[cfg(feature = "smtp-transport")]
 mod test {
-    use lettre::{ClientSecurity, Message, SmtpClient, Transport};
+    use lettre::{Message, SmtpTransport, Transport};
 
     #[test]
     fn smtp_transport_simple() {
@@ -12,9 +12,8 @@ mod test {
             .subject("Happy new year")
             .body("Be happy!")
             .unwrap();
-        SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-            .unwrap()
-            .transport()
+        SmtpTransport::new("127.0.0.1")
+            .port(2525)
             .send(&email)
             .unwrap();
     }

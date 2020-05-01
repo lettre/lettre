@@ -52,6 +52,10 @@ impl ClientId {
                 .unwrap_or_else(|_| DEFAULT_DOMAIN_CLIENT_ID.to_string()),
         )
     }
+    #[cfg(not(feature = "hostname"))]
+    pub fn hostname() -> ClientId {
+        ClientId::Domain(DEFAULT_DOMAIN_CLIENT_ID.to_string())
+    }
 }
 
 /// Supported ESMTP keywords
@@ -86,7 +90,7 @@ impl Display for Extension {
 }
 
 /// Contains information about an SMTP server
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ServerInfo {
     /// Server name
@@ -175,6 +179,16 @@ impl ServerInfo {
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
         self.features
             .contains(&Extension::Authentication(mechanism))
+    }
+
+    /// Gets a compatible mechanism from list
+    pub fn get_auth_mechanism(&self, mechanisms: &[Mechanism]) -> Option<Mechanism> {
+        for mechanism in mechanisms {
+            if self.supports_auth_mechanism(*mechanism) {
+                return Some(*mechanism);
+            }
+        }
+        None
     }
 }
 

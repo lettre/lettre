@@ -30,7 +30,7 @@ pub type StubResult = Result<(), ()>;
 impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
-    fn send_raw(&mut self, envelope: &Envelope, _email: &[u8]) -> Self::Result {
+    fn send_raw(&self, envelope: &Envelope, _email: &[u8]) -> Self::Result {
         info!(
             "from=<{}> to=<{:?}>",
             match envelope.from() {

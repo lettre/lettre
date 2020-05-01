@@ -31,11 +31,11 @@ pub use crate::transport::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::client::net::ClientTlsParameters;
+pub use crate::transport::smtp::client::net::TlsParameters;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::{ClientSecurity, SmtpClient, SmtpTransport};
+pub use crate::transport::smtp::{SmtpTransport, Tls};
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
 
@@ -115,14 +115,12 @@ pub trait Transport<'a> {
     type Result;
 
     /// Sends the email
-    /// FIXME not mut
-
-    fn send(&mut self, message: &Message) -> Self::Result {
+    fn send(&self, message: &Message) -> Self::Result {
         let raw = message.formatted();
         self.send_raw(message.envelope(), &raw)
     }
 
-    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result;
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result;
 }
 
 #[cfg(test)]

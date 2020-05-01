@@ -10,7 +10,7 @@ mod test {
 
     #[test]
     fn file_transport() {
-        let mut sender = FileTransport::new(temp_dir());
+        let sender = FileTransport::new(temp_dir());
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())

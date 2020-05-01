@@ -1,12 +1,8 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lettre::{
-    transport::smtp::ConnectionReuseParameters, ClientSecurity, Message, SmtpClient, Transport,
-};
+use lettre::{Message, SmtpTransport, Transport};
 
 fn bench_simple_send(c: &mut Criterion) {
-    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-        .unwrap()
-        .transport();
+    let sender = SmtpTransport::new("127.0.0.1").port(2525);
 
     c.bench_function("send email", move |b| {
         b.iter(|| {
@@ -24,10 +20,7 @@ fn bench_simple_send(c: &mut Criterion) {
 }
 
 fn bench_reuse_send(c: &mut Criterion) {
-    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-        .unwrap()
-        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
-        .transport();
+    let sender = SmtpTransport::new("127.0.0.1").port(2525);
     c.bench_function("send email with connection reuse", move |b| {
         b.iter(|| {
             let email = Message::builder()

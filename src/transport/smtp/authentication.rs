@@ -3,13 +3,9 @@
 use crate::transport::smtp::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-/// Accepted authentication mechanisms on an encrypted connection
+/// Accepted authentication mechanisms
 /// Trying LOGIN last as it is deprecated.
-pub const DEFAULT_ENCRYPTED_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
-
-/// Accepted authentication mechanisms on an unencrypted connection
-// FIXME remove
-pub const DEFAULT_UNENCRYPTED_MECHANISMS: &[Mechanism] = &[];
+pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Convertible to user credentials
 pub trait IntoCredentials {

@@ -2,9 +2,10 @@
 
 use crate::transport::smtp::{
     authentication::{Credentials, Mechanism},
-    client::net::{ClientTlsParameters, Connector, NetworkStream, Timeout},
+    client::net::{NetworkStream, TlsParameters},
     commands::*,
     error::{Error, SmtpResult},
+    extension::{ClientId, Extension, ServerInfo},
     response::Response,
 };
 use bufstream::BufStream;
@@ -13,7 +14,7 @@ use log::debug;
 use std::fmt::Debug;
 use std::{
     fmt::Display,
-    io::{self, BufRead, Read, Write},
+    io::{self, BufRead, Write},
     net::ToSocketAddrs,
     string::String,
     time::Duration,
@@ -77,12 +78,27 @@ fn escape_crlf(string: &str) -> String {
     string.replace("\r\n", "<CRLF>")
 }
 
+macro_rules! try_smtp (
+    ($err: expr, $client: ident) => ({
+        match $err {
+            Ok(val) => val,
+            Err(err) => {
+                $client.abort();
+                return Err(From::from(err))
+            },
+        }
+    })
+);
+
 /// Structure that implements the SMTP client
-#[derive(Default)]
-pub struct SmtpConnection<S: Write + Read = NetworkStream> {
+pub struct SmtpConnection {
     /// TCP stream between client and server
     /// Value is None before connection
-    stream: Option<BufStream<S>>,
+    stream: BufStream<NetworkStream>,
+    /// Panic state
+    panic: bool,
+    /// Information about the server
+    server_info: ServerInfo,
 }
 
 macro_rules! return_err (
@@ -91,98 +107,139 @@ macro_rules! return_err (
     })
 );
 
-impl<S: Write + Read> SmtpConnection<S> {
-    /// Creates a new SMTP client
-    ///
-    /// It does not connects to the server, but only creates the `Client`
-    pub fn new() -> SmtpConnection<S> {
-        SmtpConnection { stream: None }
-    }
-}
-
-impl<S: Connector + Write + Read + Timeout> SmtpConnection<S> {
-    /// Closes the SMTP transaction if possible
-    pub fn close(&mut self) {
-        let _ = self.command(QuitCommand);
-        self.stream = None;
-    }
-
-    /// Sets the underlying stream
-    pub fn set_stream(&mut self, stream: S) {
-        self.stream = Some(BufStream::new(stream));
-    }
-
-    /// Upgrades the underlying connection to SSL/TLS
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
-    pub fn upgrade_tls_stream(
-        &mut self,
-        tls_parameters: &ClientTlsParameters,
-    ) -> Result<(), Error> {
-        match self.stream {
-            Some(ref mut stream) => stream.get_mut().upgrade_tls(tls_parameters),
-            None => Ok(()),
-        }
-    }
-
-    /// Tells if the underlying stream is currently encrypted
-    pub fn is_encrypted(&self) -> bool {
-        self.stream
-            .as_ref()
-            .map(|s| s.get_ref().is_encrypted())
-            .unwrap_or(false)
-    }
-
-    /// Set timeout
-    pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        if let Some(ref mut stream) = self.stream {
-            stream.get_mut().set_read_timeout(duration)?;
-            stream.get_mut().set_write_timeout(duration)?;
-        }
-        Ok(())
+impl SmtpConnection {
+    pub fn server_info(&self) -> &ServerInfo {
+        &self.server_info
     }
 
     /// Connects to the configured server
+    ///
+    /// Sends EHLO and parses server information
     pub fn connect<A: ToSocketAddrs>(
-        &mut self,
-        addr: &A,
+        server: A,
         timeout: Option<Duration>,
-        tls_parameters: Option<&ClientTlsParameters>,
-    ) -> Result<(), Error> {
-        // Connect should not be called when the client is already connected
-        if self.stream.is_some() {
-            return_err!("The connection is already established", self);
-        }
+        hello_name: &ClientId,
+        tls_parameters: Option<&TlsParameters>,
+    ) -> Result<SmtpConnection, Error> {
+        let mut addresses = server.to_socket_addrs()?;
 
-        let mut addresses = addr.to_socket_addrs()?;
-
+        // FIXME try all
         let server_addr = match addresses.next() {
             Some(addr) => addr,
             None => return_err!("Could not resolve hostname", self),
         };
-
         debug!("connecting to {}", server_addr);
 
-        // Try to connect
-        self.set_stream(Connector::connect(&server_addr, timeout, tls_parameters)?);
+        let stream = BufStream::new(NetworkStream::connect(
+            &server_addr,
+            timeout,
+            tls_parameters,
+        )?);
+        let mut conn = SmtpConnection {
+            stream,
+            panic: false,
+            server_info: ServerInfo::default(),
+        };
+        conn.set_timeout(timeout)?;
+        // TODO log
+        let _response = conn.read_response()?;
 
+        conn.ehlo(hello_name)?;
+
+        // Print server information
+        debug!("server {}", conn.server_info);
+        Ok(conn)
+    }
+
+    pub fn has_broken(&self) -> bool {
+        self.panic
+    }
+
+    pub fn can_starttls(&self) -> bool {
+        !self.stream.get_ref().is_encrypted()
+            && self.server_info.supports_feature(Extension::StartTls)
+    }
+
+    pub fn starttls(
+        &mut self,
+        tls_parameters: &TlsParameters,
+        hello_name: &ClientId,
+    ) -> Result<(), Error> {
+        if self.server_info.supports_feature(Extension::StartTls) {
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
+            {
+                try_smtp!(self.command(Starttls), self);
+                try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
+                debug!("connection encrypted");
+                // Send EHLO again
+                self.ehlo(hello_name)
+            }
+            #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
+            // This should never happen as `Tls` can only be created
+            // when a TLS library is enabled
+            unreachable!("TLS support required but not supported");
+        } else {
+            Err(Error::Client("STARTTLS is not supported on this server"))
+        }
+    }
+
+    /// Send EHLO and update server info
+    fn ehlo(&mut self, hello_name: &ClientId) -> Result<(), Error> {
+        let ehlo_response = try_smtp!(
+            self.command(Ehlo::new(ClientId::new(hello_name.to_string()))),
+            self
+        );
+        self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
         Ok(())
     }
 
+    pub fn abort(&mut self) {
+        // Only try to quit if we are not already broken
+        if !self.panic {
+            self.panic = true;
+            let _ = self.command(Quit);
+        }
+    }
+
+    /// Sets the underlying stream
+    pub fn set_stream(&mut self, stream: NetworkStream) {
+        self.stream = BufStream::new(stream);
+    }
+
+    /// Tells if the underlying stream is currently encrypted
+    pub fn is_encrypted(&self) -> bool {
+        self.stream.get_ref().is_encrypted()
+    }
+
+    /// Set timeout
+    pub fn set_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        self.stream.get_mut().set_read_timeout(duration)?;
+        self.stream.get_mut().set_write_timeout(duration)
+    }
+
     /// Checks if the server is connected using the NOOP SMTP command
-    #[cfg_attr(feature = "cargo-clippy", allow(clippy::wrong_self_convention))]
-    pub fn is_connected(&mut self) -> bool {
-        self.stream.is_some() && self.command(NoopCommand).is_ok()
+    pub fn test_connected(&mut self) -> bool {
+        self.command(Noop).is_ok()
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
-    pub fn auth(&mut self, mechanism: Mechanism, credentials: &Credentials) -> SmtpResult {
+    pub fn auth(&mut self, mechanisms: &[Mechanism], credentials: &Credentials) -> SmtpResult {
+        let mechanism = match self.server_info.get_auth_mechanism(mechanisms) {
+            Some(m) => m,
+            None => {
+                return Err(Error::Client(
+                    "No compatible authentication mechanism was found",
+                ))
+            }
+        };
+
         // Limit challenges to avoid blocking
         let mut challenges = 10;
-        let mut response = self.command(AuthCommand::new(mechanism, credentials.clone(), None)?)?;
+        let mut response = self.command(Auth::new(mechanism, credentials.clone(), None)?)?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
-            response = self.command(AuthCommand::new_from_response(
+            response = self.command(Auth::new_from_response(
                 mechanism,
                 credentials.clone(),
                 &response,
@@ -214,12 +271,8 @@ impl<S: Connector + Write + Read + Timeout> SmtpConnection<S> {
 
     /// Writes a string to the server
     fn write(&mut self, string: &[u8]) -> Result<(), Error> {
-        if self.stream.is_none() {
-            return Err(From::from("Connection closed"));
-        }
-
-        self.stream.as_mut().unwrap().write_all(string)?;
-        self.stream.as_mut().unwrap().flush()?;
+        self.stream.write_all(string)?;
+        self.stream.flush()?;
 
         debug!(
             "Wrote: {}",
@@ -240,7 +293,7 @@ impl<S: Connector + Write + Read + Timeout> SmtpConnection<S> {
                 break;
             }
             // TODO read more than one line
-            let read_count = self.stream.as_mut().unwrap().read_line(&mut raw_response)?;
+            let read_count = self.stream.read_line(&mut raw_response)?;
 
             // EOF is reached
             if read_count == 0 {

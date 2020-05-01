@@ -18,7 +18,7 @@ use std::{
 /// Parameters to use for secure clients
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-pub struct ClientTlsParameters {
+pub struct TlsParameters {
     /// A connector from `native-tls`
     #[cfg(feature = "native-tls")]
     connector: TlsConnector,
@@ -30,17 +30,17 @@ pub struct ClientTlsParameters {
     domain: String,
 }
 
-impl ClientTlsParameters {
-    /// Creates a `ClientTlsParameters`
+impl TlsParameters {
+    /// Creates a `TlsParameters`
     #[cfg(feature = "native-tls")]
     pub fn new(domain: String, connector: TlsConnector) -> Self {
-        ClientTlsParameters { connector, domain }
+        Self { connector, domain }
     }
 
-    /// Creates a `ClientTlsParameters`
+    /// Creates a `TlsParameters`
     #[cfg(feature = "rustls")]
     pub fn new(domain: String, connector: ClientConfig) -> Self {
-        ClientTlsParameters {
+        Self {
             connector: Box::new(connector),
             domain,
         }
@@ -87,6 +87,85 @@ impl NetworkStream {
             NetworkStream::Mock(_) => Ok(()),
         }
     }
+
+    pub fn connect(
+        addr: &SocketAddr,
+        timeout: Option<Duration>,
+        tls_parameters: Option<&TlsParameters>,
+    ) -> Result<NetworkStream, Error> {
+        let tcp_stream = match timeout {
+            Some(t) => TcpStream::connect_timeout(addr, t)?,
+            None => TcpStream::connect(addr)?,
+        };
+
+        match tls_parameters {
+            #[cfg(feature = "native-tls")]
+            Some(context) => context
+                .connector
+                .connect(context.domain.as_ref(), tcp_stream)
+                .map(|tls| NetworkStream::Tls(Box::new(tls)))
+                .map_err(|e| Error::Io(io::Error::new(ErrorKind::Other, e))),
+            #[cfg(feature = "rustls")]
+            Some(context) => {
+                let domain = webpki::DNSNameRef::try_from_ascii_str(&context.domain)?;
+
+                Ok(NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(*context.connector.clone()), domain),
+                    tcp_stream,
+                ))))
+            }
+            None => Ok(NetworkStream::Tcp(tcp_stream)),
+        }
+    }
+
+    pub fn upgrade_tls(&mut self, tls_parameters: &TlsParameters) -> Result<(), Error> {
+        *self = match *self {
+            #[cfg(feature = "native-tls")]
+            NetworkStream::Tcp(ref mut stream) => match tls_parameters
+                .connector
+                .connect(tls_parameters.domain.as_ref(), stream.try_clone().unwrap())
+            {
+                Ok(tls_stream) => NetworkStream::Tls(Box::new(tls_stream)),
+                Err(err) => return Err(Error::Io(io::Error::new(ErrorKind::Other, err))),
+            },
+            #[cfg(feature = "rustls")]
+            NetworkStream::Tcp(ref mut stream) => {
+                let domain = webpki::DNSNameRef::try_from_ascii_str(&tls_parameters.domain)?;
+
+                NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
+                    ClientSession::new(&Arc::new(*tls_parameters.connector.clone()), domain),
+                    stream.try_clone().unwrap(),
+                )))
+            }
+            NetworkStream::Tls(_) | NetworkStream::Mock(_) => return Ok(()),
+        };
+
+        Ok(())
+    }
+
+    pub fn is_encrypted(&self) -> bool {
+        match *self {
+            NetworkStream::Tcp(_) | NetworkStream::Mock(_) => false,
+            NetworkStream::Tls(_) => true,
+        }
+    }
+
+    pub fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        match *self {
+            NetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
+            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_read_timeout(duration),
+            NetworkStream::Mock(_) => Ok(()),
+        }
+    }
+
+    /// Set write timeout for IO calls
+    pub fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
+        match *self {
+            NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
+            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_write_timeout(duration),
+            NetworkStream::Mock(_) => Ok(()),
+        }
+    }
 }
 
 impl Read for NetworkStream {
@@ -122,111 +201,6 @@ impl Write for NetworkStream {
             #[cfg(feature = "rustls")]
             NetworkStream::Tls(ref mut s) => s.flush(),
             NetworkStream::Mock(ref mut s) => s.flush(),
-        }
-    }
-}
-
-/// A trait for the concept of opening a stream
-pub trait Connector: Sized {
-    /// Opens a connection to the given IP socket
-    fn connect(
-        addr: &SocketAddr,
-        timeout: Option<Duration>,
-        tls_parameters: Option<&ClientTlsParameters>,
-    ) -> Result<Self, Error>;
-    /// Upgrades to TLS connection
-    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> Result<(), Error>;
-    /// Is the NetworkStream encrypted
-    fn is_encrypted(&self) -> bool;
-}
-
-impl Connector for NetworkStream {
-    fn connect(
-        addr: &SocketAddr,
-        timeout: Option<Duration>,
-        tls_parameters: Option<&ClientTlsParameters>,
-    ) -> Result<NetworkStream, Error> {
-        let tcp_stream = match timeout {
-            Some(duration) => TcpStream::connect_timeout(addr, duration)?,
-            None => TcpStream::connect(addr)?,
-        };
-
-        match tls_parameters {
-            #[cfg(feature = "native-tls")]
-            Some(context) => context
-                .connector
-                .connect(context.domain.as_ref(), tcp_stream)
-                .map(|tls| NetworkStream::Tls(Box::new(tls)))
-                .map_err(|e| Error::Io(io::Error::new(ErrorKind::Other, e))),
-            #[cfg(feature = "rustls")]
-            Some(context) => {
-                let domain = webpki::DNSNameRef::try_from_ascii_str(&context.domain)?;
-
-                Ok(NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
-                    ClientSession::new(&Arc::new(*context.connector.clone()), domain),
-                    tcp_stream,
-                ))))
-            }
-            None => Ok(NetworkStream::Tcp(tcp_stream)),
-        }
-    }
-
-    fn upgrade_tls(&mut self, tls_parameters: &ClientTlsParameters) -> Result<(), Error> {
-        *self = match *self {
-            #[cfg(feature = "native-tls")]
-            NetworkStream::Tcp(ref mut stream) => match tls_parameters
-                .connector
-                .connect(tls_parameters.domain.as_ref(), stream.try_clone().unwrap())
-            {
-                Ok(tls_stream) => NetworkStream::Tls(Box::new(tls_stream)),
-                Err(err) => return Err(Error::Io(io::Error::new(ErrorKind::Other, err))),
-            },
-            #[cfg(feature = "rustls")]
-            NetworkStream::Tcp(ref mut stream) => {
-                let domain = webpki::DNSNameRef::try_from_ascii_str(&tls_parameters.domain)?;
-
-                NetworkStream::Tls(Box::new(rustls::StreamOwned::new(
-                    ClientSession::new(&Arc::new(*tls_parameters.connector.clone()), domain),
-                    stream.try_clone().unwrap(),
-                )))
-            }
-            NetworkStream::Tls(_) | NetworkStream::Mock(_) => return Ok(()),
-        };
-
-        Ok(())
-    }
-
-    fn is_encrypted(&self) -> bool {
-        match *self {
-            NetworkStream::Tcp(_) | NetworkStream::Mock(_) => false,
-            NetworkStream::Tls(_) => true,
-        }
-    }
-}
-
-/// A trait for read and write timeout support
-pub trait Timeout: Sized {
-    /// Set read timeout for IO calls
-    fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()>;
-    /// Set write timeout for IO calls
-    fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()>;
-}
-
-impl Timeout for NetworkStream {
-    fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match *self {
-            NetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
-            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_read_timeout(duration),
-            NetworkStream::Mock(_) => Ok(()),
-        }
-    }
-
-    /// Set write timeout for IO calls
-    fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match *self {
-            NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
-            NetworkStream::Tls(ref mut stream) => stream.get_ref().set_write_timeout(duration),
-            NetworkStream::Mock(_) => Ok(()),
         }
     }
 }

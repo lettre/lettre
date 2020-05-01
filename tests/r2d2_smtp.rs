@@ -1,7 +1,7 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "connection-pool"))]
 mod test {
     use lettre::{
-        ClientSecurity, Email, EmailAddress, Envelope, SmtpClient, SmtpConnectionManager, Transport,
+        Email, EmailAddress, Envelope, SmtpConnectionManager, SmtpTransport, Tls, Transport,
     };
     use r2d2::Pool;
     use std::{sync::mpsc, thread};
@@ -20,7 +20,7 @@ mod test {
 
     #[test]
     fn send_one() {
-        let client = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None).unwrap();
+        let client = SmtpTransport::new("127.0.0.1:2525", Tls::None).unwrap();
         let manager = SmtpConnectionManager::new(client).unwrap();
         let pool = Pool::builder().max_size(1).build(manager).unwrap();
 
@@ -31,7 +31,7 @@ mod test {
 
     #[test]
     fn send_from_thread() {
-        let client = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None).unwrap();
+        let client = SmtpTransport::new("127.0.0.1:2525", Tls::None).unwrap();
         let manager = SmtpConnectionManager::new(client).unwrap();
         let pool = Pool::builder().max_size(2).build(manager).unwrap();
 

@@ -1,12 +1,14 @@
-use crate::transport::smtp::{error::Error, ConnectionReuseParameters, SmtpClient, SmtpTransport};
+use crate::transport::smtp::{
+    error::Error, ConnectionReuseParameters, SmtpTransport, SmtpTransport,
+};
 use r2d2::ManageConnection;
 
 pub struct SmtpConnectionManager {
-    transport_builder: SmtpClient,
+    transport_builder: SmtpTransport,
 }
 
 impl SmtpConnectionManager {
-    pub fn new(transport_builder: SmtpClient) -> Result<SmtpConnectionManager, Error> {
+    pub fn new(transport_builder: SmtpTransport) -> Result<SmtpConnectionManager, Error> {
         Ok(SmtpConnectionManager {
             transport_builder: transport_builder
                 .connection_reuse(ConnectionReuseParameters::ReuseUnlimited),
@@ -25,7 +27,7 @@ impl ManageConnection for SmtpConnectionManager {
     }
 
     fn is_valid(&self, conn: &mut Self::Connection) -> Result<(), Error> {
-        if conn.client.is_connected() {
+        if conn.client.test_connected() {
             return Ok(());
         }
         Err(Error::Client("is not connected anymore"))

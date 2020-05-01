@@ -1,6 +1,6 @@
 extern crate lettre;
 
-use lettre::{transport::smtp::authentication::Credentials, Message, SmtpClient, Transport};
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 
 fn main() {
     let email = Message::builder()
@@ -17,10 +17,9 @@ fn main() {
     );
 
     // Open a remote connection to gmail
-    let mut mailer = SmtpClient::new_simple("smtp.gmail.com")
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
         .unwrap()
-        .credentials(creds)
-        .transport();
+        .credentials(creds);
 
     // Send the email
     let result = mailer.send(&email);
