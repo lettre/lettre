@@ -12,8 +12,8 @@
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //!
 
-#[cfg(any(feature = "native-tls", feature = "rustls"))]
-use crate::transport::smtp::net::TlsParameters;
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+use crate::transport::smtp::client::net::TlsParameters;
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
@@ -27,11 +27,12 @@ use crate::{
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "r2d2")]
 use r2d2::Pool;
-#[cfg(feature = "rustls")]
+#[cfg(feature = "rustls-tls")]
 use rustls::ClientConfig;
+#[cfg(feature = "r2d2")]
 use std::ops::DerefMut;
 use std::time::Duration;
-#[cfg(feature = "rustls")]
+#[cfg(feature = "rustls-tls")]
 use webpki_roots::TLS_SERVER_ROOTS;
 
 pub mod authentication;
@@ -68,13 +69,13 @@ pub enum Tls {
     /// Insecure connection only (for testing purposes)
     None,
     /// Start with insecure connection and use `STARTTLS` when available
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     Opportunistic(TlsParameters),
     /// Start with insecure connection and require `STARTTLS`
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     Required(TlsParameters),
     /// Use TLS wrapped connection
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     Wrapper(TlsParameters),
 }
 
@@ -130,7 +131,7 @@ impl SmtpTransport {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     pub fn relay(relay: &str) -> Result<Self, Error> {
         #[cfg(feature = "native-tls")]
         let mut tls_builder = TlsConnector::builder();
@@ -139,22 +140,25 @@ impl SmtpTransport {
         #[cfg(feature = "native-tls")]
         let tls_parameters = TlsParameters::new(relay.to_string(), tls_builder.build().unwrap());
 
-        #[cfg(feature = "rustls")]
+        #[cfg(feature = "rustls-tls")]
         let mut tls = ClientConfig::new();
-        #[cfg(feature = "rustls")]
+        #[cfg(feature = "rustls-tls")]
         tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
-        #[cfg(feature = "rustls")]
+        #[cfg(feature = "rustls-tls")]
         let tls_parameters = TlsParameters::new(relay.to_string(), tls);
 
-        let new = Self::new(relay)
+        #[allow(unused_mut)]
+        let mut new = Self::new(relay)
             .port(SUBMISSIONS_PORT)
             .tls(Tls::Wrapper(tls_parameters));
 
         #[cfg(feature = "r2d2")]
-        // Pool with default configuration
-        // FIXME avoid clone
-        let tpool = new.clone();
-        let new = new.pool(Pool::new(tpool)?);
+        {
+            // Pool with default configuration
+            // FIXME avoid clone
+            let tpool = new.clone();
+            new = new.pool(Pool::new(tpool)?);
+        }
         Ok(new)
     }
 
@@ -196,7 +200,7 @@ impl SmtpTransport {
     }
 
     /// Set the TLS settings to use
-    #[cfg(any(feature = "native-tls", feature = "rustls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     pub fn tls(mut self, tls: Tls) -> Self {
         self.tls = tls;
         self
@@ -217,21 +221,23 @@ impl SmtpTransport {
             (self.server.as_ref(), self.port),
             self.timeout,
             &self.hello_name,
+            #[allow(clippy::match_single_binding)]
             match self.tls {
-                #[cfg(any(feature = "native-tls", feature = "rustls"))]
+                #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
                 Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
                 _ => None,
             },
         )?;
 
+        #[allow(clippy::match_single_binding)]
         match self.tls {
-            #[cfg(any(feature = "native-tls", feature = "rustls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
                     conn.starttls(tls_parameters, &self.hello_name)?;
                 }
             }
-            #[cfg(any(feature = "native-tls", feature = "rustls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Required(ref tls_parameters) => {
                 conn.starttls(tls_parameters, &self.hello_name)?;
             }
