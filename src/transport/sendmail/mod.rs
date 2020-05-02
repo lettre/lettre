@@ -1,8 +1,7 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
 
-use crate::Envelope;
-use crate::{transport::sendmail::error::SendmailResult, Transport};
+use crate::{transport::sendmail::error::SendmailResult, Envelope, Transport};
 use std::{
     convert::AsRef,
     io::prelude::*,
