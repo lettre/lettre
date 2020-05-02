@@ -270,7 +270,6 @@ pub mod serde {
                     }
                     let user: &str = user.ok_or_else(|| DeError::missing_field("user"))?;
                     let domain: &str = domain.ok_or_else(|| DeError::missing_field("domain"))?;
-                    // FIXME avoid unwrap here
                     Ok(Address::new(user, domain).unwrap())
                 }
             }
@@ -279,5 +278,3 @@ pub mod serde {
         }
     }
 }
-
-// FIXME test serializer deserializer

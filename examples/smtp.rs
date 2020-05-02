@@ -1,7 +1,7 @@
 extern crate env_logger;
 extern crate lettre;
 
-use lettre::{Message, SmtpClient, Transport};
+use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
     env_logger::init();
@@ -14,7 +14,7 @@ fn main() {
         .unwrap();
 
     // Open a local connection on port 25
-    let mut mailer = SmtpClient::new_unencrypted_localhost().unwrap().transport();
+    let mailer = SmtpTransport::unencrypted_localhost();
     // Send the email
     let result = mailer.send(&email);
 

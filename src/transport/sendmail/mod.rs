@@ -39,7 +39,7 @@ impl SendmailTransport {
 impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
-    fn send_raw(&mut self, envelope: &Envelope, email: &[u8]) -> Self::Result {
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
         let email_id = Uuid::new_v4();
 
         // Spawn the sendmail command

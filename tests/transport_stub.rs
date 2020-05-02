@@ -2,8 +2,8 @@ use lettre::{transport::stub::StubTransport, Message, Transport};
 
 #[test]
 fn stub_transport() {
-    let mut sender_ok = StubTransport::new_positive();
-    let mut sender_ko = StubTransport::new(Err(()));
+    let sender_ok = StubTransport::new_positive();
+    let sender_ko = StubTransport::new(Err(()));
     let email = Message::builder()
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
