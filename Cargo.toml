@@ -24,7 +24,6 @@ hyperx = { version = "1", optional = true, features = ["headers"] }
 idna = "0.2"
 line-wrap = "0.1"
 log = "0.4"
-uuid = { version = "0.8", features = ["v4"] }
 mime = { version = "0.3", optional = true }
 native-tls = { version = "0.2", optional = true }
 nom = { version = "5", optional = true }
@@ -36,6 +35,7 @@ rustls = { version = "0.17", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 textnonce = { version = "0.7", optional = true }
+uuid = { version = "0.8", features = ["v4"] }
 webpki = { version = "0.21", optional = true }
 webpki-roots = { version = "0.19", optional = true }
 
@@ -51,7 +51,7 @@ name = "transport_smtp"
 
 [features]
 builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable"]
-default = ["file-transport", "smtp-transport", "hostname", "sendmail-transport", "rustls-tls", "builder", "r2d2"]
+default = ["file-transport", "smtp-transport", "rustls-tls", "hostname", "sendmail-transport", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 sendmail-transport = []

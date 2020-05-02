@@ -186,13 +186,14 @@ impl SmtpConnection {
             && self.server_info.supports_feature(Extension::StartTls)
     }
 
+    #[allow(unused_variables)]
     pub fn starttls(
         &mut self,
         tls_parameters: &TlsParameters,
         hello_name: &ClientId,
     ) -> Result<(), Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
-            #[cfg(any(feature = "native-tls", feature = "rustls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
                 try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
@@ -201,7 +202,7 @@ impl SmtpConnection {
                 try_smtp!(self.ehlo(hello_name), self);
                 Ok(())
             }
-            #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
+            #[cfg(not(any(feature = "native-tls", feature = "rustls-tls")))]
             // This should never happen as `Tls` can only be created
             // when a TLS library is enabled
             unreachable!("TLS support required but not supported");

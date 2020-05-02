@@ -69,6 +69,7 @@ impl Display for Error {
             Parsing(ref err) => fmt.write_str(err.description()),
             #[cfg(feature = "rustls-tls")]
             InvalidDNSName(ref err) => err.fmt(fmt),
+            #[cfg(feature = "r2d2")]
             Pool(ref err) => err.fmt(fmt),
         }
     }
