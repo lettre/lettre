@@ -12,10 +12,12 @@
 //! * STARTTLS ([RFC 2487](http://tools.ietf.org/html/rfc2487))
 //!
 
+#[cfg(any(feature = "native-tls", feature = "rustls"))]
+use crate::transport::smtp::net::TlsParameters;
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
-        client::{net::TlsParameters, SmtpConnection},
+        client::SmtpConnection,
         error::{Error, SmtpResult},
         extension::ClientId,
     },
@@ -61,7 +63,7 @@ const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 pub enum Tls {
     /// Insecure connection only (for testing purposes)
     None,
@@ -128,6 +130,7 @@ impl SmtpTransport {
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
+    #[cfg(any(feature = "native-tls", feature = "rustls"))]
     pub fn relay(relay: &str) -> Result<Self, Error> {
         #[cfg(feature = "native-tls")]
         let mut tls_builder = TlsConnector::builder();
@@ -193,6 +196,7 @@ impl SmtpTransport {
     }
 
     /// Set the TLS settings to use
+    #[cfg(any(feature = "native-tls", feature = "rustls"))]
     pub fn tls(mut self, tls: Tls) -> Self {
         self.tls = tls;
         self
@@ -214,6 +218,7 @@ impl SmtpTransport {
             self.timeout,
             &self.hello_name,
             match self.tls {
+                #[cfg(any(feature = "native-tls", feature = "rustls"))]
                 Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
                 _ => None,
             },

@@ -169,7 +169,6 @@ pub struct Vrfy {
 
 impl Display for Vrfy {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        #[allow(clippy::write_with_newline)]
         write!(f, "VRFY {}\r\n", self.argument)
     }
 }
@@ -190,7 +189,6 @@ pub struct Expn {
 
 impl Display for Expn {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        #[allow(clippy::write_with_newline)]
         write!(f, "EXPN {}\r\n", self.argument)
     }
 }

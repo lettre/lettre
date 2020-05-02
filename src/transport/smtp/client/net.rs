@@ -114,10 +114,13 @@ impl NetworkStream {
                     tcp_stream,
                 ))))
             }
+            #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
+            Some(_) => panic!("TLS configuration without support"),
             None => Ok(NetworkStream::Tcp(tcp_stream)),
         }
     }
 
+    #[allow(unused_variables, unreachable_code)]
     pub fn upgrade_tls(&mut self, tls_parameters: &TlsParameters) -> Result<(), Error> {
         *self = match *self {
             #[cfg(feature = "native-tls")]
@@ -137,7 +140,11 @@ impl NetworkStream {
                     stream.try_clone().unwrap(),
                 )))
             }
-            NetworkStream::Tls(_) | NetworkStream::Mock(_) => return Ok(()),
+            #[cfg(not(any(feature = "native-tls", feature = "rustls")))]
+            NetworkStream::Tcp(_) => panic!("STARTTLS without TLS support"),
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
+            NetworkStream::Tls(_) => return Ok(()),
+            NetworkStream::Mock(_) => return Ok(()),
         };
 
         Ok(())
@@ -146,6 +153,7 @@ impl NetworkStream {
     pub fn is_encrypted(&self) -> bool {
         match *self {
             NetworkStream::Tcp(_) | NetworkStream::Mock(_) => false,
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
             NetworkStream::Tls(_) => true,
         }
     }
@@ -153,6 +161,7 @@ impl NetworkStream {
     pub fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
             NetworkStream::Tls(ref mut stream) => stream.get_ref().set_read_timeout(duration),
             NetworkStream::Mock(_) => Ok(()),
         }
@@ -162,6 +171,7 @@ impl NetworkStream {
     pub fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match *self {
             NetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
+            #[cfg(any(feature = "native-tls", feature = "rustls"))]
             NetworkStream::Tls(ref mut stream) => stream.get_ref().set_write_timeout(duration),
             NetworkStream::Mock(_) => Ok(()),
         }

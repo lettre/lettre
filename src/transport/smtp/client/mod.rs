@@ -186,6 +186,7 @@ impl SmtpConnection {
             && self.server_info.supports_feature(Extension::StartTls)
     }
 
+    #[allow(unused_variables)]
     pub fn starttls(
         &mut self,
         tls_parameters: &TlsParameters,
