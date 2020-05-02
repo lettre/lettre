@@ -1,15 +1,18 @@
 //! SMTP client
 
-use crate::transport::smtp::{
-    authentication::{Credentials, Mechanism},
-    client::net::{NetworkStream, TlsParameters},
-    commands::*,
-    error::{Error, SmtpResult},
-    extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-    response::Response,
+use crate::{
+    transport::smtp::{
+        authentication::{Credentials, Mechanism},
+        client::net::{NetworkStream, TlsParameters},
+        commands::*,
+        error::{Error, SmtpResult},
+        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        response::Response,
+    },
+    Envelope,
 };
-use crate::Envelope;
 use bufstream::BufStream;
+#[cfg(feature = "log")]
 use log::debug;
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
@@ -75,6 +78,7 @@ impl ClientCodec {
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
 /// Used for debug displays
+#[cfg(feature = "log")]
 fn escape_crlf(string: &str) -> String {
     string.replace("\r\n", "<CRLF>")
 }
@@ -129,6 +133,7 @@ impl SmtpConnection {
             Some(addr) => addr,
             None => return_err!("Could not resolve hostname", self),
         };
+        #[cfg(feature = "log")]
         debug!("connecting to {}", server_addr);
 
         let stream = BufStream::new(NetworkStream::connect(
@@ -148,6 +153,7 @@ impl SmtpConnection {
         conn.ehlo(hello_name)?;
 
         // Print server information
+        #[cfg(feature = "log")]
         debug!("server {}", conn.server_info);
         Ok(conn)
     }
@@ -197,6 +203,7 @@ impl SmtpConnection {
             {
                 try_smtp!(self.command(Starttls), self);
                 try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
+                #[cfg(feature = "log")]
                 debug!("connection encrypted");
                 // Send EHLO again
                 try_smtp!(self.ehlo(hello_name), self);
@@ -309,6 +316,7 @@ impl SmtpConnection {
         self.stream.write_all(string)?;
         self.stream.flush()?;
 
+        #[cfg(feature = "log")]
         debug!(
             "Wrote: {}",
             escape_crlf(String::from_utf8_lossy(string).as_ref())
@@ -338,6 +346,7 @@ impl SmtpConnection {
             response = raw_response.parse::<Response>();
         }
 
+        #[cfg(feature = "log")]
         debug!("Read: {}", escape_crlf(raw_response.as_ref()));
 
         let final_response = response?;
@@ -352,7 +361,7 @@ impl SmtpConnection {
 
 #[cfg(test)]
 mod test {
-    use super::{escape_crlf, ClientCodec};
+    use super::*;
 
     #[test]
     fn test_codec() {
@@ -375,6 +384,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "log")]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CRLF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CRLF>");

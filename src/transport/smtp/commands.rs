@@ -9,6 +9,7 @@ use crate::{
     },
     Address,
 };
+#[cfg(feature = "log")]
 use log::debug;
 use std::{
     convert::AsRef,
@@ -274,9 +275,11 @@ impl Auth {
         let encoded_challenge = response
             .first_word()
             .ok_or(Error::ResponseParsing("Could not read auth challenge"))?;
+        #[cfg(feature = "log")]
         debug!("auth encoded challenge: {}", encoded_challenge);
 
         let decoded_challenge = String::from_utf8(base64::decode(&encoded_challenge)?)?;
+        #[cfg(feature = "log")]
         debug!("auth decoded challenge: {}", decoded_challenge);
 
         let response = Some(mechanism.response(&credentials, Some(decoded_challenge.as_ref()))?);

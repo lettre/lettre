@@ -2,8 +2,7 @@
 //! testing purposes.
 //!
 
-use crate::Envelope;
-use crate::Transport;
+use crate::{Envelope, Transport};
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
