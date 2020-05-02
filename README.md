@@ -1,24 +1,31 @@
-# lettre
+<h1 align="center">lettre</h1>
+<div align="center">
+ <strong>
+   A mailer library for Rust
+ </strong>
+</div>
 
-**Lettre is a mailer library for Rust.**
+<br />
 
-![](https://github.com/lettre/lettre/workflows/Continuous%20integration/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/lettre/lettre/badge.svg?branch=master)](https://coveralls.io/github/lettre/lettre?branch=master)
-
-[![Crate](https://img.shields.io/crates/v/lettre.svg)](https://crates.io/crates/lettre)
-[![Docs](https://docs.rs/lettre/badge.svg)](https://docs.rs/lettre/)
-[![Required Rust version](https://img.shields.io/badge/rustc-1.20-green.svg)]()
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-
-[![Gitter](https://badges.gitter.im/lettre/lettre.svg)](https://gitter.im/lettre/lettre?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/lettre/lettre.svg)](https://isitmaintained.com/project/lettre/lettre "Average time to resolve an issue")
-[![Percentage of issues still open](https://isitmaintained.com/badge/open/lettre/lettre.svg)](https://isitmaintained.com/project/lettre/lettre "Percentage of issues still open")
-
-Useful links:
-
-* [User documentation](https://lettre.at/)
-* [API documentation](https://docs.rs/lettre/)
-* [Changelog](https://github.com/lettre/lettre/blob/master/CHANGELOG.md)
+<div align="center">
+  <a href="https://docs.rs/lettre">
+    <img src="https://docs.rs/lettre/badge.svg"
+      alt="docs" />
+  </a>
+  <a href="https://crates.io/crates/lettre">
+    <img src="https://img.shields.io/crates/d/lettre.svg"
+      alt="downloads" />
+  </a>
+  <br />
+  <a href="https://gitter.im/lettre/lettre">
+    <img src="https://badges.gitter.im/lettre/lettre.svg"
+      alt="chat on gitter" />
+  </a>
+  <a href="https://lettre.at">
+    <img src="https://img.shields.io/badge/visit-website-blueviolet"
+      alt="website" />
+  </a>
+</div>
 
 ---
 

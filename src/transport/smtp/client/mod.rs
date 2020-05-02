@@ -106,16 +106,12 @@ pub struct SmtpConnection {
     server_info: ServerInfo,
 }
 
-macro_rules! return_err (
-    ($err: expr, $client: ident) => ({
-        return Err(From::from($err))
-    })
-);
-
 impl SmtpConnection {
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
     }
+
+    // FIXME add simple connect and rename this one
 
     /// Connects to the configured server
     ///
@@ -126,21 +122,7 @@ impl SmtpConnection {
         hello_name: &ClientId,
         tls_parameters: Option<&TlsParameters>,
     ) -> Result<SmtpConnection, Error> {
-        let mut addresses = server.to_socket_addrs()?;
-
-        // FIXME try all
-        let server_addr = match addresses.next() {
-            Some(addr) => addr,
-            None => return_err!("Could not resolve hostname", self),
-        };
-        #[cfg(feature = "log")]
-        debug!("connecting to {}", server_addr);
-
-        let stream = BufStream::new(NetworkStream::connect(
-            &server_addr,
-            timeout,
-            tls_parameters,
-        )?);
+        let stream = BufStream::new(NetworkStream::connect(server, timeout, tls_parameters)?);
         let mut conn = SmtpConnection {
             stream,
             panic: false,
