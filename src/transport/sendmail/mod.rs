@@ -3,13 +3,11 @@
 
 use crate::Envelope;
 use crate::{transport::sendmail::error::SendmailResult, Transport};
-use log::info;
 use std::{
     convert::AsRef,
     io::prelude::*,
     process::{Command, Stdio},
 };
-use uuid::Uuid;
 
 pub mod error;
 
@@ -40,8 +38,6 @@ impl<'a> Transport<'a> for SendmailTransport {
     type Result = SendmailResult;
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
-        let email_id = Uuid::new_v4();
-
         // Spawn the sendmail command
         let mut process = Command::new(&self.command)
             .arg("-i")
@@ -53,9 +49,6 @@ impl<'a> Transport<'a> for SendmailTransport {
             .spawn()?;
 
         process.stdin.as_mut().unwrap().write_all(email)?;
-
-        info!("Wrote {} message to stdin", email_id);
-
         let output = process.wait_with_output()?;
 
         if output.status.success() {
