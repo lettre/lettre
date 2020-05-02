@@ -4,7 +4,6 @@
 
 use crate::Envelope;
 use crate::Transport;
-use log::info;
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
@@ -30,15 +29,7 @@ pub type StubResult = Result<(), ()>;
 impl<'a> Transport<'a> for StubTransport {
     type Result = StubResult;
 
-    fn send_raw(&self, envelope: &Envelope, _email: &[u8]) -> Self::Result {
-        info!(
-            "from=<{}> to=<{:?}>",
-            match envelope.from() {
-                Some(address) => address.to_string(),
-                None => "".to_string(),
-            },
-            envelope.to()
-        );
+    fn send_raw(&self, _envelope: &Envelope, _email: &[u8]) -> Self::Result {
         self.response
     }
 }
