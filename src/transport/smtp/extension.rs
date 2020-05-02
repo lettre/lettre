@@ -133,8 +133,8 @@ impl ServerInfo {
                 continue;
             }
 
-            let split: Vec<&str> = line.split_whitespace().collect();
-            match split[0] {
+            let mut split = line.split_whitespace();
+            match split.next().unwrap() {
                 "8BITMIME" => {
                     features.insert(Extension::EightBitMime);
                 }
@@ -145,7 +145,7 @@ impl ServerInfo {
                     features.insert(Extension::StartTls);
                 }
                 "AUTH" => {
-                    for &mechanism in &split[1..] {
+                    for mechanism in split {
                         match mechanism {
                             "PLAIN" => {
                                 features.insert(Extension::Authentication(Mechanism::Plain));
