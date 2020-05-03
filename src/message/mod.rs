@@ -207,6 +207,7 @@ pub trait EmailFormat {
 #[derive(Debug, Clone)]
 pub struct MessageBuilder {
     headers: Headers,
+    envelope: Option<Envelope>,
 }
 
 impl MessageBuilder {
@@ -214,6 +215,7 @@ impl MessageBuilder {
     pub fn new() -> Self {
         Self {
             headers: Headers::new(),
+            envelope: None,
         }
     }
 
@@ -356,6 +358,12 @@ impl MessageBuilder {
         self.header(header::UserAgent(id))
     }
 
+    /// Force specific envelope (by default it is derived from headers)
+    pub fn envelope(mut self, envelope: Envelope) -> Self {
+        self.envelope = Some(envelope);
+        self
+    }
+
     fn insert_missing_headers(self) -> Self {
         let mut new = self;
 
@@ -376,7 +384,10 @@ impl MessageBuilder {
     fn build(self, body: Body) -> Result<Message, EmailError> {
         let res = self.insert_missing_headers();
 
-        let envelope = Envelope::try_from(&res.headers)?;
+        let envelope = match res.envelope {
+            Some(e) => e,
+            None => Envelope::try_from(&res.headers)?,
+        };
         Ok(Message {
             headers: res.headers,
             body,
