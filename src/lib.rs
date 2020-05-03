@@ -1,5 +1,11 @@
-//! Lettre provides an email builder and several email transports.
+//! Lettre is an email library that allows creating and sending messages. It provides:
 //!
+//! * An easy to use email builder
+//! * Pluggable email transports
+//! * Unicode support
+//! * Secure defaults
+//!
+//! Lettre requires Rust 1.40 or newer.
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
 #![doc(html_favicon_url = "https://lettre.at/favicon.png")]
@@ -36,6 +42,7 @@ pub use crate::transport::smtp::client::net::TlsParameters;
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::{SmtpTransport, Tls};
+pub use crate::transport::stub::StubTransport;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
 
