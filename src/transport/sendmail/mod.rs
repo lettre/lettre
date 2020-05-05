@@ -23,7 +23,7 @@
 //! # }
 //! ```
 
-use crate::{transport::sendmail::error::SendmailResult, Envelope, Transport};
+use crate::{transport::sendmail::error::Error, Envelope, Transport};
 use std::{
     convert::AsRef,
     io::prelude::*,
@@ -55,10 +55,11 @@ impl SendmailTransport {
     }
 }
 
-impl<'a> Transport<'a> for SendmailTransport {
-    type Result = SendmailResult;
+impl Transport for SendmailTransport {
+    type Ok = ();
+    type Error = Error;
 
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         // Spawn the sendmail command
         let mut process = Command::new(&self.command)
             .arg("-i")

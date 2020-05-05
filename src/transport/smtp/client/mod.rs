@@ -5,7 +5,7 @@ use crate::{
         authentication::{Credentials, Mechanism},
         client::net::{NetworkStream, TlsParameters},
         commands::*,
-        error::{Error, SmtpResult},
+        error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::Response,
     },
@@ -140,7 +140,7 @@ impl SmtpConnection {
         Ok(conn)
     }
 
-    pub fn send(&mut self, envelope: &Envelope, email: &[u8]) -> SmtpResult {
+    pub fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
         // Mail
         let mut mail_options = vec![];
 
@@ -210,7 +210,7 @@ impl SmtpConnection {
         Ok(())
     }
 
-    pub fn quit(&mut self) -> SmtpResult {
+    pub fn quit(&mut self) -> Result<Response, Error> {
         Ok(try_smtp!(self.command(Quit), self))
     }
 
@@ -244,7 +244,11 @@ impl SmtpConnection {
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
-    pub fn auth(&mut self, mechanisms: &[Mechanism], credentials: &Credentials) -> SmtpResult {
+    pub fn auth(
+        &mut self,
+        mechanisms: &[Mechanism],
+        credentials: &Credentials,
+    ) -> Result<Response, Error> {
         let mechanism = match self.server_info.get_auth_mechanism(mechanisms) {
             Some(m) => m,
             None => {
@@ -278,7 +282,7 @@ impl SmtpConnection {
     }
 
     /// Sends the message content
-    pub fn message(&mut self, message: &[u8]) -> SmtpResult {
+    pub fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
         codec.encode(message, &mut out_buf)?;
@@ -288,7 +292,7 @@ impl SmtpConnection {
     }
 
     /// Sends an SMTP command
-    pub fn command<C: Display>(&mut self, command: C) -> SmtpResult {
+    pub fn command<C: Display>(&mut self, command: C) -> Result<Response, Error> {
         self.write(command.to_string().as_bytes())?;
         self.read_response()
     }
@@ -307,7 +311,7 @@ impl SmtpConnection {
     }
 
     /// Gets the SMTP response
-    pub fn read_response(&mut self) -> SmtpResult {
+    pub fn read_response(&mut self) -> Result<Response, Error> {
         let mut raw_response = String::new();
         let mut response = raw_response.parse::<Response>();
 

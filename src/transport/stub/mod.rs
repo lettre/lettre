@@ -17,38 +17,60 @@
 //!     .body("Be happy!")
 //!     .unwrap();
 //!
-//! let mut sender = StubTransport::new_positive();
+//! let mut sender = StubTransport::new_ok();
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! ```
 
 use crate::{Envelope, Transport};
+use std::error::Error as StdError;
+use std::fmt;
+
+#[derive(Debug, Copy, Clone)]
+pub struct Error;
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "stub error")
+    }
+}
+
+impl StdError for Error {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        None
+    }
+}
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
 pub struct StubTransport {
-    response: StubResult,
+    response: Result<(), Error>,
 }
 
 impl StubTransport {
-    /// Creates a new transport that always returns the given response
-    pub fn new(response: StubResult) -> StubTransport {
+    /// Creates aResult new transport that always returns the given response
+    pub fn new(response: Result<(), Error>) -> StubTransport {
         StubTransport { response }
     }
 
     /// Creates a new transport that always returns a success response
-    pub fn new_positive() -> StubTransport {
+    pub fn new_ok() -> StubTransport {
         StubTransport { response: Ok(()) }
+    }
+
+    /// Creates a new transport that always returns an error
+    pub fn new_error() -> StubTransport {
+        StubTransport {
+            response: Err(Error),
+        }
     }
 }
 
-/// SMTP result type
-pub type StubResult = Result<(), ()>;
+impl Transport for StubTransport {
+    type Ok = ();
+    type Error = Error;
 
-impl<'a> Transport<'a> for StubTransport {
-    type Result = StubResult;
-
-    fn send_raw(&self, _envelope: &Envelope, _email: &[u8]) -> Self::Result {
+    fn send_raw(&self, _envelope: &Envelope, _email: &[u8]) -> Result<Self::Ok, Self::Error> {
         self.response
     }
 }

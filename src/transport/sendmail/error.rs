@@ -50,6 +50,3 @@ impl From<FromUtf8Error> for Error {
         Utf8Parsing(err)
     }
 }
-
-/// sendmail result type
-pub type SendmailResult = Result<(), Error>;

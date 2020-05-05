@@ -35,7 +35,7 @@
 //! TODO
 //! ```
 
-use crate::{transport::file::error::FileResult, Envelope, Transport};
+use crate::{transport::file::error::Error, Envelope, Transport};
 use std::{
     fs::File,
     io::prelude::*,
@@ -45,6 +45,8 @@ use std::{
 use uuid::Uuid;
 
 pub mod error;
+
+type Id = String;
 
 /// Writes the content and the envelope information to a file
 #[derive(Debug)]
@@ -70,10 +72,11 @@ struct SerializableEmail<'a> {
     message: Option<&'a str>,
 }
 
-impl<'a> Transport<'a> for FileTransport {
-    type Result = FileResult;
+impl Transport for FileTransport {
+    type Ok = Id;
+    type Error = Error;
 
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         let email_id = Uuid::new_v4();
 
         let mut file = self.path.clone();
