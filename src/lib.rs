@@ -45,6 +45,8 @@ pub use crate::transport::smtp::{SmtpTransport, Tls};
 pub use crate::transport::stub::StubTransport;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
+use std::error::Error as StdError;
+use std::fmt;
 
 /// Simple email envelope representation
 ///
@@ -117,17 +119,18 @@ impl TryFrom<&Headers> for Envelope {
 }
 
 /// Transport method for emails
-pub trait Transport<'a> {
-    /// Result type for the transport
-    type Result;
+pub trait Transport {
+    /// Result types for the transport
+    type Ok: fmt::Debug;
+    type Error: StdError;
 
     /// Sends the email
-    fn send(&self, message: &Message) -> Self::Result {
+    fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
         self.send_raw(message.envelope(), &raw)
     }
 
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result;
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
 #[cfg(test)]

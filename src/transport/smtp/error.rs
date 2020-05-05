@@ -152,6 +152,3 @@ impl From<&'static str> for Error {
         Client(string)
     }
 }
-
-/// SMTP result type
-pub type SmtpResult = Result<Response, Error>;

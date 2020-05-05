@@ -182,8 +182,9 @@ use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
         client::SmtpConnection,
-        error::{Error, SmtpResult},
+        error::Error,
         extension::ClientId,
+        response::Response,
     },
     Envelope, Transport,
 };
@@ -419,11 +420,12 @@ impl SmtpTransport {
     }
 }
 
-impl<'a> Transport<'a> for SmtpTransport {
-    type Result = SmtpResult;
+impl Transport for SmtpTransport {
+    type Ok = Response;
+    type Error = Error;
 
     /// Sends an email
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Self::Result {
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         #[cfg(feature = "r2d2")]
         let mut conn: Box<dyn DerefMut<Target = SmtpConnection>> = match self.pool {
             Some(ref p) => Box::new(p.get()?),
