@@ -271,7 +271,13 @@ impl EmailBuilder {
         filename: &str,
         content_type: &Mime,
     ) -> Result<EmailBuilder, Error> {
-        let encoded_body = base64::encode(&body);
+        let encoded_body = base64::encode(&body)
+            .as_bytes()
+            .chunks(72)
+            // base64 encoding is guaranteed to return utf-8, so this won't panic
+            .map(|s| std::str::from_utf8(s).unwrap())
+            .collect::<Vec<_>>()
+            .join("\r\n");
         let content = PartBuilder::new()
             .body(encoded_body)
             .header((
