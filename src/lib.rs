@@ -25,12 +25,11 @@ pub mod error;
 pub mod message;
 pub mod transport;
 
-pub use crate::address::Address;
 use crate::error::Error;
 #[cfg(feature = "builder")]
 pub use crate::message::{
     header::{self, Headers},
-    EmailFormat, Mailboxes, Message,
+    EmailFormat, Mailbox, Mailboxes, Message,
 };
 #[cfg(feature = "file-transport")]
 pub use crate::transport::file::FileTransport;
@@ -42,11 +41,10 @@ pub use crate::transport::smtp::client::net::TlsParameters;
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::{SmtpTransport, Tls};
-pub use crate::transport::stub::StubTransport;
+pub use crate::{address::Address, transport::stub::StubTransport};
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
-use std::error::Error as StdError;
-use std::fmt;
+use std::{error::Error as StdError, fmt};
 
 /// Simple email envelope representation
 ///
@@ -92,9 +90,15 @@ impl TryFrom<&Headers> for Envelope {
         let from = match headers.get::<header::Sender>() {
             // If there is a Sender, use it
             Some(header::Sender(a)) => Some(a.email.clone()),
-            // ... else use the first From address
+            // ... else try From
             None => match headers.get::<header::From>() {
-                Some(header::From(ref a)) => Some(a.iter().next().unwrap().email.clone()),
+                Some(header::From(a)) => {
+                    let from: Vec<Mailbox> = a.clone().into();
+                    if from.len() > 1 {
+                        return Err(Error::TooManyFrom);
+                    }
+                    Some(from[0].email.clone())
+                }
                 None => None,
             },
         };
