@@ -364,25 +364,32 @@ impl MessageBuilder {
         self
     }
 
-    fn insert_missing_headers(self) -> Self {
-        let mut new = self;
-
-        // Insert Date if missing
-        new = if new.headers.get::<header::Date>().is_none() {
-            new.date_now()
-        } else {
-            new
-        };
-
-        // TODO insert sender if needed?
-        new
-    }
-
     // TODO: High-level methods for attachments and embedded files
 
     /// Create message from body
     fn build(self, body: Body) -> Result<Message, EmailError> {
-        let res = self.insert_missing_headers();
+        // Check for missing required headers
+        // https://tools.ietf.org/html/rfc5322#section-3.6
+
+        // Insert Date if missing
+        let res = if self.headers.get::<header::Date>().is_none() {
+            self.date_now()
+        } else {
+            self
+        };
+
+        // Fail is missing correct originator (Sender or From)
+        match res.headers.get::<header::From>() {
+            Some(header::From(f)) => {
+                let from: Vec<Mailbox> = f.clone().into();
+                if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
+                    return Err(EmailError::TooManyFrom);
+                }
+            }
+            None => {
+                return Err(EmailError::MissingFrom);
+            }
+        }
 
         let envelope = match res.envelope {
             Some(e) => e,
@@ -484,6 +491,29 @@ impl Default for MessageBuilder {
 #[cfg(test)]
 mod test {
     use crate::message::{header, mailbox::Mailbox, Message};
+
+    #[test]
+    fn email_missing_originator() {
+        assert!(Message::builder().body("Happy new year!").is_err());
+    }
+
+    #[test]
+    fn email_miminal_message() {
+        assert!(Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .body("Happy new year!")
+            .is_ok());
+    }
+
+    #[test]
+    fn email_missing_sender() {
+        assert!(Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .from("AnyBody <anybody@domain.tld>".parse().unwrap())
+            .body("Happy new year!")
+            .is_err());
+    }
 
     #[test]
     fn email_message() {
