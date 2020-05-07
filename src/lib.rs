@@ -6,6 +6,19 @@
 //! * Secure defaults
 //!
 //! Lettre requires Rust 1.40 or newer.
+//!
+//! ## Optional features
+//!
+//! * **builder**: Message builder
+//! * **file-transport**: Transport that write messages into a file
+//! * **smtp-transport**: Transport over SMTP
+//! * **sendmail-transport**: Transport over SMTP
+//! * **rustls-tls**: TLS support with the `rustls` crate
+//! * **native-tls**: TLS support with the `native-tls` crate
+//! * **r2d2**: Connection pool for SMTP transport
+//! * **log**: Logging using the `log` crate
+//! * **serde**: Serilization/Deserialization of entities
+//! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
 #![doc(html_favicon_url = "https://lettre.at/favicon.png")]
@@ -129,6 +142,7 @@ pub trait Transport {
     type Error: StdError;
 
     /// Sends the email
+    #[cfg(feature = "builder")]
     fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
         self.send_raw(message.envelope(), &raw)
