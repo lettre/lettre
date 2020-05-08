@@ -12,8 +12,9 @@ mod test {
             .subject("Happy new year")
             .body("Be happy!")
             .unwrap();
-        SmtpTransport::new("127.0.0.1")
+        SmtpTransport::builder("127.0.0.1")
             .port(2525)
+            .build()
             .send(&email)
             .unwrap();
     }

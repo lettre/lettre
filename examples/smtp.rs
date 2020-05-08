@@ -1,6 +1,3 @@
-extern crate env_logger;
-extern crate lettre;
-
 use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
