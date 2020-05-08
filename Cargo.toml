@@ -1,6 +1,6 @@
 [package]
 name = "lettre"
-version = "0.10.0-pre" # remember to update html_root_url
+version = "0.10.0-alpha.0" # remember to update html_root_url
 description = "Email client"
 readme = "README.md"
 homepage = "https://lettre.at"
@@ -51,7 +51,7 @@ name = "transport_smtp"
 
 [features]
 builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable"]
-default = ["file-transport", "smtp-transport", "rustls-tls", "hostname", "sendmail-transport", "builder"]
+default = ["file-transport", "smtp-transport", "rustls-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 sendmail-transport = []

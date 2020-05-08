@@ -191,11 +191,9 @@ use crate::{
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "r2d2")]
-use r2d2::Pool;
+use r2d2::{Builder, Pool};
 #[cfg(feature = "rustls-tls")]
 use rustls::ClientConfig;
-#[cfg(feature = "r2d2")]
-use std::ops::DerefMut;
 use std::time::Duration;
 #[cfg(feature = "rustls-tls")]
 use webpki_roots::TLS_SERVER_ROOTS;
@@ -219,7 +217,12 @@ pub const SMTP_PORT: u16 = 25;
 /// Default submission port
 pub const SUBMISSION_PORT: u16 = 587;
 /// Default submission over TLS port
+///
+/// https://tools.ietf.org/html/rfc8314
 pub const SUBMISSIONS_PORT: u16 = 465;
+
+/// Default timeout
+pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
@@ -244,10 +247,86 @@ pub enum Tls {
     Wrapper(TlsParameters),
 }
 
-/// Contains client configuration
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct SmtpTransport {
+    #[cfg(feature = "r2d2")]
+    inner: Pool<SmtpClient>,
+    #[cfg(not(feature = "r2d2"))]
+    inner: SmtpClient,
+}
+
+impl Transport for SmtpTransport {
+    type Ok = Response;
+    type Error = Error;
+
+    /// Sends an email
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        #[cfg(feature = "r2d2")]
+        let mut conn = self.inner.get()?;
+        #[cfg(not(feature = "r2d2"))]
+        let mut conn = self.inner.connection()?;
+
+        let result = conn.send(envelope, email)?;
+
+        #[cfg(not(feature = "r2d2"))]
+        conn.quit()?;
+
+        Ok(result)
+    }
+}
+
+impl SmtpTransport {
+    /// Creates a new SMTP client
+    ///
+    /// Defaults are:
+    ///
+    /// * No authentication
+    /// * A 60 seconds timeout for smtp commands
+    /// * Port 587
+    ///
+    /// Consider using [`SmtpTransport::new`] instead, if possible.
+    pub fn builder<T: Into<String>>(server: T) -> SmtpTransportBuilder {
+        let mut new = SmtpInfo::default();
+        new.server = server.into();
+        SmtpTransportBuilder { info: new }
+    }
+
+    /// Simple and secure transport, should be used when possible.
+    /// Creates an encrypted transport over submissions port, using the provided domain
+    /// to validate TLS certificates.
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
+        #[cfg(feature = "native-tls")]
+        let mut tls_builder = TlsConnector::builder();
+        #[cfg(feature = "native-tls")]
+        tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
+        #[cfg(feature = "native-tls")]
+        let tls_parameters = TlsParameters::new(relay.to_string(), tls_builder.build()?);
+
+        #[cfg(feature = "rustls-tls")]
+        let mut tls = ClientConfig::new();
+        #[cfg(feature = "rustls-tls")]
+        tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
+        #[cfg(feature = "rustls-tls")]
+        let tls_parameters = TlsParameters::new(relay.to_string(), tls);
+
+        Ok(Self::builder(relay)
+            .port(SUBMISSIONS_PORT)
+            .tls(Tls::Wrapper(tls_parameters)))
+    }
+
+    /// Creates a new local SMTP client to port 25
+    ///
+    /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
+    pub fn unencrypted_localhost() -> SmtpTransport {
+        Self::builder("localhost").port(SMTP_PORT).build()
+    }
+}
+
+#[allow(missing_debug_implementations)]
+#[derive(Clone)]
+struct SmtpInfo {
     /// Name sent during EHLO
     hello_name: ClientId,
     /// Server we are connecting to
@@ -263,131 +342,109 @@ pub struct SmtpTransport {
     /// Define network timeout
     /// It can be changed later for specific needs (like a different timeout for each SMTP command)
     timeout: Option<Duration>,
-    /// Connection pool
-    #[cfg(feature = "r2d2")]
-    pool: Option<Pool<SmtpTransport>>,
 }
 
-/// Builder for the SMTP `SmtpTransport`
-impl SmtpTransport {
-    /// Creates a new SMTP client
-    ///
-    /// Defaults are:
-    ///
-    /// * No authentication
-    /// * A 60 seconds timeout for smtp commands
-    /// * Port 587
-    ///
-    /// Consider using [`SmtpTransport::new`] instead, if possible.
-    pub fn new<T: Into<String>>(server: T) -> Self {
+impl Default for SmtpInfo {
+    fn default() -> Self {
         Self {
-            server: server.into(),
+            server: "localhost".to_string(),
             port: SUBMISSION_PORT,
             hello_name: ClientId::hostname(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),
-            timeout: Some(Duration::new(60, 0)),
+            timeout: Some(DEFAULT_TIMEOUT),
             tls: Tls::None,
-            #[cfg(feature = "r2d2")]
-            pool: None,
         }
     }
+}
 
-    /// Simple and secure transport, should be used when possible.
-    /// Creates an encrypted transport over submissions port, using the provided domain
-    /// to validate TLS certificates.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-    pub fn relay(relay: &str) -> Result<Self, Error> {
-        #[cfg(feature = "native-tls")]
-        let mut tls_builder = TlsConnector::builder();
-        #[cfg(feature = "native-tls")]
-        tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
-        #[cfg(feature = "native-tls")]
-        let tls_parameters = TlsParameters::new(relay.to_string(), tls_builder.build().unwrap());
+/// Contains client configuration
+#[allow(missing_debug_implementations)]
+#[derive(Clone)]
+pub struct SmtpTransportBuilder {
+    info: SmtpInfo,
+}
 
-        #[cfg(feature = "rustls-tls")]
-        let mut tls = ClientConfig::new();
-        #[cfg(feature = "rustls-tls")]
-        tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
-        #[cfg(feature = "rustls-tls")]
-        let tls_parameters = TlsParameters::new(relay.to_string(), tls);
-
-        #[allow(unused_mut)]
-        let mut new = Self::new(relay)
-            .port(SUBMISSIONS_PORT)
-            .tls(Tls::Wrapper(tls_parameters));
-
-        #[cfg(feature = "r2d2")]
-        {
-            // Pool with default configuration
-            // FIXME avoid clone
-            let tpool = new.clone();
-            new = new.pool(Pool::new(tpool)?);
-        }
-        Ok(new)
-    }
-
-    /// Creates a new local SMTP client to port 25
-    ///
-    /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
-    pub fn unencrypted_localhost() -> Self {
-        Self::new("localhost").port(SMTP_PORT)
-    }
-
+/// Builder for the SMTP `SmtpTransport`
+impl SmtpTransportBuilder {
     /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> Self {
-        self.hello_name = name;
+        self.info.hello_name = name;
         self
     }
 
     /// Set the authentication mechanism to use
     pub fn credentials(mut self, credentials: Credentials) -> Self {
-        self.credentials = Some(credentials);
+        self.info.credentials = Some(credentials);
         self
     }
 
     /// Set the authentication mechanism to use
     pub fn authentication(mut self, mechanisms: Vec<Mechanism>) -> Self {
-        self.authentication = mechanisms;
+        self.info.authentication = mechanisms;
         self
     }
 
     /// Set the timeout duration
     pub fn timeout(mut self, timeout: Option<Duration>) -> Self {
-        self.timeout = timeout;
+        self.info.timeout = timeout;
         self
     }
 
     /// Set the port to use
     pub fn port(mut self, port: u16) -> Self {
-        self.port = port;
+        self.info.port = port;
         self
     }
 
     /// Set the TLS settings to use
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     pub fn tls(mut self, tls: Tls) -> Self {
-        self.tls = tls;
+        self.info.tls = tls;
         self
     }
 
-    /// Set the TLS settings to use
+    /// Build the client
+    fn build_client(self) -> SmtpClient {
+        SmtpClient { info: self.info }
+    }
+
+    /// Build the transport with custom pool settings
     #[cfg(feature = "r2d2")]
-    pub fn pool(mut self, pool: Pool<SmtpTransport>) -> Self {
-        self.pool = Some(pool);
-        self
+    pub fn build_with_pool(self, pool: Builder<SmtpClient>) -> SmtpTransport {
+        let pool = pool.build_unchecked(self.build_client());
+        SmtpTransport { inner: pool }
     }
 
+    /// Build the transport (with default pool if enabled)
+    pub fn build(self) -> SmtpTransport {
+        let client = self.build_client();
+        SmtpTransport {
+            #[cfg(feature = "r2d2")]
+            inner: Pool::builder().max_size(5).build_unchecked(client),
+            #[cfg(not(feature = "r2d2"))]
+            inner: client,
+        }
+    }
+}
+
+/// Build client
+#[derive(Clone)]
+pub struct SmtpClient {
+    info: SmtpInfo,
+}
+
+impl SmtpClient {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
-    fn connection(&self) -> Result<SmtpConnection, Error> {
+    pub fn connection(&self) -> Result<SmtpConnection, Error> {
         let mut conn = SmtpConnection::connect::<(&str, u16)>(
-            (self.server.as_ref(), self.port),
-            self.timeout,
-            &self.hello_name,
+            (self.info.server.as_ref(), self.info.port),
+            self.info.timeout,
+            &self.info.hello_name,
             #[allow(clippy::match_single_binding)]
-            match self.tls {
+            match self.info.tls {
                 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
                 Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
                 _ => None,
@@ -395,56 +452,27 @@ impl SmtpTransport {
         )?;
 
         #[allow(clippy::match_single_binding)]
-        match self.tls {
+        match self.info.tls {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters, &self.hello_name)?;
+                    conn.starttls(tls_parameters, &self.info.hello_name)?;
                 }
             }
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters, &self.hello_name)?;
+                conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             _ => (),
         }
 
-        match &self.credentials {
+        match &self.info.credentials {
             Some(credentials) => {
-                conn.auth(self.authentication.as_slice(), &credentials)?;
+                conn.auth(self.info.authentication.as_slice(), &credentials)?;
             }
             None => (),
         }
 
         Ok(conn)
-    }
-}
-
-impl Transport for SmtpTransport {
-    type Ok = Response;
-    type Error = Error;
-
-    /// Sends an email
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        #[cfg(feature = "r2d2")]
-        let mut conn: Box<dyn DerefMut<Target = SmtpConnection>> = match self.pool {
-            Some(ref p) => Box::new(p.get()?),
-            None => Box::new(Box::new(self.connection()?)),
-        };
-        #[cfg(not(feature = "r2d2"))]
-        let mut conn = self.connection()?;
-
-        let result = conn.send(envelope, email)?;
-
-        #[cfg(feature = "r2d2")]
-        {
-            if self.pool.is_none() {
-                conn.quit()?;
-            }
-        }
-        #[cfg(not(feature = "r2d2"))]
-        conn.quit()?;
-
-        Ok(result)
     }
 }
