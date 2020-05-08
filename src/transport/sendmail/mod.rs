@@ -26,29 +26,32 @@
 use crate::{transport::sendmail::error::Error, Envelope, Transport};
 use std::{
     convert::AsRef,
+    ffi::OsString,
     io::prelude::*,
     process::{Command, Stdio},
 };
 
 pub mod error;
 
+const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
+
 /// Sends an email using the `sendmail` command
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SendmailTransport {
-    command: String,
+    command: OsString,
 }
 
 impl SendmailTransport {
     /// Creates a new transport with the default `/usr/sbin/sendmail` command
     pub fn new() -> SendmailTransport {
         SendmailTransport {
-            command: "/usr/sbin/sendmail".to_string(),
+            command: DEFAUT_SENDMAIL.into(),
         }
     }
 
     /// Creates a new transport to the given sendmail command
-    pub fn new_with_command<S: Into<String>>(command: S) -> SendmailTransport {
+    pub fn new_with_command<S: Into<OsString>>(command: S) -> SendmailTransport {
         SendmailTransport {
             command: command.into(),
         }

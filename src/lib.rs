@@ -17,7 +17,7 @@
 //! * **native-tls**: TLS support with the `native-tls` crate
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **log**: Logging using the `log` crate
-//! * **serde**: Serilization/Deserialization of entities
+//! * **serde**: Serialization/Deserialization of entities
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]

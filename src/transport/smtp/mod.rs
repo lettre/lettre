@@ -221,6 +221,9 @@ pub const SUBMISSION_PORT: u16 = 587;
 /// Default submission over TLS port
 pub const SUBMISSIONS_PORT: u16 = 465;
 
+/// Default timeout
+pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
 // This is also rustls' default behavior
@@ -286,7 +289,7 @@ impl SmtpTransport {
             hello_name: ClientId::hostname(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),
-            timeout: Some(Duration::new(60, 0)),
+            timeout: Some(DEFAULT_TIMEOUT),
             tls: Tls::None,
             #[cfg(feature = "r2d2")]
             pool: None,
