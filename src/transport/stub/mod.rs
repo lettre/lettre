@@ -73,3 +73,24 @@ impl Transport for StubTransport {
         self.response
     }
 }
+
+#[cfg(feature = "async")]
+pub mod r#async {
+    use super::StubTransport;
+    use crate::{r#async::Transport, transport::stub::Error, Envelope};
+    use async_trait::async_trait;
+
+    #[async_trait]
+    impl Transport for StubTransport {
+        type Ok = ();
+        type Error = Error;
+
+        async fn send_raw(
+            &self,
+            _envelope: &Envelope,
+            _email: &[u8],
+        ) -> Result<Self::Ok, Self::Error> {
+            self.response
+        }
+    }
+}

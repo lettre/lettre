@@ -62,6 +62,12 @@ impl SinglePartBuilder {
         self
     }
 
+    /// Set the Content-Type header of the singlepart
+    pub fn content_type(mut self, content_type: ContentType) -> Self {
+        self.headers.set(content_type);
+        self
+    }
+
     /// Build singlepart using body
     pub fn body<T: Into<Vec<u8>>>(self, body: T) -> SinglePart {
         SinglePart {
@@ -81,11 +87,8 @@ impl Default for SinglePartBuilder {
 ///
 /// # Example
 ///
-/// ```no_test
-/// extern crate mime;
-/// extern crate emailmessage;
-///
-/// use emailmessage::{SinglePart, header};
+/// ```
+/// use lettre::message::{SinglePart, header};
 ///
 /// let part = SinglePart::builder()
 ///      .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))

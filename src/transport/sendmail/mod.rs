@@ -56,6 +56,17 @@ impl SendmailTransport {
             command: command.into(),
         }
     }
+
+    fn command(&self, envelope: &Envelope) -> Command {
+        let mut c = Command::new(&self.command);
+        c.arg("-i")
+            .arg("-f")
+            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .args(envelope.to())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped());
+        c
+    }
 }
 
 impl Transport for SendmailTransport {
@@ -64,14 +75,7 @@ impl Transport for SendmailTransport {
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         // Spawn the sendmail command
-        let mut process = Command::new(&self.command)
-            .arg("-i")
-            .arg("-f")
-            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
-            .args(envelope.to())
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()?;
+        let mut process = self.command(envelope).spawn()?;
 
         process.stdin.as_mut().unwrap().write_all(email)?;
         let output = process.wait_with_output()?;
@@ -80,6 +84,45 @@ impl Transport for SendmailTransport {
             Ok(())
         } else {
             Err(error::Error::Client(String::from_utf8(output.stderr)?))
+        }
+    }
+}
+
+#[cfg(feature = "async")]
+pub mod r#async {
+    use super::SendmailTransport;
+    use crate::{r#async::Transport, transport::sendmail::error::Error, Envelope};
+    use async_trait::async_trait;
+    use std::io::Write;
+
+    #[async_trait]
+    impl Transport for SendmailTransport {
+        type Ok = ();
+        type Error = Error;
+
+        // TODO: Convert to real async, once async-std has a process implementation.
+        async fn send_raw(
+            &self,
+            envelope: &Envelope,
+            email: &[u8],
+        ) -> Result<Self::Ok, Self::Error> {
+            let mut command = self.command(envelope);
+            let email = email.to_vec();
+
+            let output = async_std::task::spawn_blocking(move || {
+                // Spawn the sendmail command
+                let mut process = command.spawn()?;
+
+                process.stdin.as_mut().unwrap().write_all(&email)?;
+                process.wait_with_output()
+            })
+            .await?;
+
+            if output.status.success() {
+                Ok(())
+            } else {
+                Err(Error::Client(String::from_utf8(output.stderr)?))
+            }
         }
     }
 }

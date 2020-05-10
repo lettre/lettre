@@ -7,7 +7,7 @@ use crate::{
         commands::*,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::Response,
+        response::{parse_response, Response},
     },
     Envelope,
 };
@@ -312,36 +312,30 @@ impl SmtpConnection {
 
     /// Gets the SMTP response
     pub fn read_response(&mut self) -> Result<Response, Error> {
-        let mut raw_response = String::new();
-        let mut response = raw_response.parse::<Response>();
+        let mut buffer = String::with_capacity(100);
 
-        while response.is_err() {
-            if let Error::Parsing(nom::error::ErrorKind::Complete) =
-                response.as_ref().err().unwrap()
-            {
-                break;
+        while self.stream.read_line(&mut buffer)? > 0 {
+            #[cfg(feature = "log")]
+            debug!("<< {}", escape_crlf(&buffer));
+            match parse_response(&buffer) {
+                Ok((_remaining, response)) => {
+                    if response.is_positive() {
+                        return Ok(response);
+                    }
+
+                    return Err(response.into());
+                }
+                Err(nom::Err::Failure(e)) => {
+                    return Err(Error::Parsing(e.1));
+                }
+                Err(nom::Err::Incomplete(_)) => { /* read more */ }
+                Err(nom::Err::Error(e)) => {
+                    return Err(Error::Parsing(e.1));
+                }
             }
-            // TODO read more than one line
-            let read_count = self.stream.read_line(&mut raw_response)?;
-
-            // EOF is reached
-            if read_count == 0 {
-                break;
-            }
-
-            response = raw_response.parse::<Response>();
         }
 
-        #[cfg(feature = "log")]
-        debug!("Read: {}", escape_crlf(raw_response.as_ref()));
-
-        let final_response = response?;
-
-        if final_response.is_positive() {
-            Ok(final_response)
-        } else {
-            Err(From::from(final_response))
-        }
+        Err(io::Error::new(io::ErrorKind::Other, "incomplete").into())
     }
 }
 

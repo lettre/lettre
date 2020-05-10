@@ -4,7 +4,7 @@
 use crate::transport::smtp::Error;
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_until},
+    bytes::streaming::{tag, take_until},
     combinator::{complete, map},
     multi::many0,
     sequence::{preceded, tuple},
@@ -226,7 +226,7 @@ fn parse_detail(i: &str) -> IResult<&str, Detail> {
     ))(i)
 }
 
-fn parse_response(i: &str) -> IResult<&str, Response> {
+pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
     let (i, lines) = many0(tuple((
         parse_code,
         preceded(tag("-"), take_until("\r\n")),
@@ -262,7 +262,7 @@ fn parse_response(i: &str) -> IResult<&str, Response> {
 
 #[cfg(test)]
 mod test {
-    use super::{Category, Code, Detail, Response, Severity};
+    use super::*;
 
     #[test]
     fn test_severity_fmt() {
@@ -470,6 +470,16 @@ mod test {
             .first_word(),
             None
         );
+    }
+
+    #[test]
+    fn test_response_incomplete() {
+        let raw_response = "250-smtp.example.org\r\n";
+        let res = parse_response(raw_response);
+        match res {
+            Err(nom::Err::Incomplete(_)) => {}
+            _ => panic!("Expected incomplete response, got {:?}", res),
+        }
     }
 
     #[test]
