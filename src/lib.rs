@@ -151,6 +151,35 @@ pub trait Transport {
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
+#[cfg(feature = "async")]
+pub mod r#async {
+
+    use super::*;
+    use async_trait::async_trait;
+
+    #[async_trait]
+    pub trait Transport {
+        /// Result types for the transport
+        type Ok: fmt::Debug;
+        type Error: StdError;
+
+        /// Sends the email
+        #[cfg(feature = "builder")]
+        // TODO take &Message
+        async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
+            let raw = message.formatted();
+            let envelope = message.envelope();
+            self.send_raw(&envelope, &raw).await
+        }
+
+        async fn send_raw(
+            &self,
+            envelope: &Envelope,
+            email: &[u8],
+        ) -> Result<Self::Ok, Self::Error>;
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
