@@ -1,5 +1,5 @@
-<a name="v0.10.0"></a>
-### v0.10.0 (unreleased)
+<a name="v0.10.0-alpha.1"></a>
+### v0.10.0-alpha.1
 
 #### Upgrade notes
 

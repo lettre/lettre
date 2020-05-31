@@ -1,6 +1,6 @@
 [package]
 name = "lettre"
-version = "0.10.0-alpha.0" # remember to update html_root_url
+version = "0.10.0-alpha.1" # remember to update html_root_url
 description = "Email client"
 readme = "README.md"
 homepage = "https://lettre.at"
