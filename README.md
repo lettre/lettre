@@ -43,7 +43,7 @@ Lettre does not provide (for now):
 * Async support
 * Email parsing
 
-## Example
+## Examples
 
 This library requires Rust 1.20 or newer.
 To use this library, add the following to your `Cargo.toml`:
@@ -83,6 +83,46 @@ if result.is_ok() {
 }
 
 assert!(result.is_ok());
+```
+
+### Sending HTML with UTF-8 on gmail(emojis, Chinese, etc)
+
+
+```rust,norun
+use lettre::{
+    message::{header, SinglePart},
+    transport::smtp::authentication::Credentials,
+    Message, SmtpTransport, Transport,
+};
+
+    match Message::builder()
+        .header(header::ContentType(
+            "text/html; charset=utf8".parse().unwrap(),
+        ))
+        .from(sender.parse().unwrap())
+        .to(receiver.parse().unwrap())
+        .subject("Validator Signing Report")
+        .singlepart(
+            SinglePart::builder()
+                .header(header::ContentType(
+                    "text/plain; charset=utf8".parse().unwrap(),
+                ))
+                .header(header::ContentTransferEncoding::Binary)
+	// assume that report is an string of the HTML document with utf8 things in it
+                .body(report),
+        ) {
+        Err(reason) => return eprintln!("issue {:?}", reason),
+        Ok(email) => {
+            let mailer = SmtpTransport::relay("smtp.gmail.com")
+                .unwrap()
+                .credentials(creds)
+                .build();
+            match mailer.send(&email) {
+                Ok(b) => println!("everything sent well  {:?}", b),
+                Err(reason) => eprintln!("issue sending out email {}", reason),
+            }
+        }
+    }
 ```
 
 ## Testing
