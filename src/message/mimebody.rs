@@ -4,7 +4,7 @@ use crate::message::{
     EmailFormat,
 };
 use mime::Mime;
-use textnonce::TextNonce;
+use rand::Rng;
 
 /// MIME part variants
 ///
@@ -194,11 +194,19 @@ pub enum MultiPartKind {
     Related,
 }
 
+/// Create a random MIME boundary.
+fn make_boundary() -> String {
+    rand::thread_rng()
+        .sample_iter(&rand::distributions::Alphanumeric)
+        .take(68)
+        .collect()
+}
+
 impl MultiPartKind {
     fn to_mime<S: AsRef<str>>(self, boundary: Option<S>) -> Mime {
         let boundary = boundary
             .map(|s| s.as_ref().into())
-            .unwrap_or_else(|| TextNonce::sized(68).unwrap().into_string());
+            .unwrap_or_else(make_boundary);
 
         use self::MultiPartKind::*;
         format!(
@@ -600,5 +608,21 @@ mod test {
                            "\r\n",
                            "int main() { return 0; }\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+    }
+
+    #[test]
+    fn test_make_boundary() {
+        let mut boundaries = std::collections::HashSet::with_capacity(10);
+        for _ in 0..1000 {
+            boundaries.insert(make_boundary());
+        }
+
+        // Ensure there are no duplicates
+        assert_eq!(1000, boundaries.len());
+
+        // Ensure correct length
+        for boundary in boundaries {
+            assert_eq!(68, boundary.len());
+        }
     }
 }
