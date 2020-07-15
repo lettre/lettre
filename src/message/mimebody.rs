@@ -176,7 +176,7 @@ impl EmailFormat for SinglePart {
 
 /// The kind of multipart
 ///
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum MultiPartKind {
     /// Mixed kind to combine unrelated content parts
     ///
@@ -192,6 +192,12 @@ pub enum MultiPartKind {
     ///
     /// For example, you can include images into HTML content using that.
     Related,
+
+    /// Encrypted kind for encrypted messages
+    Encrypted { protocol: String },
+
+    /// Signed kind for signed messages
+    Signed { protocol: String },
 }
 
 impl MultiPartKind {
@@ -202,13 +208,20 @@ impl MultiPartKind {
 
         use self::MultiPartKind::*;
         format!(
-            "multipart/{}; boundary=\"{}\"",
+            "multipart/{}; boundary=\"{}\"{}",
             match self {
                 Mixed => "mixed",
                 Alternative => "alternative",
                 Related => "related",
+                Encrypted { .. } => "encrypted",
+                Signed { .. } => "signed",
             },
-            boundary
+            boundary,
+            match self {
+                Encrypted { protocol } => format!("; protocol=\"{}\"", protocol),
+                Signed { protocol } => format!("; protocol=\"{}\"", protocol),
+                _ => String::new(),
+            }
         )
         .parse()
         .unwrap()
@@ -220,6 +233,9 @@ impl MultiPartKind {
             "mixed" => Some(Mixed),
             "alternative" => Some(Alternative),
             "related" => Some(Related),
+            "signed" => m.get_param("protocol").map(|p| Signed{ protocol: p.as_str().to_owned() }),
+            "encrypted" => m.get_param("protocol").map(|p| Encrypted{ protocol: p.as_str().to_owned() }),
+            //TODO: test the encrypted and signed bits
             _ => None,
         }
     }
@@ -330,6 +346,20 @@ impl MultiPart {
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Related)`
     pub fn related() -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Related)
+    }
+    
+    /// Creates encrypted multipart builder
+    ///
+    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Encrypted{protocol})`
+    pub fn encrypted(protocol: String) -> MultiPartBuilder {
+        MultiPart::builder().kind(MultiPartKind::Encrypted{protocol})
+    }
+    
+    /// Creates signed multipart builder
+    ///
+    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{protocol})`
+    pub fn signed(protocol: String) -> MultiPartBuilder {
+        MultiPart::builder().kind(MultiPartKind::Signed{protocol})
     }
 
     /// Add part to multipart
@@ -514,6 +544,54 @@ mod test {
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "int main() { return 0; }\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+    }
+    #[test]
+    fn multi_part_encrypted() {
+        let part = MultiPart::encrypted("application/pgp-encrypted".to_owned())
+            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .part(Part::Single(
+                SinglePart::builder()
+                    .header(header::ContentType(
+                        "application/pgp-encrypted".parse().unwrap(),
+                    ))
+                    .body(String::from("Version: 1")),
+            ))
+            .singlepart(
+                SinglePart::builder()
+                    .header(ContentType("application/octet-stream; name=\"encrypted.asc\"".parse().unwrap()))
+                    .header(header::ContentDisposition {
+                        disposition: header::DispositionType::Inline,
+                        parameters: vec![header::DispositionParam::Filename(
+                            header::Charset::Ext("utf-8".into()),
+                            None,
+                            "encrypted.asc".as_bytes().into(),
+                        )],
+                    })
+                    .body(String::from(concat!("-----BEGIN PGP MESSAGE-----\r\n",
+                    "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
+                    "...\r\n",
+                    "-----END PGP MESSAGE-----\r\n"))),
+            );
+
+        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
+                   concat!("Content-Type: multipart/encrypted;",
+                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
+                           " protocol=\"application/pgp-encrypted\"\r\n",
+                           "\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "Content-Type: application/pgp-encrypted\r\n",
+                           "\r\n",
+                           "Version: 1\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
+                           "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
+                           "\r\n",
+                           "-----BEGIN PGP MESSAGE-----\r\n",
+                           "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
+                           "...\r\n",
+                           "-----END PGP MESSAGE-----\r\n",
+                           "\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
     }
 
