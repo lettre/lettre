@@ -1,48 +1,36 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lettre::{
-    smtp::ConnectionReuseParameters, ClientSecurity, Email, EmailAddress, Envelope, SmtpClient,
-    Transport,
-};
+use lettre::{Message, SmtpTransport, Transport};
 
 fn bench_simple_send(c: &mut Criterion) {
-    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-        .unwrap()
-        .transport();
+    let sender = SmtpTransport::builder("127.0.0.1").port(2525).build();
 
     c.bench_function("send email", move |b| {
         b.iter(|| {
-            let email = Email::new(
-                Envelope::new(
-                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-                )
-                .unwrap(),
-                "id".to_string(),
-                "Hello ß☺ example".to_string().into_bytes(),
-            );
-            let result = black_box(sender.send(email));
+            let email = Message::builder()
+                .from("NoBody <nobody@domain.tld>".parse().unwrap())
+                .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+                .to("Hei <hei@domain.tld>".parse().unwrap())
+                .subject("Happy new year")
+                .body("Be happy!")
+                .unwrap();
+            let result = black_box(sender.send(&email));
             assert!(result.is_ok());
         })
     });
 }
 
 fn bench_reuse_send(c: &mut Criterion) {
-    let mut sender = SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-        .unwrap()
-        .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
-        .transport();
+    let sender = SmtpTransport::builder("127.0.0.1").port(2525).build();
     c.bench_function("send email with connection reuse", move |b| {
         b.iter(|| {
-            let email = Email::new(
-                Envelope::new(
-                    Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                    vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-                )
-                .unwrap(),
-                "id".to_string(),
-                "Hello ß☺ example".to_string().into_bytes(),
-            );
-            let result = black_box(sender.send(email));
+            let email = Message::builder()
+                .from("NoBody <nobody@domain.tld>".parse().unwrap())
+                .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+                .to("Hei <hei@domain.tld>".parse().unwrap())
+                .subject("Happy new year")
+                .body("Be happy!")
+                .unwrap();
+            let result = black_box(sender.send(&email));
             assert!(result.is_ok());
         })
     });

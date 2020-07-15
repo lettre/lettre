@@ -1,40 +1,65 @@
 #[cfg(test)]
 #[cfg(feature = "file-transport")]
 mod test {
-    use lettre::file::FileTransport;
-    use lettre::{Email, EmailAddress, Envelope, Transport};
-    use std::env::temp_dir;
-    use std::fs::remove_file;
-    use std::fs::File;
-    use std::io::Read;
+    use lettre::{transport::file::FileTransport, Message};
+    use std::{
+        env::temp_dir,
+        fs::{remove_file, File},
+        io::Read,
+    };
 
     #[test]
     fn file_transport() {
-        let mut sender = FileTransport::new(temp_dir());
-        let email = Email::new(
-            Envelope::new(
-                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            )
-            .unwrap(),
-            "id".to_string(),
-            "Hello ß☺ example".to_string().into_bytes(),
-        );
-        let message_id = email.message_id().to_string();
+        use lettre::Transport;
+        let sender = FileTransport::new(temp_dir());
+        let email = Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+            .to("Hei <hei@domain.tld>".parse().unwrap())
+            .subject("Happy new year")
+            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .body("Be happy!")
+            .unwrap();
 
-        let result = sender.send(email);
-        assert!(result.is_ok());
+        let result = sender.send(&email);
+        let id = result.unwrap();
 
-        let file = format!("{}/{}.json", temp_dir().to_str().unwrap(), message_id);
+        let file = temp_dir().join(format!("{}.json", id));
         let mut f = File::open(file.clone()).unwrap();
         let mut buffer = String::new();
         let _ = f.read_to_string(&mut buffer);
 
         assert_eq!(
             buffer,
-            "{\"envelope\":{\"forward_path\":[\"root@localhost\"],\"reverse_path\":\"user@localhost\"},\"message_id\":\"id\",\"message\":[72,101,108,108,111,32,195,159,226,152,186,32,101,120,97,109,112,108,101]}"
-        );
+            "{\"envelope\":{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"},\"raw_message\":null,\"message\":\"From: NoBody <nobody@domain.tld>\\r\\nReply-To: Yuin <yuin@domain.tld>\\r\\nTo: Hei <hei@domain.tld>\\r\\nSubject: Happy new year\\r\\nDate: Tue, 15 Nov 1994 08:12:31 GMT\\r\\n\\r\\nBe happy!\"}");
+        remove_file(file).unwrap();
+    }
 
+    #[cfg(feature = "async")]
+    #[async_attributes::test]
+    async fn file_transport_async() {
+        use lettre::r#async::Transport;
+        let sender = FileTransport::new(temp_dir());
+        let email = Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+            .to("Hei <hei@domain.tld>".parse().unwrap())
+            .subject("Happy new year")
+            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .body("Be happy!")
+            .unwrap();
+
+        let result = sender.send(email).await;
+        let id = result.unwrap();
+
+        let file = temp_dir().join(format!("{}.json", id));
+        let mut f = File::open(file.clone()).unwrap();
+        let mut buffer = String::new();
+        let _ = f.read_to_string(&mut buffer);
+
+        assert_eq!(
+            buffer,
+            "{\"envelope\":{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"},\"raw_message\":null,\"message\":\"From: NoBody <nobody@domain.tld>\\r\\nReply-To: Yuin <yuin@domain.tld>\\r\\nTo: Hei <hei@domain.tld>\\r\\nSubject: Happy new year\\r\\nDate: Tue, 15 Nov 1994 08:12:31 GMT\\r\\n\\r\\nBe happy!\"}");
         remove_file(file).unwrap();
     }
 }

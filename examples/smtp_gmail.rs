@@ -1,18 +1,13 @@
-extern crate lettre;
-
-use lettre::smtp::authentication::Credentials;
-use lettre::{Email, EmailAddress, Envelope, SmtpClient, Transport};
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 
 fn main() {
-    let email = Email::new(
-        Envelope::new(
-            Some(EmailAddress::new("from@gmail.com".to_string()).unwrap()),
-            vec![EmailAddress::new("to@example.com".to_string()).unwrap()],
-        )
-        .unwrap(),
-        "id".to_string(),
-        "Hello example".to_string().into_bytes(),
-    );
+    let email = Message::builder()
+        .from("NoBody <nobody@domain.tld>".parse().unwrap())
+        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .subject("Happy new year")
+        .body("Be happy!")
+        .unwrap();
 
     let creds = Credentials::new(
         "example_username".to_string(),
@@ -20,13 +15,13 @@ fn main() {
     );
 
     // Open a remote connection to gmail
-    let mut mailer = SmtpClient::new_simple("smtp.gmail.com")
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
         .unwrap()
         .credentials(creds)
-        .transport();
+        .build();
 
     // Send the email
-    let result = mailer.send(email);
+    let result = mailer.send(&email);
 
     if result.is_ok() {
         println!("Email sent");

@@ -29,6 +29,16 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
+      - run: rm target/debug/deps/liblettre-*
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --features=builder,smtp-transport,file-transport,sendmail-transport
+      - run: rm target/debug/deps/liblettre-*
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features=async
 
   check:
     name: Check
@@ -67,7 +77,6 @@ jobs:
       matrix:
         rust:
           - stable
-          - beta
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
@@ -79,28 +88,28 @@ jobs:
           command: clippy
           args: -- -D warnings
 
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
-      - run: smtp-sink 2525 1000&
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-fail-fast
-        env:
-          CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
-      - id: coverage
-        uses: actions-rs/grcov@v0.1
-      - name: Coveralls upload
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path-to-lcov: ${{ steps.coverage.outputs.report }}
+#  coverage:
+#    name: Coverage
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v1
+#      - uses: actions-rs/toolchain@v1
+#        with:
+#          toolchain: nightly
+#          override: true
+#      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
+#      - run: smtp-sink 2525 1000&
+#      - uses: actions-rs/cargo@v1
+#        with:
+#          command: test
+#          args: --no-fail-fast
+#        env:
+#          CARGO_INCREMENTAL: "0"
+#          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Zno-landing-pads"
+#      - id: coverage
+#        uses: actions-rs/grcov@v0.1
+#      - name: Coveralls upload
+#        uses: coverallsapp/github-action@master
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          path-to-lcov: ${{ steps.coverage.outputs.report }}

@@ -1,24 +1,21 @@
 #[cfg(test)]
 #[cfg(feature = "smtp-transport")]
 mod test {
-    use lettre::{ClientSecurity, Email, EmailAddress, Envelope, SmtpClient, Transport};
+    use lettre::{Message, SmtpTransport, Transport};
 
     #[test]
     fn smtp_transport_simple() {
-        let email = Email::new(
-            Envelope::new(
-                Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-                vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-            )
-            .unwrap(),
-            "id".to_string(),
-            "Hello ß☺ example".to_string().into_bytes(),
-        );
-
-        SmtpClient::new("127.0.0.1:2525", ClientSecurity::None)
-            .unwrap()
-            .transport()
-            .send(email)
+        let email = Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+            .to("Hei <hei@domain.tld>".parse().unwrap())
+            .subject("Happy new year")
+            .body("Be happy!")
+            .unwrap();
+        SmtpTransport::builder("127.0.0.1")
+            .port(2525)
+            .build()
+            .send(&email)
             .unwrap();
     }
 }
