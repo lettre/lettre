@@ -55,7 +55,7 @@ name = "transport_smtp"
 [features]
 async = ["async-std", "async-trait", "async-attributes"]
 builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable"]
-default = ["file-transport", "smtp-transport", "rustls-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
+default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 sendmail-transport = []
