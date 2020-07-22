@@ -35,12 +35,12 @@ quoted_printable = { version = "0.4", optional = true }
 r2d2 = { version = "0.8", optional = true }
 rand = { version = "0.7", optional = true, default-features = false }
 regex = "1"
-rustls = { version = "0.17", optional = true }
+rustls = { version = "0.18", optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 uuid = { version = "0.8", features = ["v4"] }
 webpki = { version = "0.21", optional = true }
-webpki-roots = { version = "0.19", optional = true }
+webpki-roots = { version = "0.20", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -54,8 +54,8 @@ name = "transport_smtp"
 
 [features]
 async = ["async-std", "async-trait", "async-attributes"]
-builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
-default = ["file-transport", "smtp-transport", "rustls-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
+builder = ["mime", "base64", "hyperx", "textnonce", "quoted_printable"]
+default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 sendmail-transport = []
