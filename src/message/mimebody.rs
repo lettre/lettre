@@ -233,8 +233,12 @@ impl MultiPartKind {
             "mixed" => Some(Mixed),
             "alternative" => Some(Alternative),
             "related" => Some(Related),
-            "signed" => m.get_param("protocol").map(|p| Signed{ protocol: p.as_str().to_owned() }),
-            "encrypted" => m.get_param("protocol").map(|p| Encrypted{ protocol: p.as_str().to_owned() }),
+            "signed" => m.get_param("protocol").map(|p| Signed {
+                protocol: p.as_str().to_owned(),
+            }),
+            "encrypted" => m.get_param("protocol").map(|p| Encrypted {
+                protocol: p.as_str().to_owned(),
+            }),
             //TODO: test the encrypted and signed bits
             _ => None,
         }
@@ -347,19 +351,19 @@ impl MultiPart {
     pub fn related() -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Related)
     }
-    
+
     /// Creates encrypted multipart builder
     ///
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Encrypted{protocol})`
     pub fn encrypted(protocol: String) -> MultiPartBuilder {
-        MultiPart::builder().kind(MultiPartKind::Encrypted{protocol})
+        MultiPart::builder().kind(MultiPartKind::Encrypted { protocol })
     }
-    
+
     /// Creates signed multipart builder
     ///
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{protocol})`
     pub fn signed(protocol: String) -> MultiPartBuilder {
-        MultiPart::builder().kind(MultiPartKind::Signed{protocol})
+        MultiPart::builder().kind(MultiPartKind::Signed { protocol })
     }
 
     /// Add part to multipart
@@ -559,7 +563,11 @@ mod test {
             ))
             .singlepart(
                 SinglePart::builder()
-                    .header(ContentType("application/octet-stream; name=\"encrypted.asc\"".parse().unwrap()))
+                    .header(ContentType(
+                        "application/octet-stream; name=\"encrypted.asc\""
+                            .parse()
+                            .unwrap(),
+                    ))
                     .header(header::ContentDisposition {
                         disposition: header::DispositionType::Inline,
                         parameters: vec![header::DispositionParam::Filename(
@@ -568,10 +576,12 @@ mod test {
                             "encrypted.asc".as_bytes().into(),
                         )],
                     })
-                    .body(String::from(concat!("-----BEGIN PGP MESSAGE-----\r\n",
-                    "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
-                    "...\r\n",
-                    "-----END PGP MESSAGE-----\r\n"))),
+                    .body(String::from(concat!(
+                        "-----BEGIN PGP MESSAGE-----\r\n",
+                        "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
+                        "...\r\n",
+                        "-----END PGP MESSAGE-----\r\n"
+                    ))),
             );
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
