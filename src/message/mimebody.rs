@@ -197,7 +197,7 @@ pub enum MultiPartKind {
     Encrypted { protocol: String },
 
     /// Signed kind for signed messages
-    Signed { protocol: String },
+    Signed { protocol: String, micalg: String },
 }
 
 impl MultiPartKind {
@@ -219,7 +219,8 @@ impl MultiPartKind {
             boundary,
             match self {
                 Encrypted { protocol } => format!("; protocol=\"{}\"", protocol),
-                Signed { protocol } => format!("; protocol=\"{}\"", protocol),
+                Signed { protocol, micalg } =>
+                    format!("; protocol=\"{}\"; micalg=\"{}\"", protocol, micalg),
                 _ => String::new(),
             }
         )
@@ -233,8 +234,11 @@ impl MultiPartKind {
             "mixed" => Some(Mixed),
             "alternative" => Some(Alternative),
             "related" => Some(Related),
-            "signed" => m.get_param("protocol").map(|p| Signed {
-                protocol: p.as_str().to_owned(),
+            "signed" => m.get_param("protocol").and_then(|p| {
+                m.get_param("micalg").map(|micalg| Signed {
+                    protocol: p.as_str().to_owned(),
+                    micalg: micalg.as_str().to_owned(),
+                })
             }),
             "encrypted" => m.get_param("protocol").map(|p| Encrypted {
                 protocol: p.as_str().to_owned(),
@@ -354,16 +358,16 @@ impl MultiPart {
 
     /// Creates encrypted multipart builder
     ///
-    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Encrypted{protocol})`
+    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Encrypted{ protocol })`
     pub fn encrypted(protocol: String) -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Encrypted { protocol })
     }
 
     /// Creates signed multipart builder
     ///
-    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{protocol})`
-    pub fn signed(protocol: String) -> MultiPartBuilder {
-        MultiPart::builder().kind(MultiPartKind::Signed { protocol })
+    /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{ protocol, micalg })`
+    pub fn signed(protocol: String, micalg: String) -> MultiPartBuilder {
+        MultiPart::builder().kind(MultiPartKind::Signed { protocol, micalg })
     }
 
     /// Add part to multipart
