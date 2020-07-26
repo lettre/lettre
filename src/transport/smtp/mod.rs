@@ -277,21 +277,6 @@ impl Transport for SmtpTransport {
 }
 
 impl SmtpTransport {
-    /// Creates a new SMTP client
-    ///
-    /// Defaults are:
-    ///
-    /// * No authentication
-    /// * A 60 seconds timeout for smtp commands
-    /// * Port 587
-    ///
-    /// Consider using [`SmtpTransport::relay`] instead, if possible.
-    pub fn builder<T: Into<String>>(server: T) -> SmtpTransportBuilder {
-        let mut new = SmtpInfo::default();
-        new.server = server.into();
-        SmtpTransportBuilder { info: new }
-    }
-
     /// Simple and secure transport, should be used when possible.
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
@@ -311,7 +296,7 @@ impl SmtpTransport {
         #[cfg(feature = "rustls-tls")]
         let tls_parameters = TlsParameters::new(relay.to_string(), tls);
 
-        Ok(Self::builder(relay)
+        Ok(Self::builder_dangerous(relay)
             .port(SUBMISSIONS_PORT)
             .tls(Tls::Wrapper(tls_parameters)))
     }
@@ -320,7 +305,23 @@ impl SmtpTransport {
     ///
     /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
     pub fn unencrypted_localhost() -> SmtpTransport {
-        Self::builder("localhost").port(SMTP_PORT).build()
+        Self::builder_dangerous("localhost").build()
+    }
+
+    /// Creates a new SMTP client
+    ///
+    /// Defaults are:
+    ///
+    /// * No authentication
+    /// * No TLS
+    /// * A 60 seconds timeout for smtp commands
+    /// * Port 25
+    ///
+    /// Consider using [`SmtpTransport::relay`] instead, if possible.
+    pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder {
+        let mut new = SmtpInfo::default();
+        new.server = server.into();
+        SmtpTransportBuilder { info: new }
     }
 }
 
@@ -348,7 +349,7 @@ impl Default for SmtpInfo {
     fn default() -> Self {
         Self {
             server: "localhost".to_string(),
-            port: SUBMISSION_PORT,
+            port: SMTP_PORT,
             hello_name: ClientId::hostname(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),

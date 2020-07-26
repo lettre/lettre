@@ -15,7 +15,7 @@ mod test {
     #[test]
     fn send_one() {
         let pool = Pool::builder().max_size(1);
-        let mailer = SmtpTransport::builder("127.0.0.1")
+        let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
             .port(2525)
             .build_with_pool(pool);
 
@@ -27,7 +27,7 @@ mod test {
     fn send_from_thread() {
         let pool = Pool::builder().max_size(1);
 
-        let mailer = SmtpTransport::builder("127.0.0.1")
+        let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
             .port(2525)
             .build_with_pool(pool);
 
