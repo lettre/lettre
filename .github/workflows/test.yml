@@ -38,7 +38,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --features=async
+          args: --features=async-std1
 
   check:
     name: Check
