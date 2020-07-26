@@ -35,10 +35,12 @@
 //! TODO
 //! ```
 
+#[cfg(feature = "async-std1")]
+use crate::AsyncStd1Transport;
 use crate::{transport::file::error::Error, Envelope, Transport};
+#[cfg(feature = "async-std1")]
+use async_trait::async_trait;
 use std::{
-    fs::File,
-    io::prelude::*,
     path::{Path, PathBuf},
     str,
 };
@@ -72,11 +74,12 @@ struct SerializableEmail<'a> {
     message: Option<&'a str>,
 }
 
-impl Transport for FileTransport {
-    type Ok = Id;
-    type Error = Error;
-
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+impl FileTransport {
+    fn send_raw_impl(
+        &self,
+        envelope: &Envelope,
+        email: &[u8],
+    ) -> Result<(Uuid, PathBuf, String), serde_json::Error> {
         let email_id = Uuid::new_v4();
         let file = self.path.join(format!("{}.json", email_id));
 
@@ -94,51 +97,40 @@ impl Transport for FileTransport {
             }),
         }?;
 
-        File::create(file.as_path())?.write_all(serialized.as_bytes())?;
+        Ok((email_id, file, serialized))
+    }
+}
+
+impl Transport for FileTransport {
+    type Ok = Id;
+    type Error = Error;
+
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        use std::fs::File;
+        use std::io::Write;
+
+        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+
+        let mut file = File::create(file)?;
+        file.write_all(serialized.as_bytes())?;
         Ok(email_id.to_string())
     }
 }
 
-#[cfg(feature = "async")]
-pub mod r#async {
-    use super::{FileTransport, Id, SerializableEmail};
-    use crate::{r#async::Transport, transport::file::error::Error, Envelope};
-    use async_std::fs::File;
-    use async_std::prelude::*;
-    use async_trait::async_trait;
-    use std::str;
-    use uuid::Uuid;
+#[cfg(feature = "async-std1")]
+#[async_trait]
+impl AsyncStd1Transport for FileTransport {
+    type Ok = Id;
+    type Error = Error;
 
-    #[async_trait]
-    impl Transport for FileTransport {
-        type Ok = Id;
-        type Error = Error;
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        use async_std::fs::File;
+        use async_std::io::prelude::WriteExt;
 
-        async fn send_raw(
-            &self,
-            envelope: &Envelope,
-            email: &[u8],
-        ) -> Result<Self::Ok, Self::Error> {
-            let email_id = Uuid::new_v4();
-            let file = self.path.join(format!("{}.json", email_id));
+        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
 
-            let serialized = match str::from_utf8(email) {
-                // Serialize as UTF-8 string if possible
-                Ok(m) => serde_json::to_string(&SerializableEmail {
-                    envelope: envelope.clone(),
-                    message: Some(m),
-                    raw_message: None,
-                }),
-                Err(_) => serde_json::to_string(&SerializableEmail {
-                    envelope: envelope.clone(),
-                    message: None,
-                    raw_message: Some(email),
-                }),
-            }?;
-
-            let mut file = File::create(file.as_path()).await?;
-            file.write_all(serialized.as_bytes()).await?;
-            Ok(email_id.to_string())
-        }
+        let mut file = File::create(file).await?;
+        file.write_all(serialized.as_bytes()).await?;
+        Ok(email_id.to_string())
     }
 }

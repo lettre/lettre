@@ -20,10 +20,11 @@ mod test {
         assert!(result.is_ok());
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(feature = "async-std1")]
     #[async_attributes::test]
     async fn sendmail_transport_async() {
-        use lettre::r#async::Transport;
+        use lettre::AsyncStd1Transport;
+
         let sender = SendmailTransport::new();
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())

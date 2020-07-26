@@ -22,7 +22,11 @@
 //! assert!(result.is_ok());
 //! ```
 
+#[cfg(feature = "async-std1")]
+use crate::AsyncStd1Transport;
 use crate::{Envelope, Transport};
+#[cfg(feature = "async-std1")]
+use async_trait::async_trait;
 use std::{error::Error as StdError, fmt};
 
 #[derive(Debug, Copy, Clone)]
@@ -74,23 +78,13 @@ impl Transport for StubTransport {
     }
 }
 
-#[cfg(feature = "async")]
-pub mod r#async {
-    use super::StubTransport;
-    use crate::{r#async::Transport, transport::stub::Error, Envelope};
-    use async_trait::async_trait;
+#[cfg(feature = "async-std1")]
+#[async_trait]
+impl AsyncStd1Transport for StubTransport {
+    type Ok = ();
+    type Error = Error;
 
-    #[async_trait]
-    impl Transport for StubTransport {
-        type Ok = ();
-        type Error = Error;
-
-        async fn send_raw(
-            &self,
-            _envelope: &Envelope,
-            _email: &[u8],
-        ) -> Result<Self::Ok, Self::Error> {
-            self.response
-        }
+    async fn send_raw(&self, _envelope: &Envelope, _email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.response
     }
 }

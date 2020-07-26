@@ -23,7 +23,11 @@
 //! # }
 //! ```
 
+#[cfg(feature = "async-std1")]
+use crate::AsyncStd1Transport;
 use crate::{transport::sendmail::error::Error, Envelope, Transport};
+#[cfg(feature = "async-std1")]
+use async_trait::async_trait;
 use std::{
     convert::AsRef,
     ffi::OsString,
@@ -88,41 +92,30 @@ impl Transport for SendmailTransport {
     }
 }
 
-#[cfg(feature = "async")]
-pub mod r#async {
-    use super::SendmailTransport;
-    use crate::{r#async::Transport, transport::sendmail::error::Error, Envelope};
-    use async_trait::async_trait;
-    use std::io::Write;
+#[cfg(feature = "async-std1")]
+#[async_trait]
+impl AsyncStd1Transport for SendmailTransport {
+    type Ok = ();
+    type Error = Error;
 
-    #[async_trait]
-    impl Transport for SendmailTransport {
-        type Ok = ();
-        type Error = Error;
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut command = self.command(envelope);
+        let email = email.to_vec();
 
         // TODO: Convert to real async, once async-std has a process implementation.
-        async fn send_raw(
-            &self,
-            envelope: &Envelope,
-            email: &[u8],
-        ) -> Result<Self::Ok, Self::Error> {
-            let mut command = self.command(envelope);
-            let email = email.to_vec();
+        let output = async_std::task::spawn_blocking(move || {
+            // Spawn the sendmail command
+            let mut process = command.spawn()?;
 
-            let output = async_std::task::spawn_blocking(move || {
-                // Spawn the sendmail command
-                let mut process = command.spawn()?;
+            process.stdin.as_mut().unwrap().write_all(&email)?;
+            process.wait_with_output()
+        })
+        .await?;
 
-                process.stdin.as_mut().unwrap().write_all(&email)?;
-                process.wait_with_output()
-            })
-            .await?;
-
-            if output.status.success() {
-                Ok(())
-            } else {
-                Err(Error::Client(String::from_utf8(output.stderr)?))
-            }
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(Error::Client(String::from_utf8(output.stderr)?))
         }
     }
 }

@@ -17,10 +17,11 @@ fn stub_transport() {
     sender_ko.send(&email).unwrap_err();
 }
 
-#[cfg(feature = "async")]
+#[cfg(feature = "async-std1")]
 #[async_attributes::test]
 async fn stub_transport_async() {
-    use lettre::r#async::Transport;
+    use lettre::AsyncStd1Transport;
+
     let sender_ok = StubTransport::new_ok();
     let sender_ko = StubTransport::new_error();
     let email = Message::builder()
