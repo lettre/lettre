@@ -285,7 +285,7 @@ impl SmtpTransport {
     /// * A 60 seconds timeout for smtp commands
     /// * Port 587
     ///
-    /// Consider using [`SmtpTransport::new`] instead, if possible.
+    /// Consider using [`SmtpTransport::relay`] instead, if possible.
     pub fn builder<T: Into<String>>(server: T) -> SmtpTransportBuilder {
         let mut new = SmtpInfo::default();
         new.server = server.into();
