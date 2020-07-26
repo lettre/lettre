@@ -7,6 +7,8 @@ mod test {
         fs::{remove_file, File},
         io::Read,
     };
+
+    #[cfg(feature = "tokio02")]
     use tokio02_crate as tokio;
 
     #[test]

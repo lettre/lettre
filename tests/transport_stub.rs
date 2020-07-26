@@ -1,4 +1,6 @@
 use lettre::{transport::stub::StubTransport, Message};
+
+#[cfg(feature = "tokio02")]
 use tokio02_crate as tokio;
 
 #[test]

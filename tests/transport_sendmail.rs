@@ -2,6 +2,8 @@
 #[cfg(feature = "sendmail-transport")]
 mod test {
     use lettre::{transport::sendmail::SendmailTransport, Message};
+
+    #[cfg(feature = "tokio02")]
     use tokio02_crate as tokio;
 
     #[test]
