@@ -108,13 +108,11 @@ impl Transport for FileTransport {
     type Error = Error;
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use std::fs::File;
-        use std::io::Write;
+        use std::fs;
 
         let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
 
-        let mut file = File::create(file)?;
-        file.write_all(serialized.as_bytes())?;
+        fs::write(file, serialized)?;
         Ok(email_id.to_string())
     }
 }
@@ -126,13 +124,11 @@ impl AsyncStd1Transport for FileTransport {
     type Error = Error;
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use async_std::fs::File;
-        use async_std::io::prelude::WriteExt;
+        use async_std::fs;
 
         let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
 
-        let mut file = File::create(file).await?;
-        file.write_all(serialized.as_bytes()).await?;
+        fs::write(file, serialized).await?;
         Ok(email_id.to_string())
     }
 }
@@ -144,13 +140,11 @@ impl Tokio02Transport for FileTransport {
     type Error = Error;
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use tokio02_crate::fs::File;
-        use tokio02_crate::io::AsyncWriteExt;
+        use tokio02_crate::fs;
 
         let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
 
-        let mut file = File::create(file).await?;
-        file.write_all(serialized.as_bytes()).await?;
+        fs::write(file, serialized).await?;
         Ok(email_id.to_string())
     }
 }
