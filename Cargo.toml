@@ -62,6 +62,9 @@ sendmail-transport = []
 smtp-transport = ["bufstream", "base64", "nom"]
 unstable = []
 
+[package.metadata.docs.rs]
+features = ["async-std1"]
+
 [[example]]
 name = "smtp"
 required-features = ["smtp-transport"]
