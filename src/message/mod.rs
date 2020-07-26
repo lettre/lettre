@@ -420,12 +420,12 @@ impl MessageBuilder {
         self.build(Body::Raw(body))
     }
 
-    /// Create message using mime body ([`MultiPart`](::MultiPart))
+    /// Create message using mime body ([`MultiPart`][self::MultiPart])
     pub fn multipart(self, part: MultiPart) -> Result<Message, EmailError> {
         self.mime_1_0().build(Body::Mime(Part::Multi(part)))
     }
 
-    /// Create message using mime body ([`SinglePart`](::SinglePart)
+    /// Create message using mime body ([`SinglePart`][self::SinglePart])
     pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
         self.mime_1_0().build(Body::Mime(Part::Single(part)))
     }
