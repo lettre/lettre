@@ -35,10 +35,11 @@ mod test {
         remove_file(file).unwrap();
     }
 
-    #[cfg(feature = "async")]
+    #[cfg(feature = "async-std1")]
     #[async_attributes::test]
     async fn file_transport_async() {
-        use lettre::r#async::Transport;
+        use lettre::AsyncStd1Transport;
+
         let sender = FileTransport::new(temp_dir());
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
