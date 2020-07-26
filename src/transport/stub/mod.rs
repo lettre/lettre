@@ -24,8 +24,10 @@
 
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
+#[cfg(feature = "tokio02")]
+use crate::Tokio02Transport;
 use crate::{Envelope, Transport};
-#[cfg(feature = "async-std1")]
+#[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{error::Error as StdError, fmt};
 
@@ -81,6 +83,17 @@ impl Transport for StubTransport {
 #[cfg(feature = "async-std1")]
 #[async_trait]
 impl AsyncStd1Transport for StubTransport {
+    type Ok = ();
+    type Error = Error;
+
+    async fn send_raw(&self, _envelope: &Envelope, _email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.response
+    }
+}
+
+#[cfg(feature = "tokio02")]
+#[async_trait]
+impl Tokio02Transport for StubTransport {
     type Ok = ();
     type Error = Error;
 
