@@ -1,6 +1,4 @@
 use crate::message::header::ContentTransferEncoding;
-use line_wrap::{crlf, line_wrap, LineEnding};
-use std::io::Write;
 
 /// Encoder trait
 pub trait EncoderCodec: Send {
@@ -93,13 +91,19 @@ impl EightBitCodec {
 
 impl EncoderCodec for EightBitCodec {
     fn encode(&mut self, input: &[u8]) -> Vec<u8> {
-        let ending = &crlf();
+        let ending = b"\r\n";
+        let endings_len = input.len() / self.max_length * ending.len();
+        let mut out = Vec::with_capacity(input.len() + endings_len);
 
-        let mut out = vec![0_u8; input.len() + input.len() / self.max_length * ending.len()];
-        let mut writer: &mut [u8] = out.as_mut();
-        writer.write_all(input).unwrap();
+        for chunk in input.chunks(self.max_length) {
+            // write the line ending after every chunk, except the last one
+            if !out.is_empty() {
+                out.extend_from_slice(ending);
+            }
 
-        line_wrap(&mut out, input.len(), self.max_length, ending);
+            out.extend_from_slice(chunk);
+        }
+
         out
     }
 }
