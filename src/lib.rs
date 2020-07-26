@@ -55,6 +55,8 @@ pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::{SmtpTransport, Tls};
 pub use crate::{address::Address, transport::stub::StubTransport};
+#[cfg(feature = "async-std1")]
+use async_trait::async_trait;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
 use std::{error::Error as StdError, fmt};
@@ -151,33 +153,24 @@ pub trait Transport {
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
-#[cfg(feature = "async")]
-pub mod r#async {
+/// Async Transport method for emails
+#[cfg(feature = "async-std1")]
+#[async_trait]
+pub trait AsyncStd1Transport {
+    /// Result types for the transport
+    type Ok: fmt::Debug;
+    type Error: StdError;
 
-    use super::*;
-    use async_trait::async_trait;
-
-    #[async_trait]
-    pub trait Transport {
-        /// Result types for the transport
-        type Ok: fmt::Debug;
-        type Error: StdError;
-
-        /// Sends the email
-        #[cfg(feature = "builder")]
-        // TODO take &Message
-        async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-            let raw = message.formatted();
-            let envelope = message.envelope();
-            self.send_raw(&envelope, &raw).await
-        }
-
-        async fn send_raw(
-            &self,
-            envelope: &Envelope,
-            email: &[u8],
-        ) -> Result<Self::Ok, Self::Error>;
+    /// Sends the email
+    #[cfg(feature = "builder")]
+    // TODO take &Message
+    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
+        let raw = message.formatted();
+        let envelope = message.envelope();
+        self.send_raw(&envelope, &raw).await
     }
+
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
 #[cfg(test)]
