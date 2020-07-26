@@ -25,8 +25,10 @@
 
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
+#[cfg(feature = "tokio02")]
+use crate::Tokio02Transport;
 use crate::{transport::sendmail::error::Error, Envelope, Transport};
-#[cfg(feature = "async-std1")]
+#[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{
     convert::AsRef,
@@ -63,6 +65,21 @@ impl SendmailTransport {
 
     fn command(&self, envelope: &Envelope) -> Command {
         let mut c = Command::new(&self.command);
+        c.arg("-i")
+            .arg("-f")
+            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .args(envelope.to())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped());
+        c
+    }
+
+    #[cfg(feature = "tokio02")]
+    fn tokio02_command(&self, envelope: &Envelope) -> tokio02_crate::process::Command {
+        use tokio02_crate::process::Command;
+
+        let mut c = Command::new(&self.command);
+        c.kill_on_drop(true);
         c.arg("-i")
             .arg("-f")
             .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
@@ -111,6 +128,31 @@ impl AsyncStd1Transport for SendmailTransport {
             process.wait_with_output()
         })
         .await?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(Error::Client(String::from_utf8(output.stderr)?))
+        }
+    }
+}
+
+#[cfg(feature = "tokio02")]
+#[async_trait]
+impl Tokio02Transport for SendmailTransport {
+    type Ok = ();
+    type Error = Error;
+
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        use tokio02_crate::io::AsyncWriteExt;
+
+        let mut command = self.tokio02_command(envelope);
+
+        // Spawn the sendmail command
+        let mut process = command.spawn()?;
+
+        process.stdin.as_mut().unwrap().write_all(&email).await?;
+        let output = process.wait_with_output().await?;
 
         if output.status.success() {
             Ok(())

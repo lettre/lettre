@@ -20,6 +20,7 @@ maintenance = { status = "actively-developed" }
 async-attributes = { version = "1.1", optional = true }
 async-std = { version = "1.5", optional = true, features = ["unstable"] }
 async-trait = { version = "0.1", optional = true }
+tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "io-util"], optional = true }
 base64 = { version = "0.12", optional = true }
 bufstream = { version = "0.1", optional = true }
 hostname = { version = "0.3", optional = true }
@@ -46,6 +47,7 @@ criterion = "0.3"
 env_logger = "0.7"
 glob = "0.3"
 walkdir = "2"
+tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }
 
 [[bench]]
 harness = false
@@ -53,6 +55,7 @@ name = "transport_smtp"
 
 [features]
 async-std1 = ["async-std", "async-trait", "async-attributes"]
+tokio02 = ["tokio02_crate", "async-trait"]
 builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
 default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
 file-transport = ["serde", "serde_json"]
