@@ -243,7 +243,6 @@ impl MultiPartKind {
             "encrypted" => m.get_param("protocol").map(|p| Encrypted {
                 protocol: p.as_str().to_owned(),
             }),
-            //TODO: test the encrypted and signed bits
             _ => None,
         }
     }
@@ -605,6 +604,68 @@ mod test {
                            "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
                            "...\r\n",
                            "-----END PGP MESSAGE-----\r\n",
+                           "\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+    }
+    #[test]
+    fn multi_part_signed() {
+        let part = MultiPart::signed(
+            "application/pgp-signature".to_owned(),
+            "pgp-sha256".to_owned(),
+        )
+        .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+        .part(Part::Single(
+            SinglePart::builder()
+                .header(header::ContentType("text/plain".parse().unwrap()))
+                .body(String::from("Test email for signature")),
+        ))
+        .singlepart(
+            SinglePart::builder()
+                .header(ContentType(
+                    "application/pgp-signature; name=\"signature.asc\""
+                        .parse()
+                        .unwrap(),
+                ))
+                .header(header::ContentDisposition {
+                    disposition: header::DispositionType::Attachment,
+                    parameters: vec![header::DispositionParam::Filename(
+                        header::Charset::Ext("utf-8".into()),
+                        None,
+                        "signature.asc".as_bytes().into(),
+                    )],
+                })
+                .body(String::from(concat!(
+                    "-----BEGIN PGP SIGNATURE-----\r\n",
+                    "\r\n",
+                    "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
+                    "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
+                    "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
+                    "=3FYZ\r\n",
+                    "-----END PGP SIGNATURE-----\r\n",
+                ))),
+        );
+
+        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
+                   concat!("Content-Type: multipart/signed;",
+                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
+                           " protocol=\"application/pgp-signature\";",
+                           " micalg=\"pgp-sha256\"\r\n",
+                           "\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "Content-Type: text/plain\r\n",
+                           "\r\n",
+                           "Test email for signature\r\n",
+                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
+                           "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
+                           "\r\n",
+                           "-----BEGIN PGP SIGNATURE-----\r\n",
+                            "\r\n",
+                            "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
+                            "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
+                            "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
+                            "=3FYZ\r\n",
+                            "-----END PGP SIGNATURE-----\r\n",
                            "\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
     }
