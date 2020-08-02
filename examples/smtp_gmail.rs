@@ -1,4 +1,5 @@
-use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
     let email = Message::builder()
@@ -9,10 +10,7 @@ fn main() {
         .body("Be happy!")
         .unwrap();
 
-    let creds = Credentials::new(
-        "example_username".to_string(),
-        "example_password".to_string(),
-    );
+    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail
     let mailer = SmtpTransport::relay("smtp.gmail.com")
@@ -21,13 +19,8 @@ fn main() {
         .build();
 
     // Send the email
-    let result = mailer.send(&email);
-
-    if result.is_ok() {
-        println!("Email sent");
-    } else {
-        println!("Could not send email: {:?}", result);
+    match mailer.send(&email) {
+        Ok(_) => println!("Email sent successfully!"),
+        Err(e) => panic!("Could not send email: {:?}", e),
     }
-
-    assert!(result.is_ok());
 }

@@ -29,6 +29,14 @@
 
 ---
 
+**NOTE**: this readme refers to the 0.10 version of lettre, which is
+still being worked on. The master branch and the alpha releases will see
+API breaking changes and some features may be missing or incomplete until
+the stable 0.10.0 release is out.
+Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x) branch for stable releases.
+
+---
+
 ## Features
 
 Lettre provides the following features:
@@ -37,57 +45,55 @@ Lettre provides the following features:
 * Unicode support (for email content and addresses)
 * Secure delivery with SMTP using encryption and authentication
 * Easy email builders
+* Async support (incomplete)
 
 Lettre does not provide (for now):
 
-* Async support
 * Email parsing
 
 ## Example
 
-This library requires Rust 1.20 or newer.
+This library requires Rust 1.40 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 
 ```toml
 [dependencies]
-lettre = "0.9"
-lettre_email = "0.9"
+lettre = "0.10.0-alpha.1"
 ```
 
 ```rust,no_run
-use lettre::{EmailTransport, SmtpTransport};
-use lettre_email::EmailBuilder;
-use std::path::Path;
+use lettre::transport::smtp::authentication::Credentials;
+use lettre::{Message, SmtpTransport, Transport};
 
-let email = EmailBuilder::new()
-    // Addresses can be specified by the tuple (email, alias)
-    .to(("user@example.org", "Firstname Lastname"))
-    // ... or by an address only
-    .from("user@example.com")
-    .subject("Hi, Hello world")
-    .text("Hello world.")
-    .build()
+let email = Message::builder()
+    .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+    .to("Hei <hei@domain.tld>".parse().unwrap())
+    .subject("Happy new year")
+    .body("Be happy!")
     .unwrap();
 
-// Open a local connection on port 25
-let mut mailer = SmtpTransport::builder_unencrypted_localhost().unwrap()
-                                                                   .build();
+let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+
+// Open a remote connection to gmail
+let mailer = SmtpTransport::relay("smtp.gmail.com")
+    .unwrap()
+    .credentials(creds)
+    .build();
+
 // Send the email
-let result = mailer.send(&email);
-
-if result.is_ok() {
-    println!("Email sent");
-} else {
-    println!("Could not send email: {:?}", result);
+match mailer.send(&email) {
+    Ok(_) => println!("Email sent successfully!"),
+    Err(e) => panic!("Could not send email: {:?}", e),
 }
-
-assert!(result.is_ok());
 ```
 
 ## Testing
 
 The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command.
+
+Alternatively only unit tests can be run by doing `cargo test --lib`.
 
 ## Code of conduct
 

@@ -137,7 +137,7 @@ impl TryFrom<&Headers> for Envelope {
     }
 }
 
-/// Transport method for emails
+/// Blocking Transport method for emails
 pub trait Transport {
     /// Result types for the transport
     type Ok: fmt::Debug;
@@ -153,7 +153,7 @@ pub trait Transport {
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
-/// Async Transport method for emails
+/// async-std 1.x based Transport method for emails
 #[cfg(feature = "async-std1")]
 #[async_trait]
 pub trait AsyncStd1Transport {
@@ -173,6 +173,7 @@ pub trait AsyncStd1Transport {
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
+/// tokio 0.2.x based Transport method for emails
 #[cfg(feature = "tokio02")]
 #[async_trait]
 pub trait Tokio02Transport {
