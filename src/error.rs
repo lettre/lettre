@@ -28,18 +28,18 @@ pub enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        fmt.write_str(&match self {
-            Error::MissingFrom => "missing source address, invalid envelope".to_string(),
-            Error::MissingTo => "missing destination address, invalid envelope".to_string(),
-            Error::TooManyFrom => "there can only be one source address".to_string(),
-            Error::EmailMissingAt => "missing @ in email address".to_string(),
-            Error::EmailMissingLocalPart => "missing local part in email address".to_string(),
-            Error::EmailMissingDomain => "missing domain in email address".to_string(),
-            Error::CannotParseFilename => "could not parse attachment filename".to_string(),
-            Error::NonAsciiChars => "contains non-ASCII chars".to_string(),
-            Error::Io(e) => e.to_string(),
-        })
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        match self {
+            Error::MissingFrom => f.write_str("missing source address, invalid envelope"),
+            Error::MissingTo => f.write_str("missing destination address, invalid envelope"),
+            Error::TooManyFrom => f.write_str("there can only be one source address"),
+            Error::EmailMissingAt => f.write_str("missing @ in email address"),
+            Error::EmailMissingLocalPart => f.write_str("missing local part in email address"),
+            Error::EmailMissingDomain => f.write_str("missing domain in email address"),
+            Error::CannotParseFilename => f.write_str("could not parse attachment filename"),
+            Error::NonAsciiChars => f.write_str("contains non-ASCII chars"),
+            Error::Io(e) => e.fmt(f),
+        }
     }
 }
 

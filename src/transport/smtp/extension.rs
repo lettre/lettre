@@ -81,9 +81,9 @@ pub enum Extension {
 impl Display for Extension {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
-            Extension::EightBitMime => write!(f, "8BITMIME"),
-            Extension::SmtpUtfEight => write!(f, "SMTPUTF8"),
-            Extension::StartTls => write!(f, "STARTTLS"),
+            Extension::EightBitMime => f.write_str("8BITMIME"),
+            Extension::SmtpUtfEight => f.write_str("SMTPUTF8"),
+            Extension::StartTls => f.write_str("STARTTLS"),
             Extension::Authentication(ref mechanism) => write!(f, "AUTH {}", mechanism),
         }
     }
@@ -105,16 +105,12 @@ pub struct ServerInfo {
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{} with {}",
-            self.name,
-            if self.features.is_empty() {
-                "no supported features".to_string()
-            } else {
-                format!("{:?}", self.features)
-            }
-        )
+        let features = if self.features.is_empty() {
+            "no supported features".to_string()
+        } else {
+            format!("{:?}", self.features)
+        };
+        write!(f, "{} with {}", self.name, features)
     }
 }
 
