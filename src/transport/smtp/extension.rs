@@ -43,18 +43,17 @@ impl ClientId {
 
     /// Defines a `ClientId` with the current hostname, of `localhost` if hostname could not be
     /// found
-    #[cfg(feature = "hostname")]
     pub fn hostname() -> ClientId {
-        ClientId::Domain(
+        #[cfg(feature = "hostname")]
+        return ClientId::Domain(
             hostname::get()
-                .map_err(|_| ())
-                .and_then(|s| s.into_string().map_err(|_| ()))
-                .unwrap_or_else(|_| DEFAULT_DOMAIN_CLIENT_ID.to_string()),
-        )
-    }
-    #[cfg(not(feature = "hostname"))]
-    pub fn hostname() -> ClientId {
-        ClientId::Domain(DEFAULT_DOMAIN_CLIENT_ID.to_string())
+                .ok()
+                .and_then(|s| s.into_string().ok())
+                .unwrap_or_else(|| DEFAULT_DOMAIN_CLIENT_ID.to_string()),
+        );
+
+        #[cfg(not(feature = "hostname"))]
+        return ClientId::Domain(DEFAULT_DOMAIN_CLIENT_ID.to_string());
     }
 }
 
