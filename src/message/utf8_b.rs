@@ -23,15 +23,8 @@ pub fn decode(s: &str) -> Option<String> {
         let s = s.split_at(10).1;
         let s = s.split_at(s.len() - 2).0;
         base64::decode(s)
-            .map_err(|_| ())
-            .and_then(|v| {
-                if let Ok(s) = from_utf8(&v) {
-                    Ok(Some(s.into()))
-                } else {
-                    Err(())
-                }
-            })
-            .unwrap_or(None)
+            .ok()
+            .and_then(|v| from_utf8(&v).ok().map(|s| s.into()))
     } else {
         Some(s.into())
     }
