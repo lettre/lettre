@@ -35,15 +35,12 @@ impl Header for MimeVersion {
         Self: Sized,
     {
         raw.one().ok_or(HeaderError::Header).and_then(|r| {
-            let s: Vec<&str> = from_utf8(r)
-                .map_err(|_| HeaderError::Header)?
-                .split('.')
-                .collect();
-            if s.len() != 2 {
-                return Err(HeaderError::Header);
-            }
-            let major = s[0].parse().map_err(|_| HeaderError::Header)?;
-            let minor = s[1].parse().map_err(|_| HeaderError::Header)?;
+            let mut s = from_utf8(r).map_err(|_| HeaderError::Header)?.split('.');
+
+            let major = s.next().ok_or(HeaderError::Header)?;
+            let minor = s.next().ok_or(HeaderError::Header)?;
+            let major = major.parse().map_err(|_| HeaderError::Header)?;
+            let minor = minor.parse().map_err(|_| HeaderError::Header)?;
             Ok(MimeVersion::new(major, minor))
         })
     }

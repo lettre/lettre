@@ -99,9 +99,8 @@ impl NetworkStream {
         ) -> Result<TcpStream, Error> {
             let addrs = server.to_socket_addrs()?;
             for addr in addrs {
-                let result = TcpStream::connect_timeout(&addr, timeout);
-                if result.is_ok() {
-                    return result.map_err(|e| e.into());
+                if let Ok(result) = TcpStream::connect_timeout(&addr, timeout) {
+                    return Ok(result);
                 }
             }
             Err(Error::Client("Could not connect"))

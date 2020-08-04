@@ -62,15 +62,11 @@ pub enum Mechanism {
 
 impl Display for Mechanism {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            match *self {
-                Mechanism::Plain => "PLAIN",
-                Mechanism::Login => "LOGIN",
-                Mechanism::Xoauth2 => "XOAUTH2",
-            }
-        )
+        f.write_str(match *self {
+            Mechanism::Plain => "PLAIN",
+            Mechanism::Login => "LOGIN",
+            Mechanism::Xoauth2 => "XOAUTH2",
+        })
     }
 }
 

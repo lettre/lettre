@@ -237,25 +237,19 @@ pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
     let (i, _) = complete(tag("\r\n"))(i)?;
 
     // Check that all codes are equal.
-    if !lines.iter().all(|&(ref code, _, _)| *code == last_code) {
+    if !lines.iter().all(|&(code, _, _)| code == last_code) {
         return Err(nom::Err::Failure(("", nom::error::ErrorKind::Not)));
     }
 
     // Extract text from lines, and append last line.
-    let mut lines: Vec<&str> = lines
-        .into_iter()
-        .map(|(_, text, _)| text)
-        .collect::<Vec<_>>();
-    lines.push(last_line);
+    let mut lines: Vec<String> = lines.into_iter().map(|(_, text, _)| text.into()).collect();
+    lines.push(last_line.into());
 
     Ok((
         i,
         Response {
             code: last_code,
-            message: lines
-                .iter()
-                .map(ToString::to_string)
-                .collect::<Vec<String>>(),
+            message: lines,
         },
     ))
 }

@@ -147,8 +147,8 @@ pub struct Help {
 impl Display for Help {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str("HELP")?;
-        if self.argument.is_some() {
-            write!(f, " {}", self.argument.as_ref().unwrap())?;
+        if let Some(argument) = &self.argument {
+            write!(f, " {}", argument)?;
         }
         f.write_str("\r\n")
     }

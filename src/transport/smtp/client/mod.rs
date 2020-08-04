@@ -40,7 +40,7 @@ impl ClientCodec {
     }
 
     /// Adds transparency
-    fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) -> Result<(), Error> {
+    fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) {
         match frame.len() {
             0 => {
                 match self.escape_count {
@@ -50,7 +50,6 @@ impl ClientCodec {
                     _ => unreachable!(),
                 }
                 self.escape_count = 0;
-                Ok(())
             }
             _ => {
                 let mut start = 0;
@@ -69,7 +68,6 @@ impl ClientCodec {
                     }
                 }
                 buf.extend_from_slice(&frame[start..]);
-                Ok(())
             }
         }
     }
@@ -283,7 +281,7 @@ impl SmtpConnection {
     pub fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
-        codec.encode(message, &mut out_buf)?;
+        codec.encode(message, &mut out_buf);
         self.write(out_buf.as_slice())?;
         self.write(b"\r\n.\r\n")?;
         self.read_response()
@@ -346,15 +344,15 @@ mod test {
         let mut codec = ClientCodec::new();
         let mut buf: Vec<u8> = vec![];
 
-        assert!(codec.encode(b"test\r\n", &mut buf).is_ok());
-        assert!(codec.encode(b".\r\n", &mut buf).is_ok());
-        assert!(codec.encode(b"\r\ntest", &mut buf).is_ok());
-        assert!(codec.encode(b"te\r\n.\r\nst", &mut buf).is_ok());
-        assert!(codec.encode(b"test", &mut buf).is_ok());
-        assert!(codec.encode(b"test.", &mut buf).is_ok());
-        assert!(codec.encode(b"test\n", &mut buf).is_ok());
-        assert!(codec.encode(b".test\n", &mut buf).is_ok());
-        assert!(codec.encode(b"test", &mut buf).is_ok());
+        codec.encode(b"test\r\n", &mut buf);
+        codec.encode(b".\r\n", &mut buf);
+        codec.encode(b"\r\ntest", &mut buf);
+        codec.encode(b"te\r\n.\r\nst", &mut buf);
+        codec.encode(b"test", &mut buf);
+        codec.encode(b"test.", &mut buf);
+        codec.encode(b"test\n", &mut buf);
+        codec.encode(b".test\n", &mut buf);
+        codec.encode(b"test", &mut buf);
         assert_eq!(
             String::from_utf8(buf).unwrap(),
             "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"

@@ -36,15 +36,11 @@ pub struct Error;
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "stub error")
+        f.write_str("stub error")
     }
 }
 
-impl StdError for Error {
-    fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        None
-    }
-}
+impl StdError for Error {}
 
 /// This transport logs the message envelope and returns the given response
 #[derive(Debug, Clone, Copy)]
