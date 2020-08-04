@@ -45,9 +45,9 @@ impl ClientCodec {
         match frame.len() {
             0 => {
                 match self.escape_count {
-                    0 => buf.write_all(b"\r\n.\r\n")?,
-                    1 => buf.write_all(b"\n.\r\n")?,
-                    2 => buf.write_all(b".\r\n")?,
+                    0 => buf.extend_from_slice(b"\r\n.\r\n"),
+                    1 => buf.extend_from_slice(b"\n.\r\n"),
+                    2 => buf.extend_from_slice(b".\r\n"),
                     _ => unreachable!(),
                 }
                 self.escape_count = 0;
@@ -64,12 +64,12 @@ impl ClientCodec {
                     }
                     if self.escape_count == 3 {
                         self.escape_count = 0;
-                        buf.write_all(&frame[start..idx])?;
-                        buf.write_all(b".")?;
+                        buf.extend_from_slice(&frame[start..idx]);
+                        buf.extend_from_slice(b".");
                         start = idx;
                     }
                 }
-                buf.write_all(&frame[start..])?;
+                buf.extend_from_slice(&frame[start..]);
                 Ok(())
             }
         }
