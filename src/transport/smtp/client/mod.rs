@@ -11,14 +11,13 @@ use crate::{
     },
     Envelope,
 };
-use bufstream::BufStream;
 #[cfg(feature = "log")]
 use log::debug;
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
 use std::{
     fmt::Display,
-    io::{self, BufRead, Write},
+    io::{self, BufRead, BufReader, Write},
     net::ToSocketAddrs,
     string::String,
     time::Duration,
@@ -99,7 +98,7 @@ macro_rules! try_smtp (
 pub struct SmtpConnection {
     /// TCP stream between client and server
     /// Value is None before connection
-    stream: BufStream<NetworkStream>,
+    stream: BufReader<NetworkStream>,
     /// Panic state
     panic: bool,
     /// Information about the server
@@ -122,7 +121,7 @@ impl SmtpConnection {
         hello_name: &ClientId,
         tls_parameters: Option<&TlsParameters>,
     ) -> Result<SmtpConnection, Error> {
-        let stream = BufStream::new(NetworkStream::connect(server, timeout, tls_parameters)?);
+        let stream = BufReader::new(NetworkStream::connect(server, timeout, tls_parameters)?);
         let mut conn = SmtpConnection {
             stream,
             panic: false,
@@ -170,8 +169,7 @@ impl SmtpConnection {
     }
 
     pub fn can_starttls(&self) -> bool {
-        !self.stream.get_ref().is_encrypted()
-            && self.server_info.supports_feature(Extension::StartTls)
+        !self.is_encrypted() && self.server_info.supports_feature(Extension::StartTls)
     }
 
     #[allow(unused_variables)]
@@ -224,7 +222,7 @@ impl SmtpConnection {
 
     /// Sets the underlying stream
     pub fn set_stream(&mut self, stream: NetworkStream) {
-        self.stream = BufStream::new(stream);
+        self.stream = BufReader::new(stream);
     }
 
     /// Tells if the underlying stream is currently encrypted
@@ -299,8 +297,8 @@ impl SmtpConnection {
 
     /// Writes a string to the server
     fn write(&mut self, string: &[u8]) -> Result<(), Error> {
-        self.stream.write_all(string)?;
-        self.stream.flush()?;
+        self.stream.get_mut().write_all(string)?;
+        self.stream.get_mut().flush()?;
 
         #[cfg(feature = "log")]
         debug!(

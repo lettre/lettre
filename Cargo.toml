@@ -22,7 +22,6 @@ async-std = { version = "1.5", optional = true, features = ["unstable"] }
 async-trait = { version = "0.1", optional = true }
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "io-util"], optional = true }
 base64 = { version = "0.12", optional = true }
-bufstream = { version = "0.1", optional = true }
 hostname = { version = "0.3", optional = true }
 hyperx = { version = "1", optional = true, features = ["headers"] }
 idna = "0.2"
@@ -61,7 +60,7 @@ default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2",
 file-transport = ["serde", "serde_json"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 sendmail-transport = []
-smtp-transport = ["bufstream", "base64", "nom"]
+smtp-transport = ["base64", "nom"]
 unstable = []
 
 [package.metadata.docs.rs]
