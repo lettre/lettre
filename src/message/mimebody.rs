@@ -209,10 +209,8 @@ fn make_boundary() -> String {
 }
 
 impl MultiPartKind {
-    fn to_mime<S: AsRef<str>>(&self, boundary: Option<S>) -> Mime {
-        let boundary = boundary
-            .map(|s| s.as_ref().into())
-            .unwrap_or_else(make_boundary);
+    fn to_mime<S: Into<String>>(&self, boundary: Option<S>) -> Mime {
+        let boundary = boundary.map_or_else(make_boundary, |s| s.into());
 
         use self::MultiPartKind::*;
         format!(
