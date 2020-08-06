@@ -1,18 +1,5 @@
 //! SMTP client
 
-use crate::{
-    transport::smtp::{
-        authentication::{Credentials, Mechanism},
-        client::net::{NetworkStream, TlsParameters},
-        commands::*,
-        error::Error,
-        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::{parse_response, Response},
-    },
-    Envelope,
-};
-#[cfg(feature = "log")]
-use log::debug;
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
 use std::{
@@ -23,8 +10,29 @@ use std::{
     time::Duration,
 };
 
-pub mod mock;
-pub mod net;
+#[cfg(feature = "log")]
+use log::debug;
+
+use crate::{
+    transport::smtp::{
+        authentication::{Credentials, Mechanism},
+        client::net::NetworkStream,
+        commands::*,
+        error::Error,
+        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        response::{parse_response, Response},
+    },
+    Envelope,
+};
+
+pub use self::mock::MockStream;
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+pub(super) use self::tls::InnerTlsParameters;
+pub use self::tls::{Tls, TlsParameters};
+
+mod mock;
+mod net;
+mod tls;
 
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
