@@ -176,8 +176,13 @@
 //! # }
 //! ```
 
+use std::time::Duration;
+
+#[cfg(feature = "r2d2")]
+use r2d2::{Builder, Pool};
+
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use crate::transport::smtp::client::net::TlsParameters;
+use crate::transport::smtp::client::TlsParameters;
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
@@ -188,15 +193,8 @@ use crate::{
     },
     Envelope, Transport,
 };
-#[cfg(feature = "native-tls")]
-use native_tls::{Protocol, TlsConnector};
-#[cfg(feature = "r2d2")]
-use r2d2::{Builder, Pool};
-#[cfg(feature = "rustls-tls")]
-use rustls::ClientConfig;
-use std::time::Duration;
-#[cfg(feature = "rustls-tls")]
-use webpki_roots::TLS_SERVER_ROOTS;
+
+use client::Tls;
 
 pub mod authentication;
 pub mod client;
@@ -223,29 +221,6 @@ pub const SUBMISSIONS_PORT: u16 = 465;
 
 /// Default timeout
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
-
-/// Accepted protocols by default.
-/// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
-// This is also rustls' default behavior
-#[cfg(feature = "native-tls")]
-const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
-
-/// How to apply TLS to a client connection
-#[derive(Clone)]
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-pub enum Tls {
-    /// Insecure connection only (for testing purposes)
-    None,
-    /// Start with insecure connection and use `STARTTLS` when available
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-    Opportunistic(TlsParameters),
-    /// Start with insecure connection and require `STARTTLS`
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-    Required(TlsParameters),
-    /// Use TLS wrapped connection
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-    Wrapper(TlsParameters),
-}
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
@@ -282,19 +257,7 @@ impl SmtpTransport {
     /// to validate TLS certificates.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     pub fn relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
-        #[cfg(feature = "native-tls")]
-        let mut tls_builder = TlsConnector::builder();
-        #[cfg(feature = "native-tls")]
-        tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
-        #[cfg(feature = "native-tls")]
-        let tls_parameters = TlsParameters::new(relay.to_string(), tls_builder.build()?);
-
-        #[cfg(feature = "rustls-tls")]
-        let mut tls = ClientConfig::new();
-        #[cfg(feature = "rustls-tls")]
-        tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
-        #[cfg(feature = "rustls-tls")]
-        let tls_parameters = TlsParameters::new(relay.to_string(), tls);
+        let tls_parameters = TlsParameters::new(relay.into())?;
 
         Ok(Self::builder_dangerous(relay)
             .port(SUBMISSIONS_PORT)
