@@ -48,12 +48,10 @@ pub use crate::message::{
 pub use crate::transport::file::FileTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use crate::transport::sendmail::SendmailTransport;
-#[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::client::TlsParameters;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::{client::Tls, SmtpTransport};
+pub use crate::transport::smtp::SmtpTransport;
 pub use crate::{address::Address, transport::stub::StubTransport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
