@@ -64,7 +64,7 @@ smtp-transport = ["base64", "nom"]
 unstable = []
 
 [package.metadata.docs.rs]
-features = ["async-std1", "tokio02"]
+all-features = true
 
 [[example]]
 name = "smtp"
