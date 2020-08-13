@@ -3,10 +3,9 @@ use std::time::Duration;
 #[cfg(feature = "r2d2")]
 use r2d2::{Builder, Pool};
 
-use super::{
-    ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo, Tls,
-    TlsParameters, SUBMISSIONS_PORT,
-};
+use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 use crate::{Envelope, Transport};
 
 #[allow(missing_debug_implementations)]
@@ -156,40 +155,36 @@ impl SmtpClient {
     ///
     /// Handles encryption and authentication
     pub fn connection(&self) -> Result<SmtpConnection, Error> {
+        #[allow(clippy::match_single_binding)]
+        let tls_parameters = match self.info.tls {
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
+            _ => None,
+        };
+
         let mut conn = SmtpConnection::connect::<(&str, u16)>(
             (self.info.server.as_ref(), self.info.port),
             self.info.timeout,
             &self.info.hello_name,
-            #[allow(clippy::match_single_binding)]
-            match self.info.tls {
-                #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-                Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
-                _ => None,
-            },
+            tls_parameters,
         )?;
 
-        #[allow(clippy::match_single_binding)]
+        #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
         match self.info.tls {
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
                     conn.starttls(tls_parameters, &self.info.hello_name)?;
                 }
             }
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Tls::Required(ref tls_parameters) => {
                 conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             _ => (),
         }
 
-        match &self.info.credentials {
-            Some(credentials) => {
-                conn.auth(self.info.authentication.as_slice(), &credentials)?;
-            }
-            None => (),
+        if let Some(credentials) = &self.info.credentials {
+            conn.auth(&self.info.authentication, &credentials)?;
         }
-
         Ok(conn)
     }
 }

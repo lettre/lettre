@@ -35,7 +35,7 @@ enum InnerNetworkStream {
 }
 
 impl NetworkStream {
-    pub(self) fn new(inner: InnerNetworkStream) -> Self {
+    fn new(inner: InnerNetworkStream) -> Self {
         NetworkStream { inner }
     }
 
@@ -100,41 +100,57 @@ impl NetworkStream {
         Ok(stream)
     }
 
-    #[allow(unused_variables)]
     pub fn upgrade_tls(&mut self, tls_parameters: &TlsParameters) -> Result<(), Error> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut stream) => {
-                #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-                match &tls_parameters.connector {
-                    #[cfg(feature = "native-tls")]
-                    InnerTlsParameters::NativeTls(connector) => {
-                        let stream = connector
-                            .connect(tls_parameters.domain(), stream.try_clone().unwrap())
-                            .map_err(|err| Error::Io(io::Error::new(io::ErrorKind::Other, err)))?;
-                        *self = NetworkStream::new(InnerNetworkStream::NativeTls(stream));
-                    }
-                    #[cfg(feature = "rustls-tls")]
-                    InnerTlsParameters::RustlsTls(connector) => {
-                        use webpki::DNSNameRef;
-
-                        let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())?;
-                        let stream = StreamOwned::new(
-                            ClientSession::new(&Arc::new(connector.clone()), domain),
-                            stream.try_clone().unwrap(),
-                        );
-
-                        *self = NetworkStream::new(InnerNetworkStream::RustlsTls(Box::new(stream)));
-                    }
-                };
+        match &self.inner {
+            #[cfg(not(any(feature = "native-tls", feature = "rustls-tls")))]
+            InnerNetworkStream::Tcp(_) => {
+                let _ = tls_parameters;
+                panic!("Trying to upgrade an NetworkStream without having enabled either the native-tls or the rustls-tls feature");
             }
-            #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(_) => (),
-            #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(_) => (),
-            InnerNetworkStream::Mock(_) => (),
-        };
 
-        Ok(())
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            InnerNetworkStream::Tcp(_) => {
+                // get owned TcpStream
+                let tcp_stream =
+                    std::mem::replace(&mut self.inner, InnerNetworkStream::Mock(MockStream::new()));
+                let tcp_stream = match tcp_stream {
+                    InnerNetworkStream::Tcp(tcp_stream) => tcp_stream,
+                    _ => unreachable!(),
+                };
+
+                self.inner = Self::upgrade_tls_impl(tcp_stream, tls_parameters)?;
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    fn upgrade_tls_impl(
+        tcp_stream: TcpStream,
+        tls_parameters: &TlsParameters,
+    ) -> Result<InnerNetworkStream, Error> {
+        Ok(match &tls_parameters.connector {
+            #[cfg(feature = "native-tls")]
+            InnerTlsParameters::NativeTls(connector) => {
+                let stream = connector
+                    .connect(tls_parameters.domain(), tcp_stream)
+                    .map_err(|err| Error::Io(io::Error::new(io::ErrorKind::Other, err)))?;
+                InnerNetworkStream::NativeTls(stream)
+            }
+            #[cfg(feature = "rustls-tls")]
+            InnerTlsParameters::RustlsTls(connector) => {
+                use webpki::DNSNameRef;
+
+                let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())?;
+                let stream = StreamOwned::new(
+                    ClientSession::new(&Arc::new(connector.clone()), domain),
+                    tcp_stream,
+                );
+
+                InnerNetworkStream::RustlsTls(Box::new(stream))
+            }
+        })
     }
 
     pub fn is_encrypted(&self) -> bool {
