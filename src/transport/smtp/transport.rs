@@ -5,7 +5,7 @@ use r2d2::{Builder, Pool};
 
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
+use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{Envelope, Transport};
 
 #[allow(missing_debug_implementations)]
@@ -48,6 +48,19 @@ impl SmtpTransport {
         Ok(Self::builder_dangerous(relay)
             .port(SUBMISSIONS_PORT)
             .tls(Tls::Wrapper(tls_parameters)))
+    }
+
+    /// Simple and secure transport, should be used when the server doesn't support wrapped TLS connections.
+    /// Creates an encrypted transport over submissions port, by first connecting using an unencrypted
+    /// connection and then upgrading it with STARTTLS, using the provided domain to validate TLS certificates.
+    /// If the connection can't be upgraded it will fail connecting altogether.
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
+        let tls_parameters = TlsParameters::new(relay.into())?;
+
+        Ok(Self::builder_dangerous(relay)
+            .port(SUBMISSION_PORT)
+            .tls(Tls::Required(tls_parameters)))
     }
 
     /// Creates a new local SMTP client to port 25

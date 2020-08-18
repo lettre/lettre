@@ -71,5 +71,9 @@ name = "smtp"
 required-features = ["smtp-transport"]
 
 [[example]]
-name = "smtp_gmail"
+name = "smtp_tls"
+required-features = ["smtp-transport", "native-tls"]
+
+[[example]]
+name = "smtp_starttls"
 required-features = ["smtp-transport", "native-tls"]
