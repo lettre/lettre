@@ -178,6 +178,11 @@
 
 use std::time::Duration;
 
+#[cfg(feature = "tokio02")]
+pub use self::async_transport::{
+    AsyncSmtpClient, AsyncSmtpConnector, AsyncSmtpTransport, AsyncSmtpTransportBuilder,
+    Tokio02Connector,
+};
 pub use self::transport::{SmtpClient, SmtpTransport, SmtpTransportBuilder};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use crate::transport::smtp::client::TlsParameters;
@@ -190,6 +195,8 @@ use crate::transport::smtp::{
 };
 use client::Tls;
 
+#[cfg(feature = "tokio02")]
+mod async_transport;
 pub mod authentication;
 pub mod client;
 pub mod commands;
