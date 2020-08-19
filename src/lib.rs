@@ -52,6 +52,8 @@ pub use crate::transport::sendmail::SendmailTransport;
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
+#[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
+pub use crate::transport::smtp::{AsyncSmtpTransport, Tokio02Connector};
 pub use crate::{address::Address, transport::stub::StubTransport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;

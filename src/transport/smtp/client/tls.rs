@@ -35,7 +35,7 @@ pub enum Tls {
 pub struct TlsParameters {
     pub(crate) connector: InnerTlsParameters,
     /// The domain name which is expected in the TLS certificate from the server
-    domain: String,
+    pub(super) domain: String,
 }
 
 #[derive(Clone)]
@@ -55,6 +55,15 @@ impl TlsParameters {
         return Self::new_native(domain);
 
         #[cfg(not(feature = "native-tls"))]
+        return Self::new_rustls(domain);
+    }
+
+    #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
+    pub(crate) fn new_tokio02(domain: String) -> Result<Self, Error> {
+        #[cfg(feature = "tokio02-native-tls")]
+        return Self::new_native(domain);
+
+        #[cfg(not(feature = "tokio02-native-tls"))]
         return Self::new_rustls(domain);
     }
 
