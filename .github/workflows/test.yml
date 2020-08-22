@@ -19,6 +19,7 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
+      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get update
       - run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
       - run: smtp-sink 2525 1000&
       - uses: actions-rs/cargo@v1
