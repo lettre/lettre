@@ -19,32 +19,30 @@ use std::{
 /// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Address {
-    /// User part
-    pub user: String,
-    /// Domain part
-    pub domain: String,
     /// Complete address
-    complete: String,
+    serialized: String,
+    /// Index into `serialized` before the '@'
+    at_start: usize,
 }
 
 impl<U, D> TryFrom<(U, D)> for Address
 where
-    U: Into<String>,
-    D: Into<String>,
+    U: AsRef<str>,
+    D: AsRef<str>,
 {
     type Error = AddressError;
 
-    fn try_from(from: (U, D)) -> Result<Self, Self::Error> {
-        let (user, domain) = from;
-        let user = user.into();
-        Address::check_user(&user)?;
-        let domain = domain.into();
-        Address::check_domain(&domain)?;
-        let complete = format!("{}@{}", &user, &domain);
+    fn try_from((user, domain): (U, D)) -> Result<Self, Self::Error> {
+        let user = user.as_ref();
+        Address::check_user(user)?;
+
+        let domain = domain.as_ref();
+        Address::check_domain(domain)?;
+
+        let serialized = format!("{}@{}", user, domain);
         Ok(Address {
-            user,
-            domain,
-            complete,
+            serialized,
+            at_start: user.len(),
         })
     }
 }
@@ -65,8 +63,18 @@ static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\
 
 impl Address {
     /// Create email address from parts
-    pub fn new<U: Into<String>, D: Into<String>>(user: U, domain: D) -> Result<Self, AddressError> {
+    pub fn new<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Result<Self, AddressError> {
         (user, domain).try_into()
+    }
+
+    /// Get the user part of this `Address`
+    pub fn user(&self) -> &str {
+        &self.serialized[..self.at_start]
+    }
+
+    /// Get the domain part of this `Address`
+    pub fn domain(&self) -> &str {
+        &self.serialized[self.at_start + 1..]
     }
 
     fn check_user(user: &str) -> Result<(), AddressError> {
@@ -104,7 +112,7 @@ impl Address {
 
 impl Display for Address {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        f.write_str(&self.complete)
+        f.write_str(&self.serialized)
     }
 }
 
@@ -119,22 +127,21 @@ impl FromStr for Address {
         Address::check_user(user)?;
         Address::check_domain(domain)?;
         Ok(Address {
-            user: user.into(),
-            domain: domain.into(),
-            complete: val.to_string(),
+            serialized: val.into(),
+            at_start: user.len(),
         })
     }
 }
 
 impl AsRef<str> for Address {
     fn as_ref(&self) -> &str {
-        &self.complete.as_ref()
+        &self.serialized
     }
 }
 
 impl AsRef<OsStr> for Address {
     fn as_ref(&self) -> &OsStr {
-        self.complete.as_ref()
+        self.serialized.as_ref()
     }
 }
 
@@ -176,7 +183,7 @@ pub mod serde {
         where
             S: Serializer,
         {
-            serializer.serialize_str(&self.to_string())
+            serializer.serialize_str(self.as_ref())
         }
     }
 
@@ -272,5 +279,22 @@ pub mod serde {
 
             deserializer.deserialize_any(AddressVisitor)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_address() {
+        let addr_str = "something@example.com";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("something", "example.com").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "example.com");
+        assert_eq!(addr2.user(), "something");
+        assert_eq!(addr2.domain(), "example.com");
     }
 }
