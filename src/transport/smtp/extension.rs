@@ -10,9 +10,6 @@ use std::{
     result::Result,
 };
 
-/// Default client id
-const DEFAULT_DOMAIN_CLIENT_ID: &str = "localhost";
-
 /// Client identifier, the parameter to `EHLO`
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -25,35 +22,44 @@ pub enum ClientId {
     Ipv6(Ipv6Addr),
 }
 
+const LOCALHOST_CLIENT: ClientId = ClientId::Ipv4(Ipv4Addr::new(127, 0, 0, 1));
+
+impl Default for ClientId {
+    fn default() -> Self {
+        // https://tools.ietf.org/html/rfc5321#section-4.1.4
+        //
+        // The SMTP client MUST, if possible, ensure that the domain parameter
+        // to the EHLO command is a primary host name as specified for this
+        // command in Section 2.3.5.  If this is not possible (e.g., when the
+        // client's address is dynamically assigned and the client does not have
+        // an obvious name), an address literal SHOULD be substituted for the
+        // domain name.
+        #[cfg(feature = "hostname")]
+        {
+            hostname::get()
+                .ok()
+                .and_then(|s| s.into_string().map(Self::Domain).ok())
+                .unwrap_or(LOCALHOST_CLIENT)
+        }
+        #[cfg(not(feature = "hostname"))]
+        LOCALHOST_CLIENT
+    }
+}
+
 impl Display for ClientId {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
-            ClientId::Domain(ref value) => f.write_str(value),
-            ClientId::Ipv4(ref value) => write!(f, "{}", value),
-            ClientId::Ipv6(ref value) => write!(f, "{}", value),
+            Self::Domain(ref value) => f.write_str(value),
+            Self::Ipv4(ref value) => write!(f, "[{}]", value),
+            Self::Ipv6(ref value) => write!(f, "[IPv6:{}]", value),
         }
     }
 }
 
 impl ClientId {
     /// Creates a new `ClientId` from a fully qualified domain name
-    pub fn new(domain: String) -> ClientId {
-        ClientId::Domain(domain)
-    }
-
-    /// Defines a `ClientId` with the current hostname, of `localhost` if hostname could not be
-    /// found
-    pub fn hostname() -> ClientId {
-        #[cfg(feature = "hostname")]
-        return ClientId::Domain(
-            hostname::get()
-                .ok()
-                .and_then(|s| s.into_string().ok())
-                .unwrap_or_else(|| DEFAULT_DOMAIN_CLIENT_ID.to_string()),
-        );
-
-        #[cfg(not(feature = "hostname"))]
-        return ClientId::Domain(DEFAULT_DOMAIN_CLIENT_ID.to_string());
+    pub fn new_domain(domain: String) -> Self {
+        Self::Domain(domain)
     }
 }
 
@@ -274,7 +280,7 @@ impl Display for RcptParameter {
 #[cfg(test)]
 mod test {
 
-    use super::{ClientId, Extension, ServerInfo};
+    use super::*;
     use crate::transport::smtp::{
         authentication::Mechanism,
         response::{Category, Code, Detail, Response, Severity},
@@ -284,9 +290,10 @@ mod test {
     #[test]
     fn test_clientid_fmt() {
         assert_eq!(
-            format!("{}", ClientId::new("test".to_string())),
+            format!("{}", ClientId::new_domain("test".to_string())),
             "test".to_string()
         );
+        assert_eq!(format!("{}", LOCALHOST_CLIENT), "[127.0.0.1]".to_string());
     }
 
     #[test]
