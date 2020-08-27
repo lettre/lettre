@@ -57,6 +57,12 @@ impl Display for ClientId {
 }
 
 impl ClientId {
+    #[deprecated(since = "0.10.0", note = "Please use the new_domain function instead")]
+    /// Creates a new `ClientId` from a fully qualified domain name
+    pub fn new(domain: String) -> Self {
+        Self::Domain(domain)
+    }
+
     /// Creates a new `ClientId` from a fully qualified domain name
     pub fn new_domain(domain: String) -> Self {
         Self::Domain(domain)
