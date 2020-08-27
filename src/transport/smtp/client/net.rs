@@ -1,8 +1,10 @@
-use std::io::{self, Read, Write};
-use std::net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs};
 #[cfg(feature = "rustls-tls")]
 use std::sync::Arc;
-use std::time::Duration;
+use std::{
+    io::{self, Read, Write},
+    net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
+    time::Duration,
+};
 
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;

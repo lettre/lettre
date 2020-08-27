@@ -7,12 +7,14 @@ use std::fmt::Debug;
 pub(crate) use self::async_connection::AsyncSmtpConnection;
 #[cfg(feature = "tokio02")]
 pub(crate) use self::async_net::AsyncNetworkStream;
-pub use self::connection::SmtpConnection;
-pub use self::mock::MockStream;
 use self::net::NetworkStream;
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 pub(super) use self::tls::InnerTlsParameters;
-pub use self::tls::{Tls, TlsParameters};
+pub use self::{
+    connection::SmtpConnection,
+    mock::MockStream,
+    tls::{Tls, TlsParameters},
+};
 
 #[cfg(feature = "tokio02")]
 mod async_connection;

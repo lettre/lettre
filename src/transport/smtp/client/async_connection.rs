@@ -1,5 +1,4 @@
-use std::fmt::Display;
-use std::io;
+use std::{fmt::Display, io};
 
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
@@ -7,14 +6,16 @@ use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use log::debug;
 
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
-use crate::transport::smtp::authentication::{Credentials, Mechanism};
-use crate::transport::smtp::commands::*;
-use crate::transport::smtp::error::Error;
-use crate::transport::smtp::extension::{
-    ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo,
+use crate::{
+    transport::smtp::{
+        authentication::{Credentials, Mechanism},
+        commands::*,
+        error::Error,
+        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        response::{parse_response, Response},
+    },
+    Envelope,
 };
-use crate::transport::smtp::response::{parse_response, Response};
-use crate::Envelope;
 
 #[cfg(feature = "log")]
 use super::escape_crlf;
@@ -144,11 +145,7 @@ impl AsyncSmtpConnection {
 
     /// Send EHLO and update server info
     async fn ehlo(&mut self, hello_name: &ClientId) -> Result<(), Error> {
-        let ehlo_response = try_smtp!(
-            self.command(Ehlo::new(ClientId::new(hello_name.to_string())))
-                .await,
-            self
-        );
+        let ehlo_response = try_smtp!(self.command(Ehlo::new(hello_name.clone())).await, self);
         self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
         Ok(())
     }

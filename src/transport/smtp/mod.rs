@@ -162,7 +162,7 @@
 //! # {
 //! use lettre::transport::smtp::{SMTP_PORT, extension::ClientId, commands::*, client::SmtpConnection};
 //!
-//! let hello = ClientId::new("my_hostname".to_string());
+//! let hello = ClientId::new_domain("my_hostname".to_string());
 //! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None).unwrap();
 //! client.command(
 //!         Mail::new(Some("user@example.com".parse().unwrap()), vec![])
@@ -249,7 +249,7 @@ impl Default for SmtpInfo {
         Self {
             server: "localhost".to_string(),
             port: SMTP_PORT,
-            hello_name: ClientId::hostname(),
+            hello_name: ClientId::default(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),
             timeout: Some(DEFAULT_TIMEOUT),
