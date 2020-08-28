@@ -16,7 +16,7 @@
 //! * **rustls-tls**: TLS support with the `rustls` crate
 //! * **native-tls**: TLS support with the `native-tls` crate
 //! * **r2d2**: Connection pool for SMTP transport
-//! * **log**: Logging using the `log` crate
+//! * **tracing**: Logging using the `tracing` crate
 //! * **serde**: Serialization/Deserialization of entities
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 

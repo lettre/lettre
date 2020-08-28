@@ -2,9 +2,6 @@ use std::{fmt::Display, io};
 
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
-#[cfg(feature = "log")]
-use log::debug;
-
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
@@ -17,7 +14,7 @@ use crate::{
     Envelope,
 };
 
-#[cfg(feature = "log")]
+#[cfg(feature = "tracing")]
 use super::escape_crlf;
 
 macro_rules! try_smtp (
@@ -79,8 +76,8 @@ impl AsyncSmtpConnection {
         conn.ehlo(hello_name).await?;
 
         // Print server information
-        #[cfg(feature = "log")]
-        debug!("server {}", conn.server_info);
+        #[cfg(feature = "tracing")]
+        tracing::debug!("server {}", conn.server_info);
         Ok(conn)
     }
 
@@ -133,8 +130,8 @@ impl AsyncSmtpConnection {
                 self.stream.get_mut().upgrade_tls(tls_parameters).await,
                 self
             );
-            #[cfg(feature = "log")]
-            debug!("connection encrypted");
+            #[cfg(feature = "tracing")]
+            tracing::debug!("connection encrypted");
             // Send EHLO again
             try_smtp!(self.ehlo(hello_name).await, self);
             Ok(())
@@ -237,8 +234,8 @@ impl AsyncSmtpConnection {
         self.stream.get_mut().write_all(string).await?;
         self.stream.get_mut().flush().await?;
 
-        #[cfg(feature = "log")]
-        debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
+        #[cfg(feature = "tracing")]
+        tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
         Ok(())
     }
 
@@ -247,8 +244,8 @@ impl AsyncSmtpConnection {
         let mut buffer = String::with_capacity(100);
 
         while self.stream.read_line(&mut buffer).await? > 0 {
-            #[cfg(feature = "log")]
-            debug!("<< {}", escape_crlf(&buffer));
+            #[cfg(feature = "tracing")]
+            tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
                     if response.is_positive() {

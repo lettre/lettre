@@ -1,7 +1,7 @@
 use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let email = Message::builder()
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
