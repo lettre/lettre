@@ -8,6 +8,8 @@ use lettre::{AsyncSmtpTransport, Message, Tokio02Connector, Tokio02Transport};
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
     let email = Message::builder()
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())

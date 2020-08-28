@@ -5,9 +5,6 @@ use std::{
     time::Duration,
 };
 
-#[cfg(feature = "log")]
-use log::debug;
-
 use super::{ClientCodec, NetworkStream, TlsParameters};
 use crate::{
     transport::smtp::{
@@ -20,7 +17,7 @@ use crate::{
     Envelope,
 };
 
-#[cfg(feature = "log")]
+#[cfg(feature = "tracing")]
 use super::escape_crlf;
 
 macro_rules! try_smtp (
@@ -76,8 +73,8 @@ impl SmtpConnection {
         conn.ehlo(hello_name)?;
 
         // Print server information
-        #[cfg(feature = "log")]
-        debug!("server {}", conn.server_info);
+        #[cfg(feature = "tracing")]
+        tracing::debug!("server {}", conn.server_info);
         Ok(conn)
     }
 
@@ -125,8 +122,8 @@ impl SmtpConnection {
             {
                 try_smtp!(self.command(Starttls), self);
                 try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
-                #[cfg(feature = "log")]
-                debug!("connection encrypted");
+                #[cfg(feature = "tracing")]
+                tracing::debug!("connection encrypted");
                 // Send EHLO again
                 try_smtp!(self.ehlo(hello_name), self);
                 Ok(())
@@ -237,8 +234,8 @@ impl SmtpConnection {
         self.stream.get_mut().write_all(string)?;
         self.stream.get_mut().flush()?;
 
-        #[cfg(feature = "log")]
-        debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
+        #[cfg(feature = "tracing")]
+        tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
         Ok(())
     }
 
@@ -247,8 +244,8 @@ impl SmtpConnection {
         let mut buffer = String::with_capacity(100);
 
         while self.stream.read_line(&mut buffer)? > 0 {
-            #[cfg(feature = "log")]
-            debug!("<< {}", escape_crlf(&buffer));
+            #[cfg(feature = "tracing")]
+            tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
                     if response.is_positive() {

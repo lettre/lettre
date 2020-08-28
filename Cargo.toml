@@ -29,7 +29,7 @@ base64 = { version = "0.12", optional = true }
 hostname = { version = "0.3", optional = true }
 hyperx = { version = "1", optional = true, features = ["headers"] }
 idna = "0.2"
-log = { version = "0.4", optional = true }
+tracing = { version = "0.1.16", optional = true }
 mime = { version = "0.3", optional = true }
 native-tls = { version = "0.2", optional = true }
 nom = { version = "5", optional = true }
@@ -47,7 +47,7 @@ webpki-roots = { version = "0.20", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
-env_logger = "0.7"
+tracing-subscriber = "0.2.10"
 glob = "0.3"
 walkdir = "2"
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }

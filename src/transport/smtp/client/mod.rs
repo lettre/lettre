@@ -74,7 +74,7 @@ impl ClientCodec {
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
 /// Used for debug displays
-#[cfg(feature = "log")]
+#[cfg(feature = "tracing")]
 pub(super) fn escape_crlf(string: &str) -> String {
     string.replace("\r\n", "<CRLF>")
 }
