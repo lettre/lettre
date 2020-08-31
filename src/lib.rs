@@ -59,7 +59,6 @@ pub use crate::{address::Address, transport::stub::StubTransport};
 use async_trait::async_trait;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
-use std::{error::Error as StdError, fmt};
 
 /// Simple email envelope representation
 ///
@@ -139,9 +138,10 @@ impl TryFrom<&Headers> for Envelope {
 
 /// Blocking Transport method for emails
 pub trait Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]
@@ -157,9 +157,10 @@ pub trait Transport {
 #[cfg(feature = "async-std1")]
 #[async_trait]
 pub trait AsyncStd1Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]
@@ -177,9 +178,10 @@ pub trait AsyncStd1Transport {
 #[cfg(feature = "tokio02")]
 #[async_trait]
 pub trait Tokio02Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]
