@@ -222,10 +222,7 @@ pub struct Auth {
 
 impl Display for Auth {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let encoded_response = self
-            .response
-            .as_ref()
-            .map(|r| base64::encode_config(r.as_bytes(), base64::STANDARD));
+        let encoded_response = self.response.as_ref().map(base64::encode);
 
         if self.mechanism.supports_initial_response() {
             write!(f, "AUTH {} {}", self.mechanism, encoded_response.unwrap())?;
