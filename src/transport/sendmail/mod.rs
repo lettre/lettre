@@ -1,12 +1,8 @@
 //! The sendmail transport sends the email using the local sendmail command.
 //!
-//! #### Sendmail Transport
-//!
-//! The sendmail transport sends the email using the local sendmail command.
+//! ## Sync example
 //!
 //! ```rust,no_run
-//! # #[cfg(feature = "sendmail-transport")]
-//! # {
 //! use lettre::{Message, Envelope, Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
@@ -20,14 +16,56 @@
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! ```
+//!
+//! ## Async tokio 0.2 example
+//!
+//!```rust,no_run
+//! # #[cfg(feature = "tokio02")]
+//! # async fn run() {
+//! use lettre::{Message, Envelope, Tokio02Transport, SendmailTransport};
+//!
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
+//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .subject("Happy new year")
+//!     .body("Be happy!")
+//!     .unwrap();
+//!
+//! let sender = SendmailTransport::new();
+//! let result = sender.send(email).await;
+//! assert!(result.is_ok());
+//! # }
+//! ```
+//!
+//! ## Async async-std 1.x example
+//!
+//!```rust,no_run
+//! # #[cfg(feature = "async-std1")]
+//! # async fn run() {
+//! use lettre::{Message, Envelope, AsyncStd1Transport, SendmailTransport};
+//!
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
+//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .subject("Happy new year")
+//!     .body("Be happy!")
+//!     .unwrap();
+//!
+//! let sender = SendmailTransport::new();
+//! let result = sender.send(email).await;
+//! assert!(result.is_ok());
 //! # }
 //! ```
 
+pub use self::error::Error;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
-use crate::{transport::sendmail::error::Error, Envelope, Transport};
+use crate::{Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{
@@ -37,7 +75,7 @@ use std::{
     process::{Command, Stdio},
 };
 
-pub mod error;
+mod error;
 
 const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
 

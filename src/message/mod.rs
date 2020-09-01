@@ -12,7 +12,7 @@
 //!
 //! The easiest way how we can create email message with simple string.
 //!
-//! ```rust
+//! ```rust,no_run
 //! # extern crate lettre;
 //! use lettre::message::Message;
 //!
@@ -44,7 +44,7 @@
 //!
 //! The more complex way is using MIME contents.
 //!
-//! ```rust
+//! ```rust,no_run
 //! # extern crate lettre;
 //! use lettre::message::{header, Message, SinglePart, Part};
 //!
@@ -82,7 +82,7 @@
 //!
 //! And more advanced way of building message by using multipart MIME contents.
 //!
-//! ```rust
+//! ```rust,no_run
 //! # extern crate lettre;
 //! use lettre::message::{header, Message, MultiPart, SinglePart, Part};
 //!
