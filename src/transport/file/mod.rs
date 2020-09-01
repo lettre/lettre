@@ -1,16 +1,10 @@
 //! The file transport writes the emails to the given directory. The name of the file will be
-//! `message_id.txt`.
-//! It can be useful for testing purposes, or if you want to keep track of sent messages.
-//!
-//! #### File Transport
-//!
-//! The file transport writes the emails to the given directory. The name of the file will be
 //! `message_id.json`.
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
-//! ```rust
-//! # #[cfg(feature = "file-transport")]
-//! # {
+//! ## Sync example
+//!
+//! ```rust,no_run
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Envelope, Message, FileTransport};
 //!
@@ -26,20 +20,77 @@
 //!
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! ```
+//!
+//! ## Async tokio 0.2
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "tokio02")]
+//! # async fn run() {
+//! use std::env::temp_dir;
+//! use lettre::{Tokio02Transport, Envelope, Message, FileTransport};
+//!
+//! // Write to the local temp directory
+//! let sender = FileTransport::new(temp_dir());
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
+//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .subject("Happy new year")
+//!     .body("Be happy!")
+//!     .unwrap();
+//!
+//! let result = sender.send(email).await;
+//! assert!(result.is_ok());
 //! # }
 //! ```
 //!
-//! Example result in `/tmp/b7c211bc-9811-45ce-8cd9-68eab575d695.json`:
+//! ## Async async-std 1.x
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "async-std1")]
+//! # async fn run() {
+//! use std::env::temp_dir;
+//! use lettre::{AsyncStd1Transport, Envelope, Message, FileTransport};
+//!
+//! // Write to the local temp directory
+//! let sender = FileTransport::new(temp_dir());
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
+//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .subject("Happy new year")
+//!     .body("Be happy!")
+//!     .unwrap();
+//!
+//! let result = sender.send(email).await;
+//! assert!(result.is_ok());
+//! # }
+//! ```
+//!
+//! ---
+//!
+//! Example result
 //!
 //! ```json
-//! TODO
+//! {
+//!   "envelope": {
+//!     "forward_path": [
+//!       "hei@domain.tld"
+//!     ],
+//!     "reverse_path": "nobody@domain.tld"
+//!   },
+//!   "raw_message": null,
+//!   "message": "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 18 Aug 2020 22:50:17 GMT\r\n\r\nBe happy!"
+//! }
 //! ```
 
+pub use self::error::Error;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
-use crate::{transport::file::error::Error, Envelope, Transport};
+use crate::{Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{
@@ -48,7 +99,7 @@ use std::{
 };
 use uuid::Uuid;
 
-pub mod error;
+mod error;
 
 type Id = String;
 
