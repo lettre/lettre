@@ -169,7 +169,7 @@ impl Display for AddressError {
 }
 
 #[cfg(feature = "serde")]
-pub mod serde {
+mod serde {
     use crate::address::Address;
     use serde::{
         de::{Deserializer, Error as DeError, MapAccess, Visitor},

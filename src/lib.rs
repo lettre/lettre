@@ -15,6 +15,10 @@
 //! * **sendmail-transport**: Transport over SMTP
 //! * **rustls-tls**: TLS support with the `rustls` crate
 //! * **native-tls**: TLS support with the `native-tls` crate
+//! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
+//! * **tokio02-rustls-tls**: Async TLS support with the `rustls` crate using tokio 0.2
+//! * **tokio02-native-tls**: Async TLS support with the `native-tls` crate using tokio 0.2
+//! * **async-std1**: Allow to asyncronously send emails using async-std 1.x (SMTP isn't supported yet)
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **tracing**: Logging using the `tracing` crate
 //! * **serde**: Serialization/Deserialization of entities
@@ -201,8 +205,10 @@ mod test {
 
     #[test]
     fn envelope_from_headers() {
-        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
-        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
+        let mut from = Mailboxes::new();
+        from.push("kayo@example.com".parse().unwrap());
+        let mut to = Mailboxes::new();
+        to.push("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(header::From(from));
@@ -220,9 +226,11 @@ mod test {
 
     #[test]
     fn envelope_from_headers_sender() {
-        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let mut from = Mailboxes::new();
+        from.push("kayo@example.com".parse().unwrap());
         let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
-        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
+        let mut to = Mailboxes::new();
+        to.push("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(header::From(from));
@@ -241,7 +249,8 @@ mod test {
 
     #[test]
     fn envelope_from_headers_no_to() {
-        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let mut from = Mailboxes::new();
+        from.push("kayo@example.com".parse().unwrap());
         let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
