@@ -1,5 +1,3 @@
-use std::str::from_utf8;
-
 // https://tools.ietf.org/html/rfc1522
 
 fn allowed_char(c: char) -> bool {
@@ -18,13 +16,16 @@ pub fn encode(s: &str) -> String {
 }
 
 pub fn decode(s: &str) -> Option<String> {
+    const PREFIX: &str = "=?utf-8?b?";
+    const SUFFIX: &str = "?=";
+
     let s = s.trim();
-    if s.starts_with("=?utf-8?b?") && s.ends_with("?=") {
-        let s = s.split_at(10).1;
-        let s = s.split_at(s.len() - 2).0;
+    if s.starts_with(PREFIX) && s.ends_with(SUFFIX) {
+        let s = &s[PREFIX.len()..];
+        let s = &s[..s.len() - SUFFIX.len()];
         base64::decode(s)
             .ok()
-            .and_then(|v| from_utf8(&v).ok().map(|s| s.into()))
+            .and_then(|v| String::from_utf8(v).ok())
     } else {
         Some(s.into())
     }

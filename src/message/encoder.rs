@@ -23,11 +23,9 @@ impl SevenBitCodec {
 
 impl EncoderCodec for SevenBitCodec {
     fn encode(&mut self, input: &[u8]) -> Vec<u8> {
-        if input.iter().all(u8::is_ascii) {
-            self.line_wrapper.encode(input)
-        } else {
-            panic!("")
-        }
+        assert!(input.is_ascii(), "input must be valid ascii");
+
+        self.line_wrapper.encode(input)
     }
 }
 
@@ -126,16 +124,13 @@ impl EncoderCodec for BinaryCodec {
 
 pub fn codec(encoding: Option<&ContentTransferEncoding>) -> Box<dyn EncoderCodec> {
     use self::ContentTransferEncoding::*;
-    if let Some(encoding) = encoding {
-        match encoding {
-            SevenBit => Box::new(SevenBitCodec::new()),
-            QuotedPrintable => Box::new(QuotedPrintableCodec::new()),
-            Base64 => Box::new(Base64Codec::new()),
-            EightBit => Box::new(EightBitCodec::new()),
-            Binary => Box::new(BinaryCodec::new()),
-        }
-    } else {
-        Box::new(BinaryCodec::new())
+
+    match encoding {
+        Some(SevenBit) => Box::new(SevenBitCodec::new()),
+        Some(QuotedPrintable) => Box::new(QuotedPrintableCodec::new()),
+        Some(Base64) => Box::new(Base64Codec::new()),
+        Some(EightBit) => Box::new(EightBitCodec::new()),
+        Some(Binary) | None => Box::new(BinaryCodec::new()),
     }
 }
 
