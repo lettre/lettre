@@ -2,7 +2,7 @@
 //!
 //! ## Sync example
 //!
-//! ```rust,no_run
+//! ```rust
 //! use lettre::{Message, Envelope, Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
@@ -20,7 +20,7 @@
 //!
 //! ## Async tokio 0.2 example
 //!
-//!```rust,no_run
+//! ```rust
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() {
 //! use lettre::{Message, Envelope, Tokio02Transport, SendmailTransport};
@@ -41,7 +41,7 @@
 //!
 //! ## Async async-std 1.x example
 //!
-//!```rust,no_run
+//!```rust
 //! # #[cfg(feature = "async-std1")]
 //! # async fn run() {
 //! use lettre::{Message, Envelope, AsyncStd1Transport, SendmailTransport};

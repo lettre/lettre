@@ -12,8 +12,7 @@
 //!
 //! The easiest way how we can create email message with simple string.
 //!
-//! ```rust,no_run
-//! # extern crate lettre;
+//! ```rust
 //! use lettre::message::Message;
 //!
 //! let m = Message::builder()
@@ -44,8 +43,7 @@
 //!
 //! The more complex way is using MIME contents.
 //!
-//! ```rust,no_run
-//! # extern crate lettre;
+//! ```rust
 //! use lettre::message::{header, Message, SinglePart, Part};
 //!
 //! let m = Message::builder()
@@ -82,8 +80,7 @@
 //!
 //! And more advanced way of building message by using multipart MIME contents.
 //!
-//! ```rust,no_run
-//! # extern crate lettre;
+//! ```rust
 //! use lettre::message::{header, Message, MultiPart, SinglePart, Part};
 //!
 //! let m = Message::builder()
