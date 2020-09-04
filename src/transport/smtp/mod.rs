@@ -17,7 +17,7 @@
 //!
 //! It is designed to be:
 //!
-//! * Secured: emails are encrypted by default
+//! * Secured: connections are encrypted by default
 //! * Modern: unicode support for email contents and sender/recipient addresses when compatible
 //! * Fast: supports connection reuse and pooling
 //!
