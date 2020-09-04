@@ -4,7 +4,7 @@
 //!
 //! ## Sync example
 //!
-//! ```rust,no_run
+//! ```rust
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Envelope, Message, FileTransport};
 //!
@@ -24,7 +24,7 @@
 //!
 //! ## Async tokio 0.2
 //!
-//! ```rust,no_run
+//! ```rust
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() {
 //! use std::env::temp_dir;
@@ -47,7 +47,7 @@
 //!
 //! ## Async async-std 1.x
 //!
-//! ```rust,no_run
+//! ```rust
 //! # #[cfg(feature = "async-std1")]
 //! # async fn run() {
 //! use std::env::temp_dir;
