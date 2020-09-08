@@ -21,7 +21,7 @@
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
-#![doc(html_favicon_url = "https://lettre.at/favicon.png")]
+#![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![deny(
     missing_copy_implementations,
