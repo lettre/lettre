@@ -145,7 +145,14 @@ impl SmtpTransportBuilder {
         SmtpTransport { inner: pool }
     }
 
-    /// Build the transport (with default pool if enabled)
+    /// Build the transport
+    ///
+    /// If the `r2d2` feature is enabled an `Arc` wrapped pool is be created.
+    /// Defaults:
+    ///
+    /// * 60 seconds idle timeout
+    /// * 30 minutes max connection lifetime
+    /// * max pool size of 10 connections
     pub fn build(self) -> SmtpTransport {
         let client = self.build_client();
         SmtpTransport {
