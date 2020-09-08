@@ -34,7 +34,10 @@ impl<C> AsyncSmtpTransport<C>
 where
     C: AsyncSmtpConnector,
 {
-    /// Simple and secure transport, should be used when possible.
+    /// Simple and secure transport, using TLS connections to comunicate with the SMTP server
+    ///
+    /// The right option for most SMTP servers.
+    ///
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
@@ -48,10 +51,17 @@ where
             .tls(Tls::Wrapper(tls_parameters)))
     }
 
-    /// Simple and secure transport, should be used when the server doesn't support wrapped TLS connections.
-    /// Creates an encrypted transport over submissions port, by first connecting using an unencrypted
-    /// connection and then upgrading it with STARTTLS, using the provided domain to validate TLS certificates.
-    /// If the connection can't be upgraded it will fail connecting altogether.
+    /// Simple an secure transport, using STARTTLS to obtain encrypted connections
+    ///
+    /// Alternative to [`AsyncSmtpTransport::relay`](#method.relay), for SMTP servers
+    /// that don't take SMTPS connections.
+    ///
+    /// Creates an encrypted transport over submissions port, by first connecting using
+    /// an unencrypted connection and then upgrading it with STARTTLS. The provided
+    /// domain is used to validate TLS certificates.
+    ///
+    /// An error is returned if the connection can't be upgraded. No credentials
+    /// or emails will be sent to the server, protecting from downgrade attacks.
     #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{TlsParameters, SUBMISSION_PORT};
@@ -78,7 +88,9 @@ where
     /// * No TLS
     /// * Port 25
     ///
-    /// Consider using [`AsyncSmtpTransport::relay`] instead, if possible.
+    /// Consider using [`AsyncSmtpTransport::relay`](#method.relay) or
+    /// [`AsyncSmtpTransport::starttls_relay`](#method.starttls_relay) instead,
+    /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder {
         let mut new = SmtpInfo::default();
         new.server = server.into();
