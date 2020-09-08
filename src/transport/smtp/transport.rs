@@ -150,7 +150,10 @@ impl SmtpTransportBuilder {
         let client = self.build_client();
         SmtpTransport {
             #[cfg(feature = "r2d2")]
-            inner: Pool::builder().max_size(5).build_unchecked(client),
+            inner: Pool::builder()
+                .min_idle(Some(0))
+                .idle_timeout(Some(Duration::from_secs(60)))
+                .build_unchecked(client),
             #[cfg(not(feature = "r2d2"))]
             inner: client,
         }
