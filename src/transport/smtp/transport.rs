@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 #[cfg(feature = "r2d2")]
-use r2d2::{Builder, Pool};
+use r2d2::Pool;
 
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -148,13 +148,6 @@ impl SmtpTransportBuilder {
     /// Build the client
     fn build_client(self) -> SmtpClient {
         SmtpClient { info: self.info }
-    }
-
-    /// Build the transport with custom pool settings
-    #[cfg(feature = "r2d2")]
-    pub fn build_with_pool(self, pool: Builder<SmtpClient>) -> SmtpTransport {
-        let pool = pool.build_unchecked(self.build_client());
-        SmtpTransport { inner: pool }
     }
 
     /// Build the transport

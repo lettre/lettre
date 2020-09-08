@@ -1,7 +1,6 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "r2d2"))]
 mod test {
     use lettre::{Envelope, SmtpTransport, Transport};
-    use r2d2::Pool;
     use std::{sync::mpsc, thread};
 
     fn envelope() -> Envelope {
@@ -14,10 +13,9 @@ mod test {
 
     #[test]
     fn send_one() {
-        let pool = Pool::builder().max_size(1);
         let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
             .port(2525)
-            .build_with_pool(pool);
+            .build();
 
         let result = mailer.send_raw(&envelope(), b"test");
         assert!(result.is_ok());
@@ -25,11 +23,9 @@ mod test {
 
     #[test]
     fn send_from_thread() {
-        let pool = Pool::builder().max_size(1);
-
         let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
             .port(2525)
-            .build_with_pool(pool);
+            .build();
 
         let (s1, r1) = mpsc::channel();
         let (s2, r2) = mpsc::channel();
