@@ -535,7 +535,7 @@ mod test {
                         parameters: vec![header::DispositionParam::Filename(
                             header::Charset::Ext("utf-8".into()),
                             None,
-                            "example.c".as_bytes().into(),
+                            "example.c".into(),
                         )],
                     })
                     .header(header::ContentTransferEncoding::Binary)
@@ -582,7 +582,7 @@ mod test {
                         parameters: vec![header::DispositionParam::Filename(
                             header::Charset::Ext("utf-8".into()),
                             None,
-                            "encrypted.asc".as_bytes().into(),
+                            "encrypted.asc".into(),
                         )],
                     })
                     .body(String::from(concat!(
@@ -637,7 +637,7 @@ mod test {
                     parameters: vec![header::DispositionParam::Filename(
                         header::Charset::Ext("utf-8".into()),
                         None,
-                        "signature.asc".as_bytes().into(),
+                        "signature.asc".into(),
                     )],
                 })
                 .body(String::from(concat!(
@@ -725,7 +725,7 @@ mod test {
                              .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
                              .header(header::ContentDisposition {
                                  disposition: header::DispositionType::Attachment,
-                                 parameters: vec![header::DispositionParam::Filename(header::Charset::Ext("utf-8".into()), None, "example.c".as_bytes().into())]
+                                 parameters: vec![header::DispositionParam::Filename(header::Charset::Ext("utf-8".into()), None, "example.c".into())]
                              })
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("int main() { return 0; }")));
