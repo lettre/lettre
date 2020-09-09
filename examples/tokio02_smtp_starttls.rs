@@ -3,8 +3,10 @@
 // Won't be needed in user's code.
 use tokio02_crate as tokio;
 
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{AsyncSmtpTransport, Message, Tokio02Connector, Tokio02Transport};
+use lettre::{
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio02Connector,
+    Tokio02Transport,
+};
 
 #[tokio::main]
 async fn main() {
