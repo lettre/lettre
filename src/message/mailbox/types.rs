@@ -114,6 +114,12 @@ impl Mailboxes {
     }
 
     /// Add mailbox to a list
+    pub fn with(mut self, mbox: Mailbox) -> Self {
+        self.0.push(mbox);
+        self
+    }
+
+    /// Add mailbox to a list
     pub fn push(&mut self, mbox: Mailbox) {
         self.0.push(mbox);
     }
