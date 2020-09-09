@@ -59,7 +59,7 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.10.0-alpha.1"
+lettre = "0.10.0-alpha.2"
 ```
 
 ```rust,no_run
