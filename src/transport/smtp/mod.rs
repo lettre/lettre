@@ -53,6 +53,107 @@
 //! # }
 //! ```
 
+//! #### Complete example
+//!
+//! ```todo
+//! # #[cfg(feature = "smtp-transport")]
+//! # {
+//! use lettre::transport::smtp::authentication::{Credentials, Mechanism};
+//! use lettre::{Email, Envelope, Transport, SmtpClient};
+//! use lettre::transport::smtp::extension::ClientId;
+//!
+//! let email_1 = Email::new(
+//!     Envelope::new(
+//!         Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+//!         vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+//!     ).unwrap(),
+//!     "id1".to_string(),
+//!     "Hello world".to_string().into_bytes(),
+//! );
+//!
+//! let email_2 = Email::new(
+//!     Envelope::new(
+//!         Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+//!         vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+//!     ).unwrap(),
+//!     "id2".to_string(),
+//!     "Hello world a second time".to_string().into_bytes(),
+//! );
+//!
+//! // Connect to a remote server on a custom port
+//! let mut mailer = SmtpClient::new_simple("server.tld").unwrap()
+//!    // Set the name sent during EHLO/HELO, default is `localhost`
+//!    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
+//!    // Add credentials for authentication
+//!    .credentials(Credentials::new("username".to_string(), "password".to_string()))
+//!    // Enable SMTPUTF8 if the server supports it
+//!    .smtp_utf8(true)
+//!    // Configure expected authentication mechanism
+//!    .authentication_mechanism(Mechanism::Plain)
+//!    // Enable connection reuse
+//!    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
+//!
+//! let result_1 = mailer.send(&email_1);
+//! assert!(result_1.is_ok());
+//!
+//! // The second email will use the same connection
+//! let result_2 = mailer.send(&email_2);
+//! assert!(result_2.is_ok());
+//!
+//! // Explicitly close the SMTP transaction as we enabled connection reuse
+//! mailer.close();
+//! # }
+//! ```
+//!
+//! You can specify custom TLS settings:
+//!
+//! ```todo
+//! # #[cfg(feature = "native-tls")]
+//! # {
+//! use lettre::{
+//!     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope,
+//!     Email, SmtpClient, Transport,
+//! };
+//! use lettre::transport::smtp::authentication::{Credentials, Mechanism};
+//! use lettre::transport::smtp::ConnectionReuseParameters;
+//! use native_tls::{Protocol, TlsConnector};
+//!
+//!     let email = Email::new(
+//!         Envelope::new(
+//!             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
+//!             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
+//!         ).unwrap(),
+//!         "message_id".to_string(),
+//!         "Hello world".to_string().into_bytes(),
+//!     );
+//!
+//!     let mut tls_builder = TlsConnector::builder();
+//!     tls_builder.min_protocol_version(Some(Protocol::Tlsv10));
+//!     let tls_parameters =
+//!         ClientTlsParameters::new(
+//!             "smtp.example.com".to_string(),
+//!             tls_builder.build().unwrap()
+//!         );
+//!
+//!     let mut mailer = SmtpClient::new(
+//!         ("smtp.example.com", 465), ClientSecurity::Wrapper(tls_parameters)
+//!     ).unwrap()
+//!         .authentication_mechanism(Mechanism::Login)
+//!         .credentials(Credentials::new(
+//!             "example_username".to_string(), "example_password".to_string()
+//!         ))
+//!         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
+//!         .transport();
+//!
+//!     let result = mailer.send(&email);
+//!
+//!     assert!(result.is_ok());
+//!
+//!     mailer.close();
+//! # }
+//! ```
+//!
+
 use std::time::Duration;
 
 #[cfg(feature = "tokio02")]

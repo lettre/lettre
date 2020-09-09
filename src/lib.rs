@@ -207,10 +207,8 @@ mod test {
 
     #[test]
     fn envelope_from_headers() {
-        let mut from = Mailboxes::new();
-        from.push("kayo@example.com".parse().unwrap());
-        let mut to = Mailboxes::new();
-        to.push("amousset@example.com".parse().unwrap());
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
+        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(header::From(from));
@@ -228,11 +226,9 @@ mod test {
 
     #[test]
     fn envelope_from_headers_sender() {
-        let mut from = Mailboxes::new();
-        from.push("kayo@example.com".parse().unwrap());
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
         let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
-        let mut to = Mailboxes::new();
-        to.push("amousset@example.com".parse().unwrap());
+        let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(header::From(from));
@@ -251,8 +247,7 @@ mod test {
 
     #[test]
     fn envelope_from_headers_no_to() {
-        let mut from = Mailboxes::new();
-        from.push("kayo@example.com".parse().unwrap());
+        let from = Mailboxes::new().with("kayo@example.com".parse().unwrap());
         let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
