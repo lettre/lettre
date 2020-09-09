@@ -335,7 +335,7 @@ mod test {
             "RCPT TO:<test@example.com>\r\n"
         );
         assert_eq!(
-            format!("{}", Rcpt::new(email.clone(), vec![rcpt_parameter])),
+            format!("{}", Rcpt::new(email, vec![rcpt_parameter])),
             "RCPT TO:<test@example.com> TEST=value\r\n"
         );
         assert_eq!(format!("{}", Quit), "QUIT\r\n");
@@ -366,7 +366,7 @@ mod test {
         assert_eq!(
             format!(
                 "{}",
-                Auth::new(Mechanism::Login, credentials.clone(), None).unwrap()
+                Auth::new(Mechanism::Login, credentials, None).unwrap()
             ),
             "AUTH LOGIN\r\n"
         );

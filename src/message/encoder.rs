@@ -143,7 +143,7 @@ mod test {
         let mut c = SevenBitCodec::new();
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, world!".as_bytes())).unwrap(),
+            &String::from_utf8(c.encode(b"Hello, world!")).unwrap(),
             "Hello, world!"
         );
     }
@@ -212,10 +212,7 @@ mod test {
     fn base64_encodeed() {
         let mut c = Base64Codec::new();
 
-        assert_eq!(
-            &String::from_utf8(c.encode("Chunk.".as_bytes())).unwrap(),
-            "Q2h1bmsu"
-        );
+        assert_eq!(&String::from_utf8(c.encode(b"Chunk.")).unwrap(), "Q2h1bmsu");
     }
 
     #[test]
@@ -223,7 +220,7 @@ mod test {
         let mut c = EightBitCodec::new();
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, world!".as_bytes())).unwrap(),
+            &String::from_utf8(c.encode(b"Hello, world!")).unwrap(),
             "Hello, world!"
         );
 
@@ -238,7 +235,7 @@ mod test {
         let mut c = BinaryCodec::new();
 
         assert_eq!(
-            &String::from_utf8(c.encode("Hello, world!".as_bytes())).unwrap(),
+            &String::from_utf8(c.encode(b"Hello, world!")).unwrap(),
             "Hello, world!"
         );
 

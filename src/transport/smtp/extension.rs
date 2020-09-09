@@ -320,7 +320,7 @@ mod test {
                 "{}",
                 ServerInfo {
                     name: "name".to_string(),
-                    features: eightbitmime.clone(),
+                    features: eightbitmime,
                 }
             ),
             "name with {EightBitMime}".to_string()
@@ -347,7 +347,7 @@ mod test {
                 "{}",
                 ServerInfo {
                     name: "name".to_string(),
-                    features: plain.clone(),
+                    features: plain,
                 }
             ),
             "name with {Authentication(Plain)}".to_string()
