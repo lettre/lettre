@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 
-use super::client::AsyncSmtpConnection;
 #[cfg(feature = "tokio02")]
 use super::Tls;
-use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpInfo};
+use super::{
+    client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
+};
 use crate::{Envelope, Tokio02Transport};
 
 #[allow(missing_debug_implementations)]

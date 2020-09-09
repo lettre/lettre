@@ -1,5 +1,4 @@
-use lettre::transport::smtp::authentication::Credentials;
-use lettre::{Message, SmtpTransport, Transport};
+use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 
 fn main() {
     tracing_subscriber::fmt::init();

@@ -1,8 +1,10 @@
-use std::net::{Shutdown, SocketAddr};
-use std::pin::Pin;
 #[cfg(feature = "tokio02-rustls-tls")]
 use std::sync::Arc;
-use std::task::{Context, Poll};
+use std::{
+    net::{Shutdown, SocketAddr},
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 use futures_io::{Error as IoError, ErrorKind, Result as IoResult};
 #[cfg(feature = "tokio02")]
@@ -159,8 +161,7 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "tokio02-rustls-tls")]
                 return {
-                    use tokio02_rustls::webpki::DNSNameRef;
-                    use tokio02_rustls::TlsConnector;
+                    use tokio02_rustls::{webpki::DNSNameRef, TlsConnector};
 
                     let domain = DNSNameRef::try_from_ascii_str(&domain)?;
 
