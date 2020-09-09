@@ -69,7 +69,6 @@ use crate::{Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{
-    convert::AsRef,
     ffi::OsString,
     io::prelude::*,
     process::{Command, Stdio},
