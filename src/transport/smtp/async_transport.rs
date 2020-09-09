@@ -212,6 +212,7 @@ impl AsyncSmtpConnector for Tokio02Connector {
             Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
             _ => None,
         };
+        #[allow(unused_mut)]
         let mut conn =
             AsyncSmtpConnection::connect_tokio02(hostname, port, hello_name, tls_parameters)
                 .await?;
