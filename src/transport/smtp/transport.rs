@@ -190,6 +190,7 @@ impl SmtpClient {
             _ => None,
         };
 
+        #[allow(unused_mut)]
         let mut conn = SmtpConnection::connect::<(&str, u16)>(
             (self.info.server.as_ref(), self.info.port),
             self.info.timeout,
