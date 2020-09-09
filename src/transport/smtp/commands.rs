@@ -9,10 +9,7 @@ use crate::{
     },
     Address,
 };
-use std::{
-    convert::AsRef,
-    fmt::{self, Display, Formatter},
-};
+use std::fmt::{self, Display, Formatter};
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
