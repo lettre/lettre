@@ -21,7 +21,7 @@
     <img src="https://badges.gitter.im/lettre/lettre.svg"
       alt="chat on gitter" />
   </a>
-  <a href="https://lettre.at">
+  <a href="https://lettre.rs">
     <img src="https://img.shields.io/badge/visit-website-blueviolet"
       alt="website" />
   </a>
