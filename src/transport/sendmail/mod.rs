@@ -80,7 +80,7 @@ mod error;
 const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
 
 /// Sends an email using the `sendmail` command
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SendmailTransport {
     command: OsString,
