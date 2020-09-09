@@ -25,7 +25,7 @@
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
 #![doc(html_root_url = "https://docs.rs/lettre/0.10.0")]
-#![doc(html_favicon_url = "https://lettre.at/favicon.png")]
+#![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![deny(
     missing_copy_implementations,
@@ -63,7 +63,6 @@ pub use crate::{address::Address, transport::stub::StubTransport};
 use async_trait::async_trait;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
-use std::{error::Error as StdError, fmt};
 
 /// Simple email envelope representation
 ///
@@ -143,9 +142,10 @@ impl TryFrom<&Headers> for Envelope {
 
 /// Blocking Transport method for emails
 pub trait Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]
@@ -161,9 +161,10 @@ pub trait Transport {
 #[cfg(feature = "async-std1")]
 #[async_trait]
 pub trait AsyncStd1Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]
@@ -181,9 +182,10 @@ pub trait AsyncStd1Transport {
 #[cfg(feature = "tokio02")]
 #[async_trait]
 pub trait Tokio02Transport {
-    /// Result types for the transport
-    type Ok: fmt::Debug;
-    type Error: StdError;
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
 
     /// Sends the email
     #[cfg(feature = "builder")]

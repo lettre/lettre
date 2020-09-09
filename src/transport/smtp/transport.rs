@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 #[cfg(feature = "r2d2")]
-use r2d2::{Builder, Pool};
+use r2d2::Pool;
 
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -38,7 +38,10 @@ impl Transport for SmtpTransport {
 }
 
 impl SmtpTransport {
-    /// Simple and secure transport, should be used when possible.
+    /// Simple and secure transport, using TLS connections to comunicate with the SMTP server
+    ///
+    /// The right option for most SMTP servers.
+    ///
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -50,10 +53,17 @@ impl SmtpTransport {
             .tls(Tls::Wrapper(tls_parameters)))
     }
 
-    /// Simple and secure transport, should be used when the server doesn't support wrapped TLS connections.
-    /// Creates an encrypted transport over submissions port, by first connecting using an unencrypted
-    /// connection and then upgrading it with STARTTLS, using the provided domain to validate TLS certificates.
-    /// If the connection can't be upgraded it will fail connecting altogether.
+    /// Simple an secure transport, using STARTTLS to obtain encrypted connections
+    ///
+    /// Alternative to [`SmtpTransport::relay`](#method.relay), for SMTP servers
+    /// that don't take SMTPS connections.
+    ///
+    /// Creates an encrypted transport over submissions port, by first connecting using
+    /// an unencrypted connection and then upgrading it with STARTTLS. The provided
+    /// domain is used to validate TLS certificates.
+    ///
+    /// An error is returned if the connection can't be upgraded. No credentials
+    /// or emails will be sent to the server, protecting from downgrade attacks.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
@@ -79,7 +89,9 @@ impl SmtpTransport {
     /// * A 60 seconds timeout for smtp commands
     /// * Port 25
     ///
-    /// Consider using [`SmtpTransport::relay`] instead, if possible.
+    /// Consider using [`SmtpTransport::relay`](#method.relay) or
+    /// [`SmtpTransport::starttls_relay`](#method.starttls_relay) instead,
+    /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder {
         let mut new = SmtpInfo::default();
         new.server = server.into();
@@ -138,19 +150,22 @@ impl SmtpTransportBuilder {
         SmtpClient { info: self.info }
     }
 
-    /// Build the transport with custom pool settings
-    #[cfg(feature = "r2d2")]
-    pub fn build_with_pool(self, pool: Builder<SmtpClient>) -> SmtpTransport {
-        let pool = pool.build_unchecked(self.build_client());
-        SmtpTransport { inner: pool }
-    }
-
-    /// Build the transport (with default pool if enabled)
+    /// Build the transport
+    ///
+    /// If the `r2d2` feature is enabled an `Arc` wrapped pool is be created.
+    /// Defaults:
+    ///
+    /// * 60 seconds idle timeout
+    /// * 30 minutes max connection lifetime
+    /// * max pool size of 10 connections
     pub fn build(self) -> SmtpTransport {
         let client = self.build_client();
         SmtpTransport {
             #[cfg(feature = "r2d2")]
-            inner: Pool::builder().max_size(5).build_unchecked(client),
+            inner: Pool::builder()
+                .min_idle(Some(0))
+                .idle_timeout(Some(Duration::from_secs(60)))
+                .build_unchecked(client),
             #[cfg(not(feature = "r2d2"))]
             inner: client,
         }
