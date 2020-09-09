@@ -80,7 +80,7 @@ mod error;
 const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
 
 /// Sends an email using the `sendmail` command
-#[derive(Debug, Default)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SendmailTransport {
     command: OsString,
@@ -125,6 +125,12 @@ impl SendmailTransport {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
         c
+    }
+}
+
+impl Default for SendmailTransport {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
