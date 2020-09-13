@@ -7,6 +7,8 @@ use std::{
     str::{from_utf8, FromStr},
 };
 
+header! { (ContentId, "Content-ID") => [String] }
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentTransferEncoding {
     SevenBit,
