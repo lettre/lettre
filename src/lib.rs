@@ -42,6 +42,9 @@ pub mod error;
 pub mod message;
 pub mod transport;
 
+#[macro_use]
+extern crate hyperx;
+
 use crate::error::Error;
 #[cfg(feature = "builder")]
 pub use crate::message::{
