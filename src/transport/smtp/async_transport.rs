@@ -45,7 +45,7 @@ where
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{TlsParameters, SUBMISSIONS_PORT};
 
-        let tls_parameters = TlsParameters::new_tokio02(relay.into())?;
+        let tls_parameters = TlsParameters::builder(relay.into()).build_tokio02()?;
 
         Ok(Self::builder_dangerous(relay)
             .port(SUBMISSIONS_PORT)
