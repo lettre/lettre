@@ -41,7 +41,7 @@ hostname = { version = "0.3", optional = true } # feature
 
 ## tls
 native-tls = { version = "0.2", optional = true } # feature
-rustls = { version = "0.18", optional = true }
+rustls = { version = "0.18", features = ["dangerous_configuration"], optional = true }
 webpki = { version = "0.21", optional = true }
 webpki-roots = { version = "0.20", optional = true }
 
