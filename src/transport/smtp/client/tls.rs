@@ -1,17 +1,14 @@
 #[cfg(feature = "rustls-tls")]
 use std::sync::Arc;
 
-#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use crate::transport::smtp::error::Error;
-
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
-use rustls::{
-    Certificate, ClientConfig, RootCertStore, ServerCertVerified, ServerCertVerifier, TLSError,
-};
+use rustls::{ClientConfig, RootCertStore, ServerCertVerified, ServerCertVerifier, TLSError};
 #[cfg(feature = "rustls-tls")]
 use webpki::DNSNameRef;
+
+use crate::transport::smtp::error::Error;
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
@@ -46,9 +43,10 @@ pub struct TlsParameters {
 }
 
 /// Builder for `TlsParameters`
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct TlsParametersBuilder {
     domain: String,
+    root_certs: Vec<Certificate>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
 }
@@ -58,9 +56,18 @@ impl TlsParametersBuilder {
     pub fn new(domain: String) -> Self {
         Self {
             domain,
+            root_certs: Vec::new(),
             accept_invalid_hostnames: false,
             accept_invalid_certs: false,
         }
+    }
+
+    /// Add a custom root certificate
+    ///
+    /// Can be used to safely connect to a server using a self signed certificate, for example.
+    pub fn add_root_certificate(&mut self, cert: Certificate) -> &mut Self {
+        self.root_certs.push(cert);
+        self
     }
 
     /// Controls whether certificates with an invalid hostname are accepted
@@ -130,8 +137,13 @@ impl TlsParametersBuilder {
     #[cfg(feature = "native-tls")]
     pub fn build_native(self) -> Result<TlsParameters, Error> {
         let mut tls_builder = TlsConnector::builder();
+
+        for cert in self.root_certs {
+            tls_builder.add_root_certificate(cert.native_tls);
+        }
         tls_builder.danger_accept_invalid_hostnames(self.accept_invalid_hostnames);
         tls_builder.danger_accept_invalid_certs(self.accept_invalid_certs);
+
         tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
         let connector = tls_builder.build()?;
         Ok(TlsParameters {
@@ -146,10 +158,19 @@ impl TlsParametersBuilder {
         use webpki_roots::TLS_SERVER_ROOTS;
 
         let mut tls = ClientConfig::new();
+
+        for cert in self.root_certs {
+            for rustls_cert in cert.rustls {
+                tls.root_store
+                    .add(&rustls_cert)
+                    .map_err(|_| Error::InvalidCertificate)?;
+            }
+        }
         if self.accept_invalid_certs {
             tls.dangerous()
                 .set_certificate_verifier(Arc::new(InvalidCertsVerifier {}));
         }
+
         tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
         Ok(TlsParameters {
             connector: InnerTlsParameters::RustlsTls(tls),
@@ -195,6 +216,55 @@ impl TlsParameters {
     }
 }
 
+/// A client certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
+#[derive(Clone)]
+#[allow(missing_copy_implementations)]
+pub struct Certificate {
+    #[cfg(feature = "native-tls")]
+    native_tls: native_tls::Certificate,
+    #[cfg(feature = "rustls-tls")]
+    rustls: Vec<rustls::Certificate>,
+}
+
+impl Certificate {
+    /// Create a `Certificate` from a DER encoded certificate
+    pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
+        #[cfg(feature = "native-tls")]
+        let native_tls_cert =
+            native_tls::Certificate::from_der(&der).map_err(|_| Error::InvalidCertificate)?;
+
+        Ok(Self {
+            #[cfg(feature = "native-tls")]
+            native_tls: native_tls_cert,
+            #[cfg(feature = "rustls-tls")]
+            rustls: vec![rustls::Certificate(der)],
+        })
+    }
+
+    /// Create a `Certificate` from a PEM encoded certificate
+    pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
+        #[cfg(feature = "native-tls")]
+        let native_tls_cert =
+            native_tls::Certificate::from_pem(pem).map_err(|_| Error::InvalidCertificate)?;
+
+        #[cfg(feature = "rustls-tls")]
+        let rustls_cert = {
+            use rustls::internal::pemfile;
+            use std::io::Cursor;
+
+            let mut pem = Cursor::new(pem);
+            pemfile::certs(&mut pem).map_err(|_| Error::InvalidCertificate)?
+        };
+
+        Ok(Self {
+            #[cfg(feature = "native-tls")]
+            native_tls: native_tls_cert,
+            #[cfg(feature = "rustls-tls")]
+            rustls: rustls_cert,
+        })
+    }
+}
+
 #[cfg(feature = "rustls-tls")]
 struct InvalidCertsVerifier;
 
@@ -203,7 +273,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
         _roots: &RootCertStore,
-        _presented_certs: &[Certificate],
+        _presented_certs: &[rustls::Certificate],
         _dns_name: DNSNameRef<'_>,
         _ocsp_response: &[u8],
     ) -> Result<ServerCertVerified, TLSError> {
