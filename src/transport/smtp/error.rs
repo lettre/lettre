@@ -41,6 +41,8 @@ pub enum Error {
     /// Invalid hostname
     #[cfg(feature = "rustls-tls")]
     InvalidDNSName(webpki::InvalidDNSNameError),
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    InvalidCertificate,
     #[cfg(feature = "r2d2")]
     Pool(r2d2::Error),
 }
@@ -69,6 +71,8 @@ impl Display for Error {
             Parsing(ref err) => fmt.write_str(err.description()),
             #[cfg(feature = "rustls-tls")]
             InvalidDNSName(ref err) => err.fmt(fmt),
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            InvalidCertificate => fmt.write_str("invalid certificate"),
             #[cfg(feature = "r2d2")]
             Pool(ref err) => err.fmt(fmt),
         }

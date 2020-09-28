@@ -34,7 +34,7 @@ pub(super) use self::tls::InnerTlsParameters;
 pub use self::{
     connection::SmtpConnection,
     mock::MockStream,
-    tls::{Tls, TlsParameters, TlsParametersBuilder},
+    tls::{Certificate, Tls, TlsParameters, TlsParametersBuilder},
 };
 
 #[cfg(feature = "tokio02")]

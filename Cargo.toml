@@ -104,6 +104,10 @@ name = "smtp_starttls"
 required-features = ["smtp-transport", "native-tls"]
 
 [[example]]
+name = "smtp_selfsigned"
+required-features = ["smtp-transport", "native-tls"]
+
+[[example]]
 name = "tokio02_smtp_tls"
 required-features = ["smtp-transport", "tokio02", "tokio02-native-tls"]
 
