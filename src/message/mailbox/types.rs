@@ -9,22 +9,48 @@ use std::{
     str::FromStr,
 };
 
-/// Email address with optional addressee name
+/// Represents an email address with an optional name for the sender/recipient.
 ///
 /// This type contains email address and the sender/recipient name (_Some Name \<user@domain.tld\>_ or _withoutname@domain.tld_).
 ///
 /// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
+///
+/// # Examples
+///
+/// You can create a `Mailbox` from a string and an [`Address`]:
+///
+/// ```
+/// # use lettre::{Address, Mailbox};
+/// let address = Address::new("example", "email.com").unwrap();
+/// let mailbox = Mailbox::new(None, address);
+/// ```
+///
+/// You can also create one from a string literal:
+///
+/// ```
+/// # use lettre::Mailbox;
+/// let mailbox: Mailbox = "John Smith <example@email.com>".parse().unwrap();
+/// ```
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Mailbox {
-    /// User name part
+    /// The name associated with the address.
     pub name: Option<String>,
 
-    /// Email address part
+    /// The email address itself.
     pub email: Address,
 }
 
 impl Mailbox {
-    /// Create new mailbox using email address and addressee name
+    /// Creates a new `Mailbox` using an email address and the name of the recipient if there is one.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::{Address, Mailbox};
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// let mailbox = Mailbox::new(None, address);
+    /// ```
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
     }
@@ -99,7 +125,7 @@ impl FromStr for Mailbox {
     }
 }
 
-/// List or email mailboxes
+/// Represents a sequence of [`Mailbox`] instances.
 ///
 /// This type contains a sequence of mailboxes (_Some Name \<user@domain.tld\>, Another Name \<other@domain.tld\>, withoutname@domain.tld, ..._).
 ///
@@ -108,28 +134,90 @@ impl FromStr for Mailbox {
 pub struct Mailboxes(Vec<Mailbox>);
 
 impl Mailboxes {
-    /// Create mailboxes list
+    /// Creates a new list of [`Mailbox`] instances.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::Mailboxes;
+    /// let mailboxes = Mailboxes::new();
+    /// ```
     pub fn new() -> Self {
         Mailboxes(Vec::new())
     }
 
-    /// Add mailbox to a list
+    /// Adds a new [`Mailbox`] to the list, in a builder style pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::{Address, Mailbox, Mailboxes};
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// let mut mailboxes = Mailboxes::new().with(Mailbox::new(None, address));
+    /// ```
     pub fn with(mut self, mbox: Mailbox) -> Self {
         self.0.push(mbox);
         self
     }
 
-    /// Add mailbox to a list
+    /// Adds a new [`Mailbox`] to the list, in a Vec::push style pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::{Address, Mailbox, Mailboxes};
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// let mut mailboxes = Mailboxes::new();
+    /// mailboxes.push(Mailbox::new(None, address));
+    /// ```
     pub fn push(&mut self, mbox: Mailbox) {
         self.0.push(mbox);
     }
 
-    /// Extract first mailbox
+    /// Extracts the first [`Mailbox`] if it exists.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::{Address, Mailbox, Mailboxes};
+    ///
+    /// let empty = Mailboxes::new();
+    /// assert!(empty.into_single().is_none());
+    ///
+    /// let mut mailboxes = Mailboxes::new();
+    /// let address = Address::new("example", "email.com").unwrap();
+    ///
+    /// mailboxes.push(Mailbox::new(None, address));
+    /// assert!(mailboxes.into_single().is_some());
+    /// ```
     pub fn into_single(self) -> Option<Mailbox> {
         self.into()
     }
 
-    /// Iterate over mailboxes
+    /// Creates an iterator over the [`Mailbox`] instances that are currently stored.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::{Address, Mailbox, Mailboxes};
+    ///
+    /// let mut mailboxes = Mailboxes::new();
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// mailboxes.push(Mailbox::new(None, address));
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// mailboxes.push(Mailbox::new(None, address));
+    ///
+    /// let mut iter = mailboxes.iter();
+    ///
+    /// assert!(iter.next().is_some());
+    /// assert!(iter.next().is_some());
+    ///
+    /// assert!(iter.next().is_none());
+    /// ```
     pub fn iter(&self) -> Iter<Mailbox> {
         self.0.iter()
     }

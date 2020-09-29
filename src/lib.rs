@@ -83,6 +83,22 @@ pub struct Envelope {
 
 impl Envelope {
     /// Creates a new envelope, which may fail if `to` is empty.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::str::FromStr;
+    /// # use lettre::{Address, Envelope};
+    ///
+    /// let sender = Address::from_str("from@email.com").unwrap();
+    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    ///
+    /// let envelope = Envelope::new(Some(sender), recipients);
+    /// ```
+    ///
+    /// # Errors
+    ///
+    /// If `to` has no elements in it.
     pub fn new(from: Option<Address>, to: Vec<Address>) -> Result<Envelope, Error> {
         if to.is_empty() {
             return Err(Error::MissingTo);
@@ -93,12 +109,41 @@ impl Envelope {
         })
     }
 
-    /// Destination addresses of the envelope
+    /// Gets the destination addresses of the envelope.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::str::FromStr;
+    /// # use lettre::{Address, Envelope};
+    ///
+    /// let sender = Address::from_str("from@email.com").unwrap();
+    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    ///
+    /// let envelope = Envelope::new(Some(sender), recipients.clone()).unwrap();
+    /// assert_eq!(envelope.to(), recipients);
+    /// ```
     pub fn to(&self) -> &[Address] {
         self.forward_path.as_slice()
     }
 
-    /// Source address of the envelope
+    /// Gets the sender of the envelope.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::str::FromStr;
+    /// # use lettre::{Address, Envelope};
+    ///
+    /// let sender = Address::from_str("from@email.com").unwrap();
+    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    ///
+    /// let envelope = Envelope::new(Some(sender), recipients.clone()).unwrap();
+    /// assert!(envelope.from().is_some());
+    ///
+    /// let senderless = Envelope::new(None, recipients.clone()).unwrap();
+    /// assert!(senderless.from().is_none());
+    /// ```
     pub fn from(&self) -> Option<&Address> {
         self.reverse_path.as_ref()
     }
