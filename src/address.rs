@@ -12,11 +12,28 @@ use std::{
     str::FromStr,
 };
 
-/// Email address
+/// Represents an email address with a user and a domain name.
 ///
 /// This type contains email in canonical form (_user@domain.tld_).
 ///
 /// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
+///
+/// # Examples
+///
+/// You can create an `Address` from a user and a domain:
+///
+/// ```
+/// # use lettre::Address;
+/// let address = Address::new("example", "email.com").unwrap();
+/// ```
+///
+/// You can also create an `Address` from a string literal by parsing it:
+///
+/// ```
+/// use std::str::FromStr;
+/// # use lettre::Address;
+/// let address = Address::from_str("example@email.com").unwrap();
+/// ```
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Address {
     /// Complete address
@@ -62,17 +79,45 @@ static DOMAIN_RE: Lazy<Regex> = Lazy::new(|| {
 static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\]\z").unwrap());
 
 impl Address {
-    /// Create email address from parts
+    /// Creates a new email address from a user and domain.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::Address;
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// let expected: Address = "example@email.com".parse().unwrap();
+    /// assert_eq!(expected, address);
+    /// ```
     pub fn new<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Result<Self, AddressError> {
         (user, domain).try_into()
     }
 
-    /// Get the user part of this `Address`
+    /// Gets the user portion of the `Address`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::Address;
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// assert_eq!("example", address.user());
+    /// ```
     pub fn user(&self) -> &str {
         &self.serialized[..self.at_start]
     }
 
-    /// Get the domain part of this `Address`
+    /// Gets the domain portion of the `Address`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::Address;
+    ///
+    /// let address = Address::new("example", "email.com").unwrap();
+    /// assert_eq!("email.com", address.domain());
+    /// ```
     pub fn domain(&self) -> &str {
         &self.serialized[self.at_start + 1..]
     }
