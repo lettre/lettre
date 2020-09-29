@@ -121,7 +121,7 @@ impl Envelope {
     /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients.clone()).unwrap();
-    /// assert_eq!(envelope.to(), recipients);
+    /// assert_eq!(envelope.to(), recipients.as_slice());
     /// ```
     pub fn to(&self) -> &[Address] {
         self.forward_path.as_slice()
