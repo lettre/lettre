@@ -7,25 +7,6 @@ use std::fmt::{self, Display, Formatter};
 /// Trying LOGIN last as it is deprecated.
 pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
-/// Convertible to user credentials
-pub trait IntoCredentials {
-    /// Converts to a `Credentials` struct
-    fn into_credentials(self) -> Credentials;
-}
-
-impl IntoCredentials for Credentials {
-    fn into_credentials(self) -> Credentials {
-        self
-    }
-}
-
-impl<S: Into<String>, T: Into<String>> IntoCredentials for (S, T) {
-    fn into_credentials(self) -> Credentials {
-        let (username, password) = self;
-        Credentials::new(username.into(), password.into())
-    }
-}
-
 /// Contains user credentials
 #[derive(PartialEq, Eq, Clone, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -41,6 +22,16 @@ impl Credentials {
             authentication_identity: username,
             secret: password,
         }
+    }
+}
+
+impl<S, T> From<(S, T)> for Credentials
+where
+    S: Into<String>,
+    T: Into<String>,
+{
+    fn from((username, password): (S, T)) -> Self {
+        Credentials::new(username.into(), password.into())
     }
 }
 
@@ -167,5 +158,13 @@ mod test {
             "user=username\x01auth=Bearer vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==\x01\x01"
         );
         assert!(mechanism.response(&credentials, Some("test")).is_err());
+    }
+
+    #[test]
+    fn test_from_user_pass_for_credentials() {
+        assert_eq!(
+            Credentials::new("alice".to_string(), "wonderland".to_string()),
+            Credentials::from(("alice", "wonderland"))
+        );
     }
 }
