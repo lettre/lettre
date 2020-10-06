@@ -3,6 +3,8 @@ use std::time::Duration;
 #[cfg(feature = "r2d2")]
 use r2d2::Pool;
 
+#[cfg(feature = "r2d2")]
+use super::PoolConfig;
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
@@ -95,7 +97,12 @@ impl SmtpTransport {
     pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder {
         let mut new = SmtpInfo::default();
         new.server = server.into();
-        SmtpTransportBuilder { info: new }
+
+        SmtpTransportBuilder {
+            info: new,
+            #[cfg(feature = "r2d2")]
+            pool_config: PoolConfig::default(),
+        }
     }
 }
 
@@ -104,6 +111,8 @@ impl SmtpTransport {
 #[derive(Clone)]
 pub struct SmtpTransportBuilder {
     info: SmtpInfo,
+    #[cfg(feature = "r2d2")]
+    pool_config: PoolConfig,
 }
 
 /// Builder for the SMTP `SmtpTransport`
@@ -145,27 +154,25 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Build the client
-    fn build_client(self) -> SmtpClient {
-        SmtpClient { info: self.info }
+    /// Use a custom configuration for the connection pool
+    ///
+    /// Defaults can be found at [`PoolConfig`]
+    #[cfg(feature = "r2d2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
+    pub fn pool_config(mut self, pool_config: PoolConfig) -> Self {
+        self.pool_config = pool_config;
+        self
     }
 
     /// Build the transport
     ///
     /// If the `r2d2` feature is enabled an `Arc` wrapped pool is be created.
-    /// Defaults:
-    ///
-    /// * 60 seconds idle timeout
-    /// * 30 minutes max connection lifetime
-    /// * max pool size of 10 connections
+    /// Defaults can be found at [`PoolConfig`]
     pub fn build(self) -> SmtpTransport {
-        let client = self.build_client();
+        let client = SmtpClient { info: self.info };
         SmtpTransport {
             #[cfg(feature = "r2d2")]
-            inner: Pool::builder()
-                .min_idle(Some(0))
-                .idle_timeout(Some(Duration::from_secs(60)))
-                .build_unchecked(client),
+            inner: self.pool_config.build(client),
             #[cfg(not(feature = "r2d2"))]
             inner: client,
         }
