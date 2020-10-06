@@ -158,6 +158,8 @@
 pub use self::async_transport::{
     AsyncSmtpConnector, AsyncSmtpTransport, AsyncSmtpTransportBuilder, Tokio02Connector,
 };
+#[cfg(feature = "r2d2")]
+pub use self::pool::PoolConfig;
 pub(crate) use self::transport::SmtpClient;
 pub use self::{
     error::Error,
@@ -182,8 +184,7 @@ pub mod commands;
 mod error;
 pub mod extension;
 #[cfg(feature = "r2d2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
-pub mod pool;
+mod pool;
 pub mod response;
 mod transport;
 pub mod util;
