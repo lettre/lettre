@@ -48,7 +48,7 @@ impl Default for ClientId {
 }
 
 impl Display for ClientId {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Domain(ref value) => f.write_str(value),
             Self::Ipv4(ref value) => write!(f, "[{}]", value),
@@ -86,7 +86,7 @@ pub enum Extension {
 }
 
 impl Display for Extension {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             Extension::EightBitMime => f.write_str("8BITMIME"),
             Extension::SmtpUtfEight => f.write_str("SMTPUTF8"),
@@ -111,7 +111,7 @@ pub struct ServerInfo {
 }
 
 impl Display for ServerInfo {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let features = if self.features.is_empty() {
             "no supported features".to_string()
         } else {
@@ -215,7 +215,7 @@ pub enum MailParameter {
 }
 
 impl Display for MailParameter {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             MailParameter::Body(ref value) => write!(f, "BODY={}", value),
             MailParameter::Size(size) => write!(f, "SIZE={}", size),
@@ -243,7 +243,7 @@ pub enum MailBodyParameter {
 }
 
 impl Display for MailBodyParameter {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             MailBodyParameter::SevenBit => f.write_str("7BIT"),
             MailBodyParameter::EightBitMime => f.write_str("8BITMIME"),
@@ -265,7 +265,7 @@ pub enum RcptParameter {
 }
 
 impl Display for RcptParameter {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             RcptParameter::Other {
                 ref keyword,

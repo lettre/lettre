@@ -37,7 +37,7 @@ impl<'de> Deserialize<'de> for Mailbox {
                 impl<'de> Visitor<'de> for FieldVisitor {
                     type Value = Field;
 
-                    fn expecting(&self, formatter: &mut Formatter) -> FmtResult {
+                    fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
                         formatter.write_str("'name' or 'email'")
                     }
 
@@ -62,7 +62,7 @@ impl<'de> Deserialize<'de> for Mailbox {
         impl<'de> Visitor<'de> for MailboxVisitor {
             type Value = Mailbox;
 
-            fn expecting(&self, formatter: &mut Formatter) -> FmtResult {
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
                 formatter.write_str("mailbox string or object")
             }
 
@@ -123,7 +123,7 @@ impl<'de> Deserialize<'de> for Mailboxes {
         impl<'de> Visitor<'de> for MailboxesVisitor {
             type Value = Mailboxes;
 
-            fn expecting(&self, formatter: &mut Formatter) -> FmtResult {
+            fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
                 formatter.write_str("mailboxes string or sequence")
             }
 

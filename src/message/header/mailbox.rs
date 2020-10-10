@@ -35,7 +35,7 @@ macro_rules! mailbox_header {
                     }).map($type_name)
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter) -> FmtResult {
+            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
                 f.fmt_line(&self.0.recode_name(utf8_b::encode))
             }
         }
@@ -70,7 +70,7 @@ macro_rules! mailboxes_header {
                     .map($type_name)
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter) -> FmtResult {
+            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
                 format_mailboxes(self.0.iter(), f)
             }
         }
@@ -155,7 +155,7 @@ fn parse_mailboxes(raw: &[u8]) -> HyperResult<Mailboxes> {
     Err(HeaderError::Header)
 }
 
-fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter) -> FmtResult {
+fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
     f.fmt_line(&Mailboxes::from(
         mbs.map(|mb| mb.recode_name(utf8_b::encode))
             .collect::<Vec<_>>(),

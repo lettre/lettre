@@ -19,7 +19,7 @@ pub struct Ehlo {
 }
 
 impl Display for Ehlo {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "EHLO {}\r\n", self.client_id)
     }
 }
@@ -37,7 +37,7 @@ impl Ehlo {
 pub struct Starttls;
 
 impl Display for Starttls {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("STARTTLS\r\n")
     }
 }
@@ -51,7 +51,7 @@ pub struct Mail {
 }
 
 impl Display for Mail {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "MAIL FROM:<{}>",
@@ -80,7 +80,7 @@ pub struct Rcpt {
 }
 
 impl Display for Rcpt {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "RCPT TO:<{}>", self.recipient)?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
@@ -105,7 +105,7 @@ impl Rcpt {
 pub struct Data;
 
 impl Display for Data {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("DATA\r\n")
     }
 }
@@ -116,7 +116,7 @@ impl Display for Data {
 pub struct Quit;
 
 impl Display for Quit {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("QUIT\r\n")
     }
 }
@@ -127,7 +127,7 @@ impl Display for Quit {
 pub struct Noop;
 
 impl Display for Noop {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("NOOP\r\n")
     }
 }
@@ -140,7 +140,7 @@ pub struct Help {
 }
 
 impl Display for Help {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("HELP")?;
         if let Some(argument) = &self.argument {
             write!(f, " {}", argument)?;
@@ -164,7 +164,7 @@ pub struct Vrfy {
 }
 
 impl Display for Vrfy {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "VRFY {}\r\n", self.argument)
     }
 }
@@ -184,7 +184,7 @@ pub struct Expn {
 }
 
 impl Display for Expn {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "EXPN {}\r\n", self.argument)
     }
 }
@@ -202,7 +202,7 @@ impl Expn {
 pub struct Rset;
 
 impl Display for Rset {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("RSET\r\n")
     }
 }
@@ -218,7 +218,7 @@ pub struct Auth {
 }
 
 impl Display for Auth {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let encoded_response = self.response.as_ref().map(base64::encode);
 
         if self.mechanism.supports_initial_response() {

@@ -32,7 +32,7 @@ pub enum Severity {
 }
 
 impl Display for Severity {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", *self as u8)
     }
 }
@@ -56,7 +56,7 @@ pub enum Category {
 }
 
 impl Display for Category {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", *self as u8)
     }
 }
@@ -88,7 +88,7 @@ pub enum Detail {
 }
 
 impl Display for Detail {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", *self as u8)
     }
 }
@@ -106,7 +106,7 @@ pub struct Code {
 }
 
 impl Display for Code {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}{}{}", self.severity, self.category, self.detail)
     }
 }
