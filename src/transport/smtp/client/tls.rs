@@ -84,6 +84,7 @@ impl TlsParametersBuilder {
     ///
     /// Hostname verification can only be disabled with the `native-tls` TLS backend.
     #[cfg(feature = "native-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn dangerous_accept_invalid_hostnames(
         &mut self,
         accept_invalid_hostnames: bool,
@@ -116,6 +117,7 @@ impl TlsParametersBuilder {
     /// Creates a new `TlsParameters` using native-tls or rustls
     /// depending on which one is available
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     pub fn build(self) -> Result<TlsParameters, Error> {
         #[cfg(feature = "native-tls")]
         return self.build_native();
@@ -135,6 +137,7 @@ impl TlsParametersBuilder {
 
     /// Creates a new `TlsParameters` using native-tls with the provided configuration
     #[cfg(feature = "native-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn build_native(self) -> Result<TlsParameters, Error> {
         let mut tls_builder = TlsConnector::builder();
 
@@ -154,6 +157,7 @@ impl TlsParametersBuilder {
 
     /// Creates a new `TlsParameters` using rustls with the provided configuration
     #[cfg(feature = "rustls-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
         use webpki_roots::TLS_SERVER_ROOTS;
 
@@ -191,6 +195,7 @@ impl TlsParameters {
     /// Creates a new `TlsParameters` using native-tls or rustls
     /// depending on which one is available
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     pub fn new(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build()
     }
@@ -201,12 +206,14 @@ impl TlsParameters {
 
     /// Creates a new `TlsParameters` using native-tls
     #[cfg(feature = "native-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn new_native(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_native()
     }
 
     /// Creates a new `TlsParameters` using rustls
     #[cfg(feature = "rustls-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn new_rustls(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_rustls()
     }
