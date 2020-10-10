@@ -20,7 +20,7 @@ pub enum Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match *self {
             Client(ref err) => err.fmt(fmt),
             Utf8Parsing(ref err) => err.fmt(fmt),

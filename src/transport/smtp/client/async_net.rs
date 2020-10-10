@@ -189,7 +189,7 @@ impl AsyncNetworkStream {
 impl futures_io::AsyncRead for AsyncNetworkStream {
     fn poll_read(
         mut self: Pin<&mut Self>,
-        cx: &mut Context,
+        cx: &mut Context<'_>,
         buf: &mut [u8],
     ) -> Poll<IoResult<usize>> {
         match self.inner {
@@ -208,7 +208,11 @@ impl futures_io::AsyncRead for AsyncNetworkStream {
 }
 
 impl futures_io::AsyncWrite for AsyncNetworkStream {
-    fn poll_write(mut self: Pin<&mut Self>, cx: &mut Context, buf: &[u8]) -> Poll<IoResult<usize>> {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<IoResult<usize>> {
         match self.inner {
             #[cfg(feature = "tokio02")]
             InnerAsyncNetworkStream::Tokio02Tcp(ref mut s) => Pin::new(s).poll_write(cx, buf),
@@ -223,7 +227,7 @@ impl futures_io::AsyncWrite for AsyncNetworkStream {
         }
     }
 
-    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<IoResult<()>> {
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<IoResult<()>> {
         match self.inner {
             #[cfg(feature = "tokio02")]
             InnerAsyncNetworkStream::Tokio02Tcp(ref mut s) => Pin::new(s).poll_flush(cx),
@@ -238,7 +242,7 @@ impl futures_io::AsyncWrite for AsyncNetworkStream {
         }
     }
 
-    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context) -> Poll<IoResult<()>> {
+    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<IoResult<()>> {
         Poll::Ready(self.shutdown(Shutdown::Write))
     }
 }

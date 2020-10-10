@@ -26,7 +26,7 @@ impl Default for ContentTransferEncoding {
 }
 
 impl Display for ContentTransferEncoding {
-    fn fmt(&self, f: &mut FmtFormatter) -> FmtResult {
+    fn fmt(&self, f: &mut FmtFormatter<'_>) -> FmtResult {
         use self::ContentTransferEncoding::*;
         f.write_str(match *self {
             SevenBit => "7bit",
@@ -73,7 +73,7 @@ impl Header for ContentTransferEncoding {
             })
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter) -> FmtResult {
+    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
         f.fmt_line(&format!("{}", self))
     }
 }

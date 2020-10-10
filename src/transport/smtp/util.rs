@@ -8,7 +8,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 pub struct XText<'a>(pub &'a str);
 
 impl<'a> Display for XText<'a> {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         let mut rest = self.0;
         while let Some(idx) = rest.find(|c| c < '!' || c == '+' || c == '=') {
             let (start, end) = rest.split_at(idx);

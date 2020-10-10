@@ -45,7 +45,7 @@ impl Header for MimeVersion {
         })
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter) -> FmtResult {
+    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
         f.fmt_line(&format!("{}.{}", self.major, self.minor))
     }
 }

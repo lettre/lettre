@@ -52,7 +52,7 @@ pub enum Mechanism {
 }
 
 impl Display for Mechanism {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str(match *self {
             Mechanism::Plain => "PLAIN",
             Mechanism::Login => "LOGIN",

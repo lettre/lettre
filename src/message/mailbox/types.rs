@@ -65,7 +65,7 @@ impl Mailbox {
 }
 
 impl Display for Mailbox {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         if let Some(ref name) = self.name {
             let name = name.trim();
             if !name.is_empty() {
@@ -218,7 +218,7 @@ impl Mailboxes {
     ///
     /// assert!(iter.next().is_none());
     /// ```
-    pub fn iter(&self) -> Iter<Mailbox> {
+    pub fn iter(&self) -> Iter<'_, Mailbox> {
         self.0.iter()
     }
 }
@@ -271,7 +271,7 @@ impl Extend<Mailbox> for Mailboxes {
 }
 
 impl Display for Mailboxes {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         let mut iter = self.iter();
 
         if let Some(mbox) = iter.next() {

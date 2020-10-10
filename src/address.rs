@@ -156,7 +156,7 @@ impl Address {
 }
 
 impl Display for Address {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         f.write_str(&self.serialized)
     }
 }
@@ -202,7 +202,7 @@ pub enum AddressError {
 impl Error for AddressError {}
 
 impl Display for AddressError {
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
             AddressError::MissingParts => f.write_str("Missing domain or user"),
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
@@ -254,7 +254,7 @@ mod serde {
                     impl<'de> Visitor<'de> for FieldVisitor {
                         type Value = Field;
 
-                        fn expecting(&self, formatter: &mut Formatter) -> FmtResult {
+                        fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
                             formatter.write_str("'user' or 'domain'")
                         }
 
@@ -279,7 +279,7 @@ mod serde {
             impl<'de> Visitor<'de> for AddressVisitor {
                 type Value = Address;
 
-                fn expecting(&self, formatter: &mut Formatter) -> FmtResult {
+                fn expecting(&self, formatter: &mut Formatter<'_>) -> FmtResult {
                     formatter.write_str("email address string or object")
                 }
 

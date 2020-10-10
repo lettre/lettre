@@ -26,7 +26,7 @@ macro_rules! text_header {
                     .map($type_name)
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter) -> FmtResult {
+            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
                 fmt_text(&self.0, f)
             }
         }
@@ -50,7 +50,7 @@ fn parse_text(raw: &[u8]) -> HyperResult<String> {
     Err(HeaderError::Header)
 }
 
-fn fmt_text(s: &str, f: &mut HeaderFormatter) -> FmtResult {
+fn fmt_text(s: &str, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
     f.fmt_line(&utf8_b::encode(s))
 }
 
