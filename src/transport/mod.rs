@@ -17,9 +17,12 @@
 //!   logs.
 
 #[cfg(feature = "file-transport")]
+#[cfg_attr(docsrs, doc(cfg(feature = "file-transport")))]
 pub mod file;
 #[cfg(feature = "sendmail-transport")]
+#[cfg_attr(docsrs, doc(cfg(feature = "sendmail-transport")))]
 pub mod sendmail;
 #[cfg(feature = "smtp-transport")]
+#[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
 pub mod smtp;
 pub mod stub;

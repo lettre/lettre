@@ -40,6 +40,7 @@
 pub mod address;
 pub mod error;
 #[cfg(feature = "builder")]
+#[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
 pub mod transport;
 

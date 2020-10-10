@@ -182,6 +182,7 @@ pub mod commands;
 mod error;
 pub mod extension;
 #[cfg(feature = "r2d2")]
+#[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
 pub mod pool;
 pub mod response;
 mod transport;
