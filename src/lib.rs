@@ -198,6 +198,7 @@ pub trait Transport {
 
     /// Sends the email
     #[cfg(feature = "builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
     fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
         self.send_raw(message.envelope(), &raw)
@@ -208,6 +209,7 @@ pub trait Transport {
 
 /// async-std 1.x based Transport method for emails
 #[cfg(feature = "async-std1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
 #[async_trait]
 pub trait AsyncStd1Transport {
     /// Response produced by the Transport
@@ -217,6 +219,7 @@ pub trait AsyncStd1Transport {
 
     /// Sends the email
     #[cfg(feature = "builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
     // TODO take &Message
     async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
@@ -229,6 +232,7 @@ pub trait AsyncStd1Transport {
 
 /// tokio 0.2.x based Transport method for emails
 #[cfg(feature = "tokio02")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
 #[async_trait]
 pub trait Tokio02Transport {
     /// Response produced by the Transport
@@ -238,6 +242,7 @@ pub trait Tokio02Transport {
 
     /// Sends the email
     #[cfg(feature = "builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
     // TODO take &Message
     async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
