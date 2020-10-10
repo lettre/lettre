@@ -27,6 +27,8 @@
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-alpha.2")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
+// TODO: remove once 1.42.0 is our MSRV
+#![allow(clippy::match_like_matches_macro)]
 #![deny(
     missing_copy_implementations,
     trivial_casts,
