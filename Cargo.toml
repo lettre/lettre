@@ -90,6 +90,7 @@ tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
 
 [package.metadata.docs.rs]
 all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
 name = "smtp"
