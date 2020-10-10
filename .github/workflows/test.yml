@@ -11,7 +11,7 @@ jobs:
         rust:
           - stable
           - beta
-          - 1.40.0
+          - 1.45.2
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
@@ -37,7 +37,6 @@ jobs:
           args: --no-default-features --features=builder,smtp-transport,file-transport,sendmail-transport
       - run: rm target/debug/deps/liblettre-*
       - uses: actions-rs/cargo@v1
-        if: matrix.rust != '1.40.0'
         with:
           command: test
           args: --features=async-std1
@@ -54,7 +53,7 @@ jobs:
         rust:
           - stable
           - beta
-          - 1.40.0
+          - 1.45.2
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
