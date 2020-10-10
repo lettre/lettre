@@ -151,10 +151,10 @@ impl Response {
 
     /// Tells if the response is positive
     pub fn is_positive(&self) -> bool {
-        match self.code.severity {
-            Severity::PositiveCompletion | Severity::PositiveIntermediate => true,
-            _ => false,
-        }
+        matches!(
+            self.code.severity,
+            Severity::PositiveCompletion | Severity::PositiveIntermediate
+        )
     }
 
     /// Tests code equality

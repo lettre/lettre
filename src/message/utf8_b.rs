@@ -16,19 +16,16 @@ pub fn encode(s: &str) -> String {
 }
 
 pub fn decode(s: &str) -> Option<String> {
-    const PREFIX: &str = "=?utf-8?b?";
-    const SUFFIX: &str = "?=";
-
-    let s = s.trim();
-    if s.starts_with(PREFIX) && s.ends_with(SUFFIX) {
-        let s = &s[PREFIX.len()..];
-        let s = &s[..s.len() - SUFFIX.len()];
-        base64::decode(s)
-            .ok()
-            .and_then(|v| String::from_utf8(v).ok())
-    } else {
-        Some(s.into())
-    }
+    s.strip_prefix("=?utf-8?b?")
+        .and_then(|stripped| stripped.strip_suffix("?="))
+        .map_or_else(
+            || Some(s.into()),
+            |stripped| {
+                let decoded = base64::decode(stripped).ok()?;
+                let decoded = String::from_utf8(decoded).ok()?;
+                Some(decoded)
+            },
+        )
 }
 
 #[cfg(test)]

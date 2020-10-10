@@ -53,7 +53,7 @@ Lettre does not provide (for now):
 
 ## Example
 
-This library requires Rust 1.40 or newer.
+This library requires Rust 1.45 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 
