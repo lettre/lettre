@@ -35,6 +35,7 @@
     unused_import_braces,
     unsafe_code
 )]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 pub mod address;
 pub mod error;
