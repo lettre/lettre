@@ -43,6 +43,7 @@ pub mod error;
 pub mod message;
 pub mod transport;
 
+#[cfg(feature = "builder")]
 #[macro_use]
 extern crate hyperx;
 
@@ -150,6 +151,7 @@ impl Envelope {
     }
 }
 
+#[cfg(feature = "builder")]
 impl TryFrom<&Headers> for Envelope {
     type Error = Error;
 
