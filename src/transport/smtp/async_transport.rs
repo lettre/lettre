@@ -195,6 +195,7 @@ pub trait AsyncSmtpConnector: Default + private::Sealed {
 
 #[derive(Debug, Copy, Clone, Default)]
 #[cfg(feature = "tokio02")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
 pub struct Tokio02Connector;
 
 #[async_trait]

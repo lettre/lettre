@@ -35,15 +35,19 @@ pub enum Error {
     Io(io::Error),
     /// TLS error
     #[cfg(feature = "native-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     Tls(native_tls::Error),
     /// Parsing error
     Parsing(nom::error::ErrorKind),
     /// Invalid hostname
     #[cfg(feature = "rustls-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     InvalidDNSName(webpki::InvalidDNSNameError),
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     InvalidCertificate,
     #[cfg(feature = "r2d2")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
     Pool(r2d2::Error),
 }
 
