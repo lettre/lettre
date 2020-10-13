@@ -174,7 +174,6 @@
 //!
 //! ```
 
-pub use encoder::*;
 pub use mailbox::*;
 pub use mimebody::*;
 
