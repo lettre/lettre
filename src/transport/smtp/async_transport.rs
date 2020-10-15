@@ -1,11 +1,15 @@
 use async_trait::async_trait;
 
-#[cfg(feature = "tokio02")]
+#[cfg(any(feature = "tokio02", feature = "tokio03"))]
 use super::Tls;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
-use crate::{Envelope, Tokio02Transport};
+use crate::Envelope;
+#[cfg(feature = "tokio02")]
+use crate::Tokio02Transport;
+#[cfg(feature = "tokio03")]
+use crate::Tokio03Transport;
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
@@ -14,8 +18,27 @@ pub struct AsyncSmtpTransport<C> {
     inner: AsyncSmtpClient<C>,
 }
 
+#[cfg(feature = "tokio02")]
 #[async_trait]
 impl Tokio02Transport for AsyncSmtpTransport<Tokio02Connector> {
+    type Ok = Response;
+    type Error = Error;
+
+    /// Sends an email
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut conn = self.inner.connection().await?;
+
+        let result = conn.send(envelope, email).await?;
+
+        conn.quit().await?;
+
+        Ok(result)
+    }
+}
+
+#[cfg(feature = "tokio03")]
+#[async_trait]
+impl Tokio03Transport for AsyncSmtpTransport<Tokio03Connector> {
     type Ok = Response;
     type Error = Error;
 
@@ -235,6 +258,48 @@ impl AsyncSmtpConnector for Tokio02Connector {
     }
 }
 
+#[derive(Debug, Copy, Clone, Default)]
+#[cfg(feature = "tokio03")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio03")))]
+pub struct Tokio03Connector;
+
+#[async_trait]
+#[cfg(feature = "tokio03")]
+impl AsyncSmtpConnector for Tokio03Connector {
+    async fn connect(
+        hostname: &str,
+        port: u16,
+        hello_name: &ClientId,
+        tls: &Tls,
+    ) -> Result<AsyncSmtpConnection, Error> {
+        #[allow(clippy::match_single_binding)]
+        let tls_parameters = match tls {
+            #[cfg(any(feature = "tokio03-native-tls", feature = "tokio03-rustls-tls"))]
+            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
+            _ => None,
+        };
+        #[allow(unused_mut)]
+        let mut conn =
+            AsyncSmtpConnection::connect_tokio03(hostname, port, hello_name, tls_parameters)
+                .await?;
+
+        #[cfg(any(feature = "tokio03-native-tls", feature = "tokio03-rustls-tls"))]
+        match tls {
+            Tls::Opportunistic(ref tls_parameters) => {
+                if conn.can_starttls() {
+                    conn.starttls(tls_parameters.clone(), hello_name).await?;
+                }
+            }
+            Tls::Required(ref tls_parameters) => {
+                conn.starttls(tls_parameters.clone(), hello_name).await?;
+            }
+            _ => (),
+        }
+
+        Ok(conn)
+    }
+}
+
 mod private {
     use super::*;
 
@@ -242,4 +307,7 @@ mod private {
 
     #[cfg(feature = "tokio02")]
     impl Sealed for Tokio02Connector {}
+
+    #[cfg(feature = "tokio03")]
+    impl Sealed for Tokio03Connector {}
 }

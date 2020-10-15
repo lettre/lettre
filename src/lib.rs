@@ -18,6 +18,7 @@
 //! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
 //! * **tokio02-rustls-tls**: Async TLS support with the `rustls` crate using tokio 0.2
 //! * **tokio02-native-tls**: Async TLS support with the `native-tls` crate using tokio 0.2
+//! * **tokio03**: Allow to asyncronously send emails using tokio 0.3.x
 //! * **async-std1**: Allow to asyncronously send emails using async-std 1.x (SMTP isn't supported yet)
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **tracing**: Logging using the `tracing` crate
@@ -66,7 +67,7 @@ pub use crate::transport::smtp::SmtpTransport;
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
 pub use crate::transport::smtp::{AsyncSmtpTransport, Tokio02Connector};
 pub use crate::{address::Address, transport::stub::StubTransport};
-#[cfg(any(feature = "async-std1", feature = "tokio02"))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 #[cfg(feature = "builder")]
 use std::convert::TryFrom;
@@ -239,6 +240,29 @@ pub trait AsyncStd1Transport {
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
 #[async_trait]
 pub trait Tokio02Transport {
+    /// Response produced by the Transport
+    type Ok;
+    /// Error produced by the Transport
+    type Error;
+
+    /// Sends the email
+    #[cfg(feature = "builder")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
+    // TODO take &Message
+    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
+        let raw = message.formatted();
+        let envelope = message.envelope();
+        self.send_raw(&envelope, &raw).await
+    }
+
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
+}
+
+/// tokio 0.3.x based Transport method for emails
+#[cfg(feature = "tokio03")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio03")))]
+#[async_trait]
+pub trait Tokio03Transport {
     /// Response produced by the Transport
     type Ok;
     /// Error produced by the Transport

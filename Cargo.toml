@@ -58,6 +58,7 @@ async-trait = { version = "0.1", optional = true }
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "tcp", "dns", "io-util"], optional = true }
 tokio02_native_tls_crate = { package = "tokio-native-tls", version = "0.1", optional = true }
 tokio02_rustls = { package = "tokio-rustls", version = "0.14", optional = true }
+tokio03_crate = { package = "tokio", version = "0.3", features = ["fs", "process", "net", "io-util"], optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -65,6 +66,7 @@ tracing-subscriber = "0.2.10"
 glob = "0.3"
 walkdir = "2"
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }
+tokio03_crate = { package = "tokio", version = "0.3", features = ["macros", "rt-multi-thread"] }
 
 [[bench]]
 harness = false
@@ -87,6 +89,7 @@ async-std1 = ["async-std", "async-trait", "async-attributes"]
 tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
+tokio03 = ["tokio03_crate", "async-trait", "futures-io", "futures-util"]
 
 [package.metadata.docs.rs]
 all-features = true
