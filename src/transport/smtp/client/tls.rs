@@ -126,15 +126,6 @@ impl TlsParametersBuilder {
         return self.build_rustls();
     }
 
-    #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
-    pub(crate) fn build_tokio02(self) -> Result<TlsParameters, Error> {
-        #[cfg(feature = "tokio02-native-tls")]
-        return self.build_native();
-
-        #[cfg(not(feature = "tokio02-native-tls"))]
-        return self.build_rustls();
-    }
-
     /// Creates a new `TlsParameters` using native-tls with the provided configuration
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]

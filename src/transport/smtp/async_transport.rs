@@ -64,11 +64,16 @@ where
     ///
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
-    #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
+    #[cfg(any(
+        feature = "tokio02-native-tls",
+        feature = "tokio02-rustls-tls",
+        feature = "tokio03-native-tls",
+        feature = "tokio03-rustls-tls"
+    ))]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{TlsParameters, SUBMISSIONS_PORT};
 
-        let tls_parameters = TlsParameters::builder(relay.into()).build_tokio02()?;
+        let tls_parameters = TlsParameters::new(relay.into())?;
 
         Ok(Self::builder_dangerous(relay)
             .port(SUBMISSIONS_PORT)
@@ -86,7 +91,12 @@ where
     ///
     /// An error is returned if the connection can't be upgraded. No credentials
     /// or emails will be sent to the server, protecting from downgrade attacks.
-    #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
+    #[cfg(any(
+        feature = "tokio02-native-tls",
+        feature = "tokio02-rustls-tls",
+        feature = "tokio03-native-tls",
+        feature = "tokio03-rustls-tls"
+    ))]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{TlsParameters, SUBMISSION_PORT};
 
@@ -156,7 +166,12 @@ impl AsyncSmtpTransportBuilder {
     }
 
     /// Set the TLS settings to use
-    #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
+    #[cfg(any(
+        feature = "tokio02-native-tls",
+        feature = "tokio02-rustls-tls",
+        feature = "tokio03-native-tls",
+        feature = "tokio03-rustls-tls"
+    ))]
     pub fn tls(mut self, tls: Tls) -> Self {
         self.info.tls = tls;
         self
