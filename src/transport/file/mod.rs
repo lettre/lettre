@@ -93,7 +93,7 @@ use crate::Tokio02Transport;
 #[cfg(feature = "tokio03")]
 use crate::Tokio03Transport;
 use crate::{Envelope, Transport};
-#[cfg(any(feature = "async-std1", feature = "tokio03"))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{
     path::{Path, PathBuf},
