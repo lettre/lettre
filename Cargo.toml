@@ -122,3 +122,12 @@ required-features = ["smtp-transport", "tokio02", "tokio02-native-tls"]
 [[example]]
 name = "tokio02_smtp_starttls"
 required-features = ["smtp-transport", "tokio02", "tokio02-native-tls"]
+
+[[example]]
+name = "tokio03_smtp_tls"
+required-features = ["smtp-transport", "tokio03", "tokio03-native-tls"]
+
+[[example]]
+name = "tokio03_smtp_starttls"
+required-features = ["smtp-transport", "tokio03", "tokio03-native-tls"]
+
