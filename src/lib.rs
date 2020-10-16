@@ -64,10 +64,17 @@ pub use crate::transport::file::FileTransport;
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(feature = "smtp-transport", feature = "connection-pool"))]
 pub use crate::transport::smtp::r2d2::SmtpConnectionManager;
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio02", feature = "tokio03")
+))]
+pub use crate::transport::smtp::AsyncSmtpTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
-pub use crate::transport::smtp::{AsyncSmtpTransport, Tokio02Connector};
+pub use crate::transport::smtp::Tokio02Connector;
+#[cfg(all(feature = "smtp-transport", feature = "tokio03"))]
+pub use crate::transport::smtp::Tokio03Connector;
 pub use crate::{address::Address, transport::stub::StubTransport};
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
