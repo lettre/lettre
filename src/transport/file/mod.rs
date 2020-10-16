@@ -90,8 +90,10 @@ pub use self::error::Error;
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
+#[cfg(feature = "tokio03")]
+use crate::Tokio03Transport;
 use crate::{Envelope, Transport};
-#[cfg(any(feature = "async-std1", feature = "tokio02"))]
+#[cfg(any(feature = "async-std1", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{
     path::{Path, PathBuf},
@@ -192,6 +194,22 @@ impl Tokio02Transport for FileTransport {
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio02_crate::fs;
+
+        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+
+        fs::write(file, serialized).await?;
+        Ok(email_id.to_string())
+    }
+}
+
+#[cfg(feature = "tokio03")]
+#[async_trait]
+impl Tokio03Transport for FileTransport {
+    type Ok = Id;
+    type Error = Error;
+
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        use tokio03_crate::fs;
 
         let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
 
