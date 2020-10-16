@@ -92,8 +92,8 @@ tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
 tokio03 = ["tokio03_crate", "async-trait", "futures-io", "futures-util"]
-tokio03-native-tls = ["tokio03", "native-tls", "tokio02_native_tls_crate"]
-tokio03-rustls-tls = ["tokio03", "rustls-tls", "tokio02_rustls"]
+tokio03-native-tls = ["tokio03", "native-tls", "tokio03_native_tls_crate"]
+tokio03-rustls-tls = ["tokio03", "rustls-tls", "tokio03_rustls"]
 
 [package.metadata.docs.rs]
 all-features = true

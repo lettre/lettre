@@ -26,7 +26,12 @@ use tokio02_rustls::client::TlsStream as Tokio02RustlsTlsStream;
 #[cfg(feature = "tokio03-rustls-tls")]
 use tokio03_rustls::client::TlsStream as Tokio03RustlsTlsStream;
 
-#[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
+#[cfg(any(
+    feature = "tokio02-native-tls",
+    feature = "tokio02-rustls-tls",
+    feature = "tokio03-native-tls",
+    feature = "tokio03-rustls-tls"
+))]
 use super::InnerTlsParameters;
 use super::TlsParameters;
 use crate::transport::smtp::Error;
