@@ -42,6 +42,9 @@ pub struct AsyncNetworkStream {
 }
 
 /// Represents the different types of underlying network streams
+// usually only one TLS backend at a time is going to be enabled,
+// so clippy::large_enum_variant doesn't make sense here
+#[allow(clippy::large_enum_variant)]
 #[allow(dead_code)]
 enum InnerAsyncNetworkStream {
     /// Plain Tokio 0.2 TCP stream
@@ -52,7 +55,7 @@ enum InnerAsyncNetworkStream {
     Tokio02NativeTls(Tokio02TlsStream<Tokio02TcpStream>),
     /// Encrypted Tokio 0.2 TCP stream
     #[cfg(feature = "tokio02-rustls-tls")]
-    Tokio02RustlsTls(Box<Tokio02RustlsTlsStream<Tokio02TcpStream>>),
+    Tokio02RustlsTls(Tokio02RustlsTlsStream<Tokio02TcpStream>),
     /// Plain Tokio 0.3 TCP stream
     #[cfg(feature = "tokio03")]
     Tokio03Tcp(Tokio03TcpStream),
@@ -61,7 +64,7 @@ enum InnerAsyncNetworkStream {
     Tokio03NativeTls(Tokio03TlsStream<Tokio03TcpStream>),
     /// Encrypted Tokio 0.3 TCP stream
     #[cfg(feature = "tokio03-rustls-tls")]
-    Tokio03RustlsTls(Box<Tokio03RustlsTlsStream<Tokio03TcpStream>>),
+    Tokio03RustlsTls(Tokio03RustlsTlsStream<Tokio03TcpStream>),
     /// Can't be built
     None,
 }
@@ -244,7 +247,7 @@ impl AsyncNetworkStream {
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector.connect(domain, tcp_stream).await?;
-                    Ok(InnerAsyncNetworkStream::Tokio02RustlsTls(Box::new(stream)))
+                    Ok(InnerAsyncNetworkStream::Tokio02RustlsTls(stream))
                 };
             }
         }
@@ -286,7 +289,7 @@ impl AsyncNetworkStream {
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector.connect(domain, tcp_stream).await?;
-                    Ok(InnerAsyncNetworkStream::Tokio03RustlsTls(Box::new(stream)))
+                    Ok(InnerAsyncNetworkStream::Tokio03RustlsTls(stream))
                 };
             }
         }
