@@ -44,6 +44,10 @@ jobs:
         with:
           command: test
           args: --features=tokio02
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --features=tokio03
 
   check:
     name: Check

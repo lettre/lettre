@@ -65,8 +65,10 @@ pub use self::error::Error;
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
+#[cfg(feature = "tokio03")]
+use crate::Tokio03Transport;
 use crate::{Envelope, Transport};
-#[cfg(any(feature = "async-std1", feature = "tokio02"))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{
     ffi::OsString,
@@ -114,6 +116,21 @@ impl SendmailTransport {
     #[cfg(feature = "tokio02")]
     fn tokio02_command(&self, envelope: &Envelope) -> tokio02_crate::process::Command {
         use tokio02_crate::process::Command;
+
+        let mut c = Command::new(&self.command);
+        c.kill_on_drop(true);
+        c.arg("-i")
+            .arg("-f")
+            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .args(envelope.to())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped());
+        c
+    }
+
+    #[cfg(feature = "tokio03")]
+    fn tokio03_command(&self, envelope: &Envelope) -> tokio03_crate::process::Command {
+        use tokio03_crate::process::Command;
 
         let mut c = Command::new(&self.command);
         c.kill_on_drop(true);
@@ -190,6 +207,31 @@ impl Tokio02Transport for SendmailTransport {
         use tokio02_crate::io::AsyncWriteExt;
 
         let mut command = self.tokio02_command(envelope);
+
+        // Spawn the sendmail command
+        let mut process = command.spawn()?;
+
+        process.stdin.as_mut().unwrap().write_all(&email).await?;
+        let output = process.wait_with_output().await?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(Error::Client(String::from_utf8(output.stderr)?))
+        }
+    }
+}
+
+#[cfg(feature = "tokio03")]
+#[async_trait]
+impl Tokio03Transport for SendmailTransport {
+    type Ok = ();
+    type Error = Error;
+
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        use tokio03_crate::io::AsyncWriteExt;
+
+        let mut command = self.tokio03_command(envelope);
 
         // Spawn the sendmail command
         let mut process = command.spawn()?;

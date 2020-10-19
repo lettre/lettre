@@ -24,9 +24,9 @@
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
 
-#[cfg(feature = "tokio02")]
+#[cfg(any(feature = "tokio02", feature = "tokio03"))]
 pub(crate) use self::async_connection::AsyncSmtpConnection;
-#[cfg(feature = "tokio02")]
+#[cfg(any(feature = "tokio02", feature = "tokio03"))]
 pub(crate) use self::async_net::AsyncNetworkStream;
 use self::net::NetworkStream;
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -37,9 +37,9 @@ pub use self::{
     tls::{Certificate, Tls, TlsParameters, TlsParametersBuilder},
 };
 
-#[cfg(feature = "tokio02")]
+#[cfg(any(feature = "tokio02", feature = "tokio03"))]
 mod async_connection;
-#[cfg(feature = "tokio02")]
+#[cfg(any(feature = "tokio02", feature = "tokio03"))]
 mod async_net;
 mod connection;
 mod mock;

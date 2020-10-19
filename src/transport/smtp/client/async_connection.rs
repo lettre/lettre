@@ -45,11 +45,10 @@ impl AsyncSmtpConnection {
         &self.server_info
     }
 
-    // FIXME add simple connect and rename this one
-
     /// Connects to the configured server
     ///
     /// Sends EHLO and parses server information
+    #[cfg(feature = "tokio02")]
     pub async fn connect_tokio02(
         hostname: &str,
         port: u16,
@@ -57,6 +56,20 @@ impl AsyncSmtpConnection {
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncSmtpConnection, Error> {
         let stream = AsyncNetworkStream::connect_tokio02(hostname, port, tls_parameters).await?;
+        Self::connect_impl(stream, hello_name).await
+    }
+
+    /// Connects to the configured server
+    ///
+    /// Sends EHLO and parses server information
+    #[cfg(feature = "tokio03")]
+    pub async fn connect_tokio03(
+        hostname: &str,
+        port: u16,
+        hello_name: &ClientId,
+        tls_parameters: Option<TlsParameters>,
+    ) -> Result<AsyncSmtpConnection, Error> {
+        let stream = AsyncNetworkStream::connect_tokio03(hostname, port, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
