@@ -23,6 +23,9 @@ pub struct NetworkStream {
 }
 
 /// Represents the different types of underlying network streams
+// usually only one TLS backend at a time is going to be enabled,
+// so clippy::large_enum_variant doesn't make sense here
+#[allow(clippy::large_enum_variant)]
 enum InnerNetworkStream {
     /// Plain TCP stream
     Tcp(TcpStream),
@@ -31,7 +34,7 @@ enum InnerNetworkStream {
     NativeTls(TlsStream<TcpStream>),
     /// Encrypted TCP stream
     #[cfg(feature = "rustls-tls")]
-    RustlsTls(Box<StreamOwned<ClientSession, TcpStream>>),
+    RustlsTls(StreamOwned<ClientSession, TcpStream>),
     /// Mock stream
     Mock(MockStream),
 }
@@ -150,7 +153,7 @@ impl NetworkStream {
                     tcp_stream,
                 );
 
-                InnerNetworkStream::RustlsTls(Box::new(stream))
+                InnerNetworkStream::RustlsTls(stream)
             }
         })
     }
