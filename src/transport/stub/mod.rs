@@ -7,7 +7,8 @@
 //! testing purposes.
 //!
 //! ```rust
-//! use lettre::{Message, Envelope, Transport, StubTransport};
+//! use lettre::{Message, Envelope, Transport};
+//! use lettre::transport::stub::StubTransport;
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
