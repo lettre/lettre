@@ -6,7 +6,7 @@
 //!
 //! ```rust
 //! use std::env::temp_dir;
-//! use lettre::{Transport, Envelope, Message, FileTransport};
+//! use lettre::{Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -28,7 +28,7 @@
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() {
 //! use std::env::temp_dir;
-//! use lettre::{Tokio02Transport, Envelope, Message, FileTransport};
+//! use lettre::{Tokio02Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -51,7 +51,7 @@
 //! # #[cfg(feature = "async-std1")]
 //! # async fn run() {
 //! use std::env::temp_dir;
-//! use lettre::{AsyncStd1Transport, Envelope, Message, FileTransport};
+//! use lettre::{AsyncStd1Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -86,13 +86,14 @@
 //! ```
 
 pub use self::error::Error;
+use crate::address::Envelope;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
 #[cfg(feature = "tokio03")]
 use crate::Tokio03Transport;
-use crate::{Envelope, Transport};
+use crate::Transport;
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{

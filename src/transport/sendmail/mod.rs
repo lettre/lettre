@@ -3,7 +3,7 @@
 //! ## Sync example
 //!
 //! ```rust
-//! use lettre::{Message, Envelope, Transport, SendmailTransport};
+//! use lettre::{Message, Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
@@ -23,7 +23,7 @@
 //! ```rust
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() {
-//! use lettre::{Message, Envelope, Tokio02Transport, SendmailTransport};
+//! use lettre::{Message, Tokio02Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
@@ -44,7 +44,7 @@
 //!```rust
 //! # #[cfg(feature = "async-std1")]
 //! # async fn run() {
-//! use lettre::{Message, Envelope, AsyncStd1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
@@ -61,13 +61,14 @@
 //! ```
 
 pub use self::error::Error;
+use crate::address::Envelope;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
 #[cfg(feature = "tokio03")]
 use crate::Tokio03Transport;
-use crate::{Envelope, Transport};
+use crate::Transport;
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{

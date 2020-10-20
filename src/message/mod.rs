@@ -186,8 +186,9 @@ mod mimebody;
 mod utf8_b;
 
 use crate::{
+    address::Envelope,
     message::header::{EmailDate, Header, Headers, MailboxesHeader},
-    Envelope, Error as EmailError,
+    Error as EmailError,
 };
 use std::{convert::TryFrom, time::SystemTime};
 use uuid::Uuid;
