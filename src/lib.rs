@@ -5,7 +5,7 @@
 //! * Unicode support
 //! * Secure defaults
 //!
-//! Lettre requires Rust 1.40 or newer.
+//! Lettre requires Rust 1.45 or newer.
 //!
 //! ## Optional features
 //!
