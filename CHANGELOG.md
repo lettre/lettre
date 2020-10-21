@@ -1,3 +1,7 @@
+### v0.6.3 (2022-1--21)
+
+* **transport**: Allow using openssl 0.10
+
 ### v0.6.2 (2017-02-18)
 
 #### Features
