@@ -61,13 +61,14 @@
 //! ```
 
 pub use self::error::Error;
+use crate::address::Envelope;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
 #[cfg(feature = "tokio03")]
 use crate::Tokio03Transport;
-use crate::{Envelope, Transport};
+use crate::Transport;
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
 use async_trait::async_trait;
 use std::{

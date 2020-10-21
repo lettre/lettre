@@ -7,8 +7,9 @@
 //! testing purposes.
 //!
 //! ```rust
-//! use lettre::{Message, Envelope, Transport};
+//! use lettre::{Message, Transport};
 //! use lettre::transport::stub::StubTransport;
+//! use lettre::{Message, Transport, StubTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
@@ -23,11 +24,12 @@
 //! assert!(result.is_ok());
 //! ```
 
+use crate::address::Envelope;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
-use crate::{Envelope, Transport};
+use crate::Transport;
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{error::Error as StdError, fmt};
