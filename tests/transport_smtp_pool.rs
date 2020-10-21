@@ -1,6 +1,8 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "r2d2"))]
 mod test {
-    use lettre::{Envelope, SmtpTransport, Transport};
+    use lettre::address::Envelope;
+    use lettre::{SmtpTransport, Transport};
+
     use std::{sync::mpsc, thread};
 
     fn envelope() -> Envelope {
