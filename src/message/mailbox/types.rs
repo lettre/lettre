@@ -20,7 +20,7 @@ use std::{
 /// You can create a `Mailbox` from a string and an [`Address`]:
 ///
 /// ```
-/// # use lettre::{Address, Mailbox};
+/// # use lettre::{Address, message::Mailbox};
 /// let address = Address::new("example", "email.com").unwrap();
 /// let mailbox = Mailbox::new(None, address);
 /// ```
@@ -28,7 +28,7 @@ use std::{
 /// You can also create one from a string literal:
 ///
 /// ```
-/// # use lettre::Mailbox;
+/// # use lettre::message::Mailbox;
 /// let mailbox: Mailbox = "John Smith <example@email.com>".parse().unwrap();
 /// ```
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -46,7 +46,7 @@ impl Mailbox {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{Address, Mailbox};
+    /// use lettre::{Address, message::Mailbox};
     ///
     /// let address = Address::new("example", "email.com").unwrap();
     /// let mailbox = Mailbox::new(None, address);
@@ -139,7 +139,7 @@ impl Mailboxes {
     /// # Examples
     ///
     /// ```
-    /// use lettre::Mailboxes;
+    /// use lettre::message::Mailboxes;
     /// let mailboxes = Mailboxes::new();
     /// ```
     pub fn new() -> Self {
@@ -151,7 +151,7 @@ impl Mailboxes {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{Address, Mailbox, Mailboxes};
+    /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
     /// let address = Address::new("example", "email.com").unwrap();
     /// let mut mailboxes = Mailboxes::new().with(Mailbox::new(None, address));
@@ -166,7 +166,7 @@ impl Mailboxes {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{Address, Mailbox, Mailboxes};
+    /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
     /// let address = Address::new("example", "email.com").unwrap();
     /// let mut mailboxes = Mailboxes::new();
@@ -181,7 +181,7 @@ impl Mailboxes {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{Address, Mailbox, Mailboxes};
+    /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
     /// let empty = Mailboxes::new();
     /// assert!(empty.into_single().is_none());
@@ -201,7 +201,7 @@ impl Mailboxes {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{Address, Mailbox, Mailboxes};
+    /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
     /// let mut mailboxes = Mailboxes::new();
     ///
