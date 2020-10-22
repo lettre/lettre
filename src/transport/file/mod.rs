@@ -28,6 +28,7 @@
 //! ## Async tokio 0.2
 //!
 //! ```rust
+//! # # use std::error::Error;
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
@@ -51,6 +52,7 @@
 //! ## Async async-std 1.x
 //!
 //! ```rust
+//! # use std::error::Error;
 //! # #[cfg(feature = "async-std1")]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
