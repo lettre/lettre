@@ -32,7 +32,7 @@
 //!
 //! ```rust,no_run
 //! # #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-//! # {
+//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{Message, Transport, SmtpTransport};
 //!
 //! let email = Message::builder()
@@ -49,6 +49,7 @@
 //! // Send the email via remote relay
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 
