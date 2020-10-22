@@ -3,6 +3,8 @@
 //! ## Sync example
 //!
 //! ```rust
+//! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
+//! # async fn run() {
 //! use lettre::{Message, Transport, SendmailTransport};
 //!
 //! # use std::error::Error;
@@ -24,10 +26,10 @@
 //! ## Async tokio 0.2 example
 //!
 //! ```rust
-//! # use std::error::Error;
-//! # #[cfg(feature = "tokio02")]
+//! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Tokio02Transport, SendmailTransport};
+//! # use lettre::{Message, Tokio02Transport, SendmailTransport};
+//! # use std::error::Error;
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -46,10 +48,10 @@
 //! ## Async async-std 1.x example
 //!
 //!```rust
-//! # use std::error::Error;
-//! # #[cfg(feature = "async-std1")]
+//! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
+//! # use lettre::{Message, AsyncStd1Transport, SendmailTransport};
+//! # use std::error::Error;
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)

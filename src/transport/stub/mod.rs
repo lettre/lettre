@@ -7,8 +7,9 @@
 //! testing purposes.
 //!
 //! ```rust
-//! use lettre::{Message, Transport};
-//! use lettre::transport::stub::StubTransport;
+//! #[cfg(feature = "builder")]{
+//! # use lettre::{Message, Transport};
+//! # use lettre::transport::stub::StubTransport;
 //!
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {

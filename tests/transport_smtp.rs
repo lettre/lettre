@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[cfg(feature = "smtp-transport")]
+#[cfg(all(feature = "smtp-transport", feature = "builder"))]
 mod test {
     use lettre::{Message, SmtpTransport, Transport};
 

@@ -164,6 +164,7 @@ pub use self::async_transport::{
 };
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
+#[cfg(feature = "r2d2")]
 pub(crate) use self::transport::SmtpClient;
 pub use self::{
     error::Error,

@@ -5,6 +5,8 @@
 //! ## Sync example
 //!
 //! ```rust
+//! # #[cfg(all(feature = "file-transport", feature = "builder"))]
+//! # fn run() {
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Message, FileTransport};
 //!

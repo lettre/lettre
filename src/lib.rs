@@ -163,6 +163,7 @@ pub trait Tokio03Transport {
 }
 
 #[cfg(test)]
+#[cfg(feature = "builder")]
 mod test {
     use super::*;
     use crate::message::{header, Mailbox, Mailboxes};

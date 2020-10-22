@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[cfg(feature = "file-transport")]
+#[cfg(all(feature = "file-transport", feature = "builder"))]
 mod test {
     use lettre::{transport::file::FileTransport, Message};
     use std::{
