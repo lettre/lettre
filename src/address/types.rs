@@ -24,7 +24,11 @@ use std::{
 ///
 /// ```
 /// # use lettre::Address;
-/// let address = Address::new("example", "email.com").unwrap();
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
+/// let address = Address::new("example", "email.com")?;
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// You can also create an `Address` from a string literal by parsing it:
@@ -32,7 +36,11 @@ use std::{
 /// ```
 /// use std::str::FromStr;
 /// # use lettre::Address;
-/// let address = Address::from_str("example@email.com").unwrap();
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
+/// let address = Address::from_str("example@email.com")?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Address {
@@ -86,9 +94,13 @@ impl Address {
     /// ```
     /// use lettre::Address;
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
-    /// let expected: Address = "example@email.com".parse().unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
+    /// let expected: Address = "example@email.com".parse()?;
     /// assert_eq!(expected, address);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn new<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Result<Self, AddressError> {
         (user, domain).try_into()
@@ -101,8 +113,12 @@ impl Address {
     /// ```
     /// use lettre::Address;
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
     /// assert_eq!("example", address.user());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn user(&self) -> &str {
         &self.serialized[..self.at_start]
@@ -115,8 +131,12 @@ impl Address {
     /// ```
     /// use lettre::Address;
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
     /// assert_eq!("email.com", address.domain());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn domain(&self) -> &str {
         &self.serialized[self.at_start + 1..]

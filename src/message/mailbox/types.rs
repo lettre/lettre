@@ -21,15 +21,23 @@ use std::{
 ///
 /// ```
 /// # use lettre::{Address, message::Mailbox};
-/// let address = Address::new("example", "email.com").unwrap();
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
+/// let address = Address::new("example", "email.com")?;
 /// let mailbox = Mailbox::new(None, address);
+/// # Ok(())
+/// # }
 /// ```
 ///
 /// You can also create one from a string literal:
 ///
 /// ```
 /// # use lettre::message::Mailbox;
-/// let mailbox: Mailbox = "John Smith <example@email.com>".parse().unwrap();
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
+/// let mailbox: Mailbox = "John Smith <example@email.com>".parse()?;
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Mailbox {
@@ -48,8 +56,12 @@ impl Mailbox {
     /// ```
     /// use lettre::{Address, message::Mailbox};
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
     /// let mailbox = Mailbox::new(None, address);
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
@@ -153,8 +165,12 @@ impl Mailboxes {
     /// ```
     /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
     /// let mut mailboxes = Mailboxes::new().with(Mailbox::new(None, address));
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn with(mut self, mbox: Mailbox) -> Self {
         self.0.push(mbox);
@@ -168,9 +184,13 @@ impl Mailboxes {
     /// ```
     /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new("example", "email.com")?;
     /// let mut mailboxes = Mailboxes::new();
     /// mailboxes.push(Mailbox::new(None, address));
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn push(&mut self, mbox: Mailbox) {
         self.0.push(mbox);
@@ -183,14 +203,18 @@ impl Mailboxes {
     /// ```
     /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let empty = Mailboxes::new();
     /// assert!(empty.into_single().is_none());
     ///
     /// let mut mailboxes = Mailboxes::new();
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// let address = Address::new("example", "email.com")?;
     ///
     /// mailboxes.push(Mailbox::new(None, address));
     /// assert!(mailboxes.into_single().is_some());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn into_single(self) -> Option<Mailbox> {
         self.into()
@@ -203,12 +227,14 @@ impl Mailboxes {
     /// ```
     /// use lettre::{Address, message::{Mailbox, Mailboxes}};
     ///
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let mut mailboxes = Mailboxes::new();
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// let address = Address::new("example", "email.com")?;
     /// mailboxes.push(Mailbox::new(None, address));
     ///
-    /// let address = Address::new("example", "email.com").unwrap();
+    /// let address = Address::new("example", "email.com")?;
     /// mailboxes.push(Mailbox::new(None, address));
     ///
     /// let mut iter = mailboxes.iter();
@@ -217,6 +243,8 @@ impl Mailboxes {
     /// assert!(iter.next().is_some());
     ///
     /// assert!(iter.next().is_none());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn iter(&self) -> Iter<'_, Mailbox> {
         self.0.iter()

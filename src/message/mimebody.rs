@@ -90,10 +90,14 @@ impl Default for SinglePartBuilder {
 /// ```
 /// use lettre::message::{SinglePart, header};
 ///
+/// # use std::error::Error;
+/// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
-///      .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+///      .header(header::ContentType("text/plain; charset=utf8".parse()?))
 ///      .header(header::ContentTransferEncoding::Binary)
 ///      .body("Текст письма в уникоде");
+/// # Ok(())
+/// # }
 /// ```
 ///
 #[derive(Debug, Clone)]

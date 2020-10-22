@@ -10,17 +10,20 @@
 //! use lettre::{Message, Transport};
 //! use lettre::transport::stub::StubTransport;
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let mut sender = StubTransport::new_ok();
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! # Ok(())
+//! # }
 //! ```
 
 use crate::address::Envelope;

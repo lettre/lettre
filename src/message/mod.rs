@@ -15,13 +15,16 @@
 //! ```rust
 //! use lettre::message::Message;
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! Will produce:
@@ -46,19 +49,22 @@
 //! ```rust
 //! use lettre::message::{header, Message, SinglePart, Part};
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
 //!     .singlepart(
 //!         SinglePart::builder()
 //!             .header(header::ContentType(
-//!                 "text/plain; charset=utf8".parse().unwrap(),
+//!                 "text/plain; charset=utf8".parse()?,
 //!             )).header(header::ContentTransferEncoding::QuotedPrintable)
 //!             .body("Привет, мир!"),
-//!     )
-//!     .unwrap();
+//!     )?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! The body will be encoded using selected `Content-Transfer-Encoding`.
@@ -83,10 +89,12 @@
 //! ```rust
 //! use lettre::message::{header, Message, MultiPart, SinglePart, Part};
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
 //!     .multipart(
 //!         MultiPart::mixed()
@@ -94,19 +102,19 @@
 //!             MultiPart::alternative()
 //!             .singlepart(
 //!                 SinglePart::quoted_printable()
-//!                 .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+//!                 .header(header::ContentType("text/plain; charset=utf8".parse()?))
 //!                 .body("Привет, мир!")
 //!             )
 //!             .multipart(
 //!                MultiPart::related()
 //!                 .singlepart(
 //!                     SinglePart::eight_bit()
-//!                     .header(header::ContentType("text/html; charset=utf8".parse().unwrap()))
+//!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
 //!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=smile.png></p>")
 //!                 )
 //!                 .singlepart(
 //!                     SinglePart::base64()
-//!                     .header(header::ContentType("image/png".parse().unwrap()))
+//!                     .header(header::ContentType("image/png".parse()?))
 //!                     .header(header::ContentDisposition {
 //!                         disposition: header::DispositionType::Inline,
 //!                         parameters: vec![],
@@ -117,7 +125,7 @@
 //!         )
 //!         .singlepart(
 //!             SinglePart::seven_bit()
-//!             .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+//!             .header(header::ContentType("text/plain; charset=utf8".parse()?))
 //!             .header(header::ContentDisposition {
 //!                 disposition: header::DispositionType::Attachment,
 //!                 parameters: vec![
@@ -129,7 +137,9 @@
 //!             })
 //!             .body("int main() { return 0; }")
 //!         )
-//!     ).unwrap();
+//!     )?;
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ```sh
