@@ -31,9 +31,8 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! # use std::error::Error;
 //! # #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-//! # fn main() -> Result<(), Box<dyn Error>> {
+//! # {
 //! use lettre::{Message, Transport, SmtpTransport};
 //!
 //! let email = Message::builder()
@@ -50,7 +49,6 @@
 //! // Send the email via remote relay
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
-//! # Ok(())
 //! # }
 //! ```
 
