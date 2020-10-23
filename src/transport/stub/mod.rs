@@ -7,7 +7,8 @@
 //! testing purposes.
 //!
 //! ```rust
-//! #[cfg(feature = "builder")]{
+//! # #[cfg(feature = "builder")]
+//! # {
 //! # use lettre::{Message, Transport};
 //! # use lettre::transport::stub::StubTransport;
 //!
