@@ -1,5 +1,6 @@
 # Lettre Examples
- This folder contains examples showing how to user lettre in your own projects.
+
+This folder contains examples showing how to use lettre in your own projects.
 
 ## Examples
 - [smtp.rs] - Send an email using a local SMTP daemon on port 25 as a relay.
