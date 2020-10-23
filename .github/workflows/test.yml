@@ -82,7 +82,7 @@ jobs:
 
       - name: Install rust
         run: |
-          rustup default ${{matrix.name}}
+          rustup default ${{ matrix.rust }}
           rustup update --no-self-update ${{ matrix.rust }}
 
       - name: Update and install postfix  
