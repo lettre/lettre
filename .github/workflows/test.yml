@@ -1,20 +1,76 @@
 name: Continuous integration
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
 
 jobs:
-  test:
-    name: Test
+  rustfmt:
+    name: rustfmt / stable
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-          - 1.45.2
 
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        run: |
+          rustup update --no-self-update ${{ matrix.rust }}
+          rustup component add rustfmt
+
+      - name: cargo fmt
+        run: |
+          cargo fmt --all -- --check
+
+  clippy:
+    name: clippy / ${{ matrix.rust }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: stable
+            rust: stable
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: Install rust
+        run: |
+          rustup update --no-self-update ${{ matrix.rust }}
+          rustup component add clippy
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+  test:
+    name: test / ${{matrix.name}}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: stable
+            rust: stable
+          - name: beta
+            rust: beta
+          - name: 1.45.2
+            rust: 1.45.2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - name: Cache multiple paths
         uses: actions/cache@v2
         with:
@@ -24,47 +80,26 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - run: |
-          rustup update --no-self-update stable
-          rustup component add rustfmt
-      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get update
-      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
-      - run: smtp-sink 2525 1000&
+      - name: Install rust
+        run: |
+          rustup default ${{matrix.name}}
+          rustup update --no-self-update ${{ matrix.rust }}
+
+      - name: Update and install postfix  
+        run: sudo DEBIAN_FRONTEND=noninteractive apt-get update; sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
+
+      - name: Run smpt server
+        run: smtp-sink 2525 1000&
       
-      - run: cargo install cargo-hack --debug
-      - uses: actions-rs/cargo@v1
+      - name: Install cargo hack
+        run: cargo install cargo-hack --debug
+
+      - name: Test with cargo hack
+        uses: actions-rs/cargo@v1
         with:
           command: hack
           args: test --each-feature
-      
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-
+  
 #  coverage:
 #    name: Coverage
 #    runs-on: ubuntu-latest
