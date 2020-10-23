@@ -85,8 +85,10 @@ jobs:
           rustup default ${{ matrix.rust }}
           rustup update --no-self-update ${{ matrix.rust }}
 
-      - name: Update and install postfix  
-        run: sudo DEBIAN_FRONTEND=noninteractive apt-get update; sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
+      - name: Install postfix  
+        run: |
+          DEBIAN_FRONTEND=noninteractive apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
 
       - name: Run SMTP server
         run: smtp-sink 2525 1000&
