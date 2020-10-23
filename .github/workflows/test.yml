@@ -88,7 +88,7 @@ jobs:
       - name: Update and install postfix  
         run: sudo DEBIAN_FRONTEND=noninteractive apt-get update; sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
 
-      - name: Run smpt server
+      - name: Run SMTP server
         run: smtp-sink 2525 1000&
       
       - name: Install cargo hack
