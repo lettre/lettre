@@ -28,7 +28,7 @@
 //! ## Async tokio 0.2
 //!
 //! ```rust
-//! # # use std::error::Error;
+//! # use std::error::Error;
 //! # #[cfg(feature = "tokio02")]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
