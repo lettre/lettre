@@ -54,7 +54,7 @@ jobs:
           args: -- -D warnings
 
   test:
-    name: test / ${{matrix.name}}
+    name: test / ${{ matrix.name }}
     runs-on: ubuntu-latest
 
     strategy:
