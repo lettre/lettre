@@ -226,31 +226,31 @@ pub struct Certificate {
 
 impl Certificate {
     /// Create a `Certificate` from a DER encoded certificate
-    pub fn from_der(_der: Vec<u8>) -> Result<Self, Error> {
+    pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
         #[cfg(feature = "native-tls")]
         let native_tls_cert =
-            native_tls::Certificate::from_der(&_der).map_err(|_| Error::InvalidCertificate)?;
+            native_tls::Certificate::from_der(&der).map_err(|_| Error::InvalidCertificate)?;
 
         Ok(Self {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
             #[cfg(feature = "rustls-tls")]
-            rustls: vec![rustls::Certificate(_der)],
+            rustls: vec![rustls::Certificate(der)],
         })
     }
 
     /// Create a `Certificate` from a PEM encoded certificate
-    pub fn from_pem(_pem: &[u8]) -> Result<Self, Error> {
+    pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
         #[cfg(feature = "native-tls")]
         let native_tls_cert =
-            native_tls::Certificate::from_pem(_pem).map_err(|_| Error::InvalidCertificate)?;
+            native_tls::Certificate::from_pem(pem).map_err(|_| Error::InvalidCertificate)?;
 
         #[cfg(feature = "rustls-tls")]
         let rustls_cert = {
             use rustls::internal::pemfile;
             use std::io::Cursor;
 
-            let mut pem = Cursor::new(_pem);
+            let mut pem = Cursor::new(pem);
             pemfile::certs(&mut pem).map_err(|_| Error::InvalidCertificate)?
         };
 
