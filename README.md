@@ -27,6 +27,13 @@
   </a>
 </div>
 
+<div align="center">
+  <a href="https://deps.rs/crate/lettre/0.10.0-alpha.3">
+    <img src="https://deps.rs/crate/lettre/0.10.0-alpha.3/status.svg"
+      alt="dependency status" />
+  </a>
+</div>
+
 ---
 
 **NOTE**: this readme refers to the 0.10 version of lettre, which is
