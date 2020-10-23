@@ -5,58 +5,63 @@
 //! ```rust
 //! use lettre::{Message, Transport, SendmailTransport};
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Async tokio 0.2 example
 //!
 //! ```rust
+//! # use std::error::Error;
 //! # #[cfg(feature = "tokio02")]
-//! # async fn run() {
+//! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, Tokio02Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 //!
 //! ## Async async-std 1.x example
 //!
 //!```rust
+//! # use std::error::Error;
 //! # #[cfg(feature = "async-std1")]
-//! # async fn run() {
+//! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 

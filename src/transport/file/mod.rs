@@ -8,63 +8,68 @@
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Message, FileTransport};
 //!
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! # Ok(())
+//! # }
 //! ```
 //!
 //! ## Async tokio 0.2
 //!
 //! ```rust
+//! # use std::error::Error;
 //! # #[cfg(feature = "tokio02")]
-//! # async fn run() {
+//! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{Tokio02Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 //!
 //! ## Async async-std 1.x
 //!
 //! ```rust
+//! # use std::error::Error;
 //! # #[cfg(feature = "async-std1")]
-//! # async fn run() {
+//! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{AsyncStd1Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 //!

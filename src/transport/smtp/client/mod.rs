@@ -4,20 +4,22 @@
 //!
 //! ```rust,no_run
 //! # #[cfg(feature = "smtp-transport")]
-//! # {
+//! # use std::error::Error;
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::transport::smtp::{SMTP_PORT, extension::ClientId, commands::*, client::SmtpConnection};
 //!
 //! let hello = ClientId::Domain("my_hostname".to_string());
-//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None).unwrap();
+//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None)?;
 //! client.command(
-//!         Mail::new(Some("user@example.com".parse().unwrap()), vec![])
-//!     ).unwrap();
+//!         Mail::new(Some("user@example.com".parse()?), vec![])
+//!     )?;
 //! client.command(
-//!         Rcpt::new("user@example.org".parse().unwrap(), vec![])
-//!       ).unwrap();
-//! client.command(Data).unwrap();
-//! client.message("Test email".as_bytes()).unwrap();
-//! client.command(Quit).unwrap();
+//!         Rcpt::new("user@example.org".parse()?, vec![])
+//!       )?;
+//! client.command(Data)?;
+//! client.message("Test email".as_bytes())?;
+//! client.command(Quit)?;
+//! # Ok(())
 //! # }
 //! ```
 

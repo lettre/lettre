@@ -32,16 +32,15 @@
 //!
 //! ```rust,no_run
 //! # #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-//! # {
+//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{Message, Transport, SmtpTransport};
 //!
 //! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse().unwrap())
-//!     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-//!     .to("Hei <hei@domain.tld>".parse().unwrap())
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")
-//!     .unwrap();
+//!     .body("Be happy!")?;
 //!
 //! // Create TLS transport on port 465
 //! let sender = SmtpTransport::relay("smtp.example.com")
@@ -50,6 +49,7 @@
 //! // Send the email via remote relay
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 
@@ -64,24 +64,24 @@
 //!
 //! let email_1 = Email::new(
 //!     Envelope::new(
-//!         Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-//!         vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-//!     ).unwrap(),
+//!         Some(EmailAddress::new("user@localhost".to_string())?),
+//!         vec![EmailAddress::new("root@localhost".to_string())?],
+//!     )?,
 //!     "id1".to_string(),
 //!     "Hello world".to_string().into_bytes(),
 //! );
 //!
 //! let email_2 = Email::new(
 //!     Envelope::new(
-//!         Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-//!         vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-//!     ).unwrap(),
+//!         Some(EmailAddress::new("user@localhost".to_string())?),
+//!         vec![EmailAddress::new("root@localhost".to_string())?],
+//!     )?,
 //!     "id2".to_string(),
 //!     "Hello world a second time".to_string().into_bytes(),
 //! );
 //!
 //! // Connect to a remote server on a custom port
-//! let mut mailer = SmtpClient::new_simple("server.tld").unwrap()
+//! let mut mailer = SmtpClient::new_simple("server.tld")?
 //!    // Set the name sent during EHLO/HELO, default is `localhost`
 //!    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
 //!    // Add credentials for authentication
@@ -120,9 +120,9 @@
 //!
 //!     let email = Email::new(
 //!         Envelope::new(
-//!             Some(EmailAddress::new("user@localhost".to_string()).unwrap()),
-//!             vec![EmailAddress::new("root@localhost".to_string()).unwrap()],
-//!         ).unwrap(),
+//!             Some(EmailAddress::new("user@localhost".to_string())?),
+//!             vec![EmailAddress::new("root@localhost".to_string())?],
+//!         )?,
 //!         "message_id".to_string(),
 //!         "Hello world".to_string().into_bytes(),
 //!     );
@@ -132,12 +132,12 @@
 //!     let tls_parameters =
 //!         ClientTlsParameters::new(
 //!             "smtp.example.com".to_string(),
-//!             tls_builder.build().unwrap()
+//!             tls_builder.build()?
 //!         );
 //!
 //!     let mut mailer = SmtpClient::new(
 //!         ("smtp.example.com", 465), ClientSecurity::Wrapper(tls_parameters)
-//!     ).unwrap()
+//!     )?
 //!         .authentication_mechanism(Mechanism::Login)
 //!         .credentials(Credentials::new(
 //!             "example_username".to_string(), "example_password".to_string()

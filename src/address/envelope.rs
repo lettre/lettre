@@ -32,10 +32,14 @@ impl Envelope {
     /// # use lettre::Address;
     /// # use lettre::address::Envelope;
     ///
-    /// let sender = Address::from_str("from@email.com").unwrap();
-    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let sender = Address::from_str("from@email.com")?;
+    /// let recipients = vec![Address::from_str("to@email.com")?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients);
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Errors
@@ -60,11 +64,15 @@ impl Envelope {
     /// # use lettre::Address;
     /// # use lettre::address::Envelope;
     ///
-    /// let sender = Address::from_str("from@email.com").unwrap();
-    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let sender = Address::from_str("from@email.com")?;
+    /// let recipients = vec![Address::from_str("to@email.com")?];
     ///
-    /// let envelope = Envelope::new(Some(sender), recipients.clone()).unwrap();
+    /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert_eq!(envelope.to(), recipients.as_slice());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn to(&self) -> &[Address] {
         self.forward_path.as_slice()
@@ -79,14 +87,18 @@ impl Envelope {
     /// # use lettre::Address;
     /// # use lettre::address::Envelope;
     ///
-    /// let sender = Address::from_str("from@email.com").unwrap();
-    /// let recipients = vec![Address::from_str("to@email.com").unwrap()];
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let sender = Address::from_str("from@email.com")?;
+    /// let recipients = vec![Address::from_str("to@email.com")?];
     ///
-    /// let envelope = Envelope::new(Some(sender), recipients.clone()).unwrap();
+    /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert!(envelope.from().is_some());
     ///
-    /// let senderless = Envelope::new(None, recipients.clone()).unwrap();
+    /// let senderless = Envelope::new(None, recipients.clone())?;
     /// assert!(senderless.from().is_none());
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn from(&self) -> Option<&Address> {
         self.reverse_path.as_ref()
