@@ -45,7 +45,7 @@ jobs:
 
       - name: Install rust
         run: |
-          rustup update --no-self-update ${{ matrix.rust }}
+          rustup update --no-self-update stable
           rustup component add clippy
 
       - uses: actions-rs/cargo@v1
