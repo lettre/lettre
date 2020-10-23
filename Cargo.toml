@@ -1,6 +1,7 @@
 [package]
 name = "lettre"
-version = "0.10.0-alpha.3" # remember to update html_root_url and README.md
+# remember to update html_root_url and README.md (Cargo.toml example and deps.rs badge)
+version = "0.10.0-alpha.3"
 description = "Email client"
 readme = "README.md"
 homepage = "https://lettre.rs"
