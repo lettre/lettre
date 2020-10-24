@@ -60,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Cache multiple paths
+      - name: Setup cache
         uses: actions/cache@v2
         with:
           path: |
