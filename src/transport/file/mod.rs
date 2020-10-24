@@ -5,13 +5,13 @@
 //! ## Sync example
 //!
 //! ```rust
+//! # use std::error::Error;
+//!
 //! # #[cfg(all(feature = "file-transport", feature = "builder"))]
-//! # fn run() {
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Message, FileTransport};
 //!
-//! # use std::error::Error;
-//! # fn main() -> Result<(), Box<dyn Error>> {
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
 //! let email = Message::builder()
@@ -25,13 +25,18 @@
 //! assert!(result.is_ok());
 //! # Ok(())
 //! # }
+//!
+//! # #[cfg(not(all(feature = "file-transport", feature = "builder")))]
+//! # fn main() {}
 //! ```
+//!
 //!
 //! ## Async tokio 0.2
 //!
-//! ```rust
+//! ```rust, no_run
 //! # use std::error::Error;
-//! # #[cfg(feature = "tokio02")]
+//!
+//! # #[cfg(all(feature = "tokio02", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{Tokio02Transport, Message, FileTransport};
@@ -53,9 +58,10 @@
 //!
 //! ## Async async-std 1.x
 //!
-//! ```rust
+//! ```rust, no_run
 //! # use std::error::Error;
-//! # #[cfg(feature = "async-std1")]
+//!
+//! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{AsyncStd1Transport, Message, FileTransport};
