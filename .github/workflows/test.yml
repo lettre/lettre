@@ -25,27 +25,16 @@ jobs:
           cargo fmt --all -- --check
 
   clippy:
-    name: clippy / ${{ matrix.rust }}
+    name: clippy / stable
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        include:
-          - name: stable
-            rust: stable
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-
       - name: Install rust
         run: |
-          rustup update --no-self-update ${{ matrix.rust }}
+          rustup update --no-self-update stable
           rustup component add clippy
 
       - uses: actions-rs/cargo@v1
