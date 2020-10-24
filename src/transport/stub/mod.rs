@@ -24,8 +24,9 @@
 //! let mut sender = StubTransport::new_ok();
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
-//! # }
 //! # Ok(())
+//! # }
+//! # }
 //! ```
 
 use crate::address::Envelope;
