@@ -33,7 +33,7 @@
 //!
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! # use lettre::{Message, Tokio02Transport, SendmailTransport};
+//! use lettre::{Message, Tokio02Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -56,7 +56,7 @@
 //!
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! # use lettre::{Message, AsyncStd1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
