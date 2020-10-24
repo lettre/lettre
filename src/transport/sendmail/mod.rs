@@ -28,7 +28,7 @@
 //!
 //! ## Async tokio 0.2 example
 //!
-//! ```rust, no_run
+//! ```rust,no_run
 //! # use std::error::Error;
 //!
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
@@ -51,7 +51,7 @@
 //!
 //! ## Async async-std 1.x example
 //!
-//!```rust, no_run
+//!```rust,no_run
 //! # use std::error::Error;
 //!
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
