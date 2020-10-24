@@ -76,8 +76,8 @@ jobs:
 
       - name: Install postfix  
         run: |
-          DEBIAN_FRONTEND=noninteractive apt-get update
-          DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
+          DEBIAN_FRONTEND=noninteractive sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install postfix
 
       - name: Run SMTP server
         run: smtp-sink 2525 1000&
