@@ -33,7 +33,7 @@
 //!
 //! ## Async tokio 0.2
 //!
-//! ```rust, no_run
+//! ```rust,no_run
 //! # use std::error::Error;
 //!
 //! # #[cfg(all(feature = "tokio02", feature = "file-transport", feature = "builder"))]
@@ -58,7 +58,7 @@
 //!
 //! ## Async async-std 1.x
 //!
-//! ```rust, no_run
+//! ```rust,no_run
 //! # use std::error::Error;
 //!
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
