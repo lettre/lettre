@@ -31,7 +31,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! # #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{Message, Transport, SmtpTransport};
 //!
