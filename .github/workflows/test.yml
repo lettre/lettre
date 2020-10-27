@@ -21,8 +21,7 @@ jobs:
           rustup component add rustfmt
 
       - name: cargo fmt
-        run: |
-          cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
 
   clippy:
     name: clippy / stable
@@ -37,10 +36,8 @@ jobs:
           rustup update --no-self-update stable
           rustup component add clippy
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+      - name: Run clippy
+        run: cargo clippy --all-features --all-targets -- -D warnings
 
   test:
     name: test / ${{ matrix.name }}
@@ -67,7 +64,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-clippy
 
       - name: Install rust
         run: |
@@ -86,10 +83,7 @@ jobs:
         run: cargo install cargo-hack --debug
 
       - name: Test with cargo hack
-        uses: actions-rs/cargo@v1
-        with:
-          command: hack
-          args: test --each-feature
+        run: cargo hack test --feature-powerset --depth 3
   
 #  coverage:
 #    name: Coverage
