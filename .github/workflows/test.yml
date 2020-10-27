@@ -39,6 +39,32 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-features --all-targets -- -D warnings
 
+  check:
+    name: check / stable
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-check
+
+      - name: Install rust
+        run: rustup update --no-self-update stable
+      
+      - name: Install cargo hack
+        run: cargo install cargo-hack --debug
+
+      - name: Check with cargo hack
+        run: cargo hack check --feature-powerset --depth 3
+
   test:
     name: test / ${{ matrix.name }}
     runs-on: ubuntu-latest
@@ -78,12 +104,15 @@ jobs:
 
       - name: Run SMTP server
         run: smtp-sink 2525 1000&
-      
-      - name: Install cargo hack
-        run: cargo install cargo-hack --debug
 
-      - name: Test with cargo hack
-        run: cargo hack test --feature-powerset --depth 3
+      - name: Test with no default features
+        run: cargo test --no-default-features
+
+      - name: Test with default features
+        run: cargo test
+
+      - name: Test with all features
+        run: cargo test --all-features
   
 #  coverage:
 #    name: Coverage
