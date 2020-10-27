@@ -1,4 +1,4 @@
-#[cfg(feature = "tokio02-rustls-tls")]
+#[cfg(any(feature = "tokio02-rustls-tls", feature = "tokio03-rustls-tls"))]
 use std::sync::Arc;
 use std::{
     net::{Shutdown, SocketAddr},
