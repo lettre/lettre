@@ -107,7 +107,8 @@ impl SmtpTransport {
     }
 }
 
-/// Contains client configuration
+/// Contains client configuration.
+/// Instances of this struct can be created using functions of [`SmtpTransport`](./struct.SmtpTransport.html).
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct SmtpTransportBuilder {

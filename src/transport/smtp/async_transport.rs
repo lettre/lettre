@@ -132,7 +132,8 @@ where
     }
 }
 
-/// Contains client configuration
+/// Contains client configuration.
+/// Instances of this struct can be created using functions of [`AsyncSmtpTransport`](./struct.AsyncSmtpTransport.html).
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct AsyncSmtpTransportBuilder {
