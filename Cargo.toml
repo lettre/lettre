@@ -101,6 +101,10 @@ all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
+name = "file_html"
+required-features = ["file-transport"]
+
+[[example]]
 name = "smtp"
 required-features = ["smtp-transport", "builder"]
 
