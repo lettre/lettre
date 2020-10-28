@@ -24,13 +24,13 @@ fn main() {
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Hello from Lettre!")
         .multipart(
-            MultiPart::alternative() // THis is composed of two parts.
+            MultiPart::alternative() // This is composed of two parts.
                 .singlepart(
                     SinglePart::eight_bit()
                         .header(header::ContentType(
                             "text/plain; charset=utf8".parse().unwrap(),
                         ))
-                        .body("Hello from Lettre! A mailer library for Rust"), // Cause every message should have a plain text fallback.
+                        .body("Hello from Lettre! A mailer library for Rust"), // Every message should have a plain text fallback.
                 )
                 .singlepart(
                     SinglePart::quoted_printable()
@@ -42,7 +42,7 @@ fn main() {
         )
         .expect("failed to build email");
 
-    // Create our mailer. See other examples for creating SMTP mailers.
+    // Create our mailer. Please see the other examples for creating SMTP mailers.
     // The path given here must exist on the filesystem.
     let mailer = FileTransport::new("./");
 
