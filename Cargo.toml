@@ -102,33 +102,33 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
 name = "smtp"
-required-features = ["smtp-transport"]
+required-features = ["smtp-transport", "builder"]
 
 [[example]]
 name = "smtp_tls"
-required-features = ["smtp-transport", "native-tls"]
+required-features = ["smtp-transport", "native-tls", "builder"]
 
 [[example]]
 name = "smtp_starttls"
-required-features = ["smtp-transport", "native-tls"]
+required-features = ["smtp-transport", "native-tls", "builder"]
 
 [[example]]
 name = "smtp_selfsigned"
-required-features = ["smtp-transport", "native-tls"]
+required-features = ["smtp-transport", "native-tls", "builder"]
 
 [[example]]
 name = "tokio02_smtp_tls"
-required-features = ["smtp-transport", "tokio02", "tokio02-native-tls"]
+required-features = ["smtp-transport", "tokio02", "tokio02-native-tls", "builder"]
 
 [[example]]
 name = "tokio02_smtp_starttls"
-required-features = ["smtp-transport", "tokio02", "tokio02-native-tls"]
+required-features = ["smtp-transport", "tokio02", "tokio02-native-tls", "builder"]
 
 [[example]]
 name = "tokio03_smtp_tls"
-required-features = ["smtp-transport", "tokio03", "tokio03-native-tls"]
+required-features = ["smtp-transport", "tokio03", "tokio03-native-tls", "builder"]
 
 [[example]]
 name = "tokio03_smtp_starttls"
-required-features = ["smtp-transport", "tokio03", "tokio03-native-tls"]
+required-features = ["smtp-transport", "tokio03", "tokio03-native-tls", "builder"]
 

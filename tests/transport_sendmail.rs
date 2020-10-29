@@ -1,5 +1,5 @@
 #[cfg(test)]
-#[cfg(feature = "sendmail-transport")]
+#[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 mod test {
     use lettre::{transport::sendmail::SendmailTransport, Message};
 

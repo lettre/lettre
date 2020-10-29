@@ -31,7 +31,7 @@
 //! This is the most basic example of usage:
 //!
 //! ```rust,no_run
-//! # #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{Message, Transport, SmtpTransport};
 //!
@@ -164,6 +164,7 @@ pub use self::async_transport::{
 };
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
+#[cfg(feature = "r2d2")]
 pub(crate) use self::transport::SmtpClient;
 pub use self::{
     error::Error,

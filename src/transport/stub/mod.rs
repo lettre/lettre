@@ -7,6 +7,8 @@
 //! testing purposes.
 //!
 //! ```rust
+//! # #[cfg(feature = "builder")]
+//! # {
 //! use lettre::{Message, Transport};
 //! use lettre::transport::stub::StubTransport;
 //!
@@ -23,6 +25,7 @@
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
 //! # Ok(())
+//! # }
 //! # }
 //! ```
 

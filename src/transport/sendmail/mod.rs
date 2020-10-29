@@ -3,10 +3,12 @@
 //! ## Sync example
 //!
 //! ```rust
-//! use lettre::{Message, Transport, SendmailTransport};
-//!
 //! # use std::error::Error;
+//!
+//! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
+//! # use lettre::{Message, Transport, SendmailTransport};
+//!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
@@ -19,13 +21,17 @@
 //! assert!(result.is_ok());
 //! # Ok(())
 //! # }
+//!
+//! # #[cfg(not(all(feature = "sendmail-transport", feature = "builder")))]
+//! # fn main() {}
 //! ```
 //!
 //! ## Async tokio 0.2 example
 //!
-//! ```rust
+//! ```rust,no_run
 //! # use std::error::Error;
-//! # #[cfg(feature = "tokio02")]
+//!
+//! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, Tokio02Transport, SendmailTransport};
 //!
@@ -45,9 +51,10 @@
 //!
 //! ## Async async-std 1.x example
 //!
-//!```rust
+//!```rust,no_run
 //! # use std::error::Error;
-//! # #[cfg(feature = "async-std1")]
+//!
+//! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
 //!

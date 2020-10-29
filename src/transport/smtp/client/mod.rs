@@ -3,8 +3,9 @@
 //! `SmtpConnection` allows manually sending SMTP commands.
 //!
 //! ```rust,no_run
-//! # #[cfg(feature = "smtp-transport")]
 //! # use std::error::Error;
+//!
+//! # #[cfg(feature = "smtp-transport")]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::transport::smtp::{SMTP_PORT, extension::ClientId, commands::*, client::SmtpConnection};
 //!

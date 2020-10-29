@@ -1,107 +1,124 @@
-name: Continuous integration
+name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
 
 jobs:
-  test:
-    name: Test
+  rustfmt:
+    name: rustfmt / stable
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-          - 1.45.2
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get update
-      - run: sudo DEBIAN_FRONTEND=noninteractive apt-get -y install postfix
-      - run: smtp-sink 2525 1000&
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --features=native-tls,builder,r2d2,smtp-transport,file-transport,sendmail-transport
-      - run: rm target/debug/deps/liblettre-*
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-      - run: rm target/debug/deps/liblettre-*
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --features=builder,smtp-transport,file-transport,sendmail-transport
-      - run: rm target/debug/deps/liblettre-*
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features=async-std1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features=tokio02
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features=tokio03
 
-  check:
-    name: Check
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        rust:
-          - stable
-          - beta
-          - 1.45.2
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
+      - name: Checkout
+        uses: actions/checkout@v2
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - name: Install rust
+        run: |
+          rustup update --no-self-update stable
+          rustup component add rustfmt
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
 
   clippy:
-    name: Clippy
+    name: clippy / stable
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install rust
+        run: |
+          rustup update --no-self-update stable
+          rustup component add clippy
+
+      - name: Run clippy
+        run: cargo clippy --all-features --all-targets -- -D warnings
+
+  check:
+    name: check / stable
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-check
+
+      - name: Install rust
+        run: rustup update --no-self-update stable
+      
+      - name: Install cargo hack
+        run: cargo install cargo-hack --debug
+
+      - name: Check with cargo hack
+        run: cargo hack check --feature-powerset --depth 3
+
+  test:
+    name: test / ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
     strategy:
       matrix:
-        rust:
-          - stable
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.rust }}
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
+        include:
+          - name: stable
+            rust: stable
+          - name: beta
+            rust: beta
+          - name: 1.45.2
+            rust: 1.45.2
 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-test-${{ matrix.rust }}
+
+      - name: Install rust
+        run: |
+          rustup default ${{ matrix.rust }}
+          rustup update --no-self-update ${{ matrix.rust }}
+
+      - name: Install postfix  
+        run: |
+          DEBIAN_FRONTEND=noninteractive sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install postfix
+
+      - name: Run SMTP server
+        run: smtp-sink 2525 1000&
+
+      - name: Test with no default features
+        run: cargo test --no-default-features
+
+      - name: Test with default features
+        run: cargo test
+
+      - name: Test with all features
+        run: cargo test --all-features
+  
 #  coverage:
 #    name: Coverage
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v1
+#      - uses: actions/checkout@v2
 #      - uses: actions-rs/toolchain@v1
 #        with:
 #          toolchain: nightly
