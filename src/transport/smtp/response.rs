@@ -238,7 +238,10 @@ pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
 
     // Check that all codes are equal.
     if !lines.iter().all(|&(code, _, _)| code == last_code) {
-        return Err(nom::Err::Failure(("", nom::error::ErrorKind::Not)));
+        return Err(nom::Err::Failure(nom::error::Error::new(
+            "",
+            nom::error::ErrorKind::Not,
+        )));
     }
 
     // Extract text from lines, and append last line.
