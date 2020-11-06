@@ -59,9 +59,8 @@
 //!     .singlepart(
 //!         SinglePart::builder()
 //!             .header(header::ContentType(
-//!                 "text/plain; charset=utf8".parse()?,
-//!             )).header(header::ContentTransferEncoding::QuotedPrintable)
-//!             .body("Привет, мир!"),
+//!                 "text/plain; charset=utf8".parse()?))
+//!             .body(String::from("Привет, мир!")),
 //!     )?;
 //! # Ok(())
 //! # }
@@ -101,31 +100,31 @@
 //!         .multipart(
 //!             MultiPart::alternative()
 //!             .singlepart(
-//!                 SinglePart::quoted_printable()
+//!                 SinglePart::builder()
 //!                 .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                 .body("Hello, world! :)")
+//!                 .body(String::from("Hello, world! :)"))
 //!             )
 //!             .multipart(
 //!                MultiPart::related()
 //!                 .singlepart(
-//!                     SinglePart::eight_bit()
+//!                     SinglePart::builder()
 //!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
-//!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>")
+//!                     .body(String::from("<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>"))
 //!                 )
 //!                 .singlepart(
-//!                     SinglePart::base64()
+//!                     SinglePart::builder()
 //!                     .header(header::ContentType("image/png".parse()?))
 //!                     .header(header::ContentDisposition {
 //!                         disposition: header::DispositionType::Inline,
 //!                         parameters: vec![],
 //!                     })
 //!                     .header(header::ContentId("<123>".into()))
-//!                     .body("<smile-raw-image-data>")
+//!                     .body(Vec::<u8>::from("<smile-raw-image-data>"))
 //!                 )
 //!             )
 //!         )
 //!         .singlepart(
-//!             SinglePart::seven_bit()
+//!             SinglePart::builder()
 //!             .header(header::ContentType("text/plain; charset=utf8".parse()?))
 //!             .header(header::ContentDisposition {
 //!                 disposition: header::DispositionType::Attachment,
@@ -136,7 +135,7 @@
 //!                     )
 //!                 ]
 //!             })
-//!             .body("int main() { return 0; }")
+//!             .body(String::from("int main() { return 0; }"))
 //!         )
 //!     )?;
 //! # Ok(())
@@ -185,12 +184,13 @@
 //!
 //! ```
 
+pub use body::Body;
 pub use mailbox::*;
 pub use mimebody::*;
 
 pub use mime;
 
-mod encoder;
+mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
@@ -375,7 +375,7 @@ impl MessageBuilder {
     // TODO: High-level methods for attachments and embedded files
 
     /// Create message from body
-    fn build(self, body: Body) -> Result<Message, EmailError> {
+    fn build(self, body: MessageBody) -> Result<Message, EmailError> {
         // Check for missing required headers
         // https://tools.ietf.org/html/rfc5322#section-3.6
 
@@ -412,30 +412,31 @@ impl MessageBuilder {
 
     // In theory having a body is optional
 
-    /// Plain ASCII body
+    /// Plain US-ASCII body
+    ///
+    /// Fails if is contains non ASCII characters or if it
+    /// contains lines longer than 1000 characters, including
+    /// the `\n` character.
     ///
     /// *WARNING*: Generally not what you want
     pub fn body<T: Into<String>>(self, body: T) -> Result<Message, EmailError> {
-        // 998 chars by line
-        // CR and LF MUST only occur together as CRLF; they MUST NOT appear
-        //  independently in the body.
         let body = body.into();
 
-        if !&body.is_ascii() {
+        if !self::body::is_7bit_encoded(body.as_ref()) {
             return Err(EmailError::NonAsciiChars);
         }
 
-        self.build(Body::Raw(body))
+        self.build(MessageBody::Raw(body))
     }
 
     /// Create message using mime body ([`MultiPart`][self::MultiPart])
     pub fn multipart(self, part: MultiPart) -> Result<Message, EmailError> {
-        self.mime_1_0().build(Body::Mime(Part::Multi(part)))
+        self.mime_1_0().build(MessageBody::Mime(Part::Multi(part)))
     }
 
     /// Create message using mime body ([`SinglePart`][self::SinglePart])
     pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
-        self.mime_1_0().build(Body::Mime(Part::Single(part)))
+        self.mime_1_0().build(MessageBody::Mime(Part::Single(part)))
     }
 }
 
@@ -443,12 +444,12 @@ impl MessageBuilder {
 #[derive(Clone, Debug)]
 pub struct Message {
     headers: Headers,
-    body: Body,
+    body: MessageBody,
     envelope: Envelope,
 }
 
 #[derive(Clone, Debug)]
-enum Body {
+enum MessageBody {
     Mime(Part),
     Raw(String),
 }
@@ -481,8 +482,8 @@ impl EmailFormat for Message {
     fn format(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(self.headers.to_string().as_bytes());
         match &self.body {
-            Body::Mime(p) => p.format(out),
-            Body::Raw(r) => {
+            MessageBody::Mime(p) => p.format(out),
+            MessageBody::Raw(r) => {
                 out.extend_from_slice(b"\r\n");
                 out.extend(r.as_bytes())
             }
@@ -573,7 +574,9 @@ mod test {
                             .header(header::ContentType(
                                 "text/html; charset=utf8".parse().unwrap(),
                             ))
-                            .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>"),
+                            .body(String::from(
+                                "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
+                            )),
                     )
                     .singlepart(
                         SinglePart::base64()
