@@ -1,7 +1,6 @@
 use crate::message::{
-    encoder::codec,
     header::{ContentTransferEncoding, ContentType, Header, Headers},
-    EmailFormat,
+    Body, EmailFormat,
 };
 use mime::Mime;
 use rand::Rng;
@@ -69,7 +68,7 @@ impl SinglePartBuilder {
     }
 
     /// Build singlepart using body
-    pub fn body<T: Into<Vec<u8>>>(self, body: T) -> SinglePart {
+    pub fn body<T: Into<Body>>(self, body: T) -> SinglePart {
         SinglePart {
             headers: self.headers,
             body: body.into(),
@@ -94,8 +93,7 @@ impl Default for SinglePartBuilder {
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
 ///      .header(header::ContentType("text/plain; charset=utf8".parse()?))
-///      .header(header::ContentTransferEncoding::Binary)
-///      .body("Текст письма в уникоде");
+///      .body(String::from("Текст письма в уникоде"));
 /// # Ok(())
 /// # }
 /// ```
@@ -103,61 +101,84 @@ impl Default for SinglePartBuilder {
 #[derive(Debug, Clone)]
 pub struct SinglePart {
     headers: Headers,
-    body: Vec<u8>,
+    body: Body,
 }
 
 impl SinglePart {
-    /// Creates a default builder for singlepart
+    /// Creates a builder for singlepart
+    #[inline]
     pub fn builder() -> SinglePartBuilder {
         SinglePartBuilder::new()
     }
 
-    /// Creates a singlepart builder with 7bit encoding
+    /// Creates a singlepart builder using 7bit encoding
     ///
-    /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::SevenBit)`.
+    /// 7bit encoding is the most efficient encoding available,
+    /// but it requires the body only to consist of US-ASCII characters,
+    /// with no lines longer than 1000 characters.
+    ///
+    /// When in doubt use [`SinglePart::builder`] instead, which
+    /// chooses the best encoding based on the body.
+    ///
+    /// # Panics
+    ///
+    /// The above conditions are checked when the Body gets encoded
+    #[inline]
     pub fn seven_bit() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::SevenBit)
     }
 
-    /// Creates a singlepart builder with quoted-printable encoding
+    /// Creates a singlepart builder using quoted-printable encoding
     ///
-    /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::QuotedPrintable)`.
+    /// quoted-printable encoding should be used when the body may contain
+    /// lines longer than 1000 characters or a few non US-ASCII characters may be present.
+    /// If the body contains many non US-ASCII characters, [`SinglePart::base64`]
+    /// should be used instead, since it creates a smaller output compared
+    /// to quoted-printable.
+    ///
+    /// When in doubt use [`SinglePart::builder`] instead, which
+    /// chooses the best encoding based on the body.
+    #[inline]
     pub fn quoted_printable() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::QuotedPrintable)
     }
 
-    /// Creates a singlepart builder with base64 encoding
+    /// Creates a singlepart builder using base64 encoding
     ///
-    /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::Base64)`.
+    /// base64 encoding must be used when the body is composed of mainly
+    /// non-text data.
+    ///
+    /// When in doubt use [`SinglePart::builder`] instead, which
+    /// chooses the best encoding based on the body.
+    #[inline]
     pub fn base64() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::Base64)
     }
 
-    /// Creates a singlepart builder with 8-bit encoding
+    /// Creates a singlepart builder using 8bit encoding
     ///
-    /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::EightBit)`.
+    /// Some SMTP servers might not support 8bit bodies.
+    ///
+    /// When in doubt use [`SinglePart::builder`] instead, which
+    /// chooses the best encoding based on the body.
+    #[inline]
     pub fn eight_bit() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::EightBit)
     }
 
-    /// Creates a singlepart builder with binary encoding
-    ///
-    /// Shortcut for `SinglePart::builder().header(ContentTransferEncoding::Binary)`.
-    pub fn binary() -> SinglePartBuilder {
-        Self::builder().header(ContentTransferEncoding::Binary)
-    }
-
     /// Get the headers from singlepart
+    #[inline]
     pub fn headers(&self) -> &Headers {
         &self.headers
     }
 
     /// Read the body from singlepart
-    pub fn body_ref(&self) -> &[u8] {
+    #[inline]
+    pub fn body(&self) -> &Body {
         &self.body
     }
 
-    /// Get message content formatted for SMTP
+    /// Get message content formatted for sending
     pub fn formatted(&self) -> Vec<u8> {
         let mut out = Vec::new();
         self.format(&mut out);
@@ -170,10 +191,14 @@ impl EmailFormat for SinglePart {
         out.extend_from_slice(self.headers.to_string().as_bytes());
         out.extend_from_slice(b"\r\n");
 
-        let encoding = self.headers.get::<ContentTransferEncoding>();
-        let mut encoder = codec(encoding);
+        let encoding = self
+            .headers
+            .get::<ContentTransferEncoding>()
+            .copied()
+            .unwrap_or_else(|| self.body.encoding());
+        let encoded = self.body.encode(encoding);
 
-        out.extend_from_slice(&encoder.encode(&self.body));
+        out.extend_from_slice(encoded.as_ref().as_ref());
         out.extend_from_slice(b"\r\n");
     }
 }
