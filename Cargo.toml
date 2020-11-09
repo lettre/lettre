@@ -103,11 +103,11 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [[example]]
 name = "basic_html"
-required-features = ["file-transport"]
+required-features = ["file-transport", "builder"]
 
 [[example]]
 name = "maud_html"
-required-feautres = ["file-transport"]
+required-features = ["file-transport", "builder"]
 
 [[example]]
 name = "smtp"
