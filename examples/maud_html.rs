@@ -11,9 +11,7 @@ fn main() {
         head {
             title { "Hello from Lettre!" }
             style type="text/css" {
-                "h2, h4 {
-                    font-family: Arial, Helvetica, sans-serif;
-                }"
+                "h2, h4 { font-family: Arial, Helvetica, sans-serif; }"
             }
         }
         div style="display: flex; flex-direction: column; align-items: center;" {
