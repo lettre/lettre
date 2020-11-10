@@ -23,7 +23,7 @@ lettre = { version = "^0.9", path = "../lettre", features = ["smtp-transport"] }
 glob = "0.3"
 
 [dependencies]
-email = "^0.0.20"
+email = ">=0.0.20, <0.0.22"
 mime = "^0.3"
 time = "^0.1"
 uuid = { version = "^0.7", features = ["v4"] }
