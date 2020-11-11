@@ -52,6 +52,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTranspo
                     "-i",
                     "-f",
                     &email.from().to_string(),
+                    "--",
                     &to_addresses.join(" "),
                 ],
             )
