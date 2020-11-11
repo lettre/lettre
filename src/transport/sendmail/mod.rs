@@ -120,6 +120,7 @@ impl SendmailTransport {
         c.arg("-i")
             .arg("-f")
             .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
@@ -135,6 +136,7 @@ impl SendmailTransport {
         c.arg("-i")
             .arg("-f")
             .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
@@ -150,6 +152,7 @@ impl SendmailTransport {
         c.arg("-i")
             .arg("-f")
             .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
+            .arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
