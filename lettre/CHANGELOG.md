@@ -1,3 +1,11 @@
+### v0.7.1 (2020-11-11)
+
+#### Bug fixes
+
+* **transport**
+
+  * **SECURITY**: Prevent argument injection in sendmail transport
+
 ### v0.7.0 (2017-10-08)
 
 #### Features
