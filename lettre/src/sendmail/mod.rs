@@ -46,6 +46,7 @@ impl<'a, T: Read + 'a> EmailTransport<'a, T, SendmailResult> for SendmailTranspo
                     Some(address) => address.to_string(),
                     None => "\"\"".to_string(),
                 },
+                "--",
                 &to_addresses.join(" "),
             ])
             .stdin(Stdio::piped())
