@@ -1,7 +1,10 @@
 <a name="v0.9.4"></a>
-### v0.9.4 (2020-04-21)
+### v0.9.4 (2020-11-11)
 
 #### Bug Fixes
+
+* **transport**
+  * **SECURITY**: Prevent argument injection in sendmail transport
 
 * **email**
   * Go back to `rust-email` 0.0.20 as upgrade broke message formatting ([6a40f4a](https://github.com/lettre/lettre/commit/6a40f4a)
