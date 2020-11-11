@@ -117,10 +117,11 @@ impl SendmailTransport {
 
     fn command(&self, envelope: &Envelope) -> Command {
         let mut c = Command::new(&self.command);
-        c.arg("-i")
-            .arg("-f")
-            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
-            .arg("--")
+        c.arg("-i");
+        if let Some(from) = envelope.from() {
+            c.arg("-f").arg(from);
+        }
+        c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
@@ -133,10 +134,11 @@ impl SendmailTransport {
 
         let mut c = Command::new(&self.command);
         c.kill_on_drop(true);
-        c.arg("-i")
-            .arg("-f")
-            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
-            .arg("--")
+        c.arg("-i");
+        if let Some(from) = envelope.from() {
+            c.arg("-f").arg(from);
+        }
+        c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
@@ -149,10 +151,11 @@ impl SendmailTransport {
 
         let mut c = Command::new(&self.command);
         c.kill_on_drop(true);
-        c.arg("-i")
-            .arg("-f")
-            .arg(envelope.from().map(|f| f.as_ref()).unwrap_or("\"\""))
-            .arg("--")
+        c.arg("-i");
+        if let Some(from) = envelope.from() {
+            c.arg("-f").arg(from);
+        }
+        c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped());
