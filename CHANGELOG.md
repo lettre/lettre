@@ -1,3 +1,12 @@
+<a name="v0.8.4"></a>
+### v0.8.4 (2020-11-11)
+
+#### Bug Fixes
+
+* **transport**
+
+  * **SECURITY**: Prevent argument injection in sendmail transport
+
 <a name="v0.8.2"></a>
 ### v0.8.2 (2018-05-03)
 
