@@ -124,7 +124,8 @@ impl SendmailTransport {
         c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped());
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         c
     }
 
@@ -141,7 +142,8 @@ impl SendmailTransport {
         c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped());
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         c
     }
 
@@ -158,7 +160,8 @@ impl SendmailTransport {
         c.arg("--")
             .args(envelope.to())
             .stdin(Stdio::piped())
-            .stdout(Stdio::piped());
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
         c
     }
 }
