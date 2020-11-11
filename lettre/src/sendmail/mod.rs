@@ -50,6 +50,7 @@ impl<'a> Transport<'a> for SendmailTransport {
                     .map(|x| x.as_ref())
                     .unwrap_or("\"\""),
             )
+            .arg("--")
             .args(email.envelope.to())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
