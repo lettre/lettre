@@ -14,8 +14,6 @@ pub enum Error {
     Client(&'static str),
     /// IO error
     Io(io::Error),
-    /// JSON serialization error
-    JsonSerialization(serde_json::Error),
 }
 
 impl Display for Error {
@@ -23,7 +21,6 @@ impl Display for Error {
         match *self {
             Client(err) => fmt.write_str(err),
             Io(ref err) => err.fmt(fmt),
-            JsonSerialization(ref err) => err.fmt(fmt),
         }
     }
 }
@@ -32,7 +29,6 @@ impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
             Io(ref err) => Some(&*err),
-            JsonSerialization(ref err) => Some(&*err),
             _ => None,
         }
     }
@@ -41,12 +37,6 @@ impl StdError for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error::Io(err)
-    }
-}
-
-impl From<serde_json::Error> for Error {
-    fn from(err: serde_json::Error) -> Error {
-        Error::JsonSerialization(err)
     }
 }
 
