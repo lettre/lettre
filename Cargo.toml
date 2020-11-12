@@ -33,7 +33,6 @@ regex = "1"
 
 # file transport
 serde = { version = "1", optional = true, features = ["derive"] }
-serde_json = { version = "1", optional = true }
 
 # smtp
 nom = { version = "6", default-features = false, features = ["alloc"], optional = true }
@@ -70,6 +69,7 @@ glob = "0.3"
 walkdir = "2"
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }
 tokio03_crate = { package = "tokio", version = "0.3", features = ["macros", "rt-multi-thread"] }
+serde_json = "1"
 
 [[bench]]
 harness = false
@@ -81,7 +81,7 @@ default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2",
 builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
 
 # transports
-file-transport = ["serde", "serde_json"]
+file-transport = []
 sendmail-transport = []
 smtp-transport = ["base64", "nom"]
 
