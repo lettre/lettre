@@ -1,5 +1,5 @@
 //! The file transport writes the emails to the given directory. The name of the file will be
-//! `message_id.json`.
+//! `message_id.eml`.
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 //! ## Sync example
@@ -85,17 +85,14 @@
 //!
 //! Example result
 //!
-//! ```json
-//! {
-//!   "envelope": {
-//!     "forward_path": [
-//!       "hei@domain.tld"
-//!     ],
-//!     "reverse_path": "nobody@domain.tld"
-//!   },
-//!   "raw_message": null,
-//!   "message": "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 18 Aug 2020 22:50:17 GMT\r\n\r\nBe happy!"
-//! }
+//! ```eml
+//! From: NoBody <nobody@domain.tld>
+//! Reply-To: Yuin <yuin@domain.tld>
+//! To: Hei <hei@domain.tld>
+//! Subject: Happy new year
+//! Date: Tue, 18 Aug 2020 22:50:17 GMT
+//!
+//! Be happy!
 //! ```
 
 pub use self::error::Error;
@@ -143,43 +140,17 @@ struct SerializableEmail<'a> {
     message: Option<&'a str>,
 }
 
-impl FileTransport {
-    fn send_raw_impl(
-        &self,
-        envelope: &Envelope,
-        email: &[u8],
-    ) -> Result<(Uuid, PathBuf, String), serde_json::Error> {
-        let email_id = Uuid::new_v4();
-        let file = self.path.join(format!("{}.json", email_id));
-
-        let serialized = match str::from_utf8(email) {
-            // Serialize as UTF-8 string if possible
-            Ok(m) => serde_json::to_string(&SerializableEmail {
-                envelope: envelope.clone(),
-                message: Some(m),
-                raw_message: None,
-            }),
-            Err(_) => serde_json::to_string(&SerializableEmail {
-                envelope: envelope.clone(),
-                message: None,
-                raw_message: Some(email),
-            }),
-        }?;
-
-        Ok((email_id, file, serialized))
-    }
-}
-
 impl Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use std::fs;
 
-        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+        let email_id = Uuid::new_v4();
+        let file = self.path.join(format!("{}.eml", email_id));
 
-        fs::write(file, serialized)?;
+        fs::write(file, email)?;
         Ok(email_id.to_string())
     }
 }
@@ -190,12 +161,13 @@ impl AsyncStd1Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use async_std::fs;
 
-        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+        let email_id = Uuid::new_v4();
+        let file = self.path.join(format!("{}.eml", email_id));
 
-        fs::write(file, serialized).await?;
+        fs::write(file, email).await?;
         Ok(email_id.to_string())
     }
 }
@@ -206,12 +178,13 @@ impl Tokio02Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio02_crate::fs;
 
-        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+        let email_id = Uuid::new_v4();
+        let file = self.path.join(format!("{}.eml", email_id));
 
-        fs::write(file, serialized).await?;
+        fs::write(file, email).await?;
         Ok(email_id.to_string())
     }
 }
@@ -222,12 +195,13 @@ impl Tokio03Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio03_crate::fs;
 
-        let (email_id, file, serialized) = self.send_raw_impl(envelope, email)?;
+        let email_id = Uuid::new_v4();
+        let file = self.path.join(format!("{}.eml", email_id));
 
-        fs::write(file, serialized).await?;
+        fs::write(file, email).await?;
         Ok(email_id.to_string())
     }
 }
