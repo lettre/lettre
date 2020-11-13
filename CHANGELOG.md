@@ -14,13 +14,11 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 #### Features
 
-* Add `tokio03` support
-* Add `tokio02` support
+* Add `tokio` 0.2 and 0.3 support
 * Add `rustls` support
-* Add `async-std`
+* Add `async-std` support
+* Allow enabling multiple SMTP authentication mechanisms
 * Allow providing a custom message id
-* Add `EmailAddress::is_valid` and `into_inner`
-* Allow forcing of a specific auth
 * Allow sending raw emails
 
 #### Breaking Changes
@@ -28,13 +26,16 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 * Merge `lettre_email` into `lettre`
 * Merge `Email` and `SendableEmail` into `lettre::message::Email`
 * SmtpTransport is now an high level SMTP client. It provides connection pooling and shortcuts for building clients using commonly desired values
-* Refactor TlsParameter implementation to not expose the intrnal TLS library
-* Rename `serde-impls` feature to `serde`
+* Refactor `TlsParameters` implementation to not expose the internal TLS library
+* `FileTransport` writes emails into `.eml` instead of `.json`
 * When the hostname feature is disabled or hostname cannot be fetched, `127.0.0.1` is used instead of `localhost` as EHLO parameter (for better RFC compliance and mail server compatibility)
 * The `new` method of `ClientId` is deprecated
+* Rename `serde-impls` feature to `serde`
+
 
 #### Bug Fixes
 
+* Fix argument injection in `SendmailTransport` (see [RUSTSEC-2020-0069](https://github.com/RustSec/advisory-db/blob/master/crates/lettre/RUSTSEC-2020-0069.md))
 * Correctly encode header values containing non-ASCII characters
 * Timeout bug causing infinite hang
 * Fix doc tests in website
@@ -43,17 +44,14 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 #### Misc
 
 * Improve documentation, examples and tests
-* Replace line-wrap, email, bufstream with our own implementations
-* Remove bytes
-* Remove time
-* Remove fast_chemail
-* Update hyperx to 1.0
-* Update rustls to 0.18
-* Update base64 to 0.13
-* Update hostname to 0.3
-* Update to nom 6
-* Replace textnonce with rand
-* Replace log with tracing
+* Replace `line-wrap`, `email`, `bufstream` with our own implementations
+* Remove `bytes`
+* Remove `time`
+* Remove `fast_chemail`
+* Update `base64` to 0.13
+* Update `hostname` to 0.3
+* Update to `nom` 6
+* Replace `log` with `tracing`
 * Move CI to Github Actions
 * Use criterion for benchmarks
 
