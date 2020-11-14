@@ -5,7 +5,8 @@
 
 Several breaking changes were made between 0.9 and 0.10, but changes should be straightforward:
 
-* The `lettre_email` crate has been merged into `lettre`. To migrate, replace `lettre_email` with `lettre::builder`
+* MSRV is now 1.45.2
+* The `lettre_email` crate has been merged into `lettre`. To migrate, replace `lettre_email` with `lettre::message`
   and make sure to enable the `builder` feature (it's enabled by default).
 * `SendableEmail` has been renamed to `Email` and `EmailBuilder::build()` produces it directly. To migrate,
   rename `SendableEmail` to `Email`.
@@ -13,33 +14,46 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 #### Features
 
-* Add `rustls` support ([29e4829](https://github.com/lettre/lettre/commit/29e4829), [39a0686](https://github.com/lettre/lettre/commit/39a0686))
-* Allow providing a custom message id ([50d96ad](https://github.com/lettre/lettre/commit/50d96ad))
-* Add `EmailAddress::is_valid` and `into_inner` ([e5a1248](https://github.com/lettre/lettre/commit/e5a1248))
-* Accept `Into<SendableEmail>` ([86e5181](https://github.com/lettre/lettre/commit/86e5181))
-* Allow forcing of a specific auth ([bf2adca](https://github.com/lettre/lettre/commit/bf2adca))
-* Add `build_body` ([e927d0b](https://github.com/lettre/lettre/commit/e927d0b))
+* Add `tokio` 0.2 and 0.3 support
+* Add `rustls` support
+* Add `async-std` support
+* Allow enabling multiple SMTP authentication mechanisms
+* Allow providing a custom message id
+* Allow sending raw emails
 
-#### Changes
+#### Breaking Changes
 
-* Move CI to Github Actions ([3eef024](https://github.com/lettre/lettre/commit/3eef024))
-* MSRV is now 1.36 ([d227cd4](https://github.com/lettre/lettre/commit/d227cd4))
-* Merged `lettre_email` into `lettre` ([0f3f27f](https://github.com/lettre/lettre/commit/0f3f27f))
-* Rename `serde-impls` feature to `serde` ([aac3e00](https://github.com/lettre/lettre/commit/aac3e00))
-* Use criterion for benchmarks ([eda7fc1](https://github.com/lettre/lettre/commit/eda7fc1))
-* Update to nom 5 ([5bc1cba](https://github.com/lettre/lettre/commit/5bc1cba))
-* Change website url schemes to https ([6014f5c](https://github.com/lettre/lettre/commit/6014f5c))
-* Use serde's `derive` feature instead of the `serde_derive` crate ([4fbe700](https://github.com/lettre/lettre/commit/4fbe700))
-* Merge `Email` and `SendableEmail` into `lettre::Email` ([ce37464](https://github.com/lettre/lettre/commit/ce37464))
-* When the hostname feature is disabled or hostname cannot be fetched, `127.0.0.1` is used instead of `localhost` as
-  EHLO parameter (for better RFC compliance and mail server compatibility)
+* Merge `lettre_email` into `lettre`
+* Merge `Email` and `SendableEmail` into `lettre::message::Email`
+* SmtpTransport is now an high level SMTP client. It provides connection pooling and shortcuts for building clients using commonly desired values
+* Refactor `TlsParameters` implementation to not expose the internal TLS library
+* `FileTransport` writes emails into `.eml` instead of `.json`
+* When the hostname feature is disabled or hostname cannot be fetched, `127.0.0.1` is used instead of `localhost` as EHLO parameter (for better RFC compliance and mail server compatibility)
 * The `new` method of `ClientId` is deprecated
+* Rename `serde-impls` feature to `serde`
+
 
 #### Bug Fixes
 
-* Timeout bug causing infinite hang ([6eff9d3](https://github.com/lettre/lettre/commit/6eff9d3))
-* Fix doc tests in website ([947af0a](https://github.com/lettre/lettre/commit/947af0a))
-* Fix docs for `domain` field ([0e05e0e](https://github.com/lettre/lettre/commit/0e05e0e))
+* Fix argument injection in `SendmailTransport` (see [RUSTSEC-2020-0069](https://github.com/RustSec/advisory-db/blob/master/crates/lettre/RUSTSEC-2020-0069.md))
+* Correctly encode header values containing non-ASCII characters
+* Timeout bug causing infinite hang
+* Fix doc tests in website
+* Fix docs for `domain` field
+
+#### Misc
+
+* Improve documentation, examples and tests
+* Replace `line-wrap`, `email`, `bufstream` with our own implementations
+* Remove `bytes`
+* Remove `time`
+* Remove `fast_chemail`
+* Update `base64` to 0.13
+* Update `hostname` to 0.3
+* Update to `nom` 6
+* Replace `log` with `tracing`
+* Move CI to Github Actions
+* Use criterion for benchmarks
 
 <a name="v0.9.2"></a>
 ### v0.9.2 (2019-06-11)
