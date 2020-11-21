@@ -103,14 +103,14 @@
 //!             .singlepart(
 //!                 SinglePart::quoted_printable()
 //!                 .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                 .body("Привет, мир!")
+//!                 .body("Hello, world! :)")
 //!             )
 //!             .multipart(
 //!                MultiPart::related()
 //!                 .singlepart(
 //!                     SinglePart::eight_bit()
 //!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
-//!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=smile.png></p>")
+//!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123>")
 //!                 )
 //!                 .singlepart(
 //!                     SinglePart::base64()
@@ -119,6 +119,7 @@
 //!                         disposition: header::DispositionType::Inline,
 //!                         parameters: vec![],
 //!                     })
+//!                     .header(header::ContentId("<123>".into()))
 //!                     .body("<smile-raw-image-data>")
 //!                 )
 //!             )
