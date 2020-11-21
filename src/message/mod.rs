@@ -110,7 +110,7 @@
 //!                 .singlepart(
 //!                     SinglePart::eight_bit()
 //!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
-//!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123>")
+//!                     .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>")
 //!                 )
 //!                 .singlepart(
 //!                     SinglePart::base64()
@@ -498,7 +498,7 @@ impl Default for MessageBuilder {
 
 #[cfg(test)]
 mod test {
-    use crate::message::{header, mailbox::Mailbox, Message};
+    use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
 
     #[test]
     fn email_missing_originator() {
@@ -554,5 +554,50 @@ mod test {
                 "Happy new year!"
             )
         );
+    }
+
+    #[test]
+    fn email_with_png() {
+        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        let img = std::fs::read("./docs/lettre.png").unwrap();
+        let m = Message::builder()
+            .date(date)
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+            .to("Hei <hei@domain.tld>".parse().unwrap())
+            .subject("Happy new year")
+            .multipart(
+                MultiPart::related()
+                    .singlepart(
+                        SinglePart::eight_bit()
+                            .header(header::ContentType(
+                                "text/html; charset=utf8".parse().unwrap(),
+                            ))
+                            .body("<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>"),
+                    )
+                    .singlepart(
+                        SinglePart::base64()
+                            .header(header::ContentType("image/png".parse().unwrap()))
+                            .header(header::ContentDisposition {
+                                disposition: header::DispositionType::Inline,
+                                parameters: vec![],
+                            })
+                            .header(header::ContentId("<123>".into()))
+                            .body(img),
+                    ),
+            )
+            .unwrap();
+
+        let output = String::from_utf8(m.formatted()).unwrap();
+        let file_expected = std::fs::read("./testdata/email_with_png.eml").unwrap();
+        let expected = String::from_utf8(file_expected).unwrap();
+
+        for (i, line) in output.lines().zip(expected.lines()).enumerate() {
+            if i == 6 || i == 8 || i == 13 || i == 232 {
+                continue;
+            }
+
+            assert_eq!(line.0, line.1)
+        }
     }
 }
