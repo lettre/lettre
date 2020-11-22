@@ -21,7 +21,7 @@ pub enum ContentTransferEncoding {
 
 impl Default for ContentTransferEncoding {
     fn default() -> Self {
-        ContentTransferEncoding::SevenBit
+        ContentTransferEncoding::Base64
     }
 }
 
