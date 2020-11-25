@@ -121,36 +121,62 @@ type Id = String;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FileTransport {
     path: PathBuf,
+    #[cfg(feature = "file-transport-envelope")]
+    save_envelope: bool,
 }
 
 impl FileTransport {
     /// Creates a new transport to the given directory
+    ///
+    /// Writes the email content in eml format.
     pub fn new<P: AsRef<Path>>(path: P) -> FileTransport {
         FileTransport {
             path: PathBuf::from(path.as_ref()),
+            #[cfg(feature = "file-transport-envelope")]
+            save_envelope: false,
         }
     }
-}
 
-#[derive(PartialEq, Eq, Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-struct SerializableEmail<'a> {
-    envelope: Envelope,
-    raw_message: Option<&'a [u8]>,
-    message: Option<&'a str>,
+    /// Creates a new transport to the given directory
+    ///
+    /// Writes the email content in eml format and the envelope
+    /// in json format.
+    #[cfg(feature = "file-transport-envelope")]
+    pub fn with_envelope<P: AsRef<Path>>(path: P) -> FileTransport {
+        FileTransport {
+            path: PathBuf::from(path.as_ref()),
+            #[cfg(feature = "file-transport-envelope")]
+            save_envelope: true,
+        }
+    }
+
+    fn path(&self, email_id: &Uuid, extension: &str) -> PathBuf {
+        self.path.join(format!("{}.{}", email_id, extension))
+    }
 }
 
 impl Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use std::fs;
 
         let email_id = Uuid::new_v4();
-        let file = self.path.join(format!("{}.eml", email_id));
 
+        let file = self.path(&email_id, "eml");
         fs::write(file, email)?;
+
+        #[cfg(feature = "file-transport-envelope")]
+        {
+            if self.save_envelope {
+                let file = self.path(&email_id, "json");
+                fs::write(file, serde_json::to_string(&envelope)?)?;
+            }
+        }
+        // use envelope anyway
+        let _ = envelope;
+
         Ok(email_id.to_string())
     }
 }
@@ -161,13 +187,24 @@ impl AsyncStd1Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use async_std::fs;
 
         let email_id = Uuid::new_v4();
-        let file = self.path.join(format!("{}.eml", email_id));
 
+        let file = self.path(&email_id, "eml");
         fs::write(file, email).await?;
+
+        #[cfg(feature = "file-transport-envelope")]
+        {
+            if self.save_envelope {
+                let file = self.path(&email_id, "json");
+                fs::write(file, serde_json::to_string(&envelope)?).await?;
+            }
+        }
+        // use envelope anyway
+        let _ = envelope;
+
         Ok(email_id.to_string())
     }
 }
@@ -178,13 +215,23 @@ impl Tokio02Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio02_crate::fs;
 
         let email_id = Uuid::new_v4();
-        let file = self.path.join(format!("{}.eml", email_id));
-
+        let file = self.path(&email_id, "eml");
         fs::write(file, email).await?;
+
+        #[cfg(feature = "file-transport-envelope")]
+        {
+            if self.save_envelope {
+                let file = self.path(&email_id, "json");
+                fs::write(file, serde_json::to_string(&envelope)?).await?;
+            }
+        }
+        // use envelope anyway
+        let _ = envelope;
+
         Ok(email_id.to_string())
     }
 }
@@ -195,13 +242,24 @@ impl Tokio03Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
-    async fn send_raw(&self, _envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio03_crate::fs;
 
         let email_id = Uuid::new_v4();
-        let file = self.path.join(format!("{}.eml", email_id));
 
+        let file = self.path(&email_id, "eml");
         fs::write(file, email).await?;
+
+        #[cfg(feature = "file-transport-envelope")]
+        {
+            if self.save_envelope {
+                let file = self.path(&email_id, "json");
+                fs::write(file, serde_json::to_string(&envelope)?).await?;
+            }
+        }
+        // use envelope anyway
+        let _ = envelope;
+
         Ok(email_id.to_string())
     }
 }

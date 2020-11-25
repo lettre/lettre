@@ -33,6 +33,7 @@ regex = "1"
 
 # file transport
 serde = { version = "1", optional = true, features = ["derive"] }
+serde_json = { version = "1", optional = true }
 
 # smtp
 nom = { version = "6", default-features = false, features = ["alloc"], optional = true }
@@ -77,12 +78,12 @@ harness = false
 name = "transport_smtp"
 
 [features]
-default = ["file-transport", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
-
+default = ["file-transport", "file-transport-envelope", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
 builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
 
 # transports
 file-transport = []
+file-transport-envelope = ["serde", "serde_json"]
 sendmail-transport = []
 smtp-transport = ["base64", "nom"]
 
