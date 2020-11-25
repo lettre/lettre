@@ -30,6 +30,37 @@
 //! # fn main() {}
 //! ```
 //!
+//! ## Sync example with envelope
+//!
+//! It is possible to also write the envelope content in a separate JSON file
+//! by using the `with_envelope` builder. The JSON file will be written in the
+//! target directory with same name and a `json` extension.
+//!
+//! ```rust
+//! # use std::error::Error;
+//!
+//! # #[cfg(all(feature = "file-transport", feature = "builder"))]
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! use std::env::temp_dir;
+//! use lettre::{Transport, Message, FileTransport};
+//!
+//! // Write to the local temp directory
+//! let sender = FileTransport::with_envelope(temp_dir());
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
+//!     .subject("Happy new year")
+//!     .body("Be happy!")?;
+//!
+//! let result = sender.send(&email);
+//! assert!(result.is_ok());
+//! # Ok(())
+//! # }
+//!
+//! # #[cfg(not(all(feature = "file-transport", feature = "builder")))]
+//! # fn main() {}
+//! ```
 //!
 //! ## Async tokio 0.2
 //!
@@ -83,7 +114,7 @@
 //!
 //! ---
 //!
-//! Example result
+//! Example email content result
 //!
 //! ```eml
 //! From: NoBody <nobody@domain.tld>
@@ -93,6 +124,12 @@
 //! Date: Tue, 18 Aug 2020 22:50:17 GMT
 //!
 //! Be happy!
+//! ```
+//!
+//! Example envelope result
+//!
+//! ```json
+//! {"forward_path":["hei@domain.tld"],"reverse_path":"nobody@domain.tld"}
 //! ```
 
 pub use self::error::Error;
