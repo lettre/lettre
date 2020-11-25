@@ -39,7 +39,7 @@
 //! ```rust
 //! # use std::error::Error;
 //!
-//! # #[cfg(all(feature = "file-transport", feature = "builder"))]
+//! # #[cfg(all(feature = "file-transport-envelope", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //! use lettre::{Transport, Message, FileTransport};
@@ -58,7 +58,7 @@
 //! # Ok(())
 //! # }
 //!
-//! # #[cfg(not(all(feature = "file-transport", feature = "builder")))]
+//! # #[cfg(not(all(feature = "file-transport-envelope", feature = "builder")))]
 //! # fn main() {}
 //! ```
 //!
