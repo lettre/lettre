@@ -83,7 +83,7 @@ builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
 
 # transports
 file-transport = []
-file-transport-envelope = ["serde", "serde_json"]
+file-transport-envelope = ["serde", "serde_json", "file-transport"]
 sendmail-transport = []
 smtp-transport = ["base64", "nom"]
 
