@@ -11,6 +11,7 @@
 //!
 //! * **builder**: Message builder
 //! * **file-transport**: Transport that write messages into a file
+//! * **file-transport-envelope**: Allow writing the envelope into a JSON file
 //! * **smtp-transport**: Transport over SMTP
 //! * **sendmail-transport**: Transport over SMTP
 //! * **rustls-tls**: TLS support with the `rustls` crate
