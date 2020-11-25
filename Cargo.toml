@@ -41,9 +41,9 @@ hostname = { version = "0.3", optional = true } # feature
 
 ## tls
 native-tls = { version = "0.2", optional = true } # feature
-rustls = { version = "0.18", features = ["dangerous_configuration"], optional = true }
+rustls = { version = "0.19", features = ["dangerous_configuration"], optional = true }
 webpki = { version = "0.21", optional = true }
-webpki-roots = { version = "0.20", optional = true }
+webpki-roots = { version = "0.21", optional = true }
 
 # async
 futures-io = { version = "0.3.7", optional = true }
@@ -57,10 +57,10 @@ async-trait = { version = "0.1", optional = true }
 ## tokio
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "tcp", "dns", "io-util"], optional = true }
 tokio02_native_tls_crate = { package = "tokio-native-tls", version = "0.1", optional = true }
-tokio02_rustls = { package = "tokio-rustls", version = "0.14", optional = true }
+tokio02_rustls = { package = "tokio-rustls", version = "0.15", optional = true }
 tokio03_crate = { package = "tokio", version = "0.3", features = ["fs", "process", "net", "io-util"], optional = true }
 tokio03_native_tls_crate = { package = "tokio-native-tls", version = "0.2", optional = true }
-tokio03_rustls = { package = "tokio-rustls", version = "0.20", optional = true }
+tokio03_rustls = { package = "tokio-rustls", version = "0.21", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
