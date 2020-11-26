@@ -81,12 +81,18 @@ mod test {
                 "Be happy!"
             )
         );
-        remove_file(eml_file).unwrap();
 
         assert_eq!(
             json,
             "{\"forward_path\":[\"hei@domain.tld\"],\"reverse_path\":\"nobody@domain.tld\"}"
         );
+
+        let (e, m) = sender.read(&id).unwrap();
+
+        assert_eq!(&e, email.envelope());
+        assert_eq!(m, email.formatted());
+
+        remove_file(eml_file).unwrap();
         remove_file(json_file).unwrap();
     }
 
