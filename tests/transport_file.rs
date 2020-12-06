@@ -20,7 +20,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(&email);
@@ -31,7 +31,17 @@ mod test {
 
         assert_eq!(
             eml,
-            "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 15 Nov 1994 08:12:31 GMT\r\n\r\nBe happy!");
+            concat!(
+                "From: NoBody <nobody@domain.tld>\r\n",
+                "Reply-To: Yuin <yuin@domain.tld>\r\n",
+                "To: Hei <hei@domain.tld>\r\n",
+                "Subject: Happy new year\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Be happy!"
+            )
+        );
         remove_file(eml_file).unwrap();
     }
 
@@ -46,7 +56,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(&email);
@@ -60,7 +70,17 @@ mod test {
 
         assert_eq!(
             eml,
-            "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 15 Nov 1994 08:12:31 GMT\r\n\r\nBe happy!");
+            concat!(
+                "From: NoBody <nobody@domain.tld>\r\n",
+                "Reply-To: Yuin <yuin@domain.tld>\r\n",
+                "To: Hei <hei@domain.tld>\r\n",
+                "Subject: Happy new year\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Be happy!"
+            )
+        );
         remove_file(eml_file).unwrap();
 
         assert_eq!(
@@ -82,7 +102,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(email).await;
@@ -93,7 +113,17 @@ mod test {
 
         assert_eq!(
             eml,
-            "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 15 Nov 1994 08:12:31 GMT\r\n\r\nBe happy!");
+            concat!(
+                "From: NoBody <nobody@domain.tld>\r\n",
+                "Reply-To: Yuin <yuin@domain.tld>\r\n",
+                "To: Hei <hei@domain.tld>\r\n",
+                "Subject: Happy new year\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Be happy!"
+            )
+        );
         remove_file(eml_file).unwrap();
     }
 
@@ -109,7 +139,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(email).await;
@@ -120,7 +150,17 @@ mod test {
 
         assert_eq!(
             eml,
-            "From: NoBody <nobody@domain.tld>\r\nReply-To: Yuin <yuin@domain.tld>\r\nTo: Hei <hei@domain.tld>\r\nSubject: Happy new year\r\nDate: Tue, 15 Nov 1994 08:12:31 GMT\r\n\r\nBe happy!");
+            concat!(
+                "From: NoBody <nobody@domain.tld>\r\n",
+                "Reply-To: Yuin <yuin@domain.tld>\r\n",
+                "To: Hei <hei@domain.tld>\r\n",
+                "Subject: Happy new year\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Be happy!"
+            )
+        );
         remove_file(eml_file).unwrap();
     }
 }

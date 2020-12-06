@@ -7,15 +7,15 @@ MIME-Version: 1.0
 Content-Type: multipart/related; boundary="kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec"
 
 --kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec
-Content-Transfer-Encoding: 8bit
 Content-Type: text/html; charset=utf8
+Content-Transfer-Encoding: 7bit
 
 <p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>
 --kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec
-Content-Transfer-Encoding: base64
 Content-Type: image/png
 Content-Disposition: inline
 Content-ID: <123>
+Content-Transfer-Encoding: base64
 
 iVBORw0KGgoAAAANSUhEUgAAA+gAAAPoCAYAAABNo9TkAAAACXBIWXMAASdGAAEnRgHWSSfaAAAA
 GXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAIABJREFUeJzs3WmMlfXd//HvzLAO

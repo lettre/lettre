@@ -13,7 +13,7 @@ fn bench_simple_send(c: &mut Criterion) {
                 .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
                 .to("Hei <hei@domain.tld>".parse().unwrap())
                 .subject("Happy new year")
-                .body("Be happy!")
+                .body(String::from("Be happy!"))
                 .unwrap();
             let result = black_box(sender.send(&email));
             assert!(result.is_ok());
@@ -32,7 +32,7 @@ fn bench_reuse_send(c: &mut Criterion) {
                 .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
                 .to("Hei <hei@domain.tld>".parse().unwrap())
                 .subject("Happy new year")
-                .body("Be happy!")
+                .body(String::from("Be happy!"))
                 .unwrap();
             let result = black_box(sender.send(&email));
             assert!(result.is_ok());

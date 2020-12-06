@@ -14,7 +14,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(&email);
@@ -40,7 +40,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(email).await;
@@ -63,7 +63,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = SendmailTransport::new();
 //! let result = sender.send(email).await;

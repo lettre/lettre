@@ -10,7 +10,7 @@ mod test {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
         SmtpTransport::builder_dangerous("127.0.0.1")
             .port(2525)

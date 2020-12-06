@@ -15,7 +15,7 @@ mod test {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(&email);
@@ -35,7 +35,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(email).await;
@@ -54,7 +54,7 @@ mod test {
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
             .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body("Be happy!")
+            .body(String::from("Be happy!"))
             .unwrap();
 
         let result = sender.send(email).await;

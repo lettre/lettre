@@ -22,7 +22,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -184,7 +184,7 @@
 //!
 //! ```
 
-pub use body::Body;
+pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
 
@@ -196,13 +196,16 @@ mod mailbox;
 mod mimebody;
 mod utf8_b;
 
+use std::convert::TryFrom;
+use std::time::SystemTime;
+
+use uuid::Uuid;
+
 use crate::{
     address::Envelope,
-    message::header::{EmailDate, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, EmailDate, Header, Headers, MailboxesHeader},
     Error as EmailError,
 };
-use std::{convert::TryFrom, time::SystemTime};
-use uuid::Uuid;
 
 const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 
@@ -410,23 +413,17 @@ impl MessageBuilder {
         })
     }
 
-    // In theory having a body is optional
-
-    /// Plain US-ASCII body
+    /// Create [`Message`] using a [`Vec<u8>`], [`String`], or [`Body`] body
     ///
-    /// Fails if is contains non ASCII characters or if it
-    /// contains lines longer than 1000 characters, including
-    /// the `\n` character.
-    ///
-    /// *WARNING*: Generally not what you want
-    pub fn body<T: Into<String>>(self, body: T) -> Result<Message, EmailError> {
-        let body = body.into();
+    /// Automatically gets encoded with `7bit`, `quoted-printable` or `base64`
+    /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
+    /// for `body`.
+    pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let body = body.into_body(maybe_encoding);
 
-        if !self::body::is_7bit_encoded(body.as_ref()) {
-            return Err(EmailError::NonAsciiChars);
-        }
-
-        self.build(MessageBody::Raw(body))
+        self.headers.set(body.encoding());
+        self.build(MessageBody::Raw(body.into_vec()))
     }
 
     /// Create message using mime body ([`MultiPart`][self::MultiPart])
@@ -451,7 +448,7 @@ pub struct Message {
 #[derive(Clone, Debug)]
 enum MessageBody {
     Mime(Part),
-    Raw(String),
+    Raw(Vec<u8>),
 }
 
 impl Message {
@@ -485,7 +482,7 @@ impl EmailFormat for Message {
             MessageBody::Mime(p) => p.format(out),
             MessageBody::Raw(r) => {
                 out.extend_from_slice(b"\r\n");
-                out.extend(r.as_bytes())
+                out.extend_from_slice(&r)
             }
         }
     }
@@ -503,7 +500,9 @@ mod test {
 
     #[test]
     fn email_missing_originator() {
-        assert!(Message::builder().body("Happy new year!").is_err());
+        assert!(Message::builder()
+            .body(String::from("Happy new year!"))
+            .is_err());
     }
 
     #[test]
@@ -511,7 +510,7 @@ mod test {
         assert!(Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .to("NoBody <nobody@domain.tld>".parse().unwrap())
-            .body("Happy new year!")
+            .body(String::from("Happy new year!"))
             .is_ok());
     }
 
@@ -520,7 +519,7 @@ mod test {
         assert!(Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .from("AnyBody <anybody@domain.tld>".parse().unwrap())
-            .body("Happy new year!")
+            .body(String::from("Happy new year!"))
             .is_err());
     }
 
@@ -541,7 +540,7 @@ mod test {
                 vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
             ))
             .header(header::Subject("яңа ел белән!".into()))
-            .body("Happy new year!")
+            .body(String::from("Happy new year!"))
             .unwrap();
 
         assert_eq!(
@@ -551,6 +550,7 @@ mod test {
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: Pony O.P. <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Happy new year!"
             )
@@ -570,7 +570,7 @@ mod test {
             .multipart(
                 MultiPart::related()
                     .singlepart(
-                        SinglePart::eight_bit()
+                        SinglePart::builder()
                             .header(header::ContentType(
                                 "text/html; charset=utf8".parse().unwrap(),
                             ))
@@ -579,7 +579,7 @@ mod test {
                             )),
                     )
                     .singlepart(
-                        SinglePart::base64()
+                        SinglePart::builder()
                             .header(header::ContentType("image/png".parse().unwrap()))
                             .header(header::ContentDisposition {
                                 disposition: header::DispositionType::Inline,

@@ -19,7 +19,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
@@ -51,7 +51,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
@@ -79,7 +79,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
@@ -104,7 +104,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .body("Be happy!")?;
+//!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());

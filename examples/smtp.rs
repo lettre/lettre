@@ -8,7 +8,7 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
-        .body("Be happy!")
+        .body(String::from("Be happy!"))
         .unwrap();
 
     // Open a local connection on port 25
