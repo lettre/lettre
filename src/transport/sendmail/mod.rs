@@ -164,6 +164,25 @@ impl SendmailTransport {
             .stderr(Stdio::piped());
         c
     }
+
+    #[cfg(feature = "async-std1")]
+    fn async_std_command(&self, envelope: &Envelope) -> async_std::process::Command {
+        use async_std::process::Command;
+
+        let mut c = Command::new(&self.command);
+        // TODO: figure out why enabling this kills it earlier
+        // c.kill_on_drop(true);
+        c.arg("-i");
+        if let Some(from) = envelope.from() {
+            c.arg("-f").arg(from);
+        }
+        c.arg("--")
+            .args(envelope.to())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        c
+    }
 }
 
 impl Default for SendmailTransport {
@@ -198,18 +217,15 @@ impl AsyncStd1Transport for SendmailTransport {
     type Error = Error;
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        let mut command = self.command(envelope);
-        let email = email.to_vec();
+        use async_std::io::prelude::WriteExt;
 
-        // TODO: Convert to real async, once async-std has a process implementation.
-        let output = async_std::task::spawn_blocking(move || {
-            // Spawn the sendmail command
-            let mut process = command.spawn()?;
+        let mut command = self.async_std_command(envelope);
 
-            process.stdin.as_mut().unwrap().write_all(&email)?;
-            process.wait_with_output()
-        })
-        .await?;
+        // Spawn the sendmail command
+        let mut process = command.spawn()?;
+
+        process.stdin.as_mut().unwrap().write_all(&email).await?;
+        let output = process.output().await?;
 
         if output.status.success() {
             Ok(())

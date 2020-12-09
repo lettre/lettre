@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+env:
+  RUST_BACKTRACE: full
+
 jobs:
   rustfmt:
     name: rustfmt / stable
