@@ -1,6 +1,6 @@
 use crate::message::{
     header::{ContentTransferEncoding, ContentType, Header, Headers},
-    Body, EmailFormat,
+    EmailFormat, IntoBody,
 };
 use mime::Mime;
 use rand::Rng;
@@ -68,10 +68,15 @@ impl SinglePartBuilder {
     }
 
     /// Build singlepart using body
-    pub fn body<T: Into<Body>>(self, body: T) -> SinglePart {
+    pub fn body<T: IntoBody>(mut self, body: T) -> SinglePart {
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let body = body.into_body(maybe_encoding);
+
+        self.headers.set(body.encoding());
+
         SinglePart {
             headers: self.headers,
-            body: body.into(),
+            body: body.into_vec(),
         }
     }
 }
@@ -101,7 +106,7 @@ impl Default for SinglePartBuilder {
 #[derive(Debug, Clone)]
 pub struct SinglePart {
     headers: Headers,
-    body: Body,
+    body: Vec<u8>,
 }
 
 impl SinglePart {
@@ -111,57 +116,26 @@ impl SinglePart {
         SinglePartBuilder::new()
     }
 
-    /// Creates a singlepart builder using 7bit encoding
-    ///
-    /// 7bit encoding is the most efficient encoding available,
-    /// but it requires the body only to consist of US-ASCII characters,
-    /// with no lines longer than 1000 characters.
-    ///
-    /// When in doubt use [`SinglePart::builder`] instead, which
-    /// chooses the best encoding based on the body.
-    ///
-    /// # Panics
-    ///
-    /// The above conditions are checked when the Body gets encoded
-    #[inline]
+    #[doc(hidden)]
+    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
     pub fn seven_bit() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::SevenBit)
     }
 
-    /// Creates a singlepart builder using quoted-printable encoding
-    ///
-    /// quoted-printable encoding should be used when the body may contain
-    /// lines longer than 1000 characters or a few non US-ASCII characters may be present.
-    /// If the body contains many non US-ASCII characters, [`SinglePart::base64`]
-    /// should be used instead, since it creates a smaller output compared
-    /// to quoted-printable.
-    ///
-    /// When in doubt use [`SinglePart::builder`] instead, which
-    /// chooses the best encoding based on the body.
-    #[inline]
+    #[doc(hidden)]
+    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
     pub fn quoted_printable() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::QuotedPrintable)
     }
 
-    /// Creates a singlepart builder using base64 encoding
-    ///
-    /// base64 encoding must be used when the body is composed of mainly
-    /// non-text data.
-    ///
-    /// When in doubt use [`SinglePart::builder`] instead, which
-    /// chooses the best encoding based on the body.
-    #[inline]
+    #[doc(hidden)]
+    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
     pub fn base64() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::Base64)
     }
 
-    /// Creates a singlepart builder using 8bit encoding
-    ///
-    /// Some SMTP servers might not support 8bit bodies.
-    ///
-    /// When in doubt use [`SinglePart::builder`] instead, which
-    /// chooses the best encoding based on the body.
-    #[inline]
+    #[doc(hidden)]
+    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
     pub fn eight_bit() -> SinglePartBuilder {
         Self::builder().header(ContentTransferEncoding::EightBit)
     }
@@ -174,7 +148,7 @@ impl SinglePart {
 
     /// Read the body from singlepart
     #[inline]
-    pub fn body(&self) -> &Body {
+    pub fn raw_body(&self) -> &[u8] {
         &self.body
     }
 
@@ -190,15 +164,7 @@ impl EmailFormat for SinglePart {
     fn format(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(self.headers.to_string().as_bytes());
         out.extend_from_slice(b"\r\n");
-
-        let encoding = self
-            .headers
-            .get::<ContentTransferEncoding>()
-            .copied()
-            .unwrap_or_else(|| self.body.encoding());
-        let encoded = self.body.encode(encoding);
-
-        out.extend_from_slice(encoded.as_ref().as_ref());
+        out.extend_from_slice(&self.body);
         out.extend_from_slice(b"\r\n");
     }
 }
@@ -629,11 +595,13 @@ mod test {
                            "\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
                            "Content-Type: application/pgp-encrypted\r\n",
+                           "Content-Transfer-Encoding: 7bit\r\n",
                            "\r\n",
                            "Version: 1\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
                            "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
                            "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
+                           "Content-Transfer-Encoding: 7bit\r\n",
                            "\r\n",
                            "-----BEGIN PGP MESSAGE-----\r\n",
                            "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
@@ -688,11 +656,13 @@ mod test {
                            "\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
                            "Content-Type: text/plain\r\n",
+                           "Content-Transfer-Encoding: 7bit\r\n",
                            "\r\n",
                            "Test email for signature\r\n",
                            "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
                            "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
                            "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
+                           "Content-Transfer-Encoding: 7bit\r\n",
                            "\r\n",
                            "-----BEGIN PGP SIGNATURE-----\r\n",
                             "\r\n",

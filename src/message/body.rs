@@ -1,95 +1,79 @@
-use std::borrow::Cow;
 use std::io::{self, Write};
+use std::ops::Deref;
 
 use crate::message::header::ContentTransferEncoding;
 
-/// A [`SinglePart`][super::SinglePart] body.
+/// A [`Message`][super::Message] or [`SinglePart`][super::SinglePart] body.
 #[derive(Debug, Clone)]
-pub struct Body(BodyInner);
+pub struct Body {
+    buf: Vec<u8>,
+    encoding: ContentTransferEncoding,
+}
 
+/// Either a `Vec<u8>` or a `String`.
+///
+/// If the content is valid utf-8 a `String` should be passed, as it
+/// makes for a more efficient `Content-Transfer-Encoding` to be choosen.
 #[derive(Debug, Clone)]
-enum BodyInner {
+pub enum MaybeString {
     Binary(Vec<u8>),
     String(String),
 }
 
 impl Body {
-    /// Returns the length of this `Body` in bytes.
+    /// Encode the supplied `buf`, making it ready to be sent as a body.
+    ///
+    /// Automatically chooses the most efficient encoding between
+    /// `7bit`, `quoted-printable` and `base64`.
+    pub fn new<B: Into<MaybeString>>(buf: B) -> Self {
+        let buf: MaybeString = buf.into();
+
+        let encoding = buf.encoding();
+        Self::new_impl(buf.into(), encoding)
+    }
+
+    /// Encode the supplied `buf`, using the provided `encoding`.
+    ///
+    /// Generally [`Body::new`] should be used.
+    ///
+    /// Returns an [`Err`] with the supplied `buf` untouched in case
+    /// the choosen encoding wouldn't have worked.
+    pub fn new_with_encoding<B: Into<MaybeString>>(
+        buf: B,
+        encoding: ContentTransferEncoding,
+    ) -> Result<Self, Vec<u8>> {
+        let buf: MaybeString = buf.into();
+
+        if !buf.is_encoding_ok(encoding) {
+            return Err(buf.into());
+        }
+
+        Ok(Self::new_impl(buf.into(), encoding))
+    }
+
+    /// Builds a new `Body` using a pre-encoded buffer.
+    ///
+    /// **Generally not you want.**
+    ///
+    /// `buf` shouldn't contain non-ascii characters, lines longer than 1000 characters or nul bytes.
     #[inline]
-    pub fn len(&self) -> usize {
-        match &self.0 {
-            BodyInner::Binary(b) => b.len(),
-            BodyInner::String(s) => s.len(),
-        }
+    pub fn dangerous_pre_encoded(buf: Vec<u8>, encoding: ContentTransferEncoding) -> Self {
+        Self { buf, encoding }
     }
 
-    /// Returns `true` if this `Body` has a length of zero, `false` otherwise.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        match &self.0 {
-            BodyInner::Binary(b) => b.is_empty(),
-            BodyInner::String(s) => s.is_empty(),
-        }
-    }
-
-    /// Suggests the best `Content-Transfer-Encoding` to be used for this `Body`
-    ///
-    /// If the `Body` was created from a `String` composed only of US-ASCII
-    /// characters, with no lines longer than 1000 characters, then 7bit
-    /// encoding will be used, else quoted-printable will be choosen.
-    ///
-    /// If the `Body` was instead created from a `Vec<u8>`, base64 encoding is always
-    /// choosen.
-    ///
-    /// `8bit` and `binary` encodings are never returned, as they may not be
-    /// supported by all SMTP servers.
-    pub fn encoding(&self) -> ContentTransferEncoding {
-        match &self.0 {
-            BodyInner::String(s) if is_7bit_encoded(s.as_ref()) => {
-                ContentTransferEncoding::SevenBit
-            }
-            // TODO: consider when base64 would be a better option because of output size
-            BodyInner::String(_) => ContentTransferEncoding::QuotedPrintable,
-            BodyInner::Binary(_) => ContentTransferEncoding::Base64,
-        }
-    }
-
-    /// Encodes this `Body` using the choosen `encoding`.
-    ///
-    /// # Panic
-    ///
-    /// Panics if the choosen `Content-Transfer-Encoding` would end-up
-    /// creating an incorrectly encoded email.
-    ///
-    /// Could happen for example if `7bit` encoding is choosen when the
-    /// content isn't US-ASCII or contains lines longer than 1000 characters.
-    ///
-    /// Never panics when using an `encoding` returned by [`encoding`][Body::encoding].
-    pub fn encode(&self, encoding: ContentTransferEncoding) -> Cow<'_, Body> {
+    /// Encodes the supplied `buf` using the provided `encoding`
+    fn new_impl(buf: Vec<u8>, encoding: ContentTransferEncoding) -> Self {
         match encoding {
-            ContentTransferEncoding::SevenBit => {
-                assert!(
-                    is_7bit_encoded(self.as_ref()),
-                    "Body isn't valid 7bit content"
-                );
-
-                Cow::Borrowed(self)
-            }
-            ContentTransferEncoding::EightBit => {
-                assert!(
-                    is_8bit_encoded(self.as_ref()),
-                    "Body isn't valid 8bit content"
-                );
-
-                Cow::Borrowed(self)
-            }
-            ContentTransferEncoding::Binary => Cow::Borrowed(self),
+            ContentTransferEncoding::SevenBit
+            | ContentTransferEncoding::EightBit
+            | ContentTransferEncoding::Binary => Self { buf, encoding },
             ContentTransferEncoding::QuotedPrintable => {
-                let encoded = quoted_printable::encode_to_str(self);
-                Cow::Owned(Body(BodyInner::String(encoded)))
+                let encoded = quoted_printable::encode(buf);
+
+                Self::dangerous_pre_encoded(encoded, ContentTransferEncoding::QuotedPrintable)
             }
             ContentTransferEncoding::Base64 => {
-                let base64_len = self.len() * 4 / 3 + 4;
+                let base64_len = buf.len() * 4 / 3 + 4;
                 let base64_endings_len = base64_len + base64_len / LINE_MAX_LENGTH;
 
                 let mut out = Vec::with_capacity(base64_endings_len);
@@ -102,7 +86,7 @@ impl Body {
                     // modified Write::write_all to work around base64 crate bug
                     // TODO: remove once https://github.com/marshallpierce/rust-base64/issues/148 is fixed
                     {
-                        let mut buf: &[u8] = self.as_ref();
+                        let mut buf: &[u8] = buf.as_ref();
                         while !buf.is_empty() {
                             match writer.write(buf) {
                                 Ok(0) => {
@@ -118,32 +102,145 @@ impl Body {
                     }
                 }
 
-                Cow::Owned(Body(BodyInner::Binary(out)))
+                Self::dangerous_pre_encoded(out, ContentTransferEncoding::Base64)
+            }
+        }
+    }
+
+    /// Returns the length of this `Body` in bytes.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.buf.len()
+    }
+
+    /// Returns `true` if this `Body` has a length of zero, `false` otherwise.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.buf.is_empty()
+    }
+
+    /// Returns the `Content-Transfer-Encoding` of this `Body`.
+    #[inline]
+    pub fn encoding(&self) -> ContentTransferEncoding {
+        self.encoding
+    }
+
+    /// Consumes `Body` and returns the inner `Vec<u8>`
+    #[inline]
+    pub fn into_vec(self) -> Vec<u8> {
+        self.buf
+    }
+}
+
+impl MaybeString {
+    /// Suggests the best `Content-Transfer-Encoding` to be used for this `MaybeString`
+    ///
+    /// If the `MaybeString` was created from a `String` composed only of US-ASCII
+    /// characters, with no lines longer than 1000 characters, then 7bit
+    /// encoding will be used, else quoted-printable will be choosen.
+    ///
+    /// If the `MaybeString` was instead created from a `Vec<u8>`, base64 encoding is always
+    /// choosen.
+    ///
+    /// `8bit` and `binary` encodings are never returned, as they may not be
+    /// supported by all SMTP servers.
+    pub fn encoding(&self) -> ContentTransferEncoding {
+        match &self {
+            Self::String(s) if is_7bit_encoded(s.as_ref()) => ContentTransferEncoding::SevenBit,
+            // TODO: consider when base64 would be a better option because of output size
+            Self::String(_) => ContentTransferEncoding::QuotedPrintable,
+            Self::Binary(_) => ContentTransferEncoding::Base64,
+        }
+    }
+
+    /// Returns whether the provided `encoding` would encode this `MaybeString` into
+    /// a valid email body.
+    fn is_encoding_ok(&self, encoding: ContentTransferEncoding) -> bool {
+        match encoding {
+            ContentTransferEncoding::SevenBit => is_7bit_encoded(&self),
+            ContentTransferEncoding::EightBit => is_8bit_encoded(&self),
+            ContentTransferEncoding::Binary => true,
+            ContentTransferEncoding::QuotedPrintable => {
+                // TODO: check
+
+                true
+            }
+            ContentTransferEncoding::Base64 => {
+                // TODO: check
+
+                true
             }
         }
     }
 }
 
-impl From<Vec<u8>> for Body {
-    #[inline]
-    fn from(b: Vec<u8>) -> Self {
-        Self(BodyInner::Binary(b))
+/// A trait for [`MessageBuilder::body`][super::MessageBuilder::body] and
+/// [`SinglePartBuilder::body`][super::SinglePartBuilder::body],
+/// which can either take something that can be encoded into [`Body`]
+/// or a pre-encoded [`Body`]
+pub trait IntoBody {
+    fn into_body(self, encoding: Option<ContentTransferEncoding>) -> Body;
+}
+
+impl<T> IntoBody for T
+where
+    T: Into<MaybeString>,
+{
+    fn into_body(self, encoding: Option<ContentTransferEncoding>) -> Body {
+        match encoding {
+            Some(encoding) => Body::new_with_encoding(self, encoding).expect("invalid encoding"),
+            None => Body::new(self),
+        }
     }
 }
 
-impl From<String> for Body {
-    #[inline]
-    fn from(s: String) -> Self {
-        Self(BodyInner::String(s))
+impl IntoBody for Body {
+    fn into_body(self, encoding: Option<ContentTransferEncoding>) -> Body {
+        let _ = encoding;
+
+        self
     }
 }
 
 impl AsRef<[u8]> for Body {
     #[inline]
     fn as_ref(&self) -> &[u8] {
-        match &self.0 {
-            BodyInner::Binary(b) => b.as_ref(),
-            BodyInner::String(s) => s.as_ref(),
+        self.buf.as_ref()
+    }
+}
+
+impl From<Vec<u8>> for MaybeString {
+    #[inline]
+    fn from(b: Vec<u8>) -> Self {
+        Self::Binary(b)
+    }
+}
+
+impl From<String> for MaybeString {
+    #[inline]
+    fn from(s: String) -> Self {
+        Self::String(s)
+    }
+}
+
+impl From<MaybeString> for Vec<u8> {
+    #[inline]
+    fn from(s: MaybeString) -> Self {
+        match s {
+            MaybeString::Binary(b) => b,
+            MaybeString::String(s) => s.into(),
+        }
+    }
+}
+
+impl Deref for MaybeString {
+    type Target = [u8];
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Binary(b) => b.as_ref(),
+            Self::String(s) => s.as_ref(),
         }
     }
 }
@@ -152,7 +249,7 @@ impl AsRef<[u8]> for Body {
 /// and no lines are longer than 1000 characters including the `\n` character.
 ///
 /// Most efficient content encoding available
-pub(crate) fn is_7bit_encoded(buf: &[u8]) -> bool {
+fn is_7bit_encoded(buf: &[u8]) -> bool {
     buf.is_ascii() && !contains_too_long_lines(buf)
 }
 
@@ -221,43 +318,31 @@ mod test {
 
     #[test]
     fn seven_bit_detect() {
-        let input = Body::from(String::from("Hello, world!"));
+        let encoded = Body::new(String::from("Hello, world!"));
 
-        let encoding = input.encoding();
-        assert_eq!(encoding, ContentTransferEncoding::SevenBit);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::SevenBit);
+        assert_eq!(encoded.as_ref(), b"Hello, world!");
     }
 
     #[test]
     fn seven_bit_encode() {
-        let input = Body::from(String::from("Hello, world!"));
+        let encoded = Body::new_with_encoding(
+            String::from("Hello, world!"),
+            ContentTransferEncoding::SevenBit,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::SevenBit);
-        assert_eq!(output.as_ref().as_ref(), b"Hello, world!");
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::SevenBit);
+        assert_eq!(encoded.as_ref(), b"Hello, world!");
     }
 
     #[test]
     fn seven_bit_too_long_detect() {
-        let input = Body::from("Hello, world!".repeat(100));
+        let encoded = Body::new("Hello, world!".repeat(100));
 
-        let encoding = input.encoding();
-        assert_eq!(encoding, ContentTransferEncoding::QuotedPrintable);
-    }
-
-    #[test]
-    #[should_panic]
-    fn seven_bit_too_long_fail() {
-        let input = Body::from("Hello, world!".repeat(100));
-
-        let _ = input.encode(ContentTransferEncoding::SevenBit);
-    }
-
-    #[test]
-    fn seven_bit_too_long_encode_quotedprintable() {
-        let input = Body::from("Hello, world!".repeat(100));
-
-        let output = input.encode(ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
         assert_eq!(
-            output.as_ref().as_ref(),
+            encoded.as_ref(),
             concat!(
                 "Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, wor=\r\n",
                 "ld!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, =\r\n",
@@ -283,63 +368,127 @@ mod test {
     }
 
     #[test]
-    #[should_panic]
-    fn seven_bit_invalid() {
-        let input = Body::from(String::from("Привет, мир!"));
+    fn seven_bit_too_long_fail() {
+        let result = Body::new_with_encoding(
+            "Hello, world!".repeat(100),
+            ContentTransferEncoding::SevenBit,
+        );
 
-        let _ = input.encode(ContentTransferEncoding::SevenBit);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn seven_bit_too_long_encode_quotedprintable() {
+        let encoded = Body::new_with_encoding(
+            "Hello, world!".repeat(100),
+            ContentTransferEncoding::QuotedPrintable,
+        )
+        .unwrap();
+
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(
+            encoded.as_ref(),
+            concat!(
+                "Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, wor=\r\n",
+                "ld!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, =\r\n",
+                "world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hell=\r\n",
+                "o, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!H=\r\n",
+                "ello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, worl=\r\n",
+                "d!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, w=\r\n",
+                "orld!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello=\r\n",
+                ", world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!He=\r\n",
+                "llo, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world=\r\n",
+                "!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, wo=\r\n",
+                "rld!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello,=\r\n",
+                " world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hel=\r\n",
+                "lo, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!=\r\n",
+                "Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, wor=\r\n",
+                "ld!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, =\r\n",
+                "world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!Hell=\r\n",
+                "o, world!Hello, world!Hello, world!Hello, world!Hello, world!Hello, world!H=\r\n",
+                "ello, world!Hello, world!"
+            )
+            .as_bytes()
+        );
+    }
+
+    #[test]
+    fn seven_bit_invalid() {
+        let result = Body::new_with_encoding(
+            String::from("Привет, мир!"),
+            ContentTransferEncoding::SevenBit,
+        );
+
+        assert!(result.is_err());
     }
 
     #[test]
     fn eight_bit_encode() {
-        let input = Body::from(String::from("Привет, мир!"));
+        let encoded = Body::new_with_encoding(
+            String::from("Привет, мир!"),
+            ContentTransferEncoding::EightBit,
+        )
+        .unwrap();
 
-        let out = input.encode(ContentTransferEncoding::EightBit);
-        assert_eq!(out.as_ref().as_ref(), "Привет, мир!".as_bytes());
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::EightBit);
+        assert_eq!(encoded.as_ref(), "Привет, мир!".as_bytes());
     }
 
     #[test]
-    #[should_panic]
     fn eight_bit_too_long_fail() {
-        let input = Body::from("Привет, мир!".repeat(200));
+        let result = Body::new_with_encoding(
+            "Привет, мир!".repeat(200),
+            ContentTransferEncoding::EightBit,
+        );
 
-        let _ = input.encode(ContentTransferEncoding::EightBit);
+        assert!(result.is_err());
     }
 
     #[test]
     fn quoted_printable_detect() {
-        let input = Body::from(String::from("Привет, мир!"));
+        let encoded = Body::new(String::from("Привет, мир!"));
 
-        let encoding = input.encoding();
-        assert_eq!(encoding, ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(
+            encoded.as_ref(),
+            b"=D0=9F=D1=80=D0=B8=D0=B2=D0=B5=D1=82, =D0=BC=D0=B8=D1=80!".as_ref()
+        );
     }
 
     #[test]
     fn quoted_printable_encode_ascii() {
-        let input = Body::from(String::from("Hello, world!"));
+        let encoded = Body::new_with_encoding(
+            String::from("Hello, world!"),
+            ContentTransferEncoding::QuotedPrintable,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::QuotedPrintable);
-        assert_eq!(output.as_ref().as_ref(), b"Hello, world!");
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(encoded.as_ref(), b"Hello, world!");
     }
 
     #[test]
     fn quoted_printable_encode_utf8() {
-        let input = Body::from(String::from("Привет, мир!"));
+        let encoded = Body::new_with_encoding(
+            String::from("Привет, мир!"),
+            ContentTransferEncoding::QuotedPrintable,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
         assert_eq!(
-            output.as_ref().as_ref(),
+            encoded.as_ref(),
             b"=D0=9F=D1=80=D0=B8=D0=B2=D0=B5=D1=82, =D0=BC=D0=B8=D1=80!".as_ref()
         );
     }
 
     #[test]
     fn quoted_printable_encode_line_wrap() {
-        let input = Body::from(String::from("Текст письма в уникоде"));
+        let encoded = Body::new(String::from("Текст письма в уникоде"));
 
-        let output = input.encode(ContentTransferEncoding::QuotedPrintable);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
         assert_eq!(
-            output.as_ref().as_ref(),
+            encoded.as_ref(),
             concat!(
                 "=D0=A2=D0=B5=D0=BA=D1=81=D1=82 =D0=BF=D0=B8=D1=81=D1=8C=D0=BC=D0=B0 =D0=B2 =\r\n",
                 "=D1=83=D0=BD=D0=B8=D0=BA=D0=BE=D0=B4=D0=B5"
@@ -350,26 +499,34 @@ mod test {
 
     #[test]
     fn base64_detect() {
-        let input = Body::from(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let input = Body::new(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
         let encoding = input.encoding();
         assert_eq!(encoding, ContentTransferEncoding::Base64);
     }
 
     #[test]
     fn base64_encode_bytes() {
-        let input = Body::from(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let encoded = Body::new_with_encoding(
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+            ContentTransferEncoding::Base64,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::Base64);
-        assert_eq!(output.as_ref().as_ref(), b"AAECAwQFBgcICQ==");
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::Base64);
+        assert_eq!(encoded.as_ref(), b"AAECAwQFBgcICQ==");
     }
 
     #[test]
     fn base64_encode_bytes_wrapping() {
-        let input = Body::from(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9].repeat(20));
+        let encoded = Body::new_with_encoding(
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9].repeat(20),
+            ContentTransferEncoding::Base64,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::Base64);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::Base64);
         assert_eq!(
-            output.as_ref().as_ref(),
+            encoded.as_ref(),
             concat!(
                 "AAECAwQFBgcICQABAgMEBQYHCAkAAQIDBAUGBwgJAAECAwQFBgcICQABAgMEBQYHCAkAAQIDBAUG\r\n",
                 "BwgJAAECAwQFBgcICQABAgMEBQYHCAkAAQIDBAUGBwgJAAECAwQFBgcICQABAgMEBQYHCAkAAQID\r\n",
@@ -382,19 +539,25 @@ mod test {
 
     #[test]
     fn base64_encode_ascii() {
-        let input = Body::from(String::from("Hello World!"));
+        let encoded = Body::new_with_encoding(
+            String::from("Hello World!"),
+            ContentTransferEncoding::Base64,
+        )
+        .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::Base64);
-        assert_eq!(output.as_ref().as_ref(), b"SGVsbG8gV29ybGQh");
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::Base64);
+        assert_eq!(encoded.as_ref(), b"SGVsbG8gV29ybGQh");
     }
 
     #[test]
     fn base64_encode_ascii_wrapping() {
-        let input = Body::from("Hello World!".repeat(20));
+        let encoded =
+            Body::new_with_encoding("Hello World!".repeat(20), ContentTransferEncoding::Base64)
+                .unwrap();
 
-        let output = input.encode(ContentTransferEncoding::Base64);
+        assert_eq!(encoded.encoding(), ContentTransferEncoding::Base64);
         assert_eq!(
-            output.as_ref().as_ref(),
+            encoded.as_ref(),
             concat!(
                 "SGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8gV29y\r\n",
                 "bGQhSGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8gV29ybGQhSGVsbG8g\r\n",

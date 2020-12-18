@@ -8,7 +8,7 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
-        .body("Be happy!")
+        .body(String::from("Be happy!"))
         .unwrap();
 
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());

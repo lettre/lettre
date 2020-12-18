@@ -14,7 +14,7 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
-        .body("Be happy!")
+        .body(String::from("Be happy!"))
         .unwrap();
 
     // Use a custom certificate stored on disk to securely verify the server's certificate
