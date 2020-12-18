@@ -146,7 +146,7 @@ impl SinglePart {
         &self.headers
     }
 
-    /// Read the body from singlepart
+    /// Get the encoded body
     #[inline]
     pub fn raw_body(&self) -> &[u8] {
         &self.body
