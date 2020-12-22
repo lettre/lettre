@@ -4,14 +4,14 @@ Reply-To: Yuin <yuin@domain.tld>
 To: Hei <hei@domain.tld>
 Subject: Happy new year
 MIME-Version: 1.0
-Content-Type: multipart/related; boundary="kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec"
+Content-Type: multipart/related; boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
 
---kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec
+--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
 Content-Type: text/html; charset=utf8
 Content-Transfer-Encoding: 7bit
 
 <p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>
---kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec
+--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
 Content-Type: image/png
 Content-Disposition: inline
 Content-ID: <123>
@@ -230,4 +230,4 @@ AAAACQh0AAAASECgAwAAQAICHQAAABIQ6AAAAJCAQAcAAIAEBDoAAAAkINABAAAgAYEOAAAACQh0
 AAAASECgAwAAQAICHQAAABIQ6AAAAJCAQAcAAIAEBDoAAAAkINABAAAgAYEOAAAACQh0AAAASECg
 AwAAQAICHQAAABIQ6AAAAJCAQAcAAIAEBDoAAAAkINABAAAgAYEOAAAACQh0AAAASECgAwAAQAIC
 HQAAABIQ6AAAAJDAfwHNjj3TR6+CggAAAABJRU5ErkJggg==
---kve7WTqtIDDNFzED8Dccv2dHCJYXcEwETTAaIYCAcfn6lxvHldUc21nczexPKCfoDVec--
+--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--
