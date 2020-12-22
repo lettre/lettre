@@ -199,7 +199,7 @@ pub enum MultiPartKind {
 fn make_boundary() -> String {
     rand::thread_rng()
         .sample_iter(&rand::distributions::Alphanumeric)
-        .take(68)
+        .take(40)
         .collect()
 }
 
@@ -772,7 +772,7 @@ mod test {
 
         // Ensure correct length
         for boundary in boundaries {
-            assert_eq!(68, boundary.len());
+            assert_eq!(40, boundary.len());
         }
     }
 }
