@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::message::header::ContentTransferEncoding;
 
-/// A [`Message`][super::Message] or [`SinglePart`][super::SinglePart] body.
+/// A [`Message`][super::Message] or [`SinglePart`][super::SinglePart] body that has already been encoded.
 #[derive(Debug, Clone)]
 pub struct Body {
     buf: Vec<u8>,
@@ -13,7 +13,7 @@ pub struct Body {
 /// Either a `Vec<u8>` or a `String`.
 ///
 /// If the content is valid utf-8 a `String` should be passed, as it
-/// makes for a more efficient `Content-Transfer-Encoding` to be choosen.
+/// makes for a more efficient `Content-Transfer-Encoding` to be chosen.
 #[derive(Debug, Clone)]
 pub enum MaybeString {
     Binary(Vec<u8>),
@@ -23,8 +23,14 @@ pub enum MaybeString {
 impl Body {
     /// Encode the supplied `buf`, making it ready to be sent as a body.
     ///
+    /// Takes a `Vec<u8>` or a `String`.
+    ///
     /// Automatically chooses the most efficient encoding between
     /// `7bit`, `quoted-printable` and `base64`.
+    ///
+    /// If `buf` is valid utf-8 a `String` should be supplied, as `String`s
+    /// can be encoded as `7bit` or `quoted-printable`, while `Vec<u8>` always
+    /// get encoded as `base64`.
     pub fn new<B: Into<MaybeString>>(buf: B) -> Self {
         let buf: MaybeString = buf.into();
 
@@ -34,10 +40,11 @@ impl Body {
 
     /// Encode the supplied `buf`, using the provided `encoding`.
     ///
-    /// Generally [`Body::new`] should be used.
+    /// [`Body::new`] is generally the better option.
     ///
-    /// Returns an [`Err`] with the supplied `buf` untouched in case
-    /// the choosen encoding wouldn't have worked.
+    /// Returns an [`Err`] giving back the supplied `buf`, in case the chosen
+    /// encoding would have resulted into `buf` being encoded
+    /// into an invalid body.
     pub fn new_with_encoding<B: Into<MaybeString>>(
         buf: B,
         encoding: ContentTransferEncoding,
@@ -137,10 +144,10 @@ impl MaybeString {
     ///
     /// If the `MaybeString` was created from a `String` composed only of US-ASCII
     /// characters, with no lines longer than 1000 characters, then 7bit
-    /// encoding will be used, else quoted-printable will be choosen.
+    /// encoding will be used, else quoted-printable will be chosen.
     ///
     /// If the `MaybeString` was instead created from a `Vec<u8>`, base64 encoding is always
-    /// choosen.
+    /// chosen.
     ///
     /// `8bit` and `binary` encodings are never returned, as they may not be
     /// supported by all SMTP servers.
@@ -153,31 +160,32 @@ impl MaybeString {
         }
     }
 
-    /// Returns whether the provided `encoding` would encode this `MaybeString` into
-    /// a valid email body.
+    /// Returns `true` if using `encoding` to encode this `MaybeString`
+    /// would result into an invalid encoded body.
     fn is_encoding_ok(&self, encoding: ContentTransferEncoding) -> bool {
         match encoding {
             ContentTransferEncoding::SevenBit => is_7bit_encoded(&self),
             ContentTransferEncoding::EightBit => is_8bit_encoded(&self),
-            ContentTransferEncoding::Binary => true,
-            ContentTransferEncoding::QuotedPrintable => {
-                // TODO: check
-
-                true
-            }
-            ContentTransferEncoding::Base64 => {
-                // TODO: check
-
-                true
-            }
+            ContentTransferEncoding::Binary
+            | ContentTransferEncoding::QuotedPrintable
+            | ContentTransferEncoding::Base64 => true,
         }
     }
 }
 
-/// A trait for [`MessageBuilder::body`][super::MessageBuilder::body] and
+/// A trait for something that takes an encoded [`Body`].
+///
+/// Used by [`MessageBuilder::body`][super::MessageBuilder::body] and
 /// [`SinglePartBuilder::body`][super::SinglePartBuilder::body],
 /// which can either take something that can be encoded into [`Body`]
-/// or a pre-encoded [`Body`]
+/// or a pre-encoded [`Body`].
+///
+/// If `encoding` is `None` the best encoding between `7bit`, `quoted-printable`
+/// and `base64` is chosen based on the input body. **Best option.**
+///
+/// If `encoding` is `Some` the supplied encoding is used.
+/// **NOTE:** if using the specified `encoding` would result into a malformed
+/// body, this will panic!
 pub trait IntoBody {
     fn into_body(self, encoding: Option<ContentTransferEncoding>) -> Body;
 }
