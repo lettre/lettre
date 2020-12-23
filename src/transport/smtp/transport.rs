@@ -41,7 +41,7 @@ impl Transport for SmtpTransport {
 }
 
 impl SmtpTransport {
-    /// Simple and secure transport, using TLS connections to comunicate with the SMTP server
+    /// Simple and secure transport, using TLS connections to communicate with the SMTP server
     ///
     /// The right option for most SMTP servers.
     ///

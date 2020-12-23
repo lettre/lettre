@@ -57,7 +57,7 @@ pub struct StubTransport {
 }
 
 impl StubTransport {
-    /// Creates aResult new transport that always returns the given response
+    /// Creates a new transport that always returns the given Result
     pub fn new(response: Result<(), Error>) -> StubTransport {
         StubTransport { response }
     }

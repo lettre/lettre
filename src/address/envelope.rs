@@ -14,7 +14,7 @@ use crate::Error;
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Envelope {
-    /// The envelope recipients' addresses
+    /// The envelope recipient's addresses
     ///
     /// This can not be empty.
     forward_path: Vec<Address>,

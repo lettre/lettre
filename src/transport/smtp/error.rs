@@ -25,7 +25,7 @@ pub enum Error {
     ResponseParsing(&'static str),
     /// Error parsing a base64 string in response
     ChallengeParsing(DecodeError),
-    /// Error parsing UTF8in response
+    /// Error parsing UTF8 in response
     Utf8Parsing(FromUtf8Error),
     /// Internal client error
     Client(&'static str),
