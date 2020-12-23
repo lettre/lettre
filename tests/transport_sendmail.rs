@@ -39,6 +39,7 @@ mod test {
             .unwrap();
 
         let result = sender.send(email).await;
+        println!("{:?}", result);
         assert!(result.is_ok());
     }
 
@@ -58,6 +59,7 @@ mod test {
             .unwrap();
 
         let result = sender.send(email).await;
+        println!("{:?}", result);
         assert!(result.is_ok());
     }
 }
