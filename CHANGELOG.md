@@ -14,7 +14,7 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 #### Features
 
-* Add `tokio` 0.2 and 0.3 support
+* Add `tokio` 0.2 and 1.0 support
 * Add `rustls` support
 * Add `async-std` support
 * Allow enabling multiple SMTP authentication mechanisms

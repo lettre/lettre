@@ -19,9 +19,9 @@
 //! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
 //! * **tokio02-rustls-tls**: Async TLS support with the `rustls` crate using tokio 0.2
 //! * **tokio02-native-tls**: Async TLS support with the `native-tls` crate using tokio 0.2
-//! * **tokio03**: Allow to asyncronously send emails using tokio 0.3.x
-//! * **tokio03-rustls-tls**: Async TLS support with the `rustls` crate using tokio 0.3
-//! * **tokio03-native-tls**: Async TLS support with the `native-tls` crate using tokio 0.3
+//! * **tokio1**: Allow to asyncronously send emails using tokio 1.x
+//! * **tokio1-rustls-tls**: Async TLS support with the `rustls` crate using tokio 1.x
+//! * **tokio1-native-tls**: Async TLS support with the `native-tls` crate using tokio 1.x
 //! * **async-std1**: Allow to asynchronously send emails using async-std 1.x (SMTP isn't supported yet)
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **tracing**: Logging using the `tracing` crate
@@ -64,16 +64,16 @@ pub use crate::transport::file::FileTransport;
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
-    any(feature = "tokio02", feature = "tokio03")
+    any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
 pub use crate::transport::smtp::Tokio02Connector;
-#[cfg(all(feature = "smtp-transport", feature = "tokio03"))]
-pub use crate::transport::smtp::Tokio03Connector;
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
+#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
+pub use crate::transport::smtp::Tokio1Connector;
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
 
 /// Blocking Transport method for emails
@@ -140,11 +140,11 @@ pub trait Tokio02Transport {
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
 }
 
-/// tokio 0.3.x based Transport method for emails
-#[cfg(feature = "tokio03")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio03")))]
+/// tokio 1.x based Transport method for emails
+#[cfg(feature = "tokio1")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
 #[async_trait]
-pub trait Tokio03Transport {
+pub trait Tokio1Transport {
     /// Response produced by the Transport
     type Ok;
     /// Error produced by the Transport
