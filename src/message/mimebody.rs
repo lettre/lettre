@@ -198,8 +198,9 @@ pub enum MultiPartKind {
 /// Create a random MIME boundary.
 fn make_boundary() -> String {
     rand::thread_rng()
-        .sample_iter(&rand::distributions::Alphanumeric)
+        .sample_iter(rand::distributions::Alphanumeric)
         .take(40)
+        .map(char::from)
         .collect()
 }
 
