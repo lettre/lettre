@@ -59,9 +59,9 @@ async-trait = { version = "0.1", optional = true }
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "tcp", "dns", "io-util"], optional = true }
 tokio02_native_tls_crate = { package = "tokio-native-tls", version = "0.1", optional = true }
 tokio02_rustls = { package = "tokio-rustls", version = "0.15", optional = true }
-tokio03_crate = { package = "tokio", version = "0.3", features = ["fs", "process", "net", "io-util"], optional = true }
-tokio03_native_tls_crate = { package = "tokio-native-tls", version = "0.2", optional = true }
-tokio03_rustls = { package = "tokio-rustls", version = "0.21", optional = true }
+tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "net", "io-util"], optional = true }
+tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
+tokio1_rustls = { package = "tokio-rustls", version = "0.22", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -69,7 +69,7 @@ tracing-subscriber = "0.2.10"
 glob = "0.3"
 walkdir = "2"
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }
-tokio03_crate = { package = "tokio", version = "0.3", features = ["macros", "rt-multi-thread"] }
+tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
 serde_json = "1"
 maud = "0.22.1"
 
@@ -94,9 +94,9 @@ async-std1 = ["async-std", "async-trait", "async-attributes"]
 tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
-tokio03 = ["tokio03_crate", "async-trait", "futures-io", "futures-util"]
-tokio03-native-tls = ["tokio03", "native-tls", "tokio03_native_tls_crate"]
-tokio03-rustls-tls = ["tokio03", "rustls-tls", "tokio03_rustls"]
+tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
+tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
+tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -135,10 +135,10 @@ name = "tokio02_smtp_starttls"
 required-features = ["smtp-transport", "tokio02", "tokio02-native-tls", "builder"]
 
 [[example]]
-name = "tokio03_smtp_tls"
-required-features = ["smtp-transport", "tokio03", "tokio03-native-tls", "builder"]
+name = "tokio1_smtp_tls"
+required-features = ["smtp-transport", "tokio1", "tokio1-native-tls", "builder"]
 
 [[example]]
-name = "tokio03_smtp_starttls"
-required-features = ["smtp-transport", "tokio03", "tokio03-native-tls", "builder"]
+name = "tokio1_smtp_starttls"
+required-features = ["smtp-transport", "tokio1", "tokio1-native-tls", "builder"]
 

@@ -1,11 +1,11 @@
 // This line is only to make it compile from lettre's examples folder,
 // since it uses Rust 2018 crate renaming to import tokio.
 // Won't be needed in user's code.
-use tokio03_crate as tokio;
+use tokio1_crate as tokio;
 
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio03Connector,
-    Tokio03Transport,
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio1Connector,
+    Tokio1Transport,
 };
 
 #[tokio::main]
@@ -23,7 +23,7 @@ async fn main() {
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail using STARTTLS
-    let mailer = AsyncSmtpTransport::<Tokio03Connector>::starttls_relay("smtp.gmail.com")
+    let mailer = AsyncSmtpTransport::<Tokio1Connector>::starttls_relay("smtp.gmail.com")
         .unwrap()
         .credentials(creds)
         .build();

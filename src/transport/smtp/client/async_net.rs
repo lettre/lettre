@@ -1,7 +1,7 @@
-#[cfg(any(feature = "tokio02-rustls-tls", feature = "tokio03-rustls-tls"))]
+#[cfg(any(feature = "tokio02-rustls-tls", feature = "tokio1-rustls-tls"))]
 use std::sync::Arc;
 use std::{
-    net::{Shutdown, SocketAddr},
+    net::SocketAddr,
     pin::Pin,
     task::{Context, Poll},
 };
@@ -11,26 +11,26 @@ use futures_io::{Error as IoError, ErrorKind, Result as IoResult};
 use tokio02_crate::io::{AsyncRead as _, AsyncWrite as _};
 #[cfg(feature = "tokio02")]
 use tokio02_crate::net::TcpStream as Tokio02TcpStream;
-#[cfg(feature = "tokio03")]
-use tokio03_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio03ReadBuf};
-#[cfg(feature = "tokio03")]
-use tokio03_crate::net::TcpStream as Tokio03TcpStream;
+#[cfg(feature = "tokio1")]
+use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
+#[cfg(feature = "tokio1")]
+use tokio1_crate::net::TcpStream as Tokio1TcpStream;
 
 #[cfg(feature = "tokio02-native-tls")]
 use tokio02_native_tls_crate::TlsStream as Tokio02TlsStream;
-#[cfg(feature = "tokio03-native-tls")]
-use tokio03_native_tls_crate::TlsStream as Tokio03TlsStream;
+#[cfg(feature = "tokio1-native-tls")]
+use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 
 #[cfg(feature = "tokio02-rustls-tls")]
 use tokio02_rustls::client::TlsStream as Tokio02RustlsTlsStream;
-#[cfg(feature = "tokio03-rustls-tls")]
-use tokio03_rustls::client::TlsStream as Tokio03RustlsTlsStream;
+#[cfg(feature = "tokio1-rustls-tls")]
+use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 
 #[cfg(any(
     feature = "tokio02-native-tls",
     feature = "tokio02-rustls-tls",
-    feature = "tokio03-native-tls",
-    feature = "tokio03-rustls-tls"
+    feature = "tokio1-native-tls",
+    feature = "tokio1-rustls-tls"
 ))]
 use super::InnerTlsParameters;
 use super::TlsParameters;
@@ -56,15 +56,15 @@ enum InnerAsyncNetworkStream {
     /// Encrypted Tokio 0.2 TCP stream
     #[cfg(feature = "tokio02-rustls-tls")]
     Tokio02RustlsTls(Tokio02RustlsTlsStream<Tokio02TcpStream>),
-    /// Plain Tokio 0.3 TCP stream
-    #[cfg(feature = "tokio03")]
-    Tokio03Tcp(Tokio03TcpStream),
-    /// Encrypted Tokio 0.3 TCP stream
-    #[cfg(feature = "tokio03-native-tls")]
-    Tokio03NativeTls(Tokio03TlsStream<Tokio03TcpStream>),
-    /// Encrypted Tokio 0.3 TCP stream
-    #[cfg(feature = "tokio03-rustls-tls")]
-    Tokio03RustlsTls(Tokio03RustlsTlsStream<Tokio03TcpStream>),
+    /// Plain Tokio 1.x TCP stream
+    #[cfg(feature = "tokio1")]
+    Tokio1Tcp(Tokio1TcpStream),
+    /// Encrypted Tokio 1.x TCP stream
+    #[cfg(feature = "tokio1-native-tls")]
+    Tokio1NativeTls(Tokio1TlsStream<Tokio1TcpStream>),
+    /// Encrypted Tokio 1.x TCP stream
+    #[cfg(feature = "tokio1-rustls-tls")]
+    Tokio1RustlsTls(Tokio1RustlsTlsStream<Tokio1TcpStream>),
     /// Can't be built
     None,
 }
@@ -89,46 +89,20 @@ impl AsyncNetworkStream {
             }
             #[cfg(feature = "tokio02-rustls-tls")]
             InnerAsyncNetworkStream::Tokio02RustlsTls(ref s) => s.get_ref().0.peer_addr(),
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(ref s) => s.peer_addr(),
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(ref s) => {
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(ref s) => s.peer_addr(),
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(ref s) => {
                 s.get_ref().get_ref().get_ref().peer_addr()
             }
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(ref s) => s.get_ref().0.peer_addr(),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(ref s) => s.get_ref().0.peer_addr(),
             InnerAsyncNetworkStream::None => {
                 debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
                 Err(IoError::new(
                     ErrorKind::Other,
                     "InnerAsyncNetworkStream::None must never be built",
                 ))
-            }
-        }
-    }
-
-    /// Shutdowns the connection
-    pub fn shutdown(&self, how: Shutdown) -> IoResult<()> {
-        match self.inner {
-            #[cfg(feature = "tokio02")]
-            InnerAsyncNetworkStream::Tokio02Tcp(ref s) => s.shutdown(how),
-            #[cfg(feature = "tokio02-native-tls")]
-            InnerAsyncNetworkStream::Tokio02NativeTls(ref s) => {
-                s.get_ref().get_ref().get_ref().shutdown(how)
-            }
-            #[cfg(feature = "tokio02-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio02RustlsTls(ref s) => s.get_ref().0.shutdown(how),
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(ref s) => s.shutdown(how),
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(ref s) => {
-                s.get_ref().get_ref().get_ref().shutdown(how)
-            }
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(ref s) => s.get_ref().0.shutdown(how),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Ok(())
             }
         }
     }
@@ -148,15 +122,15 @@ impl AsyncNetworkStream {
         Ok(stream)
     }
 
-    #[cfg(feature = "tokio03")]
-    pub async fn connect_tokio03(
+    #[cfg(feature = "tokio1")]
+    pub async fn connect_tokio1(
         hostname: &str,
         port: u16,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncNetworkStream, Error> {
-        let tcp_stream = Tokio03TcpStream::connect((hostname, port)).await?;
+        let tcp_stream = Tokio1TcpStream::connect((hostname, port)).await?;
 
-        let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio03Tcp(tcp_stream));
+        let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters).await?;
         }
@@ -187,24 +161,24 @@ impl AsyncNetworkStream {
                 Ok(())
             }
             #[cfg(all(
-                feature = "tokio03",
-                not(any(feature = "tokio03-native-tls", feature = "tokio03-rustls-tls"))
+                feature = "tokio1",
+                not(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))
             ))]
-            InnerAsyncNetworkStream::Tokio03Tcp(_) => {
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 let _ = tls_parameters;
-                panic!("Trying to upgrade an AsyncNetworkStream without having enabled either the tokio03-native-tls or the tokio03-rustls-tls feature");
+                panic!("Trying to upgrade an AsyncNetworkStream without having enabled either the tokio1-native-tls or the tokio1-rustls-tls feature");
             }
 
-            #[cfg(any(feature = "tokio03-native-tls", feature = "tokio03-rustls-tls"))]
-            InnerAsyncNetworkStream::Tokio03Tcp(_) => {
+            #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 // get owned TcpStream
                 let tcp_stream = std::mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
                 let tcp_stream = match tcp_stream {
-                    InnerAsyncNetworkStream::Tokio03Tcp(tcp_stream) => tcp_stream,
+                    InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) => tcp_stream,
                     _ => unreachable!(),
                 };
 
-                self.inner = Self::upgrade_tokio03_tls(tcp_stream, tls_parameters).await?;
+                self.inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters).await?;
                 Ok(())
             }
             _ => Ok(()),
@@ -254,9 +228,9 @@ impl AsyncNetworkStream {
     }
 
     #[allow(unused_variables)]
-    #[cfg(any(feature = "tokio03-native-tls", feature = "tokio03-rustls-tls"))]
-    async fn upgrade_tokio03_tls(
-        tcp_stream: Tokio03TcpStream,
+    #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
+    async fn upgrade_tokio1_tls(
+        tcp_stream: Tokio1TcpStream,
         mut tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
         let domain = std::mem::take(&mut tls_parameters.domain);
@@ -264,32 +238,32 @@ impl AsyncNetworkStream {
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
             InnerTlsParameters::NativeTls(connector) => {
-                #[cfg(not(feature = "tokio03-native-tls"))]
-                panic!("built without the tokio03-native-tls feature");
+                #[cfg(not(feature = "tokio1-native-tls"))]
+                panic!("built without the tokio1-native-tls feature");
 
-                #[cfg(feature = "tokio03-native-tls")]
+                #[cfg(feature = "tokio1-native-tls")]
                 return {
-                    use tokio03_native_tls_crate::TlsConnector;
+                    use tokio1_native_tls_crate::TlsConnector;
 
                     let connector = TlsConnector::from(connector);
                     let stream = connector.connect(&domain, tcp_stream).await?;
-                    Ok(InnerAsyncNetworkStream::Tokio03NativeTls(stream))
+                    Ok(InnerAsyncNetworkStream::Tokio1NativeTls(stream))
                 };
             }
             #[cfg(feature = "rustls-tls")]
             InnerTlsParameters::RustlsTls(config) => {
-                #[cfg(not(feature = "tokio03-rustls-tls"))]
-                panic!("built without the tokio03-rustls-tls feature");
+                #[cfg(not(feature = "tokio1-rustls-tls"))]
+                panic!("built without the tokio1-rustls-tls feature");
 
-                #[cfg(feature = "tokio03-rustls-tls")]
+                #[cfg(feature = "tokio1-rustls-tls")]
                 return {
-                    use tokio03_rustls::{webpki::DNSNameRef, TlsConnector};
+                    use tokio1_rustls::{webpki::DNSNameRef, TlsConnector};
 
                     let domain = DNSNameRef::try_from_ascii_str(&domain)?;
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector.connect(domain, tcp_stream).await?;
-                    Ok(InnerAsyncNetworkStream::Tokio03RustlsTls(stream))
+                    Ok(InnerAsyncNetworkStream::Tokio1RustlsTls(stream))
                 };
             }
         }
@@ -303,12 +277,12 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio02NativeTls(_) => true,
             #[cfg(feature = "tokio02-rustls-tls")]
             InnerAsyncNetworkStream::Tokio02RustlsTls(_) => true,
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(_) => false,
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(_) => true,
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(_) => true,
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => false,
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(_) => true,
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(_) => true,
             InnerAsyncNetworkStream::None => false,
         }
     }
@@ -327,27 +301,27 @@ impl futures_io::AsyncRead for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio02NativeTls(ref mut s) => Pin::new(s).poll_read(cx, buf),
             #[cfg(feature = "tokio02-rustls-tls")]
             InnerAsyncNetworkStream::Tokio02RustlsTls(ref mut s) => Pin::new(s).poll_read(cx, buf),
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(ref mut s) => {
-                let mut b = Tokio03ReadBuf::new(buf);
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(ref mut s) => {
+                let mut b = Tokio1ReadBuf::new(buf);
                 match Pin::new(s).poll_read(cx, &mut b) {
                     Poll::Ready(Ok(())) => Poll::Ready(Ok(b.filled().len())),
                     Poll::Ready(Err(err)) => Poll::Ready(Err(err)),
                     Poll::Pending => Poll::Pending,
                 }
             }
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(ref mut s) => {
-                let mut b = Tokio03ReadBuf::new(buf);
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => {
+                let mut b = Tokio1ReadBuf::new(buf);
                 match Pin::new(s).poll_read(cx, &mut b) {
                     Poll::Ready(Ok(())) => Poll::Ready(Ok(b.filled().len())),
                     Poll::Ready(Err(err)) => Poll::Ready(Err(err)),
                     Poll::Pending => Poll::Pending,
                 }
             }
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(ref mut s) => {
-                let mut b = Tokio03ReadBuf::new(buf);
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => {
+                let mut b = Tokio1ReadBuf::new(buf);
                 match Pin::new(s).poll_read(cx, &mut b) {
                     Poll::Ready(Ok(())) => Poll::Ready(Ok(b.filled().len())),
                     Poll::Ready(Err(err)) => Poll::Ready(Err(err)),
@@ -375,12 +349,12 @@ impl futures_io::AsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio02NativeTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
             #[cfg(feature = "tokio02-rustls-tls")]
             InnerAsyncNetworkStream::Tokio02RustlsTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(ref mut s) => Pin::new(s).poll_write(cx, buf),
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(ref mut s) => Pin::new(s).poll_write(cx, buf),
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
             InnerAsyncNetworkStream::None => {
                 debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
                 Poll::Ready(Ok(0))
@@ -396,12 +370,12 @@ impl futures_io::AsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio02NativeTls(ref mut s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "tokio02-rustls-tls")]
             InnerAsyncNetworkStream::Tokio02RustlsTls(ref mut s) => Pin::new(s).poll_flush(cx),
-            #[cfg(feature = "tokio03")]
-            InnerAsyncNetworkStream::Tokio03Tcp(ref mut s) => Pin::new(s).poll_flush(cx),
-            #[cfg(feature = "tokio03-native-tls")]
-            InnerAsyncNetworkStream::Tokio03NativeTls(ref mut s) => Pin::new(s).poll_flush(cx),
-            #[cfg(feature = "tokio03-rustls-tls")]
-            InnerAsyncNetworkStream::Tokio03RustlsTls(ref mut s) => Pin::new(s).poll_flush(cx),
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(ref mut s) => Pin::new(s).poll_flush(cx),
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_flush(cx),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_flush(cx),
             InnerAsyncNetworkStream::None => {
                 debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
                 Poll::Ready(Ok(()))
@@ -409,7 +383,24 @@ impl futures_io::AsyncWrite for AsyncNetworkStream {
         }
     }
 
-    fn poll_close(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<IoResult<()>> {
-        Poll::Ready(self.shutdown(Shutdown::Write))
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<IoResult<()>> {
+        match self.inner {
+            #[cfg(feature = "tokio02")]
+            InnerAsyncNetworkStream::Tokio02Tcp(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio02-native-tls")]
+            InnerAsyncNetworkStream::Tokio02NativeTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio02-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio02RustlsTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            InnerAsyncNetworkStream::None => {
+                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
+                Poll::Ready(Ok(()))
+            }
+        }
     }
 }

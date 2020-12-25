@@ -62,15 +62,15 @@
 //! # fn main() {}
 //! ```
 //!
-//! ## Async tokio 0.2
+//! ## Async tokio 1.x
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
 //!
-//! # #[cfg(all(feature = "tokio02", feature = "file-transport", feature = "builder"))]
+//! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
-//! use lettre::{Tokio02Transport, Message, FileTransport};
+//! use lettre::{Tokio1Transport, Message, FileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -138,10 +138,10 @@ use crate::address::Envelope;
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
-#[cfg(feature = "tokio03")]
-use crate::Tokio03Transport;
+#[cfg(feature = "tokio1")]
+use crate::Tokio1Transport;
 use crate::Transport;
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio03"))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
 use std::{
     path::{Path, PathBuf},
@@ -273,14 +273,14 @@ impl Tokio02Transport for FileTransport {
     }
 }
 
-#[cfg(feature = "tokio03")]
+#[cfg(feature = "tokio1")]
 #[async_trait]
-impl Tokio03Transport for FileTransport {
+impl Tokio1Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use tokio03_crate::fs;
+        use tokio1_crate::fs;
 
         let email_id = Uuid::new_v4();
 
