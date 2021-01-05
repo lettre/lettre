@@ -25,7 +25,7 @@ impl<'de> Deserialize<'de> for Address {
         enum Field {
             User,
             Domain,
-        };
+        }
 
         const FIELDS: &[&str] = &["user", "domain"];
 

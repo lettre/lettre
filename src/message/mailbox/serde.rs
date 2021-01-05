@@ -23,7 +23,7 @@ impl<'de> Deserialize<'de> for Mailbox {
         enum Field {
             Name,
             Email,
-        };
+        }
 
         const FIELDS: &[&str] = &["name", "email"];
 
