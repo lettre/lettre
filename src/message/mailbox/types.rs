@@ -258,26 +258,26 @@ impl Default for Mailboxes {
 }
 
 impl From<Mailbox> for Mailboxes {
-    fn from(single: Mailbox) -> Self {
-        Mailboxes(vec![single])
+    fn from(mailbox: Mailbox) -> Self {
+        Mailboxes(vec![mailbox])
     }
 }
 
-impl Into<Option<Mailbox>> for Mailboxes {
-    fn into(self) -> Option<Mailbox> {
-        self.into_iter().next()
+impl From<Mailboxes> for Option<Mailbox> {
+    fn from(mailboxes: Mailboxes) -> Option<Mailbox> {
+        mailboxes.into_iter().next()
     }
 }
 
 impl From<Vec<Mailbox>> for Mailboxes {
-    fn from(list: Vec<Mailbox>) -> Self {
-        Mailboxes(list)
+    fn from(vec: Vec<Mailbox>) -> Self {
+        Mailboxes(vec)
     }
 }
 
-impl Into<Vec<Mailbox>> for Mailboxes {
-    fn into(self) -> Vec<Mailbox> {
-        self.0
+impl From<Mailboxes> for Vec<Mailbox> {
+    fn from(mailboxes: Mailboxes) -> Vec<Mailbox> {
+        mailboxes.0
     }
 }
 

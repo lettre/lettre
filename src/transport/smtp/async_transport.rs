@@ -126,8 +126,10 @@ where
     /// [`AsyncSmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder {
-        let mut new = SmtpInfo::default();
-        new.server = server.into();
+        let new = SmtpInfo {
+            server: server.into(),
+            ..Default::default()
+        };
         AsyncSmtpTransportBuilder { info: new }
     }
 }

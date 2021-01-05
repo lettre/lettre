@@ -56,14 +56,14 @@ impl Display for Error {
         match *self {
             // Try to display the first line of the server's response that usually
             // contains a short humanly readable error message
-            Transient(ref err) => fmt.write_str(match err.first_line() {
-                Some(line) => line,
-                None => "transient error during SMTP transaction",
-            }),
-            Permanent(ref err) => fmt.write_str(match err.first_line() {
-                Some(line) => line,
-                None => "permanent error during SMTP transaction",
-            }),
+            Transient(ref err) => fmt.write_str(
+                err.first_line()
+                    .unwrap_or("transient error during SMTP transaction"),
+            ),
+            Permanent(ref err) => fmt.write_str(
+                err.first_line()
+                    .unwrap_or("permanent error during SMTP transaction"),
+            ),
             ResponseParsing(err) => fmt.write_str(err),
             ChallengeParsing(ref err) => err.fmt(fmt),
             Utf8Parsing(ref err) => err.fmt(fmt),
