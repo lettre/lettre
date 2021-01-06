@@ -49,11 +49,12 @@ webpki-roots = { version = "0.21", optional = true }
 # async
 futures-io = { version = "0.3.7", optional = true }
 futures-util = { version = "0.3.7", default-features = false, features = ["io"], optional = true }
+async-trait = { version = "0.1", optional = true }
 
 ## async-std
-async-attributes = { version = "1.1", optional = true }
 async-std = { version = "1.8", optional = true, features = ["unstable"] }
-async-trait = { version = "0.1", optional = true }
+async-native-tls = { version = "0.3.3", optional = true }
+async-rustls = { version = "0.2", optional = true }
 
 ## tokio
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["fs", "process", "tcp", "dns", "io-util"], optional = true }
@@ -70,6 +71,7 @@ glob = "0.3"
 walkdir = "2"
 tokio02_crate = { package = "tokio", version = "0.2.7", features = ["macros", "rt-threaded"] }
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
+async-std = { version = "1.8", features = ["attributes"] }
 serde_json = "1"
 maud = "0.22.1"
 
@@ -90,7 +92,9 @@ smtp-transport = ["base64", "nom"]
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 
 # async
-async-std1 = ["async-std", "async-trait", "async-attributes"]
+async-std1 = ["async-std", "async-trait", "futures-io", "futures-util"]
+async-std1-native-tls = ["async-std1", "native-tls", "async-native-tls"]
+async-std1-rustls-tls = ["async-std1", "rustls-tls", "async-rustls"]
 tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
@@ -142,3 +146,10 @@ required-features = ["smtp-transport", "tokio1", "tokio1-native-tls", "builder"]
 name = "tokio1_smtp_starttls"
 required-features = ["smtp-transport", "tokio1", "tokio1-native-tls", "builder"]
 
+[[example]]
+name = "asyncstd1_smtp_tls"
+required-features = ["smtp-transport", "async-std1", "async-std1-native-tls", "builder"]
+
+[[example]]
+name = "asyncstd1_smtp_starttls"
+required-features = ["smtp-transport", "async-std1", "async-std1-native-tls", "builder"]

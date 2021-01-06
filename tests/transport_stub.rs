@@ -24,7 +24,7 @@ mod test {
     }
 
     #[cfg(feature = "async-std1")]
-    #[async_attributes::test]
+    #[async_std::test]
     async fn stub_transport_asyncstd1() {
         use lettre::AsyncStd1Transport;
 

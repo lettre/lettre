@@ -22,7 +22,9 @@
 //! * **tokio1**: Allow to asyncronously send emails using tokio 1.x
 //! * **tokio1-rustls-tls**: Async TLS support with the `rustls` crate using tokio 1.x
 //! * **tokio1-native-tls**: Async TLS support with the `native-tls` crate using tokio 1.x
-//! * **async-std1**: Allow to asynchronously send emails using async-std 1.x (SMTP isn't supported yet)
+//! * **async-std1**: Allow to asynchronously send emails using async-std 1.x
+//! * **async-std1-rustls-tls**: Async TLS support with the `rustls` crate using async-std 1.x
+//! * **async-std1-native-tls**: Async TLS support with the `native-tls` crate using async-std 1.x
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **tracing**: Logging using the `tracing` crate
 //! * **serde**: Serialization/Deserialization of entities
@@ -67,6 +69,8 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
+pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
