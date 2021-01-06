@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 use super::Tls;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
