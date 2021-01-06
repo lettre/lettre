@@ -42,7 +42,9 @@ use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
     feature = "tokio02-native-tls",
     feature = "tokio02-rustls-tls",
     feature = "tokio1-native-tls",
-    feature = "tokio1-rustls-tls"
+    feature = "tokio1-rustls-tls",
+    feature = "async-std1-native-tls",
+    feature = "async-std1-rustls-tls"
 ))]
 use super::InnerTlsParameters;
 use super::TlsParameters;
