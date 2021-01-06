@@ -31,7 +31,7 @@ use tokio02_native_tls_crate::TlsStream as Tokio02TlsStream;
 #[cfg(feature = "tokio1-native-tls")]
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 
-#[cfg(feature = "async-std1-native-tls")]
+#[cfg(feature = "async-std1-rustls-tls")]
 use async_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
 #[cfg(feature = "tokio02-rustls-tls")]
 use tokio02_rustls::client::TlsStream as Tokio02RustlsTlsStream;
