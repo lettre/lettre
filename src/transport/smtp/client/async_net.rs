@@ -349,7 +349,7 @@ impl AsyncNetworkStream {
 
                 /*
                 #[cfg(not(feature = "async-std1-native-tls"))]
-                panic!("built without the tokio1-native-tls feature");
+                panic!("built without the async-std1-native-tls feature");
 
                 #[cfg(feature = "async-std1-native-tls")]
                 return {
@@ -366,7 +366,7 @@ impl AsyncNetworkStream {
             #[cfg(feature = "rustls-tls")]
             InnerTlsParameters::RustlsTls(config) => {
                 #[cfg(not(feature = "async-std1-rustls-tls"))]
-                panic!("built without the tokio1-rustls-tls feature");
+                panic!("built without the async-std1-rustls-tls feature");
 
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
