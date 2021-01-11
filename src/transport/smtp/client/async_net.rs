@@ -345,6 +345,9 @@ impl AsyncNetworkStream {
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
             InnerTlsParameters::NativeTls(connector) => {
+                panic!("native-tls isn't supported with async-std yet. See https://github.com/lettre/lettre/pull/531#issuecomment-757893531");
+
+                /*
                 #[cfg(not(feature = "async-std1-native-tls"))]
                 panic!("built without the tokio1-native-tls feature");
 
@@ -358,6 +361,7 @@ impl AsyncNetworkStream {
                     let stream = connector.connect(&domain, tcp_stream).await?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1NativeTls(stream))
                 };
+                */
             }
             #[cfg(feature = "rustls-tls")]
             InnerTlsParameters::RustlsTls(config) => {

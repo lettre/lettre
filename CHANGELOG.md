@@ -16,7 +16,7 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 * Add `tokio` 0.2 and 1.0 support
 * Add `rustls` support
-* Add `async-std` support
+* Add `async-std` support. NOTE: native-tls isn't supported when using async-std for the smtp transport.
 * Allow enabling multiple SMTP authentication mechanisms
 * Allow providing a custom message id
 * Allow sending raw emails

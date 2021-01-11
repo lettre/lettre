@@ -23,8 +23,8 @@
 //! * **tokio1-rustls-tls**: Async TLS support with the `rustls` crate using tokio 1.x
 //! * **tokio1-native-tls**: Async TLS support with the `native-tls` crate using tokio 1.x
 //! * **async-std1**: Allow to asynchronously send emails using async-std 1.x
+//! * NOTE: native-tls isn't supported with async-std at the moment
 //! * **async-std1-rustls-tls**: Async TLS support with the `rustls` crate using async-std 1.x
-//! * **async-std1-native-tls**: Async TLS support with the `native-tls` crate using async-std 1.x
 //! * **r2d2**: Connection pool for SMTP transport
 //! * **tracing**: Logging using the `tracing` crate
 //! * **serde**: Serialization/Deserialization of entities
