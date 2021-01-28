@@ -52,7 +52,7 @@ Lettre provides the following features:
 * Unicode support (for email content and addresses)
 * Secure delivery with SMTP using encryption and authentication
 * Easy email builders
-* Async support (incomplete)
+* Async support
 
 Lettre does not provide (for now):
 
