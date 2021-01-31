@@ -13,6 +13,7 @@ use crate::Transport;
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
+/// Transport using the SMTP protocol
 pub struct SmtpTransport {
     #[cfg(feature = "r2d2")]
     inner: Pool<SmtpClient>,

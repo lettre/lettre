@@ -1,3 +1,5 @@
+//! Email addresses
+
 #[cfg(feature = "serde")]
 mod serde;
 

@@ -1,3 +1,5 @@
+//! Error type for email messages
+
 use std::{
     error::Error as StdError,
     fmt::{self, Display, Formatter},
