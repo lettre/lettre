@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use async_trait::async_trait;
 
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
@@ -14,7 +16,6 @@ use crate::Tokio02Transport;
 use crate::Tokio1Transport;
 
 #[allow(missing_debug_implementations)]
-#[derive(Clone)]
 pub struct AsyncSmtpTransport<C> {
     // TODO: pool
     inner: AsyncSmtpClient<C>,
@@ -158,6 +159,17 @@ where
     }
 }
 
+impl<C> Clone for AsyncSmtpTransport<C>
+where
+    C: AsyncSmtpConnector,
+{
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
 #[allow(missing_debug_implementations)]
@@ -211,20 +223,18 @@ impl AsyncSmtpTransportBuilder {
     where
         C: AsyncSmtpConnector,
     {
-        let connector = Default::default();
         let client = AsyncSmtpClient {
-            connector,
             info: self.info,
+            marker_: PhantomData,
         };
         AsyncSmtpTransport { inner: client }
     }
 }
 
 /// Build client
-#[derive(Clone)]
 pub struct AsyncSmtpClient<C> {
-    connector: C,
     info: SmtpInfo,
+    marker_: PhantomData<C>,
 }
 
 impl<C> AsyncSmtpClient<C>
@@ -250,8 +260,21 @@ where
     }
 }
 
+impl<C> AsyncSmtpClient<C>
+where
+    C: AsyncSmtpConnector,
+{
+    fn clone(&self) -> Self {
+        Self {
+            info: self.info.clone(),
+            marker_: PhantomData,
+        }
+    }
+}
+
 #[async_trait]
-pub trait AsyncSmtpConnector: Default + private::Sealed {
+pub trait AsyncSmtpConnector: private::Sealed {
+    #[doc(hidden)]
     async fn connect(
         hostname: &str,
         port: u16,
@@ -260,7 +283,8 @@ pub trait AsyncSmtpConnector: Default + private::Sealed {
     ) -> Result<AsyncSmtpConnection, Error>;
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[allow(missing_copy_implementations)]
+#[non_exhaustive]
 #[cfg(feature = "tokio02")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
 pub struct Tokio02Connector;
@@ -268,6 +292,7 @@ pub struct Tokio02Connector;
 #[async_trait]
 #[cfg(feature = "tokio02")]
 impl AsyncSmtpConnector for Tokio02Connector {
+    #[doc(hidden)]
     async fn connect(
         hostname: &str,
         port: u16,
@@ -302,7 +327,8 @@ impl AsyncSmtpConnector for Tokio02Connector {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[allow(missing_copy_implementations)]
+#[non_exhaustive]
 #[cfg(feature = "tokio1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
 pub struct Tokio1Connector;
@@ -310,6 +336,7 @@ pub struct Tokio1Connector;
 #[async_trait]
 #[cfg(feature = "tokio1")]
 impl AsyncSmtpConnector for Tokio1Connector {
+    #[doc(hidden)]
     async fn connect(
         hostname: &str,
         port: u16,
@@ -343,7 +370,8 @@ impl AsyncSmtpConnector for Tokio1Connector {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[allow(missing_copy_implementations)]
+#[non_exhaustive]
 #[cfg(feature = "async-std1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
 pub struct AsyncStd1Connector;
@@ -351,6 +379,7 @@ pub struct AsyncStd1Connector;
 #[async_trait]
 #[cfg(feature = "async-std1")]
 impl AsyncSmtpConnector for AsyncStd1Connector {
+    #[doc(hidden)]
     async fn connect(
         hostname: &str,
         port: u16,
