@@ -265,7 +265,8 @@ use crate::{
 
 const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 
-pub trait EmailFormat {
+/// Something that can be formatted as an email message
+trait EmailFormat {
     // Use a writer?
     fn format(&self, out: &mut Vec<u8>);
 }
