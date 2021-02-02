@@ -9,8 +9,7 @@
 //! ```rust
 //! # #[cfg(feature = "builder")]
 //! # {
-//! use lettre::{Message, Transport};
-//! use lettre::transport::stub::StubTransport;
+//! use lettre::{transport::stub::StubTransport, Message, Transport};
 //!
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
@@ -29,12 +28,11 @@
 //! # }
 //! ```
 
-use crate::address::Envelope;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Transport;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Transport;
-use crate::Transport;
+use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02"))]
 use async_trait::async_trait;
 use std::{error::Error as StdError, fmt};

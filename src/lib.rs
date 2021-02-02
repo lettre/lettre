@@ -56,8 +56,6 @@ pub mod transport;
 extern crate hyperx;
 
 pub use crate::address::Address;
-use crate::address::Envelope;
-use crate::error::Error;
 #[cfg(feature = "builder")]
 pub use crate::message::Message;
 #[cfg(feature = "file-transport")]
@@ -77,6 +75,7 @@ pub use crate::transport::smtp::SmtpTransport;
 pub use crate::transport::smtp::Tokio02Connector;
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 pub use crate::transport::smtp::Tokio1Connector;
+use crate::{address::Envelope, error::Error};
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
 

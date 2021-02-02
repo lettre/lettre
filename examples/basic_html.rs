@@ -1,5 +1,7 @@
-use lettre::message::{header, MultiPart, SinglePart};
-use lettre::{FileTransport, Message, Transport};
+use lettre::{
+    message::{header, MultiPart, SinglePart},
+    FileTransport, Message, Transport,
+};
 
 fn main() {
     // The html we want to send.

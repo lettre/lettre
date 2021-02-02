@@ -115,7 +115,6 @@
 //! # Ok(())
 //! # }
 //! ```
-//!
 
 #[cfg(feature = "async-std1")]
 pub use self::async_transport::AsyncStd1Connector;

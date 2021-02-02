@@ -6,5 +6,7 @@ mod serde;
 mod envelope;
 mod types;
 
-pub use self::envelope::Envelope;
-pub use self::types::{Address, AddressError};
+pub use self::{
+    envelope::Envelope,
+    types::{Address, AddressError},
+};

@@ -1,8 +1,10 @@
 use std::fs;
 
 use lettre::{
-    transport::smtp::authentication::Credentials,
-    transport::smtp::client::{Certificate, Tls, TlsParameters},
+    transport::smtp::{
+        authentication::Credentials,
+        client::{Certificate, Tls, TlsParameters},
+    },
     Message, SmtpTransport, Transport,
 };
 

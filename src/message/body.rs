@@ -1,5 +1,7 @@
-use std::io::{self, Write};
-use std::ops::Deref;
+use std::{
+    io::{self, Write},
+    ops::Deref,
+};
 
 use crate::message::header::ContentTransferEncoding;
 
