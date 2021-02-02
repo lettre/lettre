@@ -65,7 +65,7 @@ impl TlsParametersBuilder {
     /// Add a custom root certificate
     ///
     /// Can be used to safely connect to a server using a self signed certificate, for example.
-    pub fn add_root_certificate(&mut self, cert: Certificate) -> &mut Self {
+    pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
         self.root_certs.push(cert);
         self
     }
@@ -85,10 +85,7 @@ impl TlsParametersBuilder {
     /// Hostname verification can only be disabled with the `native-tls` TLS backend.
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
-    pub fn dangerous_accept_invalid_hostnames(
-        &mut self,
-        accept_invalid_hostnames: bool,
-    ) -> &mut Self {
+    pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
         self
     }
@@ -109,7 +106,7 @@ impl TlsParametersBuilder {
     ///
     /// This method should only be used as a last resort, as it introduces
     /// significant vulnerabilities to man-in-the-middle attacks.
-    pub fn dangerous_accept_invalid_certs(&mut self, accept_invalid_certs: bool) -> &mut Self {
+    pub fn dangerous_accept_invalid_certs(mut self, accept_invalid_certs: bool) -> Self {
         self.accept_invalid_certs = accept_invalid_certs;
         self
     }

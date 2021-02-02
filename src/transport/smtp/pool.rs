@@ -16,6 +16,11 @@ pub struct PoolConfig {
 }
 
 impl PoolConfig {
+    /// Create a new pool configuration with default values
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Minimum number of idle connections
     ///
     /// Defaults to `0`

@@ -20,9 +20,10 @@ fn main() {
     // Use a custom certificate stored on disk to securely verify the server's certificate
     let pem_cert = fs::read("certificate.pem").unwrap();
     let cert = Certificate::from_pem(&pem_cert).unwrap();
-    let mut tls = TlsParameters::builder("smtp.server.com".to_string());
-    tls.add_root_certificate(cert);
-    let tls = tls.build().unwrap();
+    let tls = TlsParameters::builder("smtp.server.com".to_string())
+        .add_root_certificate(cert)
+        .build()
+        .unwrap();
 
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
