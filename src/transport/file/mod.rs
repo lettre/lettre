@@ -144,9 +144,6 @@ use crate::Transport;
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
 use std::{
-    fs::read_to_string,
-    fs::File,
-    io::Read,
     path::{Path, PathBuf},
     str,
 };
@@ -195,13 +192,14 @@ impl FileTransport {
     /// Reads the envelope and the raw message content.
     #[cfg(feature = "file-transport-envelope")]
     pub fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
+        use std::fs;
+
         let eml_file = self.path.join(format!("{}.eml", email_id));
-        let mut eml = Vec::new();
-        File::open(eml_file)?.read_to_end(&mut eml)?;
+        let eml = fs::read(eml_file)?;
 
         let json_file = self.path.join(format!("{}.json", email_id));
-        let json = read_to_string(&json_file).unwrap();
-        let envelope = serde_json::from_str(&json)?;
+        let json = fs::read(&json_file)?;
+        let envelope = serde_json::from_slice(&json)?;
 
         Ok((envelope, eml))
     }
