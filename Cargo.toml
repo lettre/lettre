@@ -80,7 +80,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-default = ["file-transport", "file-transport-envelope", "smtp-transport", "native-tls", "hostname", "r2d2", "sendmail-transport", "builder"]
+default = ["smtp-transport", "native-tls", "hostname", "r2d2", "builder"]
 builder = ["mime", "base64", "hyperx", "rand", "quoted_printable"]
 
 # transports
