@@ -1,9 +1,15 @@
 use crate::message::{
-    header::{ContentTransferEncoding, ContentType, Header, Headers},
+    header::{
+        Charset, ContentDisposition, ContentTransferEncoding, ContentType, DispositionParam,
+        DispositionType, Header, Headers,
+    },
     EmailFormat, IntoBody,
 };
 use mime::Mime;
 use rand::Rng;
+use std::fs;
+use std::io;
+use std::path::Path;
 
 /// MIME part variants
 #[derive(Debug, Clone)]
@@ -108,6 +114,34 @@ impl SinglePart {
     #[inline]
     pub fn builder() -> SinglePartBuilder {
         SinglePartBuilder::new()
+    }
+
+    // Shortcut to avoid builder
+    /// Directly create a `SinglePart` from a file content
+    pub fn file_content<T: IntoBody>(body: T, filename: &str, content_type: Mime) -> Self {
+        Self::builder()
+            .header(ContentType(content_type))
+            .header(ContentDisposition {
+                disposition: DispositionType::Attachment,
+                parameters: vec![DispositionParam::Filename(
+                    Charset::Ext("utf-8".into()),
+                    None,
+                    filename.as_bytes().into(),
+                )],
+            })
+            .body(body)
+    }
+
+    // Shortcut to avoid builder
+    /// Directly create a `SinglePart` from a file content
+    pub fn file(self, file: &Path, content_type: Mime) -> Result<Self, io::Error> {
+        let image = fs::read(file)?;
+        let image_body = Body::new(image);
+        Ok(Self::file_content(
+            image_body,
+            file.file_name(),
+            content_type,
+        ))
     }
 
     /// Get the headers from singlepart
@@ -346,6 +380,23 @@ impl MultiPart {
     pub fn singlepart(mut self, part: SinglePart) -> Self {
         self.parts.push(Part::Single(part));
         self
+    }
+
+    /// Add an attachment
+    pub fn attachment<T: IntoBody>(self, body: T, filename: &str, content_type: Mime) -> Self {
+        self.singlepart(
+            SinglePart::builder()
+                .header(ContentType(content_type))
+                .header(ContentDisposition {
+                    disposition: DispositionType::Attachment,
+                    parameters: vec![DispositionParam::Filename(
+                        Charset::Ext("utf-8".into()),
+                        None,
+                        filename.as_bytes().into(),
+                    )],
+                })
+                .body(body),
+        )
     }
 
     /// Add multi part to multipart
