@@ -186,6 +186,23 @@ impl FileTransport {
         }
     }
 
+    /// Read a message that was written using the file transport.
+    ///
+    /// Reads the envelope and the raw message content.
+    #[cfg(feature = "file-transport-envelope")]
+    pub fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
+        use std::fs;
+
+        let eml_file = self.path.join(format!("{}.eml", email_id));
+        let eml = fs::read(eml_file)?;
+
+        let json_file = self.path.join(format!("{}.json", email_id));
+        let json = fs::read(&json_file)?;
+        let envelope = serde_json::from_slice(&json)?;
+
+        Ok((envelope, eml))
+    }
+
     fn path(&self, email_id: &Uuid, extension: &str) -> PathBuf {
         self.path.join(format!("{}.{}", email_id, extension))
     }
