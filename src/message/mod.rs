@@ -71,21 +71,10 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .multipart(
-//!         MultiPart::alternative()
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_PLAIN)
-//!                     .body(String::from("Hello, world! :)")),
-//!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_HTML)
-//!                     .body(String::from(
-//!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
-//!                     )),
-//!             ),
-//!     )?;
+//!     .multipart(MultiPart::alternative_html_plain(
+//!         String::from("<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>"),
+//!         String::from("Hello, world! :)"),
+//!     ))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -124,7 +113,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Body, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, Part, SinglePart};
 //! use std::fs;
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
@@ -144,33 +133,24 @@
 //!         MultiPart::mixed()
 //!             .multipart(
 //!                 MultiPart::alternative()
-//!                     .singlepart(
-//!                         SinglePart::builder()
-//!                             .header(header::ContentType::TEXT_PLAIN)
-//!                             .body(String::from("Hello, world! :)")),
-//!                     )
+//!                     .singlepart(SinglePart::plain(String::from("Hello, world! :)")))
 //!                     .multipart(
 //!                         MultiPart::related()
+//!                             .singlepart(SinglePart::html(String::from(
+//!                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
+//!                             )))
 //!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType::TEXT_HTML)
-//!                                     .body(String::from(
-//!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
-//!                                     )),
-//!                             )
-//!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType::parse("image/png")?)
-//!                                     .header(header::ContentDisposition::inline())
-//!                                     .header(header::ContentId::from(String::from("<123>")))
+//!                                 Attachment::new_inline()
+//!                                     .content_id(String::from("<123>"))
+//!                                     .content_type("image/png".parse().unwrap())
 //!                                     .body(image_body),
 //!                             ),
 //!                     ),
 //!             )
 //!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_PLAIN)
-//!                     .header(header::ContentDisposition::attachment("example.rs"))
+//!                 Attachment::new()
+//!                     .content_type("text/plain".parse().unwrap())
+//!                     .filename(String::from("example.rs"))
 //!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
 //!             ),
 //!     )?;
@@ -228,10 +208,12 @@
 
 use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
+pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
 
+mod attachment;
 mod body;
 pub mod header;
 mod mailbox;
@@ -293,7 +275,8 @@ impl MessageBuilder {
 
     /// Set `Date` header using current date/time
     ///
-    /// Shortcut for `self.date(SystemTime::now())`.
+    /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
+    /// if no date has been provided.
     pub fn date_now(self) -> Self {
         self.date(SystemTime::now())
     }
@@ -306,7 +289,7 @@ impl MessageBuilder {
         self.header(header::Subject::from(s))
     }
 
-    /// Set `Mime-Version` header to 1.0
+    /// Set `MIME-Version` header to 1.0
     ///
     /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
     ///

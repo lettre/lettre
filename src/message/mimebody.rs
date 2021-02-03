@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use crate::message::{
-    header::{ContentTransferEncoding, ContentType, Header, Headers},
+    header::{self, ContentTransferEncoding, ContentType, Header, Headers},
     EmailFormat, IntoBody,
 };
 use mime::Mime;
@@ -110,6 +110,20 @@ impl SinglePart {
     #[inline]
     pub fn builder() -> SinglePartBuilder {
         SinglePartBuilder::new()
+    }
+
+    /// Directly create a `SinglePart` from an plain UTF-8 content
+    pub fn plain<T: IntoBody>(body: T) -> Self {
+        Self::builder()
+            .header(header::ContentType::TEXT_PLAIN)
+            .body(body)
+    }
+
+    /// Directly create a `SinglePart` from an UTF-8 HTML content
+    pub fn html<T: IntoBody>(body: T) -> Self {
+        Self::builder()
+            .header(header::ContentType::TEXT_HTML)
+            .body(body)
     }
 
     /// Get the headers from singlepart
@@ -328,6 +342,13 @@ impl MultiPart {
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{ protocol, micalg })`
     pub fn signed(protocol: String, micalg: String) -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Signed { protocol, micalg })
+    }
+
+    /// Alias for HTML and plain text versions of an email
+    pub fn alternative_html_plain<T: IntoBody>(html: T, plain: T) -> Self {
+        Self::alternative()
+            .singlepart(SinglePart::html(html))
+            .singlepart(SinglePart::plain(plain))
     }
 
     /// Add part to multipart
