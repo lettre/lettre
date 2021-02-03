@@ -10,8 +10,10 @@ use std::{
     task::{Context, Poll},
 };
 
-use futures_io::{AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite};
-use futures_io::{Error as IoError, ErrorKind, Result as IoResult};
+use futures_io::{
+    AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Error as IoError, ErrorKind,
+    Result as IoResult,
+};
 #[cfg(feature = "tokio02")]
 use tokio02_crate::io::{AsyncRead as _, AsyncWrite as _};
 #[cfg(feature = "tokio1")]
@@ -370,8 +372,7 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
-                    use async_rustls::webpki::DNSNameRef;
-                    use async_rustls::TlsConnector;
+                    use async_rustls::{webpki::DNSNameRef, TlsConnector};
 
                     let domain = DNSNameRef::try_from_ascii_str(&domain)?;
 

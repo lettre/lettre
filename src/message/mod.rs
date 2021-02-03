@@ -114,7 +114,6 @@
 //!
 //! <p><b>Hello</b>, <i>world</i>! <img src="cid:123"></p>
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--
-//!
 //! ```
 //! </details>
 //!
@@ -125,8 +124,8 @@
 //!
 //! ```rust
 //! # use std::error::Error;
+//! use lettre::message::{header, Body, Message, MultiPart, Part, SinglePart};
 //! use std::fs;
-//! use lettre::message::{Body, header, Message, MultiPart, Part, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let image = fs::read("docs/lettre.png")?;
@@ -236,7 +235,6 @@
 //!
 //! fn main() { println!("Hello, World!") }
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--
-//!
 //! ```
 //! </details>
 
@@ -252,8 +250,7 @@ mod mailbox;
 mod mimebody;
 mod utf8_b;
 
-use std::convert::TryFrom;
-use std::time::SystemTime;
+use std::{convert::TryFrom, time::SystemTime};
 
 use uuid::Uuid;
 

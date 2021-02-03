@@ -8,8 +8,7 @@ use super::PoolConfig;
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
-use crate::address::Envelope;
-use crate::Transport;
+use crate::{address::Envelope, Transport};
 
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]

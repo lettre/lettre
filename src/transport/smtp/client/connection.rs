@@ -6,13 +6,15 @@ use std::{
 };
 
 use super::{ClientCodec, NetworkStream, TlsParameters};
-use crate::address::Envelope;
-use crate::transport::smtp::{
-    authentication::{Credentials, Mechanism},
-    commands::*,
-    error::Error,
-    extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-    response::{parse_response, Response},
+use crate::{
+    address::Envelope,
+    transport::smtp::{
+        authentication::{Credentials, Mechanism},
+        commands::*,
+        error::Error,
+        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        response::{parse_response, Response},
+    },
 };
 
 #[cfg(feature = "tracing")]

@@ -43,8 +43,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Create TLS transport on port 465
-//! let sender = SmtpTransport::relay("smtp.example.com")
-//!     .expect("relay valid")
+//! let sender = SmtpTransport::relay("smtp.example.com")?
 //!     .build();
 //! // Send the email via remote relay
 //! let result = sender.send(&email);
@@ -52,107 +51,70 @@
 //! # Ok(())
 //! # }
 //! ```
-
-//! #### Complete example
 //!
-//! ```todo
-//! # #[cfg(feature = "smtp-transport")]
-//! # {
-//! use lettre::transport::smtp::authentication::{Credentials, Mechanism};
-//! use lettre::{Email, Envelope, Transport, SmtpClient};
-//! use lettre::transport::smtp::extension::ClientId;
+//! #### Authentication
 //!
-//! let email_1 = Email::new(
-//!     Envelope::new(
-//!         Some(EmailAddress::new("user@localhost".to_string())?),
-//!         vec![EmailAddress::new("root@localhost".to_string())?],
-//!     )?,
-//!     "id1".to_string(),
-//!     "Hello world".to_string().into_bytes(),
-//! );
+//! Example with authentication and connection pool:
 //!
-//! let email_2 = Email::new(
-//!     Envelope::new(
-//!         Some(EmailAddress::new("user@localhost".to_string())?),
-//!         vec![EmailAddress::new("root@localhost".to_string())?],
-//!     )?,
-//!     "id2".to_string(),
-//!     "Hello world a second time".to_string().into_bytes(),
-//! );
+//! ```rust,no_run
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
+//! use lettre::{Message, Transport, SmtpTransport, transport::smtp::{PoolConfig, authentication::{Credentials, Mechanism}}};
 //!
-//! // Connect to a remote server on a custom port
-//! let mut mailer = SmtpClient::new_simple("server.tld")?
-//!    // Set the name sent during EHLO/HELO, default is `localhost`
-//!    .hello_name(ClientId::Domain("my.hostname.tld".to_string()))
-//!    // Add credentials for authentication
-//!    .credentials(Credentials::new("username".to_string(), "password".to_string()))
-//!    // Enable SMTPUTF8 if the server supports it
-//!    .smtp_utf8(true)
-//!    // Configure expected authentication mechanism
-//!    .authentication_mechanism(Mechanism::Plain)
-//!    // Enable connection reuse
-//!    .connection_reuse(ConnectionReuseParameters::ReuseUnlimited).transport();
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
+//!     .subject("Happy new year")
+//!     .body(String::from("Be happy!"))?;
 //!
-//! let result_1 = mailer.send(&email_1);
-//! assert!(result_1.is_ok());
+//! // Create TLS transport on port 587 with STARTTLS
+//! let sender = SmtpTransport::starttls_relay("smtp.example.com")?
+//!     // Add credentials for authentication
+//!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
+//!     // Configure expected authentication mechanism
+//!     .authentication(vec![Mechanism::Plain])
+//!     // Connection pool settings
+//!     .pool_config( PoolConfig::new().max_size(20))
+//!     .build();
 //!
-//! // The second email will use the same connection
-//! let result_2 = mailer.send(&email_2);
-//! assert!(result_2.is_ok());
-//!
-//! // Explicitly close the SMTP transaction as we enabled connection reuse
-//! mailer.close();
+//! // Send the email via remote relay
+//! let result = sender.send(&email);
+//! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
 //!
 //! You can specify custom TLS settings:
 //!
-//! ```todo
-//! # #[cfg(feature = "native-tls")]
-//! # {
-//! use lettre::{
-//!     ClientSecurity, ClientTlsParameters, EmailAddress, Envelope,
-//!     Email, SmtpClient, Transport,
-//! };
-//! use lettre::transport::smtp::authentication::{Credentials, Mechanism};
-//! use lettre::transport::smtp::ConnectionReuseParameters;
-//! use native_tls::{Protocol, TlsConnector};
+//! ```rust,no_run
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
+//! use lettre::{Message, Transport, SmtpTransport, transport::smtp::client::{TlsParameters, Tls}};
 //!
-//!     let email = Email::new(
-//!         Envelope::new(
-//!             Some(EmailAddress::new("user@localhost".to_string())?),
-//!             vec![EmailAddress::new("root@localhost".to_string())?],
-//!         )?,
-//!         "message_id".to_string(),
-//!         "Hello world".to_string().into_bytes(),
-//!     );
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
+//!     .subject("Happy new year")
+//!     .body(String::from("Be happy!"))?;
 //!
-//!     let mut tls_builder = TlsConnector::builder();
-//!     tls_builder.min_protocol_version(Some(Protocol::Tlsv10));
-//!     let tls_parameters =
-//!         ClientTlsParameters::new(
-//!             "smtp.example.com".to_string(),
-//!             tls_builder.build()?
-//!         );
+//! // Custom TLS configuration
+//! let tls = TlsParameters::builder("smtp.example.com".to_string())
+//!           .dangerous_accept_invalid_certs(true).build()?;
 //!
-//!     let mut mailer = SmtpClient::new(
-//!         ("smtp.example.com", 465), ClientSecurity::Wrapper(tls_parameters)
-//!     )?
-//!         .authentication_mechanism(Mechanism::Login)
-//!         .credentials(Credentials::new(
-//!             "example_username".to_string(), "example_password".to_string()
-//!         ))
-//!         .connection_reuse(ConnectionReuseParameters::ReuseUnlimited)
-//!         .transport();
+//! // Create TLS transport on port 465
+//! let sender = SmtpTransport::relay("smtp.example.com")?
+//!     // Custom TLS configuration
+//!     .tls(Tls::Required(tls))
+//!     .build();
 //!
-//!     let result = mailer.send(&email);
-//!
-//!     assert!(result.is_ok());
-//!
-//!     mailer.close();
+//! // Send the email via remote relay
+//! let result = sender.send(&email);
+//! assert!(result.is_ok());
+//! # Ok(())
 //! # }
 //! ```
-//!
 
 #[cfg(feature = "async-std1")]
 pub use self::async_transport::AsyncStd1Connector;

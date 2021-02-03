@@ -6,15 +6,12 @@ use mime::Mime;
 use rand::Rng;
 
 /// MIME part variants
-///
 #[derive(Debug, Clone)]
 pub enum Part {
     /// Single part with content
-    ///
     Single(SinglePart),
 
     /// Multiple parts of content
-    ///
     Multi(MultiPart),
 }
 
@@ -37,11 +34,9 @@ impl Part {
 }
 
 /// Parts of multipart body
-///
 pub type Parts = Vec<Part>;
 
 /// Creates builder for single part
-///
 #[derive(Debug, Clone)]
 pub struct SinglePartBuilder {
     headers: Headers,
@@ -92,17 +87,16 @@ impl Default for SinglePartBuilder {
 /// # Example
 ///
 /// ```
-/// use lettre::message::{SinglePart, header};
+/// use lettre::message::{header, SinglePart};
 ///
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
-///      .header(header::ContentType("text/plain; charset=utf8".parse()?))
-///      .body(String::from("Текст письма в уникоде"));
+///     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+///     .body(String::from("Текст письма в уникоде"));
 /// # Ok(())
 /// # }
 /// ```
-///
 #[derive(Debug, Clone)]
 pub struct SinglePart {
     headers: Headers,
@@ -170,7 +164,6 @@ impl EmailFormat for SinglePart {
 }
 
 /// The kind of multipart
-///
 #[derive(Debug, Clone)]
 pub enum MultiPartKind {
     /// Mixed kind to combine unrelated content parts
@@ -257,7 +250,6 @@ impl From<MultiPartKind> for Mime {
 }
 
 /// Multipart builder
-///
 #[derive(Debug, Clone)]
 pub struct MultiPartBuilder {
     headers: Headers,
@@ -323,7 +315,6 @@ impl Default for MultiPartBuilder {
 }
 
 /// Multipart variant with parts
-///
 #[derive(Debug, Clone)]
 pub struct MultiPart {
     headers: Headers,
