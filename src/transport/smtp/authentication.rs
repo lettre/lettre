@@ -39,15 +39,16 @@ where
 #[derive(PartialEq, Eq, Copy, Clone, Hash, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Mechanism {
-    /// PLAIN authentication mechanism
-    /// RFC 4616: https://tools.ietf.org/html/rfc4616
+    /// PLAIN authentication mechanism, defined in
+    /// [RFC 4616](https://tools.ietf.org/html/rfc4616)
     Plain,
     /// LOGIN authentication mechanism
     /// Obsolete but needed for some providers (like office365)
-    /// https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt
+    ///
+    /// Defined in [draft-murchison-sasl-login-00](https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt).
     Login,
-    /// Non-standard XOAUTH2 mechanism
-    /// https://developers.google.com/gmail/imap/xoauth2-protocol
+    /// Non-standard XOAUTH2 mechanism, defined in
+    /// [xoauth2-protocol](https://developers.google.com/gmail/imap/xoauth2-protocol)
     Xoauth2,
 }
 

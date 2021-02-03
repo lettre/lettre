@@ -211,6 +211,7 @@ impl AsRef<OsStr> for Address {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
+/// Errors in email addresses parsing
 pub enum AddressError {
     MissingParts,
     Unbalanced,
