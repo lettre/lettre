@@ -1,9 +1,13 @@
 use crate::message::{
-    header::{ContentTransferEncoding, ContentType, Header, Headers},
-    EmailFormat, IntoBody,
+    header::{
+        Charset, ContentDisposition, ContentId, ContentTransferEncoding, ContentType,
+        DispositionParam, DispositionType, Header, Headers,
+    },
+    Body, EmailFormat, IntoBody,
 };
 use mime::Mime;
 use rand::Rng;
+use std::{fs, io, path::Path};
 
 /// MIME part variants
 #[derive(Debug, Clone)]
@@ -108,6 +112,66 @@ impl SinglePart {
     #[inline]
     pub fn builder() -> SinglePartBuilder {
         SinglePartBuilder::new()
+    }
+
+    /// Directly create a `SinglePart` from a file content
+    pub fn attachment_content<T: IntoBody>(body: T, filename: &str, content_type: Mime) -> Self {
+        Self::builder()
+            .header(ContentType(content_type))
+            .header(ContentDisposition {
+                disposition: DispositionType::Attachment,
+                parameters: vec![DispositionParam::Filename(
+                    Charset::Ext("utf-8".into()),
+                    None,
+                    filename.as_bytes().into(),
+                )],
+            })
+            .body(body)
+    }
+
+    /// Directly create a `SinglePart` from a file content
+    pub fn attachment(file: &str, content_type: Mime) -> Result<Self, io::Error> {
+        let path = Path::new(file);
+        let image = fs::read(path)?;
+        let image_body = Body::new(image);
+        Ok(Self::attachment_content(
+            image_body,
+            path.file_name()
+                // it has a filename as we could read it already
+                .unwrap()
+                .to_str()
+                // file is valid UTF-8
+                .unwrap()
+                .as_ref(),
+            content_type,
+        ))
+    }
+
+    /// Directly create a `SinglePart` from a file content with inline disposition
+    pub fn inline_content<T: IntoBody>(body: T, content_type: Mime, content_id: &str) -> Self {
+        Self::builder()
+            .header(ContentType(content_type))
+            .header(ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: vec![],
+            })
+            .header(ContentId(content_id.into()))
+            .body(body)
+    }
+
+    /// Directly create a `SinglePart` from a file with inline disposition
+    pub fn inline(file: &str, content_type: Mime, content_id: &str) -> Result<Self, io::Error> {
+        let path = Path::new(file);
+        let image = fs::read(path)?;
+        let image_body = Body::new(image);
+        Ok(Self::inline_content(image_body, content_type, content_id))
+    }
+
+    /// Directly create a `SinglePart` from an UTF-8 HTML
+    pub fn html<T: IntoBody>(body: T) -> Self {
+        Self::builder()
+            .header(ContentType("text/plain; charset=utf8".parse().unwrap()))
+            .body(body)
     }
 
     /// Get the headers from singlepart
@@ -334,6 +398,46 @@ impl MultiPart {
     /// Shortcut for `MultiPart::builder().kind(MultiPartKind::Signed{ protocol, micalg })`
     pub fn signed(protocol: String, micalg: String) -> MultiPartBuilder {
         MultiPart::builder().kind(MultiPartKind::Signed { protocol, micalg })
+    }
+
+    /// Add an attachment as single part
+    pub fn attachment_content<T: IntoBody>(
+        self,
+        body: T,
+        filename: &str,
+        content_type: Mime,
+    ) -> Self {
+        self.singlepart(SinglePart::attachment_content(body, filename, content_type))
+    }
+
+    /// Add an attachment as single part
+    pub fn attachment(self, filename: &str, content_type: Mime) -> Result<Self, io::Error> {
+        Ok(self.singlepart(SinglePart::attachment(filename, content_type)?))
+    }
+
+    /// Add an attachment as single part with inline disposition
+    pub fn inline_content<T: IntoBody>(
+        self,
+        body: T,
+        content_type: Mime,
+        content_id: &str,
+    ) -> Self {
+        self.singlepart(SinglePart::inline_content(body, content_type, content_id))
+    }
+
+    /// Add an attachment as single part with inline disposition
+    pub fn inline(
+        self,
+        filename: &str,
+        content_type: Mime,
+        content_id: &str,
+    ) -> Result<Self, io::Error> {
+        Ok(self.singlepart(SinglePart::inline(filename, content_type, content_id)?))
+    }
+
+    /// Add single part containing a UTF-8 HTML body
+    pub fn html<T: IntoBody>(self, body: T) -> Self {
+        self.singlepart(SinglePart::html(body))
     }
 
     /// Add part to multipart

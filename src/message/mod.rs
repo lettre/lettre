@@ -144,46 +144,21 @@
 //!         MultiPart::mixed()
 //!             .multipart(
 //!                 MultiPart::alternative()
-//!                     .singlepart(
-//!                         SinglePart::builder()
-//!                             .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                             .body(String::from("Hello, world! :)")),
-//!                     )
+//!                     .build()
+//!                     .html(String::from("Hello, world! :)"))
 //!                     .multipart(
 //!                         MultiPart::related()
-//!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType(
-//!                                         "text/html; charset=utf8".parse()?,
-//!                                     ))
-//!                                     .body(String::from(
-//!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
-//!                                     )),
-//!                             )
-//!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType("image/png".parse()?))
-//!                                     .header(header::ContentDisposition {
-//!                                         disposition: header::DispositionType::Inline,
-//!                                         parameters: vec![],
-//!                                     })
-//!                                     .header(header::ContentId("<123>".into()))
-//!                                     .body(image_body),
-//!                             ),
+//!                             .build()
+//!                             .html(String::from(
+//!                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
+//!                             ))
+//!                             .inline_content(image_body, "image/png".parse()?, "<123>"),
 //!                     ),
 //!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                     .header(header::ContentDisposition {
-//!                         disposition: header::DispositionType::Attachment,
-//!                         parameters: vec![header::DispositionParam::Filename(
-//!                             header::Charset::Ext("utf-8".into()),
-//!                             None,
-//!                             "example.rs".as_bytes().into(),
-//!                         )],
-//!                     })
-//!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
+//!             .attachment_content(
+//!                 String::from("fn main() { println!(\"Hello, World!\") }"),
+//!                 "example.rs",
+//!                 "text/plain; charset=utf8".parse()?,
 //!             ),
 //!     )?;
 //! # Ok(())
