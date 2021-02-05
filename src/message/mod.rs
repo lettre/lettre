@@ -332,7 +332,7 @@ impl MessageBuilder {
 
     /// Set `Sender` header. Should be used when providing several `From` mailboxes.
     ///
-    /// https://tools.ietf.org/html/rfc5322#section-3.6.2
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
     /// Shortcut for `self.header(header::Sender(mbox))`.
     pub fn sender(self, mbox: Mailbox) -> Self {
@@ -341,7 +341,7 @@ impl MessageBuilder {
 
     /// Set or add mailbox to `From` header
     ///
-    /// https://tools.ietf.org/html/rfc5322#section-3.6.2
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
     /// Shortcut for `self.mailbox(header::From(mbox))`.
     pub fn from(self, mbox: Mailbox) -> Self {
@@ -350,7 +350,7 @@ impl MessageBuilder {
 
     /// Set or add mailbox to `ReplyTo` header
     ///
-    /// https://tools.ietf.org/html/rfc5322#section-3.6.2
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
     /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
     pub fn reply_to(self, mbox: Mailbox) -> Self {
