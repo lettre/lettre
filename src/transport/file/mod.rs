@@ -134,14 +134,18 @@
 
 pub use self::error::Error;
 #[cfg(feature = "async-std1")]
-use crate::AsyncStd1Transport;
+use crate::AsyncStd1Executor;
 #[cfg(feature = "tokio02")]
-use crate::Tokio02Transport;
+use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
-use crate::Tokio1Transport;
+use crate::Tokio1Executor;
 use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+use crate::{AsyncTransport, Executor};
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+use std::marker::PhantomData;
 use std::{
     path::{Path, PathBuf},
     str,
@@ -159,6 +163,14 @@ pub struct FileTransport {
     path: PathBuf,
     #[cfg(feature = "file-transport-envelope")]
     save_envelope: bool,
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+pub struct AsyncFileTransport<E: Executor> {
+    inner: FileTransport,
+    marker_: PhantomData<E>,
 }
 
 impl FileTransport {
@@ -208,6 +220,34 @@ impl FileTransport {
     }
 }
 
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+impl<E> AsyncFileTransport<E>
+where
+    E: Executor,
+{
+    /// Creates a new transport to the given directory
+    ///
+    /// Writes the email content in eml format.
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            inner: FileTransport::new(path),
+            marker_: PhantomData,
+        }
+    }
+
+    /// Creates a new transport to the given directory
+    ///
+    /// Writes the email content in eml format and the envelope
+    /// in json format.
+    #[cfg(feature = "file-transport-envelope")]
+    pub fn with_envelope<P: AsRef<Path>>(path: P) -> Self {
+        Self {
+            inner: FileTransport::with_envelope(path),
+            marker_: PhantomData,
+        }
+    }
+}
+
 impl Transport for FileTransport {
     type Ok = Id;
     type Error = Error;
@@ -236,7 +276,7 @@ impl Transport for FileTransport {
 
 #[cfg(feature = "async-std1")]
 #[async_trait]
-impl AsyncStd1Transport for FileTransport {
+impl AsyncTransport for AsyncFileTransport<AsyncStd1Executor> {
     type Ok = Id;
     type Error = Error;
 
@@ -245,13 +285,13 @@ impl AsyncStd1Transport for FileTransport {
 
         let email_id = Uuid::new_v4();
 
-        let file = self.path(&email_id, "eml");
+        let file = self.inner.path(&email_id, "eml");
         fs::write(file, email).await?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
-            if self.save_envelope {
-                let file = self.path(&email_id, "json");
+            if self.inner.save_envelope {
+                let file = self.inner.path(&email_id, "json");
                 fs::write(file, serde_json::to_string(&envelope)?).await?;
             }
         }
@@ -264,7 +304,7 @@ impl AsyncStd1Transport for FileTransport {
 
 #[cfg(feature = "tokio02")]
 #[async_trait]
-impl Tokio02Transport for FileTransport {
+impl AsyncTransport for AsyncFileTransport<Tokio02Executor> {
     type Ok = Id;
     type Error = Error;
 
@@ -272,13 +312,13 @@ impl Tokio02Transport for FileTransport {
         use tokio02_crate::fs;
 
         let email_id = Uuid::new_v4();
-        let file = self.path(&email_id, "eml");
+        let file = self.inner.path(&email_id, "eml");
         fs::write(file, email).await?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
-            if self.save_envelope {
-                let file = self.path(&email_id, "json");
+            if self.inner.save_envelope {
+                let file = self.inner.path(&email_id, "json");
                 fs::write(file, serde_json::to_string(&envelope)?).await?;
             }
         }
@@ -291,7 +331,7 @@ impl Tokio02Transport for FileTransport {
 
 #[cfg(feature = "tokio1")]
 #[async_trait]
-impl Tokio1Transport for FileTransport {
+impl AsyncTransport for AsyncFileTransport<Tokio1Executor> {
     type Ok = Id;
     type Error = Error;
 
@@ -300,13 +340,13 @@ impl Tokio1Transport for FileTransport {
 
         let email_id = Uuid::new_v4();
 
-        let file = self.path(&email_id, "eml");
+        let file = self.inner.path(&email_id, "eml");
         fs::write(file, email).await?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
-            if self.save_envelope {
-                let file = self.path(&email_id, "json");
+            if self.inner.save_envelope {
+                let file = self.inner.path(&email_id, "json");
                 fs::write(file, serde_json::to_string(&envelope)?).await?;
             }
         }

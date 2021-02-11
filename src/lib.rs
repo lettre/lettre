@@ -65,11 +65,23 @@ pub use self::executor::Executor;
 pub use self::executor::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 pub use self::executor::Tokio1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
 pub use crate::message::Message;
+#[cfg(all(
+    feature = "file-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+pub use crate::transport::file::AsyncFileTransport;
 #[cfg(feature = "file-transport")]
 pub use crate::transport::file::FileTransport;
+#[cfg(all(
+    feature = "sendmail-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+pub use crate::transport::sendmail::AsyncSendmailTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(

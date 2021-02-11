@@ -8,22 +8,24 @@ use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
 #[cfg(feature = "async-std1")]
-use crate::AsyncStd1Transport;
+use crate::AsyncStd1Executor;
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+use crate::AsyncTransport;
 use crate::Envelope;
 #[cfg(feature = "tokio02")]
-use crate::Tokio02Transport;
+use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
-use crate::Tokio1Transport;
+use crate::Tokio1Executor;
 
 #[allow(missing_debug_implementations)]
-pub struct AsyncSmtpTransport<C> {
+pub struct AsyncSmtpTransport<E> {
     // TODO: pool
-    inner: AsyncSmtpClient<C>,
+    inner: AsyncSmtpClient<E>,
 }
 
 #[cfg(feature = "tokio02")]
 #[async_trait]
-impl Tokio02Transport for AsyncSmtpTransport<Tokio02Connector> {
+impl AsyncTransport for AsyncSmtpTransport<Tokio02Executor> {
     type Ok = Response;
     type Error = Error;
 
@@ -41,7 +43,7 @@ impl Tokio02Transport for AsyncSmtpTransport<Tokio02Connector> {
 
 #[cfg(feature = "tokio1")]
 #[async_trait]
-impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
+impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
     type Ok = Response;
     type Error = Error;
 
@@ -59,7 +61,7 @@ impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
 
 #[cfg(feature = "async-std1")]
 #[async_trait]
-impl AsyncStd1Transport for AsyncSmtpTransport<AsyncStd1Connector> {
+impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
     type Ok = Response;
     type Error = Error;
 

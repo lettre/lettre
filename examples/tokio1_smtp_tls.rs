@@ -23,10 +23,11 @@ async fn main() {
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail
-    let mailer = AsyncSmtpTransport::<Tokio1Connector>::relay("smtp.gmail.com")
-        .unwrap()
-        .credentials(creds)
-        .build();
+    let mailer: AsyncSmtpTransport<Tokio1Connector> =
+        AsyncSmtpTransport::<Tokio1Connector>::relay("smtp.gmail.com")
+            .unwrap()
+            .credentials(creds)
+            .build();
 
     // Send the email
     match mailer.send(email).await {
