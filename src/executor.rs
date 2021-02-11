@@ -1,5 +1,10 @@
 use async_trait::async_trait;
 
+#[cfg(feature = "file-transport-envelope")]
+use std::io::Result as IoResult;
+#[cfg(feature = "file-transport-envelope")]
+use std::path::Path;
+
 #[cfg(all(
     feature = "smtp-transport",
     any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
@@ -31,6 +36,10 @@ pub trait Executor: private::Sealed {
         hello_name: &ClientId,
         tls: &Tls,
     ) -> Result<AsyncSmtpConnection, Error>;
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport-envelope")]
+    async fn fs_read(path: &Path) -> IoResult<Vec<u8>>;
 }
 
 #[allow(missing_copy_implementations)]
@@ -76,6 +85,12 @@ impl Executor for Tokio02Executor {
 
         Ok(conn)
     }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport-envelope")]
+    async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
+        tokio02_crate::fs::read(path).await
+    }
 }
 
 #[allow(missing_copy_implementations)]
@@ -119,6 +134,12 @@ impl Executor for Tokio1Executor {
         }
 
         Ok(conn)
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport-envelope")]
+    async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
+        tokio1_crate::fs::read(path).await
     }
 }
 
@@ -164,6 +185,12 @@ impl Executor for AsyncStd1Executor {
         }
 
         Ok(conn)
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport-envelope")]
+    async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
+        async_std::fs::read(path).await
     }
 }
 

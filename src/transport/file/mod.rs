@@ -246,6 +246,21 @@ where
             marker_: PhantomData,
         }
     }
+
+    /// Read a message that was written using the file transport.
+    ///
+    /// Reads the envelope and the raw message content.
+    #[cfg(feature = "file-transport-envelope")]
+    pub async fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
+        let eml_file = self.inner.path.join(format!("{}.eml", email_id));
+        let eml = E::fs_read(&eml_file).await?;
+
+        let json_file = self.inner.path.join(format!("{}.json", email_id));
+        let json = E::fs_read(&json_file).await?;
+        let envelope = serde_json::from_slice(&json)?;
+
+        Ok((envelope, eml))
+    }
 }
 
 impl Transport for FileTransport {
