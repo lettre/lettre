@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-#[cfg(feature = "file-transport-envelope")]
+#[cfg(feature = "file-transport")]
 use std::io::Result as IoResult;
 #[cfg(feature = "file-transport")]
 use std::path::Path;
