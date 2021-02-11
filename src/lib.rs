@@ -89,6 +89,9 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+pub use crate::transport::Transport;
+use crate::{address::Envelope, error::Error};
+
 #[doc(hidden)]
 #[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
@@ -112,8 +115,6 @@ pub use crate::transport::Tokio02Transport;
 #[doc(hidden)]
 #[cfg(feature = "tokio1")]
 pub use crate::transport::Tokio1Transport;
-pub use crate::transport::Transport;
-use crate::{address::Envelope, error::Error};
 
 #[cfg(test)]
 #[cfg(feature = "builder")]
