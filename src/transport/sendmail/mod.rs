@@ -247,6 +247,16 @@ impl Default for SendmailTransport {
     }
 }
 
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+impl<E> Default for AsyncSendmailTransport<E>
+where
+    E: Executor,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Transport for SendmailTransport {
     type Ok = ();
     type Error = Error;
