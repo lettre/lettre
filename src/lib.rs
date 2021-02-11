@@ -103,13 +103,12 @@ pub use crate::transport::smtp::Tokio02Connector;
 #[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 pub use crate::transport::smtp::Tokio1Connector;
-#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
+#[cfg(feature = "async-std1")]
 pub use crate::transport::AsyncStd1Transport;
-#[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
+#[cfg(feature = "tokio02")]
 pub use crate::transport::Tokio02Transport;
-#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
+#[cfg(feature = "tokio1")]
 pub use crate::transport::Tokio1Transport;
-#[cfg(feature = "smtp-transport")]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 
