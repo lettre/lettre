@@ -32,7 +32,9 @@ pub use self::AsyncTransport as Tokio1Transport;
 #[cfg(feature = "tokio02")]
 pub use self::AsyncTransport as Tokio02Transport;
 
-use crate::{Envelope, Message};
+use crate::Envelope;
+#[cfg(feature = "builder")]
+use crate::Message;
 
 #[cfg(feature = "file-transport")]
 #[cfg_attr(docsrs, doc(cfg(feature = "file-transport")))]
