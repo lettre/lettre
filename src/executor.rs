@@ -1,10 +1,24 @@
 use async_trait::async_trait;
 
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::client::AsyncSmtpConnection;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::client::Tls;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::extension::ClientId;
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::Error;
 
 #[async_trait]
