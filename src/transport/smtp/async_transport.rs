@@ -9,11 +9,11 @@ use super::{
 use crate::AsyncStd1Executor;
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 use crate::AsyncTransport;
-use crate::Envelope;
 #[cfg(feature = "tokio02")]
 use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 use crate::Tokio1Executor;
+use crate::{Envelope, Executor};
 
 #[allow(missing_debug_implementations)]
 pub struct AsyncSmtpTransport<E> {
@@ -75,9 +75,9 @@ impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
     }
 }
 
-impl<C> AsyncSmtpTransport<C>
+impl<E> AsyncSmtpTransport<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     /// Simple and secure transport, using TLS connections to communicate with the SMTP server
     ///
@@ -135,7 +135,7 @@ where
     /// Creates a new local SMTP client to port 25
     ///
     /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
-    pub fn unencrypted_localhost() -> AsyncSmtpTransport<C> {
+    pub fn unencrypted_localhost() -> AsyncSmtpTransport<E> {
         Self::builder_dangerous("localhost").build()
     }
 
@@ -159,9 +159,9 @@ where
     }
 }
 
-impl<C> Clone for AsyncSmtpTransport<C>
+impl<E> Clone for AsyncSmtpTransport<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     fn clone(&self) -> Self {
         Self {
@@ -219,9 +219,9 @@ impl AsyncSmtpTransportBuilder {
     }
 
     /// Build the transport (with default pool if enabled)
-    pub fn build<C>(self) -> AsyncSmtpTransport<C>
+    pub fn build<E>(self) -> AsyncSmtpTransport<E>
     where
-        C: AsyncSmtpConnector,
+        E: Executor,
     {
         let client = AsyncSmtpClient {
             info: self.info,
@@ -237,15 +237,15 @@ pub struct AsyncSmtpClient<C> {
     marker_: PhantomData<C>,
 }
 
-impl<C> AsyncSmtpClient<C>
+impl<E> AsyncSmtpClient<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
     pub async fn connection(&self) -> Result<AsyncSmtpConnection, Error> {
-        let mut conn = C::connect(
+        let mut conn = E::connect(
             &self.info.server,
             self.info.port,
             &self.info.hello_name,
@@ -260,9 +260,9 @@ where
     }
 }
 
-impl<C> AsyncSmtpClient<C>
+impl<E> AsyncSmtpClient<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     fn clone(&self) -> Self {
         Self {
