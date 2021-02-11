@@ -70,10 +70,10 @@
 //! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
-//! use lettre::{Tokio1Transport, Message, FileTransport};
+//! use lettre::{AsyncTransport, Tokio1Executor, Message, AsyncFileTransport};
 //!
 //! // Write to the local temp directory
-//! let sender = FileTransport::new(temp_dir());
+//! let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
@@ -95,10 +95,10 @@
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
-//! use lettre::{AsyncStd1Transport, Message, FileTransport};
+//! use lettre::{AsyncTransport, AsyncStd1Executor, Message, AsyncFileTransport};
 //!
 //! // Write to the local temp directory
-//! let sender = FileTransport::new(temp_dir());
+//! let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)

@@ -117,12 +117,15 @@
 //! ```
 
 #[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(feature = "async-std1")]
 pub use self::async_transport::AsyncStd1Connector;
 #[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(feature = "tokio02")]
 pub use self::async_transport::Tokio02Connector;
 #[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(feature = "tokio1")]
 pub use self::async_transport::Tokio1Connector;
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]

@@ -89,14 +89,18 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
 pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
 #[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
 pub use crate::transport::smtp::Tokio02Connector;
 #[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 pub use crate::transport::smtp::Tokio1Connector;
 #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]

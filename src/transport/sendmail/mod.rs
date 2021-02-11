@@ -33,7 +33,7 @@
 //!
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Tokio02Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, Tokio02Executor, AsyncSendmailTransport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -42,7 +42,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<Tokio02Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
@@ -56,7 +56,7 @@
 //!
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Tokio1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, Tokio1Executor, AsyncSendmailTransport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -65,7 +65,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<Tokio1Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
@@ -79,7 +79,7 @@
 //!
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, AsyncStd1Executor, AsyncSendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -88,7 +88,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<AsyncStd1Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
