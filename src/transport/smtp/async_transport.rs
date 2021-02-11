@@ -2,8 +2,6 @@ use std::marker::PhantomData;
 
 use async_trait::async_trait;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-use super::Tls;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
@@ -96,7 +94,7 @@ where
         feature = "async-std1-rustls-tls"
     ))]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{TlsParameters, SUBMISSIONS_PORT};
+        use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -125,7 +123,7 @@ where
         feature = "async-std1-rustls-tls"
     ))]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{TlsParameters, SUBMISSION_PORT};
+        use super::{Tls, TlsParameters, SUBMISSION_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -215,7 +213,7 @@ impl AsyncSmtpTransportBuilder {
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
-    pub fn tls(mut self, tls: Tls) -> Self {
+    pub fn tls(mut self, tls: super::Tls) -> Self {
         self.info.tls = tls;
         self
     }
