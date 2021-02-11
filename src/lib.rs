@@ -46,6 +46,8 @@
 
 pub mod address;
 pub mod error;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
@@ -55,6 +57,14 @@ pub mod transport;
 #[macro_use]
 extern crate hyperx;
 
+#[cfg(feature = "async-std1")]
+pub use self::executor::AsyncStd1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+pub use self::executor::Executor;
+#[cfg(feature = "tokio02")]
+pub use self::executor::Tokio02Executor;
+#[cfg(feature = "tokio1")]
+pub use self::executor::Tokio1Executor;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
 pub use crate::message::Message;
@@ -71,11 +81,14 @@ pub use crate::transport::smtp::AsyncSmtpTransport;
 pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
+#[doc(hidden)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
 pub use crate::transport::smtp::Tokio02Connector;
+#[doc(hidden)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 pub use crate::transport::smtp::Tokio1Connector;
 use crate::{address::Envelope, error::Error};
+
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
 
