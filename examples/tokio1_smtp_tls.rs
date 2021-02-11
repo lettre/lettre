@@ -4,7 +4,7 @@
 use tokio1_crate as tokio;
 
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio1Connector,
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio1Executor,
     Tokio1Transport,
 };
 
@@ -23,8 +23,8 @@ async fn main() {
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail
-    let mailer: AsyncSmtpTransport<Tokio1Connector> =
-        AsyncSmtpTransport::<Tokio1Connector>::relay("smtp.gmail.com")
+    let mailer: AsyncSmtpTransport<Tokio1Executor> =
+        AsyncSmtpTransport::<Tokio1Executor>::relay("smtp.gmail.com")
             .unwrap()
             .credentials(creds)
             .build();

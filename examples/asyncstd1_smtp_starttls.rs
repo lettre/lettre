@@ -1,5 +1,5 @@
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Connector,
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Executor,
     AsyncStd1Transport, Message,
 };
 
@@ -18,8 +18,8 @@ async fn main() {
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to gmail using STARTTLS
-    let mailer: AsyncSmtpTransport<AsyncStd1Connector> =
-        AsyncSmtpTransport::<AsyncStd1Connector>::starttls_relay("smtp.gmail.com")
+    let mailer: AsyncSmtpTransport<AsyncStd1Executor> =
+        AsyncSmtpTransport::<AsyncStd1Executor>::starttls_relay("smtp.gmail.com")
             .unwrap()
             .credentials(creds)
             .build();
