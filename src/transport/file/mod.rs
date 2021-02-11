@@ -133,12 +133,6 @@
 //! ```
 
 pub use self::error::Error;
-#[cfg(feature = "async-std1")]
-use crate::AsyncStd1Executor;
-#[cfg(feature = "tokio02")]
-use crate::Tokio02Executor;
-#[cfg(feature = "tokio1")]
-use crate::Tokio1Executor;
 use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use crate::{AsyncTransport, Executor};
@@ -289,80 +283,27 @@ impl Transport for FileTransport {
     }
 }
 
-#[cfg(feature = "async-std1")]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 #[async_trait]
-impl AsyncTransport for AsyncFileTransport<AsyncStd1Executor> {
+impl<E> AsyncTransport for AsyncFileTransport<E>
+where
+    E: Executor,
+{
     type Ok = Id;
     type Error = Error;
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use async_std::fs;
-
         let email_id = Uuid::new_v4();
 
         let file = self.inner.path(&email_id, "eml");
-        fs::write(file, email).await?;
+        E::fs_write(&file, email).await?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
             if self.inner.save_envelope {
                 let file = self.inner.path(&email_id, "json");
-                fs::write(file, serde_json::to_string(&envelope)?).await?;
-            }
-        }
-        // use envelope anyway
-        let _ = envelope;
-
-        Ok(email_id.to_string())
-    }
-}
-
-#[cfg(feature = "tokio02")]
-#[async_trait]
-impl AsyncTransport for AsyncFileTransport<Tokio02Executor> {
-    type Ok = Id;
-    type Error = Error;
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use tokio02_crate::fs;
-
-        let email_id = Uuid::new_v4();
-        let file = self.inner.path(&email_id, "eml");
-        fs::write(file, email).await?;
-
-        #[cfg(feature = "file-transport-envelope")]
-        {
-            if self.inner.save_envelope {
-                let file = self.inner.path(&email_id, "json");
-                fs::write(file, serde_json::to_string(&envelope)?).await?;
-            }
-        }
-        // use envelope anyway
-        let _ = envelope;
-
-        Ok(email_id.to_string())
-    }
-}
-
-#[cfg(feature = "tokio1")]
-#[async_trait]
-impl AsyncTransport for AsyncFileTransport<Tokio1Executor> {
-    type Ok = Id;
-    type Error = Error;
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use tokio1_crate::fs;
-
-        let email_id = Uuid::new_v4();
-
-        let file = self.inner.path(&email_id, "eml");
-        fs::write(file, email).await?;
-
-        #[cfg(feature = "file-transport-envelope")]
-        {
-            if self.inner.save_envelope {
-                let file = self.inner.path(&email_id, "json");
-                fs::write(file, serde_json::to_string(&envelope)?).await?;
+                let buf = serde_json::to_vec(&envelope)?;
+                E::fs_write(&file, &buf).await?;
             }
         }
         // use envelope anyway

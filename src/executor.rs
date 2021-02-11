@@ -27,7 +27,7 @@ use crate::transport::smtp::extension::ClientId;
 use crate::transport::smtp::Error;
 
 #[async_trait]
-pub trait Executor: private::Sealed {
+pub trait Executor: Send + Sync + private::Sealed {
     #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     async fn connect(
@@ -40,6 +40,10 @@ pub trait Executor: private::Sealed {
     #[doc(hidden)]
     #[cfg(feature = "file-transport-envelope")]
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>>;
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport")]
+    async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()>;
 }
 
 #[allow(missing_copy_implementations)]
@@ -91,6 +95,12 @@ impl Executor for Tokio02Executor {
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
         tokio02_crate::fs::read(path).await
     }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport")]
+    async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()> {
+        tokio02_crate::fs::write(path, contents).await
+    }
 }
 
 #[allow(missing_copy_implementations)]
@@ -140,6 +150,12 @@ impl Executor for Tokio1Executor {
     #[cfg(feature = "file-transport-envelope")]
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
         tokio1_crate::fs::read(path).await
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport")]
+    async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()> {
+        tokio1_crate::fs::write(path, contents).await
     }
 }
 
@@ -191,6 +207,12 @@ impl Executor for AsyncStd1Executor {
     #[cfg(feature = "file-transport-envelope")]
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
         async_std::fs::read(path).await
+    }
+
+    #[doc(hidden)]
+    #[cfg(feature = "file-transport")]
+    async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()> {
+        async_std::fs::write(path, contents).await
     }
 }
 
