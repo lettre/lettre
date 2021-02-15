@@ -33,7 +33,7 @@ impl PoolConfig {
     ///
     /// Defaults to `10`
     pub fn max_size(mut self, max_size: u32) -> Self {
-        self.min_idle = max_size;
+        self.max_size = max_size;
         self
     }
 
