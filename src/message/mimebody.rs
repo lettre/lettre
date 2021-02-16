@@ -110,30 +110,6 @@ impl SinglePart {
         SinglePartBuilder::new()
     }
 
-    #[doc(hidden)]
-    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
-    pub fn seven_bit() -> SinglePartBuilder {
-        Self::builder().header(ContentTransferEncoding::SevenBit)
-    }
-
-    #[doc(hidden)]
-    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
-    pub fn quoted_printable() -> SinglePartBuilder {
-        Self::builder().header(ContentTransferEncoding::QuotedPrintable)
-    }
-
-    #[doc(hidden)]
-    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
-    pub fn base64() -> SinglePartBuilder {
-        Self::builder().header(ContentTransferEncoding::Base64)
-    }
-
-    #[doc(hidden)]
-    #[deprecated = "Replaced by SinglePart::builder(), which chooses the best Content-Transfer-Encoding based on the provided body"]
-    pub fn eight_bit() -> SinglePartBuilder {
-        Self::builder().header(ContentTransferEncoding::EightBit)
-    }
-
     /// Get the headers from singlepart
     #[inline]
     pub fn headers(&self) -> &Headers {
