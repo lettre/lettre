@@ -145,6 +145,20 @@ impl From<r2d2::Error> for Error {
     }
 }
 
+#[cfg(feature = "bb8")]
+impl From<bb8::RunError<Error>> for Error {
+    fn from(err: bb8::RunError<Error>) -> Error {
+        match err {
+            bb8::RunError::TimedOut => {
+                Io(io::Error::new(io::ErrorKind::TimedOut, "Timed out in bb8"))
+            },
+            bb8::RunError::User(e) => {
+                e
+            }
+        }
+    }
+}
+
 impl From<Response> for Error {
     fn from(response: Response) -> Error {
         match response.code.severity {

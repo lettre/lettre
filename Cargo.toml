@@ -99,9 +99,12 @@ async-std1-rustls-tls = ["async-std1", "rustls-tls", "async-rustls"]
 tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
-tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util", "bb8"]
+tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
+
+# async pool
+tokio1-pool = ["bb8", "tokio1"]
 
 [package.metadata.docs.rs]
 all-features = true
