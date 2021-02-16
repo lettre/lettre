@@ -145,6 +145,8 @@ use crate::transport::smtp::{
 use client::Tls;
 use std::time::Duration;
 
+#[cfg(feature = "tokio1")]
+mod async_pool;
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 mod async_transport;
 pub mod authentication;

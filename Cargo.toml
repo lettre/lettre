@@ -36,6 +36,7 @@ serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 
 # smtp
+bb8 = { version = "0.7", optional = true } # feature
 nom = { version = "6", default-features = false, features = ["alloc"], optional = true }
 r2d2 = { version = "0.8", optional = true } # feature
 hostname = { version = "0.3", optional = true } # feature
@@ -98,7 +99,7 @@ async-std1-rustls-tls = ["async-std1", "rustls-tls", "async-rustls"]
 tokio02 = ["tokio02_crate", "async-trait", "futures-io", "futures-util"]
 tokio02-native-tls = ["tokio02", "native-tls", "tokio02_native_tls_crate"]
 tokio02-rustls-tls = ["tokio02", "rustls-tls", "tokio02_rustls"]
-tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
+tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util", "bb8"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 
