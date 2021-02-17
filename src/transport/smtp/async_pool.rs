@@ -66,6 +66,7 @@ impl AsyncPoolConfig {
         self
     }
 
+    #[allow(dead_code)]
     pub(crate) fn build<C: ManageConnection>(&self, client: C) -> Pool<C> {
         Pool::builder()
             .min_idle(Some(self.min_idle))
