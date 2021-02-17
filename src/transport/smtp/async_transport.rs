@@ -1,10 +1,16 @@
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
-#[cfg(feature = "tokio1-pool")]
+#[cfg(all(
+    feature = "tokio1-pool",
+    not(any(feature = "tokio02", feature = "async-std1"))
+))]
 use bb8::Pool;
 
-#[cfg(feature = "tokio1-pool")]
+#[cfg(all(
+    feature = "tokio1-pool",
+    not(any(feature = "tokio02", feature = "async-std1"))
+))]
 use super::async_pool::AsyncPoolConfig;
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 use super::Tls;
@@ -23,12 +29,12 @@ use crate::Tokio1Transport;
 pub struct AsyncSmtpTransport<C> {
     #[cfg(all(
         feature = "tokio1-pool",
-        not(all(feature = "tokio02", feature = "async-std1"))
+        not(any(feature = "tokio02", feature = "async-std1"))
     ))]
     marker_: PhantomData<C>,
     #[cfg(all(
         feature = "tokio1-pool",
-        not(all(feature = "tokio02", feature = "async-std1"))
+        not(any(feature = "tokio02", feature = "async-std1"))
     ))]
     inner: Pool<AsyncSmtpClient<Tokio1Connector>>,
     #[cfg(any(
@@ -71,7 +77,7 @@ impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
         let mut conn = self.inner.connection().await?;
         #[cfg(all(
             feature = "tokio1-pool",
-            not(all(feature = "tokio02", feature = "async-std1"))
+            not(any(feature = "tokio02", feature = "async-std1"))
         ))]
         let mut conn = self.inner.get().await?;
 
@@ -185,7 +191,7 @@ where
             info: new,
             #[cfg(all(
                 feature = "tokio1-pool",
-                not(all(feature = "tokio02", feature = "async-std1"))
+                not(any(feature = "tokio02", feature = "async-std1"))
             ))]
             pool_config: AsyncPoolConfig::default(),
         }
@@ -200,7 +206,7 @@ where
         Self {
             #[cfg(all(
                 feature = "tokio1-pool",
-                not(all(feature = "tokio02", feature = "async-std1"))
+                not(any(feature = "tokio02", feature = "async-std1"))
             ))]
             marker_: PhantomData,
             inner: self.inner.clone(),
@@ -216,7 +222,7 @@ pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
     #[cfg(all(
         feature = "tokio1-pool",
-        not(all(feature = "tokio02", feature = "async-std1"))
+        not(any(feature = "tokio02", feature = "async-std1"))
     ))]
     pool_config: AsyncPoolConfig,
 }
@@ -266,7 +272,7 @@ impl AsyncSmtpTransportBuilder {
     /// Defaults can be found at [`AsyncPoolConfig`]
     #[cfg(all(
         feature = "tokio1-pool",
-        not(all(feature = "tokio02", feature = "async-std1"))
+        not(any(feature = "tokio02", feature = "async-std1"))
     ))]
     #[cfg_attr(docsrs, doc(cfg(feature = "tokio1-pool")))]
     pub fn pool_config(mut self, pool_config: AsyncPoolConfig) -> Self {
@@ -286,7 +292,7 @@ impl AsyncSmtpTransportBuilder {
 
         #[cfg(all(
             feature = "tokio1-pool",
-            not(all(feature = "tokio02", feature = "async-std1"))
+            not(any(feature = "tokio02", feature = "async-std1"))
         ))]
         let transport = AsyncSmtpTransport {
             marker_: PhantomData,
