@@ -55,7 +55,7 @@ impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
 
     /// Sends an email
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        #[cfg(any(not(feature = "tokio1-pool"), any(feature = "tokio1", feature = "tokio02", feature = "async-std1")))]
+        #[cfg(any(not(feature = "tokio1-pool"), any(feature = "tokio02", feature = "async-std1")))]
         let mut conn = self.inner.connection().await?;
         #[cfg(all(feature = "tokio1-pool", not(all(feature = "tokio02", feature = "async-std1"))))]
         let mut conn = self.inner.get().await?;
