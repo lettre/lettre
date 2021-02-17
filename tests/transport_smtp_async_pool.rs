@@ -1,9 +1,6 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "tokio1-pool"))]
 mod test {
-    use lettre::{
-        address::Envelope, AsyncSmtpTransport, Tokio1Connector,
-        Tokio1Transport,
-    };
+    use lettre::{address::Envelope, AsyncSmtpTransport, Tokio1Connector, Tokio1Transport};
     use tokio1_crate as tokio;
 
     fn envelope() -> Envelope {
@@ -46,7 +43,6 @@ mod test {
         assert!(first.is_ok());
         assert!(second.is_ok());
     }
-
 
     #[cfg(all(
         feature = "tokio1-pool",
