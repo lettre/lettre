@@ -1,7 +1,10 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "tokio1-pool"))]
 mod test {
+    use lettre::{
+        address::Envelope, transport::smtp::AsyncPoolConfig, AsyncSmtpTransport, Tokio1Connector,
+        Tokio1Transport,
+    };
     use tokio1_crate as tokio;
-    use lettre::{address::Envelope, AsyncSmtpTransport, Tokio1Connector, Tokio1Transport};
 
     fn envelope() -> Envelope {
         Envelope::new(
@@ -42,5 +45,23 @@ mod test {
         let (first, second) = tokio::join!(handles.pop().unwrap(), handles.pop().unwrap());
         assert!(first.is_ok());
         assert!(second.is_ok());
+    }
+
+
+    #[cfg(all(
+        feature = "tokio1-pool",
+        not(all(feature = "tokio02", feature = "async-std1"))
+    ))]
+    #[tokio::test]
+    async fn send_one_with_pool_async() {
+        let cfg = AsyncPoolConfig::new().min_idle(1).max_size(2);
+
+        let mailer = AsyncSmtpTransport::<Tokio1Connector>::builder_dangerous("127.0.0.1")
+            .port(2525)
+            .pool_config(cfg)
+            .build();
+
+        let result = mailer.send_raw(&envelope(), b"async test with pool").await;
+        assert!(result.is_ok());
     }
 }

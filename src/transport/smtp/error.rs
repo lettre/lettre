@@ -151,10 +151,8 @@ impl From<bb8::RunError<Error>> for Error {
         match err {
             bb8::RunError::TimedOut => {
                 Io(io::Error::new(io::ErrorKind::TimedOut, "Timed out in bb8"))
-            },
-            bb8::RunError::User(e) => {
-                e
             }
+            bb8::RunError::User(e) => e,
         }
     }
 }
