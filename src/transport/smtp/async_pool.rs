@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::transport::smtp::{
-    async_transport::AsyncSmtpClient, client::AsyncSmtpConnection, error::Error, Tokio1Connector,
+    async_transport::AsyncSmtpClient, client::AsyncSmtpConnection, error::Error, AsyncSmtpConnector,
 };
 
 use async_trait::async_trait;
@@ -78,7 +78,10 @@ impl AsyncPoolConfig {
 }
 
 #[async_trait]
-impl ManageConnection for AsyncSmtpClient<Tokio1Connector> {
+impl<C> ManageConnection for AsyncSmtpClient<C>
+where
+    C: AsyncSmtpConnector,
+{
     type Connection = AsyncSmtpConnection;
     type Error = Error;
 

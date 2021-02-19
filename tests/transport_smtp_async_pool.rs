@@ -50,7 +50,7 @@ mod test {
     ))]
     #[tokio::test]
     async fn send_one_with_pool_async() {
-        use transport::smtp::AsyncPoolConfig;
+        use lettre::transport::smtp::AsyncPoolConfig;
         let cfg = AsyncPoolConfig::new().min_idle(1).max_size(2);
 
         let mailer = AsyncSmtpTransport::<Tokio1Connector>::builder_dangerous("127.0.0.1")

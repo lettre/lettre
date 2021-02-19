@@ -26,17 +26,15 @@ use crate::Tokio02Transport;
 use crate::Tokio1Transport;
 
 #[allow(missing_debug_implementations)]
-pub struct AsyncSmtpTransport<C> {
+pub struct AsyncSmtpTransport<C>
+where
+    C: AsyncSmtpConnector,
+{
     #[cfg(all(
         feature = "tokio1-pool",
         not(any(feature = "tokio02", feature = "async-std1"))
     ))]
-    marker_: PhantomData<C>,
-    #[cfg(all(
-        feature = "tokio1-pool",
-        not(any(feature = "tokio02", feature = "async-std1"))
-    ))]
-    inner: Pool<AsyncSmtpClient<Tokio1Connector>>,
+    inner: Pool<AsyncSmtpClient<C>>,
     #[cfg(any(
         not(feature = "tokio1-pool"),
         any(feature = "tokio02", feature = "async-std1")
@@ -204,11 +202,6 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            #[cfg(all(
-                feature = "tokio1-pool",
-                not(any(feature = "tokio02", feature = "async-std1"))
-            ))]
-            marker_: PhantomData,
             inner: self.inner.clone(),
         }
     }
@@ -295,7 +288,6 @@ impl AsyncSmtpTransportBuilder {
             not(any(feature = "tokio02", feature = "async-std1"))
         ))]
         let transport = AsyncSmtpTransport {
-            marker_: PhantomData,
             inner: self.pool_config.build(client),
         };
 
@@ -351,7 +343,7 @@ where
 }
 
 #[async_trait]
-pub trait AsyncSmtpConnector: private::Sealed {
+pub trait AsyncSmtpConnector: private::Sealed + Sync + Send + 'static {
     #[doc(hidden)]
     async fn connect(
         hostname: &str,
