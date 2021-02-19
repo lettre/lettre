@@ -81,6 +81,10 @@ impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
 
         let result = conn.send(envelope, email).await?;
 
+        #[cfg(any(
+            not(feature = "tokio1-pool"),
+            any(feature = "tokio02", feature = "async-std1")
+        ))]
         conn.quit().await?;
 
         Ok(result)
