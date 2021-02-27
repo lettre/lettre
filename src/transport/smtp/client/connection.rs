@@ -82,9 +82,32 @@ impl SmtpConnection {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info().supports_feature(Extension::EightBitMime) {
+        // Internationalization handling
+        //
+        // * 8BITMIME: https://tools.ietf.org/html/rfc6152
+        // * SMTPUTF8: https://tools.ietf.org/html/rfc653
+
+        // Check for non-ascii addresses and use the SMTPUTF8 option if any.
+        if envelope.has_non_ascii_addresses() {
+            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
+                // don't try to send non-ascii addresses (per RFC)
+                return Err(Error::Client(
+                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
+                ));
+            }
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        // Check for non-ascii content in message
+        if !email.is_ascii() {
+            if !self.server_info().supports_feature(Extension::EightBitMime) {
+                return Err(Error::Client(
+                    "Message contains non-ascii chars but server does not support 8BITMIME",
+                ));
+            }
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
+
         try_smtp!(
             self.command(Mail::new(envelope.from().cloned(), mail_options)),
             self
