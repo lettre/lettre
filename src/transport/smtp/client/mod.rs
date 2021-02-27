@@ -52,7 +52,7 @@ mod tls;
 /// The codec used for transparency
 #[derive(Default, Clone, Copy, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct ClientCodec {
+struct ClientCodec {
     escape_count: u8,
 }
 

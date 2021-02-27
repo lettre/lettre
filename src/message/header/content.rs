@@ -7,7 +7,10 @@ use std::{
     str::{from_utf8, FromStr},
 };
 
-header! { (ContentId, "Content-ID") => [String] }
+header! {
+    /// `Content-Id` header, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
+    (ContentId, "Content-ID") => [String]
+}
 
 /// `Content-Transfer-Encoding` of the body
 ///

@@ -5,6 +5,7 @@ use hyperx::{
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+/// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
 pub struct MimeVersion {
     pub major: u8,
     pub minor: u8,
