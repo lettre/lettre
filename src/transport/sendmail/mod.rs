@@ -33,7 +33,7 @@
 //!
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Tokio02Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, Tokio02Executor, AsyncSendmailTransport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -42,7 +42,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<Tokio02Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
@@ -56,7 +56,7 @@
 //!
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Tokio1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, Tokio1Executor, AsyncSendmailTransport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -65,7 +65,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<Tokio1Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
@@ -79,7 +79,7 @@
 //!
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncStd1Transport, SendmailTransport};
+//! use lettre::{Message, AsyncTransport, AsyncStd1Executor, AsyncSendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -88,7 +88,7 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let sender = SendmailTransport::new();
+//! let sender = AsyncSendmailTransport::<AsyncStd1Executor>::new();
 //! let result = sender.send(email).await;
 //! assert!(result.is_ok());
 //! # Ok(())
@@ -97,14 +97,18 @@
 
 pub use self::error::Error;
 #[cfg(feature = "async-std1")]
-use crate::AsyncStd1Transport;
+use crate::AsyncStd1Executor;
 #[cfg(feature = "tokio02")]
-use crate::Tokio02Transport;
+use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
-use crate::Tokio1Transport;
+use crate::Tokio1Executor;
 use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+use crate::{AsyncTransport, Executor};
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+use std::marker::PhantomData;
 use std::{
     ffi::OsString,
     io::prelude::*,
@@ -120,6 +124,14 @@ const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SendmailTransport {
     command: OsString,
+}
+
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+pub struct AsyncSendmailTransport<E: Executor> {
+    inner: SendmailTransport,
+    marker_: PhantomData<E>,
 }
 
 impl SendmailTransport {
@@ -150,12 +162,34 @@ impl SendmailTransport {
             .stderr(Stdio::piped());
         c
     }
+}
+
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+impl<E> AsyncSendmailTransport<E>
+where
+    E: Executor,
+{
+    /// Creates a new transport with the default `/usr/sbin/sendmail` command
+    pub fn new() -> Self {
+        Self {
+            inner: SendmailTransport::new(),
+            marker_: PhantomData,
+        }
+    }
+
+    /// Creates a new transport to the given sendmail command
+    pub fn new_with_command<S: Into<OsString>>(command: S) -> Self {
+        Self {
+            inner: SendmailTransport::new_with_command(command),
+            marker_: PhantomData,
+        }
+    }
 
     #[cfg(feature = "tokio02")]
     fn tokio02_command(&self, envelope: &Envelope) -> tokio02_crate::process::Command {
         use tokio02_crate::process::Command;
 
-        let mut c = Command::new(&self.command);
+        let mut c = Command::new(&self.inner.command);
         c.kill_on_drop(true);
         c.arg("-i");
         if let Some(from) = envelope.from() {
@@ -173,7 +207,7 @@ impl SendmailTransport {
     fn tokio1_command(&self, envelope: &Envelope) -> tokio1_crate::process::Command {
         use tokio1_crate::process::Command;
 
-        let mut c = Command::new(&self.command);
+        let mut c = Command::new(&self.inner.command);
         c.kill_on_drop(true);
         c.arg("-i");
         if let Some(from) = envelope.from() {
@@ -191,7 +225,7 @@ impl SendmailTransport {
     fn async_std_command(&self, envelope: &Envelope) -> async_std::process::Command {
         use async_std::process::Command;
 
-        let mut c = Command::new(&self.command);
+        let mut c = Command::new(&self.inner.command);
         // TODO: figure out why enabling this kills it earlier
         // c.kill_on_drop(true);
         c.arg("-i");
@@ -208,6 +242,16 @@ impl SendmailTransport {
 }
 
 impl Default for SendmailTransport {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+impl<E> Default for AsyncSendmailTransport<E>
+where
+    E: Executor,
+{
     fn default() -> Self {
         Self::new()
     }
@@ -234,7 +278,7 @@ impl Transport for SendmailTransport {
 
 #[cfg(feature = "async-std1")]
 #[async_trait]
-impl AsyncStd1Transport for SendmailTransport {
+impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
     type Ok = ();
     type Error = Error;
 
@@ -259,7 +303,7 @@ impl AsyncStd1Transport for SendmailTransport {
 
 #[cfg(feature = "tokio02")]
 #[async_trait]
-impl Tokio02Transport for SendmailTransport {
+impl AsyncTransport for AsyncSendmailTransport<Tokio02Executor> {
     type Ok = ();
     type Error = Error;
 
@@ -284,7 +328,7 @@ impl Tokio02Transport for SendmailTransport {
 
 #[cfg(feature = "tokio1")]
 #[async_trait]
-impl Tokio1Transport for SendmailTransport {
+impl AsyncTransport for AsyncSendmailTransport<Tokio1Executor> {
     type Ok = ();
     type Error = Error;
 

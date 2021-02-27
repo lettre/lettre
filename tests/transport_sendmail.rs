@@ -26,9 +26,9 @@ mod test {
     #[cfg(feature = "async-std1")]
     #[async_std::test]
     async fn sendmail_transport_asyncstd1() {
-        use lettre::AsyncStd1Transport;
+        use lettre::{AsyncSendmailTransport, AsyncStd1Executor, AsyncTransport};
 
-        let sender = SendmailTransport::new();
+        let sender = AsyncSendmailTransport::<AsyncStd1Executor>::new();
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
@@ -46,9 +46,9 @@ mod test {
     #[cfg(feature = "tokio02")]
     #[tokio::test]
     async fn sendmail_transport_tokio02() {
-        use lettre::Tokio02Transport;
+        use lettre::{AsyncSendmailTransport, Tokio02Executor, Tokio02Transport};
 
-        let sender = SendmailTransport::new();
+        let sender = AsyncSendmailTransport::<Tokio02Executor>::new();
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())

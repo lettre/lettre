@@ -99,9 +99,9 @@ mod test {
     #[cfg(feature = "async-std1")]
     #[async_std::test]
     async fn file_transport_asyncstd1() {
-        use lettre::AsyncStd1Transport;
+        use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport};
 
-        let sender = FileTransport::new(temp_dir());
+        let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
@@ -136,9 +136,9 @@ mod test {
     #[cfg(feature = "tokio02")]
     #[tokio::test]
     async fn file_transport_tokio02() {
-        use lettre::Tokio02Transport;
+        use lettre::{AsyncFileTransport, AsyncTransport, Tokio02Executor};
 
-        let sender = FileTransport::new(temp_dir());
+        let sender = AsyncFileTransport::<Tokio02Executor>::new(temp_dir());
         let email = Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
