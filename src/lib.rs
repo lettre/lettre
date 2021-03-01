@@ -30,7 +30,7 @@
 //! * **serde**: Serialization/Deserialization of entities
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
-#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-alpha.5")]
+#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-beta.1")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]
@@ -46,6 +46,8 @@
 
 pub mod address;
 pub mod error;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
@@ -55,11 +57,31 @@ pub mod transport;
 #[macro_use]
 extern crate hyperx;
 
+#[cfg(feature = "async-std1")]
+pub use self::executor::AsyncStd1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+pub use self::executor::Executor;
+#[cfg(feature = "tokio02")]
+pub use self::executor::Tokio02Executor;
+#[cfg(feature = "tokio1")]
+pub use self::executor::Tokio1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
 pub use crate::message::Message;
+#[cfg(all(
+    feature = "file-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+pub use crate::transport::file::AsyncFileTransport;
 #[cfg(feature = "file-transport")]
 pub use crate::transport::file::FileTransport;
+#[cfg(all(
+    feature = "sendmail-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+pub use crate::transport::sendmail::AsyncSendmailTransport;
 #[cfg(feature = "sendmail-transport")]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
@@ -67,104 +89,32 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+pub use crate::transport::Transport;
+use crate::{address::Envelope, error::Error};
+
+#[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
 pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
+#[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
 pub use crate::transport::smtp::Tokio02Connector;
+#[doc(hidden)]
+#[allow(deprecated)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 pub use crate::transport::smtp::Tokio1Connector;
-use crate::{address::Envelope, error::Error};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
-use async_trait::async_trait;
-
-/// Blocking Transport method for emails
-pub trait Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        self.send_raw(message.envelope(), &raw)
-    }
-
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// async-std 1.x based Transport method for emails
+#[doc(hidden)]
 #[cfg(feature = "async-std1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
-#[async_trait]
-pub trait AsyncStd1Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// tokio 0.2.x based Transport method for emails
+pub use crate::transport::AsyncStd1Transport;
+#[doc(hidden)]
 #[cfg(feature = "tokio02")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
-#[async_trait]
-pub trait Tokio02Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// tokio 1.x based Transport method for emails
+pub use crate::transport::Tokio02Transport;
+#[doc(hidden)]
 #[cfg(feature = "tokio1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
-#[async_trait]
-pub trait Tokio1Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
+pub use crate::transport::Tokio1Transport;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]

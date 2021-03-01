@@ -1,6 +1,6 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "tokio1-pool"))]
 mod test {
-    use lettre::{address::Envelope, AsyncSmtpTransport, Tokio1Connector, Tokio1Transport};
+    use lettre::{address::Envelope, AsyncSmtpTransport, AsyncTransport, Tokio1Executor};
     use tokio1_crate as tokio;
 
     fn envelope() -> Envelope {
@@ -13,9 +13,10 @@ mod test {
 
     #[tokio::test]
     async fn send_one_async() {
-        let mailer = AsyncSmtpTransport::<Tokio1Connector>::builder_dangerous("127.0.0.1")
-            .port(2525)
-            .build();
+        let mailer: AsyncSmtpTransport<Tokio1Executor> =
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous("127.0.0.1")
+                .port(2525)
+                .build();
 
         let result = mailer.send_raw(&envelope(), b"async test").await;
         assert!(result.is_ok());
@@ -23,9 +24,10 @@ mod test {
 
     #[tokio::test]
     async fn send_multiple_async() {
-        let mailer = AsyncSmtpTransport::<Tokio1Connector>::builder_dangerous("127.0.0.1")
-            .port(2525)
-            .build();
+        let mailer: AsyncSmtpTransport<Tokio1Executor> =
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous("127.0.0.1")
+                .port(2525)
+                .build();
 
         let mut handles = Vec::new();
 
@@ -53,10 +55,11 @@ mod test {
         use lettre::transport::smtp::AsyncPoolConfig;
         let cfg = AsyncPoolConfig::new().min_idle(1).max_size(2);
 
-        let mailer = AsyncSmtpTransport::<Tokio1Connector>::builder_dangerous("127.0.0.1")
-            .port(2525)
-            .pool_config(cfg)
-            .build();
+        let mailer: AsyncSmtpTransport<Tokio1Executor> =
+            AsyncSmtpTransport::<Tokio1Executor>::builder_dangerous("127.0.0.1")
+                .port(2525)
+                .pool_config(cfg)
+                .build();
 
         let result = mailer.send_raw(&envelope(), b"async test with pool").await;
         assert!(result.is_ok());

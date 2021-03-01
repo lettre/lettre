@@ -1,8 +1,9 @@
 use std::time::Duration;
 
 use crate::transport::smtp::{
-    async_transport::AsyncSmtpClient, client::AsyncSmtpConnection, error::Error, AsyncSmtpConnector,
+    async_transport::AsyncSmtpClient, client::AsyncSmtpConnection, error::Error,
 };
+use crate::Executor;
 
 use async_trait::async_trait;
 use bb8::{ManageConnection, Pool, PooledConnection};
@@ -78,9 +79,9 @@ impl AsyncPoolConfig {
 }
 
 #[async_trait]
-impl<C> ManageConnection for AsyncSmtpClient<C>
+impl<E> ManageConnection for AsyncSmtpClient<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     type Connection = AsyncSmtpConnection;
     type Error = Error;
