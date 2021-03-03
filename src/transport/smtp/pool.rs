@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::transport::smtp::{client::SmtpConnection, error::Error, SmtpClient};
 
-use r2d2::{ManageConnection, Pool};
+use r2d2::{CustomizeConnection, ManageConnection, Pool};
 
 /// Configuration for a connection pool
 #[derive(Debug, Clone)]
@@ -53,12 +53,16 @@ impl PoolConfig {
         self
     }
 
-    pub(crate) fn build<C: ManageConnection>(&self, client: C) -> Pool<C> {
+    pub(crate) fn build<C: ManageConnection<Connection = SmtpConnection, Error = Error>>(
+        &self,
+        client: C,
+    ) -> Pool<C> {
         Pool::builder()
             .min_idle(Some(self.min_idle))
             .max_size(self.max_size)
             .connection_timeout(self.connection_timeout)
             .idle_timeout(Some(self.idle_timeout))
+            .connection_customizer(Box::new(SmtpConnectionQuitter))
             .build_unchecked(client)
     }
 }
@@ -91,5 +95,17 @@ impl ManageConnection for SmtpClient {
 
     fn has_broken(&self, conn: &mut Self::Connection) -> bool {
         conn.has_broken()
+    }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct SmtpConnectionQuitter;
+
+impl CustomizeConnection<SmtpConnection, Error> for SmtpConnectionQuitter {
+    fn on_release(&self, conn: SmtpConnection) {
+        let mut conn = conn;
+        if !conn.has_broken() {
+            let _quit = conn.quit();
+        }
     }
 }
