@@ -4,8 +4,8 @@
 use tokio02_crate as tokio;
 
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, Message, Tokio02Executor,
-    Tokio02Transport,
+    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message,
+    Tokio02Executor,
 };
 
 #[tokio::main]

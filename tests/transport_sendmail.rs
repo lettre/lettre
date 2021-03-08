@@ -46,7 +46,7 @@ mod test {
     #[cfg(feature = "tokio02")]
     #[tokio::test]
     async fn sendmail_transport_tokio02() {
-        use lettre::{AsyncSendmailTransport, Tokio02Executor, Tokio02Transport};
+        use lettre::{AsyncSendmailTransport, AsyncTransport, Tokio02Executor};
 
         let sender = AsyncSendmailTransport::<Tokio02Executor>::new();
         let email = Message::builder()

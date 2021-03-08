@@ -9,6 +9,7 @@ mod test {
     #[test]
     fn stub_transport() {
         use lettre::Transport;
+
         let sender_ok = StubTransport::new_ok();
         let sender_ko = StubTransport::new_error();
         let email = Message::builder()
@@ -26,7 +27,7 @@ mod test {
     #[cfg(feature = "async-std1")]
     #[async_std::test]
     async fn stub_transport_asyncstd1() {
-        use lettre::AsyncStd1Transport;
+        use lettre::AsyncTransport;
 
         let sender_ok = StubTransport::new_ok();
         let sender_ko = StubTransport::new_error();
@@ -46,7 +47,7 @@ mod test {
     #[cfg(feature = "tokio02")]
     #[tokio::test]
     async fn stub_transport_tokio02() {
-        use lettre::Tokio02Transport;
+        use lettre::AsyncTransport;
 
         let sender_ok = StubTransport::new_ok();
         let sender_ko = StubTransport::new_error();

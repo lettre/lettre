@@ -1,6 +1,6 @@
 use lettre::{
     transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Executor,
-    AsyncStd1Transport, Message,
+    AsyncTransport, Message,
 };
 
 #[async_std::main]
