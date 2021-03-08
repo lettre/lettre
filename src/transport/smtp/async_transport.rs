@@ -271,22 +271,3 @@ where
         }
     }
 }
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Executor instead")]
-pub use crate::Executor as AsyncSmtpConnector;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Tokio02Executor instead")]
-#[cfg(feature = "tokio02")]
-pub type Tokio02Connector = crate::Tokio02Executor;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Tokio1Executor instead")]
-#[cfg(feature = "tokio1")]
-pub type Tokio1Connector = crate::Tokio1Executor;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::AsyncStd1Executor instead")]
-#[cfg(feature = "async-std1")]
-pub type AsyncStd1Connector = crate::AsyncStd1Executor;
