@@ -92,29 +92,8 @@ pub use crate::transport::smtp::AsyncSmtpTransport;
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
-pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
-pub use crate::transport::smtp::Tokio02Connector;
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
-pub use crate::transport::smtp::Tokio1Connector;
-#[doc(hidden)]
-#[cfg(feature = "async-std1")]
-pub use crate::transport::AsyncStd1Transport;
-#[doc(hidden)]
-#[cfg(feature = "tokio02")]
-pub use crate::transport::Tokio02Transport;
-#[doc(hidden)]
-#[cfg(feature = "tokio1")]
-pub use crate::transport::Tokio1Transport;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]
