@@ -15,7 +15,7 @@ use rustls::{ClientSession, StreamOwned};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::InnerTlsParameters;
 use super::{MockStream, TlsParameters};
-use crate::transport::smtp::Error;
+use crate::transport::smtp::{error, Error};
 
 /// A network stream
 pub struct NetworkStream {
@@ -84,18 +84,18 @@ impl NetworkStream {
             server: T,
             timeout: Duration,
         ) -> Result<TcpStream, Error> {
-            let addrs = server.to_socket_addrs()?;
+            let addrs = server.to_socket_addrs().map_err(error::client)?;
             for addr in addrs {
                 if let Ok(result) = TcpStream::connect_timeout(&addr, timeout) {
                     return Ok(result);
                 }
             }
-            Err(Error::Client("Could not connect"))
+            Err(error::client("Could not connect"))
         }
 
         let tcp_stream = match timeout {
             Some(t) => try_connect_timeout(server, t)?,
-            None => TcpStream::connect(server)?,
+            None => TcpStream::connect(server).map_err(error::client)?,
         };
 
         let mut stream = NetworkStream::new(InnerNetworkStream::Tcp(tcp_stream));
@@ -140,14 +140,15 @@ impl NetworkStream {
             InnerTlsParameters::NativeTls(connector) => {
                 let stream = connector
                     .connect(tls_parameters.domain(), tcp_stream)
-                    .map_err(|err| Error::Io(io::Error::new(io::ErrorKind::Other, err)))?;
+                    .map_err(error::client)?;
                 InnerNetworkStream::NativeTls(stream)
             }
             #[cfg(feature = "rustls-tls")]
             InnerTlsParameters::RustlsTls(connector) => {
                 use webpki::DNSNameRef;
 
-                let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())?;
+                let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())
+                    .map_err(error::client)?;
                 let stream = StreamOwned::new(
                     ClientSession::new(&Arc::new(connector.clone()), domain),
                     tcp_stream,

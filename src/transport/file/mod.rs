@@ -9,8 +9,8 @@
 //! #
 //! # #[cfg(all(feature = "file-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use std::env::temp_dir;
 //! use lettre::{FileTransport, Message, Transport};
+//! use std::env::temp_dir;
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -41,8 +41,8 @@
 //! #
 //! # #[cfg(all(feature = "file-transport-envelope", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use std::env::temp_dir;
 //! use lettre::{FileTransport, Message, Transport};
+//! use std::env::temp_dir;
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::with_envelope(temp_dir());

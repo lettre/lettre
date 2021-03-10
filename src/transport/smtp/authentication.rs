@@ -1,6 +1,6 @@
 //! Provides limited SASL authentication mechanisms
 
-use crate::transport::smtp::error::Error;
+use crate::transport::smtp::error::{self, Error};
 use std::fmt::{self, Display, Formatter};
 
 /// Accepted authentication mechanisms
@@ -80,15 +80,15 @@ impl Mechanism {
     ) -> Result<String, Error> {
         match self {
             Mechanism::Plain => match challenge {
-                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                Some(_) => Err(error::client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
                     "\u{0}{}\u{0}{}",
                     credentials.authentication_identity, credentials.secret
                 )),
             },
             Mechanism::Login => {
-                let decoded_challenge =
-                    challenge.ok_or(Error::Client("This mechanism does expect a challenge"))?;
+                let decoded_challenge = challenge
+                    .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
                     return Ok(credentials.authentication_identity.to_string());
@@ -98,10 +98,10 @@ impl Mechanism {
                     return Ok(credentials.secret.to_string());
                 }
 
-                Err(Error::Client("Unrecognized challenge"))
+                Err(error::client("Unrecognized challenge"))
             }
             Mechanism::Xoauth2 => match challenge {
-                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                Some(_) => Err(error::client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
                     "user={}\x01auth=Bearer {}\x01\x01",
                     credentials.authentication_identity, credentials.secret

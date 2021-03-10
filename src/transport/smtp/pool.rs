@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::transport::smtp::{client::SmtpConnection, error::Error, SmtpClient};
+use crate::transport::smtp::{client::SmtpConnection, error, error::Error, SmtpClient};
 
 use r2d2::{CustomizeConnection, ManageConnection, Pool};
 
@@ -90,7 +90,7 @@ impl ManageConnection for SmtpClient {
         if conn.test_connected() {
             return Ok(());
         }
-        Err(Error::Client("is not connected anymore"))
+        Err(error::client("is not connected anymore"))
     }
 
     fn has_broken(&self, conn: &mut Self::Connection) -> bool {

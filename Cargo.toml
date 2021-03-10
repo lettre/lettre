@@ -36,7 +36,7 @@ serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 
 # smtp
-nom = { version = "6", default-features = false, features = ["alloc"], optional = true }
+nom = { version = "6", default-features = false, features = ["alloc", "std"], optional = true }
 r2d2 = { version = "0.8", optional = true } # feature
 hostname = { version = "0.3", optional = true } # feature
 

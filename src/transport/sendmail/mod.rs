@@ -7,7 +7,7 @@
 //! #
 //! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, Transport, SendmailTransport};
+//! use lettre::{Message, SendmailTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
