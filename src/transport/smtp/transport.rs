@@ -10,9 +10,10 @@ use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, S
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{address::Envelope, Transport};
 
+/// Sends emails using the SMTP protocol
+#[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
-/// Transport using the SMTP protocol
 pub struct SmtpTransport {
     #[cfg(feature = "r2d2")]
     inner: Pool<SmtpClient>,

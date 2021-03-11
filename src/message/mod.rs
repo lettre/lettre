@@ -492,6 +492,7 @@ impl MessageBuilder {
 }
 
 /// Email message which can be formatted
+#[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 #[derive(Clone, Debug)]
 pub struct Message {
     headers: Headers,

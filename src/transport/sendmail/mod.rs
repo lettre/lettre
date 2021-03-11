@@ -4,10 +4,10 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! # use lettre::{Message, Transport, SendmailTransport};
+//! use lettre::{Message, Transport, SendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -30,7 +30,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, Tokio02Executor, AsyncSendmailTransport, SendmailTransport};
@@ -53,7 +53,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, Tokio1Executor, AsyncSendmailTransport, SendmailTransport};
@@ -76,7 +76,7 @@
 //!
 //!```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, AsyncStd1Executor, AsyncSendmailTransport};
@@ -119,16 +119,22 @@ mod error;
 
 const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
 
-/// Sends an email using the `sendmail` command
+/// Sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(docsrs, doc(cfg(feature = "sendmail-transport")))]
 pub struct SendmailTransport {
     command: OsString,
 }
 
+/// Asynchronously sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSendmailTransport<E: Executor> {
     inner: SendmailTransport,
     marker_: PhantomData<E>,
