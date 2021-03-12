@@ -6,11 +6,11 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "file-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{FileTransport, Message, Transport};
 //! use std::env::temp_dir;
+//! use lettre::{FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -38,11 +38,11 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "file-transport-envelope", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{FileTransport, Message, Transport};
 //! use std::env::temp_dir;
+//! use lettre::{FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::with_envelope(temp_dir());
@@ -66,7 +66,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
@@ -91,7 +91,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
@@ -153,14 +153,20 @@ type Id = String;
 /// Writes the content and the envelope information to a file
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(docsrs, doc(cfg(feature = "file-transport")))]
 pub struct FileTransport {
     path: PathBuf,
     #[cfg(feature = "file-transport-envelope")]
     save_envelope: bool,
 }
 
+/// Asynchronously writes the content and the envelope information to a file
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 pub struct AsyncFileTransport<E: Executor> {
     inner: FileTransport,

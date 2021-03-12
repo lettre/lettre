@@ -15,6 +15,11 @@ use crate::Tokio02Executor;
 use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
 
+/// Asynchronously sends emails using the SMTP protocol
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 #[allow(missing_debug_implementations)]
 pub struct AsyncSmtpTransport<E> {
     // TODO: pool
@@ -93,6 +98,16 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 
@@ -122,6 +137,16 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{Tls, TlsParameters, SUBMISSION_PORT};
 
@@ -174,6 +199,10 @@ where
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
 #[allow(missing_debug_implementations)]
 #[derive(Clone)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
 }
@@ -213,12 +242,22 @@ impl AsyncSmtpTransportBuilder {
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn tls(mut self, tls: super::Tls) -> Self {
         self.info.tls = tls;
         self
     }
 
-    /// Build the transport (with default pool if enabled)
+    /// Build the transport
     pub fn build<E>(self) -> AsyncSmtpTransport<E>
     where
         E: Executor,

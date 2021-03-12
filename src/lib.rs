@@ -4,16 +4,17 @@
 //! * Pluggable email transports
 //! * Unicode support
 //! * Secure defaults
+//! * Async support
 //!
 //! Lettre requires Rust 1.45 or newer.
 //!
 //! ## Optional features
 //!
 //! * **builder**: Message builder
-//! * **file-transport**: Transport that write messages into a file
+//! * **file-transport**: Transport that writes messages into a file
 //! * **file-transport-envelope**: Allow writing the envelope into a JSON file
 //! * **smtp-transport**: Transport over SMTP
-//! * **sendmail-transport**: Transport over SMTP
+//! * **sendmail-transport**: Transport using the `sendmail` command
 //! * **rustls-tls**: TLS support with the `rustls` crate
 //! * **native-tls**: TLS support with the `native-tls` crate
 //! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
@@ -46,7 +47,7 @@
 
 pub mod address;
 pub mod error;
-#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
@@ -66,29 +67,36 @@ pub use self::executor::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 pub use self::executor::Tokio1Executor;
 #[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[doc(inline)]
 pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
+#[doc(inline)]
 pub use crate::message::Message;
 #[cfg(all(
     feature = "file-transport",
     any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
 ))]
+#[doc(inline)]
 pub use crate::transport::file::AsyncFileTransport;
 #[cfg(feature = "file-transport")]
+#[doc(inline)]
 pub use crate::transport::file::FileTransport;
 #[cfg(all(
     feature = "sendmail-transport",
     any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
 ))]
+#[doc(inline)]
 pub use crate::transport::sendmail::AsyncSendmailTransport;
 #[cfg(feature = "sendmail-transport")]
+#[doc(inline)]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[doc(inline)]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 

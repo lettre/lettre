@@ -26,6 +26,18 @@ use crate::transport::smtp::extension::ClientId;
 ))]
 use crate::transport::smtp::Error;
 
+/// Async executor abstraction trait
+///
+/// Used by [`AsyncSmtpTransport`], [`AsyncSendmailTransport`] and [`AsyncFileTransport`]
+/// in order to be able to work with different async runtimes.
+///
+/// [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
+/// [`AsyncSendmailTransport`]: crate::AsyncSendmailTransport
+/// [`AsyncFileTransport`]: crate::AsyncFileTransport
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 #[async_trait]
 pub trait Executor: Send + Sync + private::Sealed {
     #[doc(hidden)]
@@ -46,6 +58,14 @@ pub trait Executor: Send + Sync + private::Sealed {
     async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()>;
 }
 
+/// Async [`Executor`] using `tokio` `0.2.x`
+///
+/// Used by [`AsyncSmtpTransport`], [`AsyncSendmailTransport`] and [`AsyncFileTransport`]
+/// in order to be able to work with different async runtimes.
+///
+/// [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
+/// [`AsyncSendmailTransport`]: crate::AsyncSendmailTransport
+/// [`AsyncFileTransport`]: crate::AsyncFileTransport
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
 #[cfg(feature = "tokio02")]
@@ -103,6 +123,14 @@ impl Executor for Tokio02Executor {
     }
 }
 
+/// Async [`Executor`] using `tokio` `1.x`
+///
+/// Used by [`AsyncSmtpTransport`], [`AsyncSendmailTransport`] and [`AsyncFileTransport`]
+/// in order to be able to work with different async runtimes.
+///
+/// [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
+/// [`AsyncSendmailTransport`]: crate::AsyncSendmailTransport
+/// [`AsyncFileTransport`]: crate::AsyncFileTransport
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
 #[cfg(feature = "tokio1")]
@@ -159,6 +187,14 @@ impl Executor for Tokio1Executor {
     }
 }
 
+/// Async [`Executor`] using `async-std` `1.x`
+///
+/// Used by [`AsyncSmtpTransport`], [`AsyncSendmailTransport`] and [`AsyncFileTransport`]
+/// in order to be able to work with different async runtimes.
+///
+/// [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
+/// [`AsyncSendmailTransport`]: crate::AsyncSendmailTransport
+/// [`AsyncFileTransport`]: crate::AsyncFileTransport
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
 #[cfg(feature = "async-std1")]
