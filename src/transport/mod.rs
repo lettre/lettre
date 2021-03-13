@@ -16,11 +16,12 @@
 //! ## Building an email
 //!
 //! Emails can either be built though [`Message`], which is a typed API for constructing emails
-//! (find out more about it by going over the [`message`] module), or via external means.
+//! (find out more about it by going over the [`message`][crate::message] module),
+//! or via external means.
 //!
 //! [`Message`]s can be sent via [`Transport::send`] or [`AsyncTransport::send`], while messages
-//! built without lettre's [`message`] APIs can be sent via [`Transport::send_raw`] or
-//! [`AsyncTransport::send_raw`].
+//! built without lettre's [`message`][crate::message] APIs can be sent via [`Transport::send_raw`]
+//! or [`AsyncTransport::send_raw`].
 //!
 //! ## Brief example
 //!
@@ -58,7 +59,6 @@
 //! ```
 //!
 //! [`Message`]: crate::Message
-//! [`message`]: crate::message
 //! [`file`]: self::file
 //! [`SmtpTransport`]: crate::SmtpTransport
 //! [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
