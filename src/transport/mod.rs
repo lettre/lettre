@@ -59,6 +59,8 @@
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(not(all(feature = "builder", feature = "smtp-transport")))]
+//! # fn main() {}
 //! ```
 //!
 //! [`Message`]: crate::Message
