@@ -1,29 +1,30 @@
 //! ## Transports for sending emails
 //!
 //! This module contains `Transport`s for sending emails. A `Transport` implements a high-level API
-//! for sending emails.
+//! for sending emails. It automatically manages the underlying resources and doesn't require any
+//! specific knowledge of email protocols in order to be used.
 //!
 //! The following transports are available:
 //!
-//! | Module       | Protocol | Sync API              | Async API                  | Description                                |
-//! | ------------ | -------- | --------------------- | -------------------------- | ------------------------------------------ |
-//! | [`smtp`]     | SMTP     | [`SmtpTransport`]     | [`AsyncSmtpTransport`]     | Uses the SMTP protocol to send emails      |
-//! | [`sendmail`] | Sendmail | [`SendmailTransport`] | [`AsyncSendmailTransport`] | Uses the `sendmail` command to send emails |
-//! | [`file`]     | File     | [`FileTransport`]     | [`AsyncFileTransport`]     | Saves the email as an `.eml` file          |
-//! | [`stub`]     | Debug    | [`StubTransport`]     | [`StubTransport`]          | Drops the email - Useful for debugging     |
+//! | Module       | Protocol | Sync API              | Async API                  | Description                                             |
+//! | ------------ | -------- | --------------------- | -------------------------- | ------------------------------------------------------- |
+//! | [`smtp`]     | SMTP     | [`SmtpTransport`]     | [`AsyncSmtpTransport`]     | Uses the SMTP protocol to send emails to a relay server |
+//! | [`sendmail`] | Sendmail | [`SendmailTransport`] | [`AsyncSendmailTransport`] | Uses the `sendmail` command to send emails              |
+//! | [`file`]     | File     | [`FileTransport`]     | [`AsyncFileTransport`]     | Saves the email as an `.eml` file                       |
+//! | [`stub`]     | Debug    | [`StubTransport`]     | [`StubTransport`]          | Drops the email - Useful for debugging                  |
 //!
 //! ## Building an email
 //!
 //! Emails can either be built though [`Message`], which is a typed API for constructing emails
-//! (more info about it can be found in the [`message`] module) or via an external means.
+//! (find out more about it by going over the [`message`] module), or via external means.
 //!
-//! [`Message`]s can be sent via [`Transport::send`] or [`AsyncTransport::send`], while those who
-//! haven't been built via [`Message`] can be sent via [`Transport::send_raw`] or
+//! [`Message`]s can be sent via [`Transport::send`] or [`AsyncTransport::send`], while messages
+//! built without lettre's [`message`] APIs can be sent via [`Transport::send_raw`] or
 //! [`AsyncTransport::send_raw`].
 //!
 //! ## Brief example
 //!
-//! This example shows how to build an email and send it via SMTP.
+//! This example shows how to build an email and send it via an SMTP relay server.
 //! It is in no way a complete example, but it shows how to get started with lettre.
 //! More examples can be found by looking at the specific modules, linked in the _Module_ column
 //! of the [table above](#transports-for-sending-emails).
