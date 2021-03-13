@@ -146,7 +146,7 @@ impl AsyncNetworkStream {
     ) -> Result<AsyncNetworkStream, Error> {
         let tcp_stream = Tokio02TcpStream::connect((hostname, port))
             .await
-            .map_err(error::client)?;
+            .map_err(error::connection)?;
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio02Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
@@ -163,7 +163,7 @@ impl AsyncNetworkStream {
     ) -> Result<AsyncNetworkStream, Error> {
         let tcp_stream = Tokio1TcpStream::connect((hostname, port))
             .await
-            .map_err(error::client)?;
+            .map_err(error::connection)?;
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
@@ -180,7 +180,7 @@ impl AsyncNetworkStream {
     ) -> Result<AsyncNetworkStream, Error> {
         let tcp_stream = AsyncStd1TcpStream::connect((hostname, port))
             .await
-            .map_err(error::client)?;
+            .map_err(error::connection)?;
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
@@ -211,7 +211,7 @@ impl AsyncNetworkStream {
 
                 self.inner = Self::upgrade_tokio02_tls(tcp_stream, tls_parameters)
                     .await
-                    .map_err(error::client)?;
+                    .map_err(error::connection)?;
                 Ok(())
             }
             #[cfg(all(
@@ -234,7 +234,7 @@ impl AsyncNetworkStream {
 
                 self.inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters)
                     .await
-                    .map_err(error::client)?;
+                    .map_err(error::connection)?;
                 Ok(())
             }
             #[cfg(all(
@@ -257,7 +257,7 @@ impl AsyncNetworkStream {
 
                 self.inner = Self::upgrade_asyncstd1_tls(tcp_stream, tls_parameters)
                     .await
-                    .map_err(error::client)?;
+                    .map_err(error::connection)?;
                 Ok(())
             }
             _ => Ok(()),
@@ -286,7 +286,7 @@ impl AsyncNetworkStream {
                     let stream = connector
                         .connect(&domain, tcp_stream)
                         .await
-                        .map_err(error::client)?;
+                        .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio02NativeTls(stream))
                 };
             }
@@ -299,13 +299,14 @@ impl AsyncNetworkStream {
                 return {
                     use tokio02_rustls::{webpki::DNSNameRef, TlsConnector};
 
-                    let domain = DNSNameRef::try_from_ascii_str(&domain).map_err(error::client)?;
+                    let domain =
+                        DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await
-                        .map_err(error::client)?;
+                        .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio02RustlsTls(stream))
                 };
             }
@@ -334,7 +335,7 @@ impl AsyncNetworkStream {
                     let stream = connector
                         .connect(&domain, tcp_stream)
                         .await
-                        .map_err(error::client)?;
+                        .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1NativeTls(stream))
                 };
             }
@@ -347,13 +348,14 @@ impl AsyncNetworkStream {
                 return {
                     use tokio1_rustls::{webpki::DNSNameRef, TlsConnector};
 
-                    let domain = DNSNameRef::try_from_ascii_str(&domain).map_err(error::client)?;
+                    let domain =
+                        DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await
-                        .map_err(error::client)?;
+                        .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1RustlsTls(stream))
                 };
             }
@@ -398,13 +400,14 @@ impl AsyncNetworkStream {
                 return {
                     use async_rustls::{webpki::DNSNameRef, TlsConnector};
 
-                    let domain = DNSNameRef::try_from_ascii_str(&domain).map_err(error::client)?;
+                    let domain =
+                        DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
                     let connector = TlsConnector::from(Arc::new(config));
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await
-                        .map_err(error::client)?;
+                        .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream))
                 };
             }

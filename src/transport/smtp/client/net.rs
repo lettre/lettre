@@ -84,18 +84,18 @@ impl NetworkStream {
             server: T,
             timeout: Duration,
         ) -> Result<TcpStream, Error> {
-            let addrs = server.to_socket_addrs().map_err(error::client)?;
+            let addrs = server.to_socket_addrs().map_err(error::connection)?;
             for addr in addrs {
                 if let Ok(result) = TcpStream::connect_timeout(&addr, timeout) {
                     return Ok(result);
                 }
             }
-            Err(error::client("Could not connect"))
+            Err(error::connection("Could not connect"))
         }
 
         let tcp_stream = match timeout {
             Some(t) => try_connect_timeout(server, t)?,
-            None => TcpStream::connect(server).map_err(error::client)?,
+            None => TcpStream::connect(server).map_err(error::connection)?,
         };
 
         let mut stream = NetworkStream::new(InnerNetworkStream::Tcp(tcp_stream));
@@ -140,7 +140,7 @@ impl NetworkStream {
             InnerTlsParameters::NativeTls(connector) => {
                 let stream = connector
                     .connect(tls_parameters.domain(), tcp_stream)
-                    .map_err(error::client)?;
+                    .map_err(error::connection)?;
                 InnerNetworkStream::NativeTls(stream)
             }
             #[cfg(feature = "rustls-tls")]
@@ -148,7 +148,7 @@ impl NetworkStream {
                 use webpki::DNSNameRef;
 
                 let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())
-                    .map_err(error::client)?;
+                    .map_err(error::connection)?;
                 let stream = StreamOwned::new(
                     ClientSession::new(&Arc::new(connector.clone()), domain),
                     tcp_stream,

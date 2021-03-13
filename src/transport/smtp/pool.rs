@@ -90,7 +90,7 @@ impl ManageConnection for SmtpClient {
         if conn.test_connected() {
             return Ok(());
         }
-        Err(error::client("is not connected anymore"))
+        Err(error::network("is not connected anymore"))
     }
 
     fn has_broken(&self, conn: &mut Self::Connection) -> bool {

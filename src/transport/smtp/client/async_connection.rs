@@ -282,8 +282,12 @@ impl AsyncSmtpConnection {
             .get_mut()
             .write_all(string)
             .await
-            .map_err(error::client)?;
-        self.stream.get_mut().flush().await.map_err(error::client)?;
+            .map_err(error::network)?;
+        self.stream
+            .get_mut()
+            .flush()
+            .await
+            .map_err(error::network)?;
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -298,7 +302,7 @@ impl AsyncSmtpConnection {
             .stream
             .read_line(&mut buffer)
             .await
-            .map_err(error::client)?
+            .map_err(error::network)?
             > 0
         {
             #[cfg(feature = "tracing")]

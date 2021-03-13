@@ -67,7 +67,7 @@ impl SmtpConnection {
             panic: false,
             server_info: ServerInfo::default(),
         };
-        conn.set_timeout(timeout).map_err(error::client)?;
+        conn.set_timeout(timeout).map_err(error::network)?;
         // TODO log
         let _response = conn.read_response()?;
 
@@ -256,8 +256,8 @@ impl SmtpConnection {
         self.stream
             .get_mut()
             .write_all(string)
-            .map_err(error::client)?;
-        self.stream.get_mut().flush().map_err(error::client)?;
+            .map_err(error::network)?;
+        self.stream.get_mut().flush().map_err(error::network)?;
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -268,12 +268,7 @@ impl SmtpConnection {
     pub fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
 
-        while self
-            .stream
-            .read_line(&mut buffer)
-            .map_err(error::response)?
-            > 0
-        {
+        while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
             #[cfg(feature = "tracing")]
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {

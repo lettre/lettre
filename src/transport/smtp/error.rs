@@ -40,7 +40,7 @@ impl Error {
         matches!(self.inner.kind, Kind::Client)
     }
 
-    /// Returns true if the error is transient SMTP error
+    /// Returns true if the error is a transient SMTP error
     pub fn is_transient(&self) -> bool {
         matches!(self.inner.kind, Kind::Transient(_))
     }
@@ -48,6 +48,21 @@ impl Error {
     /// Returns true if the error is a permanent SMTP error
     pub fn is_permanent(&self) -> bool {
         matches!(self.inner.kind, Kind::Permanent(_))
+    }
+
+    /// Returns true if the error is caused by a timeout
+    pub fn is_timeout(&self) -> bool {
+        let mut source = self.source();
+
+        while let Some(err) = source {
+            if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
+                return io_err.kind() == std::io::ErrorKind::TimedOut;
+            }
+
+            source = err.source();
+        }
+
+        false
     }
 
     /// Returns true if the error is from TLS
@@ -86,6 +101,10 @@ pub(crate) enum Kind {
     Response,
     /// Internal client error
     Client,
+    /// Connection error
+    Connection,
+    /// Underlying network i/o error
+    Network,
     /// TLS error
     #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -111,13 +130,15 @@ impl fmt::Display for Error {
         match self.inner.kind {
             Kind::Response => f.write_str("response error")?,
             Kind::Client => f.write_str("internal client error")?,
+            Kind::Network => f.write_str("network error")?,
+            Kind::Connection => f.write_str("Connection error")?,
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             Kind::Tls => f.write_str("tls error")?,
             Kind::Transient(ref code) => {
                 write!(f, "transient error ({})", code)?;
             }
             Kind::Permanent(ref code) => {
-                write!(f, "transient error ({})", code)?;
+                write!(f, "permanent error ({})", code)?;
             }
         };
 
@@ -152,6 +173,14 @@ pub(crate) fn response<E: Into<BoxError>>(e: E) -> Error {
 
 pub(crate) fn client<E: Into<BoxError>>(e: E) -> Error {
     Error::new(Kind::Client, Some(e))
+}
+
+pub(crate) fn network<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Network, Some(e))
+}
+
+pub(crate) fn connection<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Connection, Some(e))
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
