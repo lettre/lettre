@@ -5,9 +5,9 @@ use r2d2::Pool;
 
 #[cfg(feature = "r2d2")]
 use super::PoolConfig;
-use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
+use super::{error, Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
+use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 use crate::{address::Envelope, Transport};
 
 /// Sends emails using the SMTP protocol
@@ -28,7 +28,7 @@ impl Transport for SmtpTransport {
     /// Sends an email
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         #[cfg(feature = "r2d2")]
-        let mut conn = self.inner.get()?;
+        let mut conn = self.inner.get().map_err(error::client)?;
         #[cfg(not(feature = "r2d2"))]
         let mut conn = self.inner.connection()?;
 
