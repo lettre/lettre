@@ -1,7 +1,7 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use crate::transport::smtp::Error;
+use crate::transport::smtp::{error, Error};
 use nom::{
     branch::alt,
     bytes::streaming::{tag, take_until},
@@ -120,6 +120,14 @@ impl Code {
             detail,
         }
     }
+
+    /// Tells if the response is positive
+    pub fn is_positive(&self) -> bool {
+        matches!(
+            self.severity,
+            Severity::PositiveCompletion | Severity::PositiveIntermediate
+        )
+    }
 }
 
 /// Contains an SMTP reply, with separated code and message
@@ -139,7 +147,9 @@ impl FromStr for Response {
     type Err = Error;
 
     fn from_str(s: &str) -> result::Result<Response, Error> {
-        parse_response(s).map(|(_, r)| r).map_err(|e| e.into())
+        parse_response(s)
+            .map(|(_, r)| r)
+            .map_err(|e| error::response(e.to_string()))
     }
 }
 
@@ -151,10 +161,7 @@ impl Response {
 
     /// Tells if the response is positive
     pub fn is_positive(&self) -> bool {
-        matches!(
-            self.code.severity,
-            Severity::PositiveCompletion | Severity::PositiveIntermediate
-        )
+        self.code.is_positive()
     }
 
     /// Tests code equality

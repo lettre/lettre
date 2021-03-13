@@ -174,6 +174,7 @@ impl Address {
         Err(AddressError::InvalidDomain)
     }
 
+    #[cfg(feature = "smtp-transport")]
     /// Check if the address contains non-ascii chars
     pub(super) fn is_ascii(&self) -> bool {
         self.serialized.is_ascii()

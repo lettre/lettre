@@ -1,162 +1,189 @@
 //! Error and result type for SMTP clients
 
-use self::Error::*;
-use crate::transport::smtp::response::{Response, Severity};
-use base64::DecodeError;
-use std::{
-    error::Error as StdError,
-    fmt::{self, Display, Formatter},
-    io,
-    string::FromUtf8Error,
-};
+use crate::transport::smtp::response::{Code, Severity};
+use std::{error::Error as StdError, fmt, io};
 
-/// An enum of all error kinds.
+// Inspired by https://github.com/seanmonstar/reqwest/blob/a8566383168c0ef06c21f38cbc9213af6ff6db31/src/error.rs
+
+/// The Errors that may occur when sending an email over SMTP
+pub struct Error {
+    inner: Box<Inner>,
+}
+
+pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
+
+struct Inner {
+    kind: Kind,
+    source: Option<BoxError>,
+}
+
+impl Error {
+    pub(crate) fn new<E>(kind: Kind, source: Option<E>) -> Error
+    where
+        E: Into<BoxError>,
+    {
+        Error {
+            inner: Box::new(Inner {
+                kind,
+                source: source.map(Into::into),
+            }),
+        }
+    }
+
+    /// Returns true if the error is from response
+    pub fn is_response(&self) -> bool {
+        matches!(self.inner.kind, Kind::Response)
+    }
+
+    /// Returns true if the error is from client
+    pub fn is_client(&self) -> bool {
+        matches!(self.inner.kind, Kind::Client)
+    }
+
+    /// Returns true if the error is a transient SMTP error
+    pub fn is_transient(&self) -> bool {
+        matches!(self.inner.kind, Kind::Transient(_))
+    }
+
+    /// Returns true if the error is a permanent SMTP error
+    pub fn is_permanent(&self) -> bool {
+        matches!(self.inner.kind, Kind::Permanent(_))
+    }
+
+    /// Returns true if the error is caused by a timeout
+    pub fn is_timeout(&self) -> bool {
+        let mut source = self.source();
+
+        while let Some(err) = source {
+            if let Some(io_err) = err.downcast_ref::<std::io::Error>() {
+                return io_err.kind() == std::io::ErrorKind::TimedOut;
+            }
+
+            source = err.source();
+        }
+
+        false
+    }
+
+    /// Returns true if the error is from TLS
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
+    pub fn is_tls(&self) -> bool {
+        matches!(self.inner.kind, Kind::Tls)
+    }
+
+    /// Returns the status code, if the error was generated from a response.
+    pub fn status(&self) -> Option<Code> {
+        match self.inner.kind {
+            Kind::Transient(code) => Some(code),
+            Kind::Permanent(code) => Some(code),
+            _ => None,
+        }
+    }
+
+    #[allow(unused)]
+    pub(crate) fn into_io(self) -> io::Error {
+        io::Error::new(io::ErrorKind::Other, self)
+    }
+}
+
 #[derive(Debug)]
-pub enum Error {
+pub(crate) enum Kind {
     /// Transient SMTP error, 4xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
-    Transient(Response),
+    Transient(Code),
     /// Permanent SMTP error, 5xx reply code
     ///
     /// [RFC 5321, section 4.2.1](https://tools.ietf.org/html/rfc5321#section-4.2.1)
-    Permanent(Response),
+    Permanent(Code),
     /// Error parsing a response
-    ResponseParsing(&'static str),
-    /// Error parsing a base64 string in response
-    ChallengeParsing(DecodeError),
-    /// Error parsing UTF8 in response
-    Utf8Parsing(FromUtf8Error),
+    Response,
     /// Internal client error
-    Client(&'static str),
-    /// DNS resolution error
-    Resolution,
-    /// IO error
-    Io(io::Error),
+    Client,
+    /// Connection error
+    Connection,
+    /// Underlying network i/o error
+    Network,
     /// TLS error
-    #[cfg(feature = "native-tls")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
-    Tls(native_tls::Error),
-    /// Parsing error
-    Parsing(nom::error::ErrorKind),
-    /// Invalid hostname
-    #[cfg(feature = "rustls-tls")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
-    InvalidDNSName(webpki::InvalidDNSNameError),
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
-    InvalidCertificate,
-    #[cfg(feature = "r2d2")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
-    Pool(r2d2::Error),
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    Tls,
 }
 
-impl Display for Error {
-    fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        match *self {
-            // Try to display the first line of the server's response that usually
-            // contains a short humanly readable error message
-            Transient(ref err) => fmt.write_str(
-                err.first_line()
-                    .unwrap_or("transient error during SMTP transaction"),
-            ),
-            Permanent(ref err) => fmt.write_str(
-                err.first_line()
-                    .unwrap_or("permanent error during SMTP transaction"),
-            ),
-            ResponseParsing(err) => fmt.write_str(err),
-            ChallengeParsing(ref err) => err.fmt(fmt),
-            Utf8Parsing(ref err) => err.fmt(fmt),
-            Resolution => fmt.write_str("could not resolve hostname"),
-            Client(err) => fmt.write_str(err),
-            Io(ref err) => err.fmt(fmt),
-            #[cfg(feature = "native-tls")]
-            Tls(ref err) => err.fmt(fmt),
-            Parsing(ref err) => fmt.write_str(err.description()),
-            #[cfg(feature = "rustls-tls")]
-            InvalidDNSName(ref err) => err.fmt(fmt),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-            InvalidCertificate => fmt.write_str("invalid certificate"),
-            #[cfg(feature = "r2d2")]
-            Pool(ref err) => err.fmt(fmt),
+impl fmt::Debug for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("lettre::Error");
+
+        builder.field("kind", &self.inner.kind);
+
+        if let Some(ref source) = self.inner.source {
+            builder.field("source", source);
         }
+
+        builder.finish()
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.inner.kind {
+            Kind::Response => f.write_str("response error")?,
+            Kind::Client => f.write_str("internal client error")?,
+            Kind::Network => f.write_str("network error")?,
+            Kind::Connection => f.write_str("Connection error")?,
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            Kind::Tls => f.write_str("tls error")?,
+            Kind::Transient(ref code) => {
+                write!(f, "transient error ({})", code)?;
+            }
+            Kind::Permanent(ref code) => {
+                write!(f, "permanent error ({})", code)?;
+            }
+        };
+
+        if let Some(ref e) = self.inner.source {
+            write!(f, ": {}", e)?;
+        }
+
+        Ok(())
     }
 }
 
 impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        match *self {
-            ChallengeParsing(ref err) => Some(&*err),
-            Utf8Parsing(ref err) => Some(&*err),
-            Io(ref err) => Some(&*err),
-            #[cfg(feature = "native-tls")]
-            Tls(ref err) => Some(&*err),
-            _ => None,
-        }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Io(err)
-    }
-}
-
-#[cfg(feature = "native-tls")]
-impl From<native_tls::Error> for Error {
-    fn from(err: native_tls::Error) -> Error {
-        Tls(err)
-    }
-}
-
-impl From<nom::Err<nom::error::Error<&str>>> for Error {
-    fn from(err: nom::Err<nom::error::Error<&str>>) -> Error {
-        Parsing(match err {
-            nom::Err::Incomplete(_) => nom::error::ErrorKind::Complete,
-            nom::Err::Failure(e) => e.code,
-            nom::Err::Error(e) => e.code,
+        self.inner.source.as_ref().map(|e| {
+            let r: &(dyn std::error::Error + 'static) = &**e;
+            r
         })
     }
 }
 
-impl From<DecodeError> for Error {
-    fn from(err: DecodeError) -> Error {
-        ChallengeParsing(err)
+pub(crate) fn code(c: Code) -> Error {
+    match c.severity {
+        Severity::TransientNegativeCompletion => Error::new::<Error>(Kind::Transient(c), None),
+        Severity::PermanentNegativeCompletion => Error::new::<Error>(Kind::Permanent(c), None),
+        _ => client("Unknown error code"),
     }
 }
 
-impl From<FromUtf8Error> for Error {
-    fn from(err: FromUtf8Error) -> Error {
-        Utf8Parsing(err)
-    }
+pub(crate) fn response<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Response, Some(e))
 }
 
-#[cfg(feature = "rustls-tls")]
-impl From<webpki::InvalidDNSNameError> for Error {
-    fn from(err: webpki::InvalidDNSNameError) -> Error {
-        InvalidDNSName(err)
-    }
+pub(crate) fn client<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Client, Some(e))
 }
 
-#[cfg(feature = "r2d2")]
-impl From<r2d2::Error> for Error {
-    fn from(err: r2d2::Error) -> Error {
-        Pool(err)
-    }
+pub(crate) fn network<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Network, Some(e))
 }
 
-impl From<Response> for Error {
-    fn from(response: Response) -> Error {
-        match response.code.severity {
-            Severity::TransientNegativeCompletion => Transient(response),
-            Severity::PermanentNegativeCompletion => Permanent(response),
-            _ => Client("Unknown error code"),
-        }
-    }
+pub(crate) fn connection<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Connection, Some(e))
 }
 
-impl From<&'static str> for Error {
-    fn from(string: &'static str) -> Error {
-        Client(string)
-    }
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+pub(crate) fn tls<E: Into<BoxError>>(e: E) -> Error {
+    Error::new(Kind::Tls, Some(e))
 }

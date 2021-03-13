@@ -11,6 +11,7 @@ use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism},
         commands::*,
+        error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::{parse_response, Response},
@@ -66,7 +67,7 @@ impl SmtpConnection {
             panic: false,
             server_info: ServerInfo::default(),
         };
-        conn.set_timeout(timeout)?;
+        conn.set_timeout(timeout).map_err(error::network)?;
         // TODO log
         let _response = conn.read_response()?;
 
@@ -91,7 +92,7 @@ impl SmtpConnection {
         if envelope.has_non_ascii_addresses() {
             if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
                 // don't try to send non-ascii addresses (per RFC)
-                return Err(Error::Client(
+                return Err(error::client(
                     "Envelope contains non-ascii chars but server does not support SMTPUTF8",
                 ));
             }
@@ -101,7 +102,7 @@ impl SmtpConnection {
         // Check for non-ascii content in message
         if !email.is_ascii() {
             if !self.server_info().supports_feature(Extension::EightBitMime) {
-                return Err(Error::Client(
+                return Err(error::client(
                     "Message contains non-ascii chars but server does not support 8BITMIME",
                 ));
             }
@@ -156,7 +157,7 @@ impl SmtpConnection {
             // when a TLS library is enabled
             unreachable!("TLS support required but not supported");
         } else {
-            Err(Error::Client("STARTTLS is not supported on this server"))
+            Err(error::client("STARTTLS is not supported on this server"))
         }
     }
 
@@ -209,9 +210,7 @@ impl SmtpConnection {
         let mechanism = self
             .server_info
             .get_auth_mechanism(mechanisms)
-            .ok_or(Error::Client(
-                "No compatible authentication mechanism was found",
-            ))?;
+            .ok_or_else(|| error::client("No compatible authentication mechanism was found"))?;
 
         // Limit challenges to avoid blocking
         let mut challenges = 10;
@@ -230,7 +229,7 @@ impl SmtpConnection {
         }
 
         if challenges == 0 {
-            Err(Error::ResponseParsing("Unexpected number of challenges"))
+            Err(error::response("Unexpected number of challenges"))
         } else {
             Ok(response)
         }
@@ -254,8 +253,11 @@ impl SmtpConnection {
 
     /// Writes a string to the server
     fn write(&mut self, string: &[u8]) -> Result<(), Error> {
-        self.stream.get_mut().write_all(string)?;
-        self.stream.get_mut().flush()?;
+        self.stream
+            .get_mut()
+            .write_all(string)
+            .map_err(error::network)?;
+        self.stream.get_mut().flush().map_err(error::network)?;
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -266,27 +268,27 @@ impl SmtpConnection {
     pub fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
 
-        while self.stream.read_line(&mut buffer)? > 0 {
+        while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
             #[cfg(feature = "tracing")]
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
-                    if response.is_positive() {
-                        return Ok(response);
-                    }
-
-                    return Err(response.into());
+                    return if response.is_positive() {
+                        Ok(response)
+                    } else {
+                        Err(error::code(response.code))
+                    };
                 }
                 Err(nom::Err::Failure(e)) => {
-                    return Err(Error::Parsing(e.code));
+                    return Err(error::response(e.to_string()));
                 }
                 Err(nom::Err::Incomplete(_)) => { /* read more */ }
                 Err(nom::Err::Error(e)) => {
-                    return Err(Error::Parsing(e.code));
+                    return Err(error::response(e.to_string()));
                 }
             }
         }
 
-        Err(io::Error::new(io::ErrorKind::Other, "incomplete").into())
+        Err(error::response("incomplete response"))
     }
 }
