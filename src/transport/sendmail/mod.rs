@@ -269,15 +269,21 @@ impl Transport for SendmailTransport {
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         // Spawn the sendmail command
-        let mut process = self.command(envelope).spawn()?;
+        let mut process = self.command(envelope).spawn().map_err(Error::Io)?;
 
-        process.stdin.as_mut().unwrap().write_all(email)?;
-        let output = process.wait_with_output()?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(email)
+            .map_err(Error::Io)?;
+        let output = process.wait_with_output().map_err(Error::Io)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(error::Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(Error::Utf8Parsing)?;
+            Err(Error::Client(stderr))
         }
     }
 }
@@ -294,15 +300,22 @@ impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
         let mut command = self.async_std_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(Error::Io)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(Error::Io)?;
+        let output = process.output().await.map_err(Error::Io)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(Error::Utf8Parsing)?;
+            Err(Error::Client(stderr))
         }
     }
 }
@@ -319,15 +332,22 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio02Executor> {
         let mut command = self.tokio02_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(Error::Io)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.wait_with_output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(Error::Io)?;
+        let output = process.wait_with_output().await.map_err(Error::Io)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(Error::Utf8Parsing)?;
+            Err(Error::Client(stderr))
         }
     }
 }
@@ -344,15 +364,22 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio1Executor> {
         let mut command = self.tokio1_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(Error::Io)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.wait_with_output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(Error::Io)?;
+        let output = process.wait_with_output().await.map_err(Error::Io)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(Error::Utf8Parsing)?;
+            Err(Error::Client(stderr))
         }
     }
 }
