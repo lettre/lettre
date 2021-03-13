@@ -21,32 +21,20 @@ pub enum Error {
 
 impl Display for Error {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        match *self {
-            Client(ref err) => err.fmt(fmt),
-            Utf8Parsing(ref err) => err.fmt(fmt),
-            Io(ref err) => err.fmt(fmt),
+        match &self {
+            Client(err) => err.fmt(fmt),
+            Utf8Parsing(err) => err.fmt(fmt),
+            Io(err) => err.fmt(fmt),
         }
     }
 }
 
 impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        match *self {
-            Io(ref err) => Some(&*err),
-            Utf8Parsing(ref err) => Some(&*err),
+        match &self {
+            Io(err) => Some(&*err),
+            Utf8Parsing(err) => Some(&*err),
             _ => None,
         }
-    }
-}
-
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::Io(err)
-    }
-}
-
-impl From<FromUtf8Error> for Error {
-    fn from(err: FromUtf8Error) -> Error {
-        Utf8Parsing(err)
     }
 }
