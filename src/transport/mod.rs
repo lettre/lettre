@@ -32,10 +32,12 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
+//! #
+//! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
+//! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::transport::smtp::authentication::Credentials;
 //! use lettre::{Message, SmtpTransport, Transport};
 //!
-//! # fn main() -> Result<(), Box<dyn Error>> {
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
