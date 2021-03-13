@@ -1,20 +1,71 @@
-//! ### Sending Messages
+//! ## Transports for sending emails
 //!
-//! This section explains how to manipulate emails you have created.
-//!
-//! This mailer contains several different transports for your emails. To be sendable, the
-//! emails have to implement `Email`, which is the case for emails created with `lettre::builder`.
+//! This module contains `Transport`s for sending emails. A `Transport` implements a high-level API
+//! for sending emails.
 //!
 //! The following transports are available:
 //!
-//! * The `SmtpTransport` uses the SMTP protocol to send the message over the network. It is
-//!   the preferred way of sending emails.
-//! * The `SendmailTransport` uses the sendmail command to send messages. It is an alternative to
-//!   the SMTP transport.
-//! * The `FileTransport` creates a file containing the email content to be sent. It can be used
-//!   for debugging or if you want to keep all sent emails.
-//! * The `StubTransport` is useful for debugging, and only prints the content of the email in the
-//!   logs.
+//! | Module       | Protocol | Sync API              | Async API                  | Description                                |
+//! | ------------ | -------- | --------------------- | -------------------------- | ------------------------------------------ |
+//! | [`smtp`]     | SMTP     | [`SmtpTransport`]     | [`AsyncSmtpTransport`]     | Uses the SMTP protocol to send emails      |
+//! | [`sendmail`] | Sendmail | [`SendmailTransport`] | [`AsyncSendmailTransport`] | Uses the `sendmail` command to send emails |
+//! | [`file`]     | File     | [`FileTransport`]     | [`AsyncFileTransport`]     | Saves the email as an `.eml` file          |
+//! | [`stub`]     | Debug    | [`StubTransport`]     | [`StubTransport`]          | Drops the email - Useful for debugging     |
+//!
+//! ## Building an email
+//!
+//! Emails can either be built though [`Message`], which is a typed API for constructing emails
+//! (more info about it can be found in the [`message`] module) or via an external means.
+//!
+//! [`Message`]s can be sent via [`Transport::send`] or [`AsyncTransport::send`], while those who
+//! haven't been built via [`Message`] can be sent via [`Transport::send_raw`] or
+//! [`AsyncTransport::send_raw`].
+//!
+//! ## Brief example
+//!
+//! This example shows how to build an email and send it via SMTP.
+//! It is in no way a complete example, but it shows how to get started with lettre.
+//! More examples can be found by looking at the specific modules, linked in the _Module_ column
+//! of the [table above](#transports-for-sending-emails).
+//!
+//! ```rust,no_run
+//! # use std::error::Error;
+//! use lettre::transport::smtp::authentication::Credentials;
+//! use lettre::{Message, SmtpTransport, Transport};
+//!
+//! # fn main() -> Result<(), Box<dyn Error>> {
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
+//!     .subject("Happy new year")
+//!     .body(String::from("Be happy!"))?;
+//!
+//! let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+//!
+//! // Open a remote connection to the SMTP relay server
+//! let mailer = SmtpTransport::relay("smtp.gmail.com")?
+//!     .credentials(creds)
+//!     .build();
+//!
+//! // Send the email
+//! match mailer.send(&email) {
+//!     Ok(_) => println!("Email sent successfully!"),
+//!     Err(e) => panic!("Could not send email: {:?}", e),
+//! }
+//! # }
+//! ```
+//!
+//! [`Message`]: crate::Message
+//! [`message`]: crate::message
+//! [`file`]: self::file
+//! [`SmtpTransport`]: crate::SmtpTransport
+//! [`AsyncSmtpTransport`]: crate::AsyncSmtpTransport
+//! [`SendmailTransport`]: crate::SendmailTransport
+//! [`AsyncSendmailTransport`]: crate::AsyncSendmailTransport
+//! [`FileTransport`]: crate::FileTransport
+//! [`AsyncFileTransport`]: crate::AsyncFileTransport
+//! [`StubTransport`]: crate::transport::stub::StubTransport
 
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 use async_trait::async_trait;

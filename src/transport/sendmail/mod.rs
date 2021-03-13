@@ -1,4 +1,4 @@
-//! The sendmail transport sends the email using the local sendmail command.
+//! The sendmail transport sends the email using the local `sendmail` command.
 //!
 //! ## Sync example
 //!
