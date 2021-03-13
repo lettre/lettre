@@ -55,6 +55,7 @@
 //!     Ok(_) => println!("Email sent successfully!"),
 //!     Err(e) => panic!("Could not send email: {:?}", e),
 //! }
+//! # Ok(())
 //! # }
 //! ```
 //!
