@@ -111,7 +111,7 @@ use async_trait::async_trait;
 use std::marker::PhantomData;
 use std::{
     ffi::OsString,
-    io::prelude::*,
+    io::Write,
     process::{Command, Stdio},
 };
 
