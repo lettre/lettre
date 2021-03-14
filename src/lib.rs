@@ -102,6 +102,9 @@ use crate::{address::Envelope, error::Error};
 
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
+use std::error::Error as StdError;
+
+pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]
