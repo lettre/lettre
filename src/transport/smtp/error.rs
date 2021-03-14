@@ -1,7 +1,10 @@
 //! Error and result type for SMTP clients
 
-use crate::transport::smtp::response::{Code, Severity};
-use std::{error::Error as StdError, fmt, io};
+use crate::{
+    transport::smtp::response::{Code, Severity},
+    BoxError,
+};
+use std::{error::Error as StdError, fmt};
 
 // Inspired by https://github.com/seanmonstar/reqwest/blob/a8566383168c0ef06c21f38cbc9213af6ff6db31/src/error.rs
 
@@ -9,8 +12,6 @@ use std::{error::Error as StdError, fmt, io};
 pub struct Error {
     inner: Box<Inner>,
 }
-
-pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 struct Inner {
     kind: Kind,
@@ -80,11 +81,6 @@ impl Error {
             _ => None,
         }
     }
-
-    #[allow(unused)]
-    pub(crate) fn into_io(self) -> io::Error {
-        io::Error::new(io::ErrorKind::Other, self)
-    }
 }
 
 #[derive(Debug)]
@@ -113,7 +109,7 @@ pub(crate) enum Kind {
 
 impl fmt::Debug for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut builder = f.debug_struct("lettre::Error");
+        let mut builder = f.debug_struct("lettre::transport::smtp::Error");
 
         builder.field("kind", &self.inner.kind);
 
