@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 
+use std::fmt::Debug;
 #[cfg(feature = "file-transport")]
 use std::io::Result as IoResult;
 #[cfg(feature = "file-transport")]
@@ -39,7 +40,7 @@ use crate::transport::smtp::Error;
     doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
 )]
 #[async_trait]
-pub trait Executor: Send + Sync + private::Sealed {
+pub trait Executor: Debug + Send + Sync + private::Sealed {
     #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     async fn connect(
@@ -70,6 +71,7 @@ pub trait Executor: Send + Sync + private::Sealed {
 #[non_exhaustive]
 #[cfg(feature = "tokio02")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
+#[derive(Debug)]
 pub struct Tokio02Executor;
 
 #[async_trait]
@@ -135,6 +137,7 @@ impl Executor for Tokio02Executor {
 #[non_exhaustive]
 #[cfg(feature = "tokio1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
+#[derive(Debug)]
 pub struct Tokio1Executor;
 
 #[async_trait]
@@ -199,6 +202,7 @@ impl Executor for Tokio1Executor {
 #[non_exhaustive]
 #[cfg(feature = "async-std1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
+#[derive(Debug)]
 pub struct AsyncStd1Executor;
 
 #[async_trait]

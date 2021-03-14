@@ -1,14 +1,14 @@
 //! Provides limited SASL authentication mechanisms
 
 use crate::transport::smtp::error::{self, Error};
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Debug, Display, Formatter};
 
 /// Accepted authentication mechanisms
 /// Trying LOGIN last as it is deprecated.
 pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Contains user credentials
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Credentials {
     authentication_identity: String,
@@ -32,6 +32,12 @@ where
 {
     fn from((username, password): (S, T)) -> Self {
         Credentials::new(username.into(), password.into())
+    }
+}
+
+impl Debug for Credentials {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Credentials").finish()
     }
 }
 
