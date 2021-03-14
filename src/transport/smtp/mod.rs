@@ -166,8 +166,7 @@ pub const SUBMISSIONS_PORT: u16 = 465;
 /// Default timeout
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct SmtpInfo {
     /// Name sent during EHLO
     hello_name: ClientId,

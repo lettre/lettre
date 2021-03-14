@@ -1,3 +1,4 @@
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
@@ -20,7 +21,6 @@ use crate::{Envelope, Executor};
     docsrs,
     doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
 )]
-#[allow(missing_debug_implementations)]
 pub struct AsyncSmtpTransport<E> {
     // TODO: pool
     inner: AsyncSmtpClient<E>,
@@ -184,6 +184,14 @@ where
     }
 }
 
+impl<E> Debug for AsyncSmtpTransport<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpTransport");
+        builder.field("inner", &self.inner);
+        builder.finish()
+    }
+}
+
 impl<E> Clone for AsyncSmtpTransport<E>
 where
     E: Executor,
@@ -197,8 +205,7 @@ where
 
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(
     docsrs,
     doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
@@ -271,9 +278,9 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
-pub struct AsyncSmtpClient<C> {
+pub struct AsyncSmtpClient<E> {
     info: SmtpInfo,
-    marker_: PhantomData<C>,
+    marker_: PhantomData<E>,
 }
 
 impl<E> AsyncSmtpClient<E>
@@ -296,6 +303,14 @@ where
             conn.auth(&self.info.authentication, &credentials).await?;
         }
         Ok(conn)
+    }
+}
+
+impl<E> Debug for AsyncSmtpClient<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpClient");
+        builder.field("info", &self.info);
+        builder.finish()
     }
 }
 

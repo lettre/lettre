@@ -12,7 +12,6 @@ use crate::{address::Envelope, Transport};
 
 /// Sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
-#[allow(missing_debug_implementations)]
 #[derive(Clone)]
 pub struct SmtpTransport {
     #[cfg(feature = "r2d2")]
@@ -112,8 +111,7 @@ impl SmtpTransport {
 
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`SmtpTransport`].
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SmtpTransportBuilder {
     info: SmtpInfo,
     #[cfg(feature = "r2d2")]
@@ -185,7 +183,7 @@ impl SmtpTransportBuilder {
 }
 
 /// Build client
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SmtpClient {
     info: SmtpInfo,
 }

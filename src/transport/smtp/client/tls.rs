@@ -4,6 +4,7 @@ use crate::transport::smtp::{error, Error};
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{ClientConfig, RootCertStore, ServerCertVerified, ServerCertVerifier, TLSError};
+use std::fmt::{self, Debug};
 #[cfg(feature = "rustls-tls")]
 use std::sync::Arc;
 #[cfg(feature = "rustls-tls")]
@@ -32,9 +33,22 @@ pub enum Tls {
     Wrapper(TlsParameters),
 }
 
+impl Debug for Tls {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            Self::None => f.pad("None"),
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            Self::Opportunistic(_) => f.pad("Opportunistic"),
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            Self::Required(_) => f.pad("Required"),
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            Self::Wrapper(_) => f.pad("Wrapper"),
+        }
+    }
+}
+
 /// Parameters to use for secure clients
 #[derive(Clone)]
-#[allow(missing_debug_implementations)]
 pub struct TlsParameters {
     pub(crate) connector: InnerTlsParameters,
     /// The domain name which is expected in the TLS certificate from the server
@@ -42,7 +56,7 @@ pub struct TlsParameters {
 }
 
 /// Builder for `TlsParameters`
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TlsParametersBuilder {
     domain: String,
     root_certs: Vec<Certificate>,
@@ -259,6 +273,12 @@ impl Certificate {
             #[cfg(feature = "rustls-tls")]
             rustls: rustls_cert,
         })
+    }
+}
+
+impl Debug for Certificate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Certificate").finish()
     }
 }
 
