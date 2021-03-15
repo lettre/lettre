@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use crate::transport::smtp::{
-    async_transport::AsyncSmtpClient, client::AsyncSmtpConnection, error::Error,
+    async_transport::AsyncSmtpClient,
+    client::AsyncSmtpConnection,
+    error::{client, Error},
 };
 use crate::Executor;
 
@@ -95,7 +97,7 @@ where
         if conn.test_connected().await {
             return Ok(());
         }
-        Err(Error::Client("is not connected anymore"))
+        Err(client("not connected anymore"))
     }
 
     fn has_broken(&self, conn: &mut Self::Connection) -> bool {

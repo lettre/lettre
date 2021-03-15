@@ -224,7 +224,10 @@ where
     }
 }
 
-impl<E> Debug for AsyncSmtpTransport<E> {
+impl<E> Debug for AsyncSmtpTransport<E>
+where
+    E: Executor,
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut builder = f.debug_struct("AsyncSmtpTransport");
         builder.field("inner", &self.inner);

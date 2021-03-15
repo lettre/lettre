@@ -180,7 +180,10 @@ impl From<bb8::RunError<Error>> for Error {
     fn from(err: bb8::RunError<Error>) -> Error {
         match err {
             bb8::RunError::TimedOut => {
-                let e = Box::new(std::io::Error::new(io::ErrorKind::TimedOut, "Timed out in bb8"));
+                let e = Box::new(std::io::Error::new(
+                    std::io::ErrorKind::TimedOut,
+                    "Timed out in bb8",
+                ));
                 Error::new(Kind::Network, Some(e))
             }
             bb8::RunError::User(e) => e,
