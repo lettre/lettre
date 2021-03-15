@@ -1,13 +1,13 @@
-//! The sendmail transport sends the email using the local sendmail command.
+//! The sendmail transport sends the email using the local `sendmail` command.
 //!
 //! ## Sync example
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! # use lettre::{Message, Transport, SendmailTransport};
+//! use lettre::{Message, SendmailTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -30,7 +30,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, Tokio02Executor, AsyncSendmailTransport, SendmailTransport};
@@ -53,7 +53,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, Tokio1Executor, AsyncSendmailTransport, SendmailTransport};
@@ -76,7 +76,7 @@
 //!
 //!```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{Message, AsyncTransport, AsyncStd1Executor, AsyncSendmailTransport};
@@ -111,24 +111,30 @@ use async_trait::async_trait;
 use std::marker::PhantomData;
 use std::{
     ffi::OsString,
-    io::prelude::*,
+    io::Write,
     process::{Command, Stdio},
 };
 
 mod error;
 
-const DEFAUT_SENDMAIL: &str = "/usr/sbin/sendmail";
+const DEFAULT_SENDMAIL: &str = "/usr/sbin/sendmail";
 
-/// Sends an email using the `sendmail` command
+/// Sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(docsrs, doc(cfg(feature = "sendmail-transport")))]
 pub struct SendmailTransport {
     command: OsString,
 }
 
+/// Asynchronously sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSendmailTransport<E: Executor> {
     inner: SendmailTransport,
     marker_: PhantomData<E>,
@@ -138,7 +144,7 @@ impl SendmailTransport {
     /// Creates a new transport with the default `/usr/sbin/sendmail` command
     pub fn new() -> SendmailTransport {
         SendmailTransport {
-            command: DEFAUT_SENDMAIL.into(),
+            command: DEFAULT_SENDMAIL.into(),
         }
     }
 
@@ -263,15 +269,21 @@ impl Transport for SendmailTransport {
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         // Spawn the sendmail command
-        let mut process = self.command(envelope).spawn()?;
+        let mut process = self.command(envelope).spawn().map_err(error::client)?;
 
-        process.stdin.as_mut().unwrap().write_all(email)?;
-        let output = process.wait_with_output()?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(email)
+            .map_err(error::client)?;
+        let output = process.wait_with_output().map_err(error::client)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(error::Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(error::response)?;
+            Err(error::client(stderr))
         }
     }
 }
@@ -288,15 +300,22 @@ impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
         let mut command = self.async_std_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(error::client)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(error::client)?;
+        let output = process.output().await.map_err(error::client)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(error::response)?;
+            Err(error::client(stderr))
         }
     }
 }
@@ -313,15 +332,22 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio02Executor> {
         let mut command = self.tokio02_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(error::client)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.wait_with_output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(error::client)?;
+        let output = process.wait_with_output().await.map_err(error::client)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(error::response)?;
+            Err(error::client(stderr))
         }
     }
 }
@@ -338,15 +364,22 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio1Executor> {
         let mut command = self.tokio1_command(envelope);
 
         // Spawn the sendmail command
-        let mut process = command.spawn()?;
+        let mut process = command.spawn().map_err(error::client)?;
 
-        process.stdin.as_mut().unwrap().write_all(&email).await?;
-        let output = process.wait_with_output().await?;
+        process
+            .stdin
+            .as_mut()
+            .unwrap()
+            .write_all(&email)
+            .await
+            .map_err(error::client)?;
+        let output = process.wait_with_output().await.map_err(error::client)?;
 
         if output.status.success() {
             Ok(())
         } else {
-            Err(Error::Client(String::from_utf8(output.stderr)?))
+            let stderr = String::from_utf8(output.stderr).map_err(error::response)?;
+            Err(error::client(stderr))
         }
     }
 }

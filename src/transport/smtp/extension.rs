@@ -1,7 +1,10 @@
 //! ESMTP features
 
 use crate::transport::smtp::{
-    authentication::Mechanism, error::Error, response::Response, util::XText,
+    authentication::Mechanism,
+    error::{self, Error},
+    response::Response,
+    util::XText,
 };
 use std::{
     collections::HashSet,
@@ -126,7 +129,7 @@ impl ServerInfo {
     pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
         let name = match response.first_word() {
             Some(name) => name,
-            None => return Err(Error::ResponseParsing("Could not read server name")),
+            None => return Err(error::response("Could not read server name")),
         };
 
         let mut features: HashSet<Extension> = HashSet::new();

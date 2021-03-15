@@ -1,3 +1,4 @@
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
@@ -25,7 +26,10 @@ use crate::Tokio02Executor;
 use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
 
-#[allow(missing_debug_implementations)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSmtpTransport<E>
 where
     E: Executor,
@@ -127,6 +131,16 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 
@@ -156,6 +170,16 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         use super::{Tls, TlsParameters, SUBMISSION_PORT};
 
@@ -200,6 +224,14 @@ where
     }
 }
 
+impl<E> Debug for AsyncSmtpTransport<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpTransport");
+        builder.field("inner", &self.inner);
+        builder.finish()
+    }
+}
+
 impl<E> Clone for AsyncSmtpTransport<E>
 where
     E: Executor,
@@ -213,8 +245,11 @@ where
 
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
     #[cfg(all(
@@ -259,6 +294,16 @@ impl AsyncSmtpTransportBuilder {
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn tls(mut self, tls: super::Tls) -> Self {
         self.info.tls = tls;
         self
@@ -306,9 +351,9 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
-pub struct AsyncSmtpClient<C> {
+pub struct AsyncSmtpClient<E> {
     info: SmtpInfo,
-    marker_: PhantomData<C>,
+    marker_: PhantomData<E>,
 }
 
 impl<E> AsyncSmtpClient<E>
@@ -334,6 +379,14 @@ where
     }
 }
 
+impl<E> Debug for AsyncSmtpClient<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpClient");
+        builder.field("info", &self.info);
+        builder.finish()
+    }
+}
+
 impl<E> AsyncSmtpClient<E>
 where
     E: Executor,
@@ -345,22 +398,3 @@ where
         }
     }
 }
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Executor instead")]
-pub use crate::Executor as AsyncSmtpConnector;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Tokio02Executor instead")]
-#[cfg(feature = "tokio02")]
-pub type Tokio02Connector = crate::Tokio02Executor;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::Tokio1Executor instead")]
-#[cfg(feature = "tokio1")]
-pub type Tokio1Connector = crate::Tokio1Executor;
-
-#[doc(hidden)]
-#[deprecated(note = "use lettre::AsyncStd1Executor instead")]
-#[cfg(feature = "async-std1")]
-pub type AsyncStd1Connector = crate::AsyncStd1Executor;

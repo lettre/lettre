@@ -1,13 +1,13 @@
 //! SMTP commands
 
 use crate::{
+    address::Address,
     transport::smtp::{
         authentication::{Credentials, Mechanism},
-        error::Error,
+        error::{self, Error},
         extension::{ClientId, MailParameter, RcptParameter},
         response::Response,
     },
-    Address,
 };
 use std::fmt::{self, Display, Formatter};
 
@@ -261,16 +261,17 @@ impl Auth {
         response: &Response,
     ) -> Result<Auth, Error> {
         if !response.has_code(334) {
-            return Err(Error::ResponseParsing("Expecting a challenge"));
+            return Err(error::response("Expecting a challenge"));
         }
 
         let encoded_challenge = response
             .first_word()
-            .ok_or(Error::ResponseParsing("Could not read auth challenge"))?;
+            .ok_or_else(|| error::response("Could not read auth challenge"))?;
         #[cfg(feature = "tracing")]
         tracing::debug!("auth encoded challenge: {}", encoded_challenge);
 
-        let decoded_challenge = String::from_utf8(base64::decode(&encoded_challenge)?)?;
+        let decoded_base64 = base64::decode(&encoded_challenge).map_err(error::response)?;
+        let decoded_challenge = String::from_utf8(decoded_base64).map_err(error::response)?;
         #[cfg(feature = "tracing")]
         tracing::debug!("auth decoded challenge: {}", decoded_challenge);
 

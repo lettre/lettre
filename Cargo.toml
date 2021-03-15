@@ -1,7 +1,7 @@
 [package]
 name = "lettre"
 # remember to update html_root_url and README.md (Cargo.toml example and deps.rs badge)
-version = "0.10.0-beta.1"
+version = "0.10.0-beta.2"
 description = "Email client"
 readme = "README.md"
 homepage = "https://lettre.rs"
@@ -37,7 +37,7 @@ serde_json = { version = "1", optional = true }
 
 # smtp
 bb8 = { version = "0.7", optional = true } # feature
-nom = { version = "6", default-features = false, features = ["alloc"], optional = true }
+nom = { version = "6", default-features = false, features = ["alloc", "std"], optional = true }
 r2d2 = { version = "0.8", optional = true } # feature
 hostname = { version = "0.3", optional = true } # feature
 

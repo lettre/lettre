@@ -6,7 +6,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "file-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::{FileTransport, Message, Transport};
@@ -38,7 +38,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "file-transport-envelope", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::{FileTransport, Message, Transport};
@@ -66,7 +66,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
@@ -91,7 +91,7 @@
 //!
 //! ```rust,no_run
 //! # use std::error::Error;
-//!
+//! #
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
@@ -153,14 +153,20 @@ type Id = String;
 /// Writes the content and the envelope information to a file
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(docsrs, doc(cfg(feature = "file-transport")))]
 pub struct FileTransport {
     path: PathBuf,
     #[cfg(feature = "file-transport-envelope")]
     save_envelope: bool,
 }
 
+/// Asynchronously writes the content and the envelope information to a file
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 #[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
 pub struct AsyncFileTransport<E: Executor> {
     inner: FileTransport,
@@ -200,11 +206,11 @@ impl FileTransport {
         use std::fs;
 
         let eml_file = self.path.join(format!("{}.eml", email_id));
-        let eml = fs::read(eml_file)?;
+        let eml = fs::read(eml_file).map_err(error::io)?;
 
         let json_file = self.path.join(format!("{}.json", email_id));
-        let json = fs::read(&json_file)?;
-        let envelope = serde_json::from_slice(&json)?;
+        let json = fs::read(&json_file).map_err(error::io)?;
+        let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 
         Ok((envelope, eml))
     }
@@ -247,11 +253,11 @@ where
     #[cfg(feature = "file-transport-envelope")]
     pub async fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
         let eml_file = self.inner.path.join(format!("{}.eml", email_id));
-        let eml = E::fs_read(&eml_file).await?;
+        let eml = E::fs_read(&eml_file).await.map_err(error::io)?;
 
         let json_file = self.inner.path.join(format!("{}.json", email_id));
-        let json = E::fs_read(&json_file).await?;
-        let envelope = serde_json::from_slice(&json)?;
+        let json = E::fs_read(&json_file).await.map_err(error::io)?;
+        let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 
         Ok((envelope, eml))
     }
@@ -267,13 +273,14 @@ impl Transport for FileTransport {
         let email_id = Uuid::new_v4();
 
         let file = self.path(&email_id, "eml");
-        fs::write(file, email)?;
+        fs::write(file, email).map_err(error::io)?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
             if self.save_envelope {
                 let file = self.path(&email_id, "json");
-                fs::write(file, serde_json::to_string(&envelope)?)?;
+                let buf = serde_json::to_string(&envelope).map_err(error::envelope)?;
+                fs::write(file, buf).map_err(error::io)?;
             }
         }
         // use envelope anyway
@@ -296,14 +303,14 @@ where
         let email_id = Uuid::new_v4();
 
         let file = self.inner.path(&email_id, "eml");
-        E::fs_write(&file, email).await?;
+        E::fs_write(&file, email).await.map_err(error::io)?;
 
         #[cfg(feature = "file-transport-envelope")]
         {
             if self.inner.save_envelope {
                 let file = self.inner.path(&email_id, "json");
-                let buf = serde_json::to_vec(&envelope)?;
-                E::fs_write(&file, &buf).await?;
+                let buf = serde_json::to_vec(&envelope).map_err(error::envelope)?;
+                E::fs_write(&file, &buf).await.map_err(error::io)?;
             }
         }
         // use envelope anyway

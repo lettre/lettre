@@ -4,16 +4,17 @@
 //! * Pluggable email transports
 //! * Unicode support
 //! * Secure defaults
+//! * Async support
 //!
 //! Lettre requires Rust 1.45 or newer.
 //!
 //! ## Optional features
 //!
 //! * **builder**: Message builder
-//! * **file-transport**: Transport that write messages into a file
+//! * **file-transport**: Transport that writes messages into a file
 //! * **file-transport-envelope**: Allow writing the envelope into a JSON file
 //! * **smtp-transport**: Transport over SMTP
-//! * **sendmail-transport**: Transport over SMTP
+//! * **sendmail-transport**: Transport using the `sendmail` command
 //! * **rustls-tls**: TLS support with the `rustls` crate
 //! * **native-tls**: TLS support with the `native-tls` crate
 //! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
@@ -30,7 +31,7 @@
 //! * **serde**: Serialization/Deserialization of entities
 //! * **hostname**: Ability to try to use actual hostname in SMTP transaction
 
-#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-beta.1")]
+#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-beta.2")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]
@@ -46,7 +47,7 @@
 
 pub mod address;
 pub mod error;
-#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
 mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
@@ -66,55 +67,44 @@ pub use self::executor::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 pub use self::executor::Tokio1Executor;
 #[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[doc(inline)]
 pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
+#[doc(inline)]
 pub use crate::message::Message;
 #[cfg(all(
     feature = "file-transport",
     any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
 ))]
+#[doc(inline)]
 pub use crate::transport::file::AsyncFileTransport;
 #[cfg(feature = "file-transport")]
+#[doc(inline)]
 pub use crate::transport::file::FileTransport;
 #[cfg(all(
     feature = "sendmail-transport",
     any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
 ))]
+#[doc(inline)]
 pub use crate::transport::sendmail::AsyncSendmailTransport;
 #[cfg(feature = "sendmail-transport")]
+#[doc(inline)]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[doc(inline)]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
-pub use crate::transport::smtp::AsyncStd1Connector;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
-pub use crate::transport::smtp::Tokio02Connector;
-#[doc(hidden)]
-#[allow(deprecated)]
-#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
-pub use crate::transport::smtp::Tokio1Connector;
-#[doc(hidden)]
-#[cfg(feature = "async-std1")]
-pub use crate::transport::AsyncStd1Transport;
-#[doc(hidden)]
-#[cfg(feature = "tokio02")]
-pub use crate::transport::Tokio02Transport;
-#[doc(hidden)]
-#[cfg(feature = "tokio1")]
-pub use crate::transport::Tokio1Transport;
+use std::error::Error as StdError;
+
+pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]

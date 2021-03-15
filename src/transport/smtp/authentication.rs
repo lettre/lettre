@@ -1,14 +1,14 @@
 //! Provides limited SASL authentication mechanisms
 
-use crate::transport::smtp::error::Error;
-use std::fmt::{self, Display, Formatter};
+use crate::transport::smtp::error::{self, Error};
+use std::fmt::{self, Debug, Display, Formatter};
 
 /// Accepted authentication mechanisms
 /// Trying LOGIN last as it is deprecated.
 pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
 /// Contains user credentials
-#[derive(PartialEq, Eq, Clone, Hash, Debug)]
+#[derive(PartialEq, Eq, Clone, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Credentials {
     authentication_identity: String,
@@ -32,6 +32,12 @@ where
 {
     fn from((username, password): (S, T)) -> Self {
         Credentials::new(username.into(), password.into())
+    }
+}
+
+impl Debug for Credentials {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Credentials").finish()
     }
 }
 
@@ -80,15 +86,15 @@ impl Mechanism {
     ) -> Result<String, Error> {
         match self {
             Mechanism::Plain => match challenge {
-                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                Some(_) => Err(error::client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
                     "\u{0}{}\u{0}{}",
                     credentials.authentication_identity, credentials.secret
                 )),
             },
             Mechanism::Login => {
-                let decoded_challenge =
-                    challenge.ok_or(Error::Client("This mechanism does expect a challenge"))?;
+                let decoded_challenge = challenge
+                    .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
                     return Ok(credentials.authentication_identity.to_string());
@@ -98,10 +104,10 @@ impl Mechanism {
                     return Ok(credentials.secret.to_string());
                 }
 
-                Err(Error::Client("Unrecognized challenge"))
+                Err(error::client("Unrecognized challenge"))
             }
             Mechanism::Xoauth2 => match challenge {
-                Some(_) => Err(Error::Client("This mechanism does not expect a challenge")),
+                Some(_) => Err(error::client("This mechanism does not expect a challenge")),
                 None => Ok(format!(
                     "user={}\x01auth=Bearer {}\x01\x01",
                     credentials.authentication_identity, credentials.secret
