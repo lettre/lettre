@@ -173,6 +173,12 @@ impl Address {
 
         Err(AddressError::InvalidDomain)
     }
+
+    #[cfg(feature = "smtp-transport")]
+    /// Check if the address contains non-ascii chars
+    pub(super) fn is_ascii(&self) -> bool {
+        self.serialized.is_ascii()
+    }
 }
 
 impl Display for Address {
@@ -211,6 +217,7 @@ impl AsRef<OsStr> for Address {
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
+/// Errors in email addresses parsing
 pub enum AddressError {
     MissingParts,
     Unbalanced,

@@ -5,14 +5,14 @@ use r2d2::Pool;
 
 #[cfg(feature = "r2d2")]
 use super::PoolConfig;
-use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
+use super::{error, Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
+use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 use crate::{address::Envelope, Transport};
 
-#[allow(missing_debug_implementations)]
+/// Sends emails using the SMTP protocol
+#[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
 #[derive(Clone)]
-/// Transport using the SMTP protocol
 pub struct SmtpTransport {
     #[cfg(feature = "r2d2")]
     inner: Pool<SmtpClient>,
@@ -27,7 +27,7 @@ impl Transport for SmtpTransport {
     /// Sends an email
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         #[cfg(feature = "r2d2")]
-        let mut conn = self.inner.get()?;
+        let mut conn = self.inner.get().map_err(error::client)?;
         #[cfg(not(feature = "r2d2"))]
         let mut conn = self.inner.connection()?;
 
@@ -111,8 +111,7 @@ impl SmtpTransport {
 
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`SmtpTransport`].
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SmtpTransportBuilder {
     info: SmtpInfo,
     #[cfg(feature = "r2d2")]
@@ -184,7 +183,7 @@ impl SmtpTransportBuilder {
 }
 
 /// Build client
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct SmtpClient {
     info: SmtpInfo,
 }

@@ -116,16 +116,8 @@
 //! # }
 //! ```
 
-#[cfg(feature = "async-std1")]
-pub use self::async_transport::AsyncStd1Connector;
-#[cfg(feature = "tokio02")]
-pub use self::async_transport::Tokio02Connector;
-#[cfg(feature = "tokio1")]
-pub use self::async_transport::Tokio1Connector;
 #[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-pub use self::async_transport::{
-    AsyncSmtpConnector, AsyncSmtpTransport, AsyncSmtpTransportBuilder,
-};
+pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
 #[cfg(feature = "r2d2")]
@@ -168,14 +160,13 @@ pub const SMTP_PORT: u16 = 25;
 pub const SUBMISSION_PORT: u16 = 587;
 /// Default submission over TLS port
 ///
-/// https://tools.ietf.org/html/rfc8314
+/// Defined in [RFC8314](https://tools.ietf.org/html/rfc8314)
 pub const SUBMISSIONS_PORT: u16 = 465;
 
 /// Default timeout
 pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 struct SmtpInfo {
     /// Name sent during EHLO
     hello_name: ClientId,

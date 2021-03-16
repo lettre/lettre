@@ -6,8 +6,9 @@ use hyperx::{
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
 macro_rules! text_header {
-    ( $type_name: ident, $header_name: expr ) => {
+    ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
         #[derive(Debug, Clone, PartialEq)]
+        $(#[$attr])*
         pub struct $type_name(pub String);
 
         impl Header for $type_name {
@@ -33,13 +34,41 @@ macro_rules! text_header {
     };
 }
 
-text_header!(Subject, "Subject");
-text_header!(Comments, "Comments");
-text_header!(Keywords, "Keywords");
-text_header!(InReplyTo, "In-Reply-To");
-text_header!(References, "References");
-text_header!(MessageId, "Message-Id");
-text_header!(UserAgent, "User-Agent");
+text_header!(
+    /// `Subject` of the message, defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.5)
+    Header(Subject, "Subject")
+);
+text_header!(
+    /// `Comments` of the message, defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.5)
+    Header(Comments, "Comments")
+);
+text_header!(
+    /// `Keywords` header. Should contain a comma-separated list of one or more
+    /// words or quoted-strings, defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.5)
+    Header(Keywords, "Keywords")
+);
+text_header!(
+    /// `In-Reply-To` header. Contains one or more
+    /// unique message identifiers,
+    /// defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    Header(InReplyTo, "In-Reply-To")
+);
+text_header!(
+    /// `References` header. Contains one or more
+    /// unique message identifiers,
+    /// defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    Header(References, "References")
+);
+text_header!(
+    /// `Message-Id` header. Contains a unique message identifier,
+    /// defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    Header(MessageId, "Message-Id")
+);
+text_header!(
+    /// `User-Agent` header. Contains information about the client,
+    /// defined in [draft-melnikov-email-user-agent-00](https://tools.ietf.org/html/draft-melnikov-email-user-agent-00#section-3)
+    Header(UserAgent, "User-Agent")
+);
 
 fn parse_text(raw: &[u8]) -> HyperResult<String> {
     if let Ok(src) = from_utf8(raw) {

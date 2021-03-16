@@ -4,16 +4,17 @@
 //! * Pluggable email transports
 //! * Unicode support
 //! * Secure defaults
+//! * Async support
 //!
 //! Lettre requires Rust 1.45 or newer.
 //!
 //! ## Optional features
 //!
 //! * **builder**: Message builder
-//! * **file-transport**: Transport that write messages into a file
+//! * **file-transport**: Transport that writes messages into a file
 //! * **file-transport-envelope**: Allow writing the envelope into a JSON file
 //! * **smtp-transport**: Transport over SMTP
-//! * **sendmail-transport**: Transport over SMTP
+//! * **sendmail-transport**: Transport using the `sendmail` command
 //! * **rustls-tls**: TLS support with the `rustls` crate
 //! * **native-tls**: TLS support with the `native-tls` crate
 //! * **tokio02**: Allow to asyncronously send emails using tokio 0.2.x
@@ -46,6 +47,8 @@
 
 pub mod address;
 pub mod error;
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
@@ -55,116 +58,53 @@ pub mod transport;
 #[macro_use]
 extern crate hyperx;
 
+#[cfg(feature = "async-std1")]
+pub use self::executor::AsyncStd1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+pub use self::executor::Executor;
+#[cfg(feature = "tokio02")]
+pub use self::executor::Tokio02Executor;
+#[cfg(feature = "tokio1")]
+pub use self::executor::Tokio1Executor;
+#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[doc(inline)]
+pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
 #[cfg(feature = "builder")]
+#[doc(inline)]
 pub use crate::message::Message;
+#[cfg(all(
+    feature = "file-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+#[doc(inline)]
+pub use crate::transport::file::AsyncFileTransport;
 #[cfg(feature = "file-transport")]
+#[doc(inline)]
 pub use crate::transport::file::FileTransport;
+#[cfg(all(
+    feature = "sendmail-transport",
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+))]
+#[doc(inline)]
+pub use crate::transport::sendmail::AsyncSendmailTransport;
 #[cfg(feature = "sendmail-transport")]
+#[doc(inline)]
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
     any(feature = "tokio02", feature = "tokio1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
-#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
-pub use crate::transport::smtp::AsyncStd1Connector;
+#[doc(inline)]
+pub use crate::transport::Transport;
+use crate::{address::Envelope, error::Error};
+
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
-#[cfg(all(feature = "smtp-transport", feature = "tokio02"))]
-pub use crate::transport::smtp::Tokio02Connector;
-#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
-pub use crate::transport::smtp::Tokio1Connector;
-use crate::{address::Envelope, error::Error};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
-use async_trait::async_trait;
+use std::error::Error as StdError;
 
-/// Blocking Transport method for emails
-pub trait Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        self.send_raw(message.envelope(), &raw)
-    }
-
-    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// async-std 1.x based Transport method for emails
-#[cfg(feature = "async-std1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
-#[async_trait]
-pub trait AsyncStd1Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// tokio 0.2.x based Transport method for emails
-#[cfg(feature = "tokio02")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
-#[async_trait]
-pub trait Tokio02Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
-
-/// tokio 1.x based Transport method for emails
-#[cfg(feature = "tokio1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
-#[async_trait]
-pub trait Tokio1Transport {
-    /// Response produced by the Transport
-    type Ok;
-    /// Error produced by the Transport
-    type Error;
-
-    /// Sends the email
-    #[cfg(feature = "builder")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
-    // TODO take &Message
-    async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
-        let raw = message.formatted();
-        let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
-    }
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
-}
+pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]

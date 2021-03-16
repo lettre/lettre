@@ -1,18 +1,17 @@
-use std::{fmt::Display, io};
-
-use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism},
         commands::*,
+        error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::{parse_response, Response},
     },
     Envelope,
 };
+use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use std::fmt::Display;
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
@@ -112,9 +111,32 @@ impl AsyncSmtpConnection {
         // Mail
         let mut mail_options = vec![];
 
-        if self.server_info().supports_feature(Extension::EightBitMime) {
+        // Internationalization handling
+        //
+        // * 8BITMIME: https://tools.ietf.org/html/rfc6152
+        // * SMTPUTF8: https://tools.ietf.org/html/rfc653
+
+        // Check for non-ascii addresses and use the SMTPUTF8 option if any.
+        if envelope.has_non_ascii_addresses() {
+            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
+                // don't try to send non-ascii addresses (per RFC)
+                return Err(error::client(
+                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
+                ));
+            }
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        // Check for non-ascii content in message
+        if !email.is_ascii() {
+            if !self.server_info().supports_feature(Extension::EightBitMime) {
+                return Err(error::client(
+                    "Message contains non-ascii chars but server does not support 8BITMIME",
+                ));
+            }
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
+
         try_smtp!(
             self.command(Mail::new(envelope.from().cloned(), mail_options))
                 .await,
@@ -163,7 +185,7 @@ impl AsyncSmtpConnection {
             try_smtp!(self.ehlo(hello_name).await, self);
             Ok(())
         } else {
-            Err(Error::Client("STARTTLS is not supported on this server"))
+            Err(error::client("STARTTLS is not supported on this server"))
         }
     }
 
@@ -210,12 +232,10 @@ impl AsyncSmtpConnection {
         let mechanism = self
             .server_info
             .get_auth_mechanism(mechanisms)
-            .ok_or(Error::Client(
-                "No compatible authentication mechanism was found",
-            ))?;
+            .ok_or_else(|| error::client("No compatible authentication mechanism was found"))?;
 
         // Limit challenges to avoid blocking
-        let mut challenges = 10;
+        let mut challenges: u8 = 10;
         let mut response = self
             .command(Auth::new(mechanism, credentials.clone(), None)?)
             .await?;
@@ -234,7 +254,7 @@ impl AsyncSmtpConnection {
         }
 
         if challenges == 0 {
-            Err(Error::ResponseParsing("Unexpected number of challenges"))
+            Err(error::response("Unexpected number of challenges"))
         } else {
             Ok(response)
         }
@@ -258,8 +278,16 @@ impl AsyncSmtpConnection {
 
     /// Writes a string to the server
     async fn write(&mut self, string: &[u8]) -> Result<(), Error> {
-        self.stream.get_mut().write_all(string).await?;
-        self.stream.get_mut().flush().await?;
+        self.stream
+            .get_mut()
+            .write_all(string)
+            .await
+            .map_err(error::network)?;
+        self.stream
+            .get_mut()
+            .flush()
+            .await
+            .map_err(error::network)?;
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -270,27 +298,33 @@ impl AsyncSmtpConnection {
     pub async fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
 
-        while self.stream.read_line(&mut buffer).await? > 0 {
+        while self
+            .stream
+            .read_line(&mut buffer)
+            .await
+            .map_err(error::network)?
+            > 0
+        {
             #[cfg(feature = "tracing")]
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
-                    if response.is_positive() {
-                        return Ok(response);
+                    return if response.is_positive() {
+                        Ok(response)
+                    } else {
+                        Err(error::code(response.code))
                     }
-
-                    return Err(response.into());
                 }
                 Err(nom::Err::Failure(e)) => {
-                    return Err(Error::Parsing(e.code));
+                    return Err(error::response(e.to_string()));
                 }
                 Err(nom::Err::Incomplete(_)) => { /* read more */ }
                 Err(nom::Err::Error(e)) => {
-                    return Err(Error::Parsing(e.code));
+                    return Err(error::response(e.to_string()));
                 }
             }
         }
 
-        Err(io::Error::new(io::ErrorKind::Other, "incomplete").into())
+        Err(error::response("incomplete response"))
     }
 }

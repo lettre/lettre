@@ -103,6 +103,15 @@ impl Envelope {
     pub fn from(&self) -> Option<&Address> {
         self.reverse_path.as_ref()
     }
+
+    #[cfg(feature = "smtp-transport")]
+    /// Check if any of the addresses in the envelope contains non-ascii chars
+    pub(crate) fn has_non_ascii_addresses(&self) -> bool {
+        self.reverse_path
+            .iter()
+            .chain(self.forward_path.iter())
+            .any(|a| !a.is_ascii())
+    }
 }
 
 #[cfg(feature = "builder")]

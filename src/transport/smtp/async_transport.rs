@@ -1,29 +1,34 @@
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-use super::Tls;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
 #[cfg(feature = "async-std1")]
-use crate::AsyncStd1Transport;
-use crate::Envelope;
+use crate::AsyncStd1Executor;
+#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+use crate::AsyncTransport;
 #[cfg(feature = "tokio02")]
-use crate::Tokio02Transport;
+use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
-use crate::Tokio1Transport;
+use crate::Tokio1Executor;
+use crate::{Envelope, Executor};
 
-#[allow(missing_debug_implementations)]
-pub struct AsyncSmtpTransport<C> {
+/// Asynchronously sends emails using the SMTP protocol
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
+pub struct AsyncSmtpTransport<E> {
     // TODO: pool
-    inner: AsyncSmtpClient<C>,
+    inner: AsyncSmtpClient<E>,
 }
 
 #[cfg(feature = "tokio02")]
 #[async_trait]
-impl Tokio02Transport for AsyncSmtpTransport<Tokio02Connector> {
+impl AsyncTransport for AsyncSmtpTransport<Tokio02Executor> {
     type Ok = Response;
     type Error = Error;
 
@@ -41,7 +46,7 @@ impl Tokio02Transport for AsyncSmtpTransport<Tokio02Connector> {
 
 #[cfg(feature = "tokio1")]
 #[async_trait]
-impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
+impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
     type Ok = Response;
     type Error = Error;
 
@@ -59,7 +64,7 @@ impl Tokio1Transport for AsyncSmtpTransport<Tokio1Connector> {
 
 #[cfg(feature = "async-std1")]
 #[async_trait]
-impl AsyncStd1Transport for AsyncSmtpTransport<AsyncStd1Connector> {
+impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
     type Ok = Response;
     type Error = Error;
 
@@ -75,9 +80,9 @@ impl AsyncStd1Transport for AsyncSmtpTransport<AsyncStd1Connector> {
     }
 }
 
-impl<C> AsyncSmtpTransport<C>
+impl<E> AsyncSmtpTransport<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     /// Simple and secure transport, using TLS connections to communicate with the SMTP server
     ///
@@ -93,8 +98,18 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{TlsParameters, SUBMISSIONS_PORT};
+        use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -122,8 +137,18 @@ where
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{TlsParameters, SUBMISSION_PORT};
+        use super::{Tls, TlsParameters, SUBMISSION_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -135,7 +160,7 @@ where
     /// Creates a new local SMTP client to port 25
     ///
     /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
-    pub fn unencrypted_localhost() -> AsyncSmtpTransport<C> {
+    pub fn unencrypted_localhost() -> AsyncSmtpTransport<E> {
         Self::builder_dangerous("localhost").build()
     }
 
@@ -159,9 +184,17 @@ where
     }
 }
 
-impl<C> Clone for AsyncSmtpTransport<C>
+impl<E> Debug for AsyncSmtpTransport<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpTransport");
+        builder.field("inner", &self.inner);
+        builder.finish()
+    }
+}
+
+impl<E> Clone for AsyncSmtpTransport<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     fn clone(&self) -> Self {
         Self {
@@ -172,8 +205,11 @@ where
 
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
-#[allow(missing_debug_implementations)]
-#[derive(Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
+)]
 pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
 }
@@ -213,15 +249,25 @@ impl AsyncSmtpTransportBuilder {
         feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
-    pub fn tls(mut self, tls: Tls) -> Self {
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(
+            feature = "tokio02-native-tls",
+            feature = "tokio02-rustls-tls",
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls-tls",
+            feature = "async-std1-rustls-tls"
+        )))
+    )]
+    pub fn tls(mut self, tls: super::Tls) -> Self {
         self.info.tls = tls;
         self
     }
 
-    /// Build the transport (with default pool if enabled)
-    pub fn build<C>(self) -> AsyncSmtpTransport<C>
+    /// Build the transport
+    pub fn build<E>(self) -> AsyncSmtpTransport<E>
     where
-        C: AsyncSmtpConnector,
+        E: Executor,
     {
         let client = AsyncSmtpClient {
             info: self.info,
@@ -232,20 +278,20 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
-pub struct AsyncSmtpClient<C> {
+pub struct AsyncSmtpClient<E> {
     info: SmtpInfo,
-    marker_: PhantomData<C>,
+    marker_: PhantomData<E>,
 }
 
-impl<C> AsyncSmtpClient<C>
+impl<E> AsyncSmtpClient<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
     pub async fn connection(&self) -> Result<AsyncSmtpConnection, Error> {
-        let mut conn = C::connect(
+        let mut conn = E::connect(
             &self.info.server,
             self.info.port,
             &self.info.hello_name,
@@ -260,9 +306,17 @@ where
     }
 }
 
-impl<C> AsyncSmtpClient<C>
+impl<E> Debug for AsyncSmtpClient<E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("AsyncSmtpClient");
+        builder.field("info", &self.info);
+        builder.finish()
+    }
+}
+
+impl<E> AsyncSmtpClient<E>
 where
-    C: AsyncSmtpConnector,
+    E: Executor,
 {
     fn clone(&self) -> Self {
         Self {
@@ -270,161 +324,4 @@ where
             marker_: PhantomData,
         }
     }
-}
-
-#[async_trait]
-pub trait AsyncSmtpConnector: private::Sealed {
-    #[doc(hidden)]
-    async fn connect(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error>;
-}
-
-#[allow(missing_copy_implementations)]
-#[non_exhaustive]
-#[cfg(feature = "tokio02")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio02")))]
-pub struct Tokio02Connector;
-
-#[async_trait]
-#[cfg(feature = "tokio02")]
-impl AsyncSmtpConnector for Tokio02Connector {
-    #[doc(hidden)]
-    async fn connect(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error> {
-        #[allow(clippy::match_single_binding)]
-        let tls_parameters = match tls {
-            #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
-            _ => None,
-        };
-        #[allow(unused_mut)]
-        let mut conn =
-            AsyncSmtpConnection::connect_tokio02(hostname, port, hello_name, tls_parameters)
-                .await?;
-
-        #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
-        match tls {
-            Tls::Opportunistic(ref tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
-                }
-            }
-            Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
-            }
-            _ => (),
-        }
-
-        Ok(conn)
-    }
-}
-
-#[allow(missing_copy_implementations)]
-#[non_exhaustive]
-#[cfg(feature = "tokio1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
-pub struct Tokio1Connector;
-
-#[async_trait]
-#[cfg(feature = "tokio1")]
-impl AsyncSmtpConnector for Tokio1Connector {
-    #[doc(hidden)]
-    async fn connect(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error> {
-        #[allow(clippy::match_single_binding)]
-        let tls_parameters = match tls {
-            #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
-            _ => None,
-        };
-        #[allow(unused_mut)]
-        let mut conn =
-            AsyncSmtpConnection::connect_tokio1(hostname, port, hello_name, tls_parameters).await?;
-
-        #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
-        match tls {
-            Tls::Opportunistic(ref tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
-                }
-            }
-            Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
-            }
-            _ => (),
-        }
-
-        Ok(conn)
-    }
-}
-
-#[allow(missing_copy_implementations)]
-#[non_exhaustive]
-#[cfg(feature = "async-std1")]
-#[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
-pub struct AsyncStd1Connector;
-
-#[async_trait]
-#[cfg(feature = "async-std1")]
-impl AsyncSmtpConnector for AsyncStd1Connector {
-    #[doc(hidden)]
-    async fn connect(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error> {
-        #[allow(clippy::match_single_binding)]
-        let tls_parameters = match tls {
-            #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
-            _ => None,
-        };
-        #[allow(unused_mut)]
-        let mut conn =
-            AsyncSmtpConnection::connect_asyncstd1(hostname, port, hello_name, tls_parameters)
-                .await?;
-
-        #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
-        match tls {
-            Tls::Opportunistic(ref tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
-                }
-            }
-            Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
-            }
-            _ => (),
-        }
-
-        Ok(conn)
-    }
-}
-
-mod private {
-    use super::*;
-
-    pub trait Sealed {}
-
-    #[cfg(feature = "tokio02")]
-    impl Sealed for Tokio02Connector {}
-
-    #[cfg(feature = "tokio1")]
-    impl Sealed for Tokio1Connector {}
-
-    #[cfg(feature = "async-std1")]
-    impl Sealed for AsyncStd1Connector {}
 }

@@ -1,7 +1,10 @@
 //! ESMTP features
 
 use crate::transport::smtp::{
-    authentication::Mechanism, error::Error, response::Response, util::XText,
+    authentication::Mechanism,
+    error::{self, Error},
+    response::Response,
+    util::XText,
 };
 use std::{
     collections::HashSet,
@@ -71,15 +74,15 @@ impl ClientId {
 pub enum Extension {
     /// 8BITMIME keyword
     ///
-    /// RFC 6152: https://tools.ietf.org/html/rfc6152
+    /// Defined in [RFC 6152](https://tools.ietf.org/html/rfc6152)
     EightBitMime,
     /// SMTPUTF8 keyword
     ///
-    /// RFC 6531: https://tools.ietf.org/html/rfc6531
+    /// Defined in [RFC 6531](https://tools.ietf.org/html/rfc6531)
     SmtpUtfEight,
     /// STARTTLS keyword
     ///
-    /// RFC 2487: https://tools.ietf.org/html/rfc2487
+    /// Defined in [RFC 2487](https://tools.ietf.org/html/rfc2487)
     StartTls,
     /// AUTH mechanism
     Authentication(Mechanism),
@@ -126,7 +129,7 @@ impl ServerInfo {
     pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
         let name = match response.first_word() {
             Some(name) => name,
-            None => return Err(Error::ResponseParsing("Could not read server name")),
+            None => return Err(error::response("Could not read server name")),
         };
 
         let mut features: HashSet<Extension> = HashSet::new();
