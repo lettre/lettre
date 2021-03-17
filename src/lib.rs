@@ -93,7 +93,7 @@ pub use crate::transport::sendmail::AsyncSendmailTransport;
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
-    any(feature = "tokio02", feature = "tokio1")
+    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
 #[doc(inline)]
