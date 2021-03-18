@@ -27,15 +27,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "sender@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients);
     /// # Ok(())
@@ -59,15 +56,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "from@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert_eq!(envelope.to(), recipients.as_slice());
@@ -82,15 +76,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "from@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert!(envelope.from().is_some());

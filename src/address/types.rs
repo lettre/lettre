@@ -23,10 +23,13 @@ use std::{
 /// You can create an `Address` from a user and a domain:
 ///
 /// ```
-/// # use lettre::Address;
+/// use lettre::Address;
+///
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// let address = Address::new("example", "email.com")?;
+/// let address = Address::new("user", "email.com")?;
+/// assert_eq!(address.user(), "user");
+/// assert_eq!(address.domain(), "email.com");
 /// # Ok(())
 /// # }
 /// ```
@@ -34,11 +37,13 @@ use std::{
 /// You can also create an `Address` from a string literal by parsing it:
 ///
 /// ```
-/// use std::str::FromStr;
-/// # use lettre::Address;
+/// use lettre::Address;
+///
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
-/// let address = Address::from_str("example@email.com")?;
+/// let address = "user@email.com".parse::<Address>()?;
+/// assert_eq!(address.user(), "user");
+/// assert_eq!(address.domain(), "email.com");
 /// # Ok(())
 /// # }
 /// ```
@@ -48,28 +53,6 @@ pub struct Address {
     serialized: String,
     /// Index into `serialized` before the '@'
     at_start: usize,
-}
-
-impl<U, D> TryFrom<(U, D)> for Address
-where
-    U: AsRef<str>,
-    D: AsRef<str>,
-{
-    type Error = AddressError;
-
-    fn try_from((user, domain): (U, D)) -> Result<Self, Self::Error> {
-        let user = user.as_ref();
-        Address::check_user(user)?;
-
-        let domain = domain.as_ref();
-        Address::check_domain(domain)?;
-
-        let serialized = format!("{}@{}", user, domain);
-        Ok(Address {
-            serialized,
-            at_start: user.len(),
-        })
-    }
 }
 
 // Regex from the specs
@@ -96,8 +79,8 @@ impl Address {
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let address = Address::new("example", "email.com")?;
-    /// let expected: Address = "example@email.com".parse()?;
+    /// let address = Address::new("user", "email.com")?;
+    /// let expected = "user@email.com".parse::<Address>()?;
     /// assert_eq!(expected, address);
     /// # Ok(())
     /// # }
@@ -115,8 +98,8 @@ impl Address {
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let address = Address::new("example", "email.com")?;
-    /// assert_eq!("example", address.user());
+    /// let address = Address::new("user", "email.com")?;
+    /// assert_eq!(address.user(), "user");
     /// # Ok(())
     /// # }
     /// ```
@@ -133,8 +116,8 @@ impl Address {
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let address = Address::new("example", "email.com")?;
-    /// assert_eq!("email.com", address.domain());
+    /// let address = Address::new("user", "email.com")?;
+    /// assert_eq!(address.domain(), "email.com");
     /// # Ok(())
     /// # }
     /// ```
@@ -199,6 +182,28 @@ impl FromStr for Address {
         Address::check_domain(domain)?;
         Ok(Address {
             serialized: val.into(),
+            at_start: user.len(),
+        })
+    }
+}
+
+impl<U, D> TryFrom<(U, D)> for Address
+where
+    U: AsRef<str>,
+    D: AsRef<str>,
+{
+    type Error = AddressError;
+
+    fn try_from((user, domain): (U, D)) -> Result<Self, Self::Error> {
+        let user = user.as_ref();
+        Address::check_user(user)?;
+
+        let domain = domain.as_ref();
+        Address::check_domain(domain)?;
+
+        let serialized = format!("{}@{}", user, domain);
+        Ok(Address {
+            serialized,
             at_start: user.len(),
         })
     }
