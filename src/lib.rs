@@ -11,7 +11,7 @@
 //! ## Features
 //!
 //! This section lists each lettre feature and briefly explains it.
-//! More info about each module can be found in the corrisponding module page.
+//! More info about each module can be found in the corresponding module page.
 //!
 //! Features with `📫` near them are enabled by default.
 //!
@@ -19,7 +19,7 @@
 //!
 //! _Strongly typed [`message`] builder_
 //!
-//! * **builder** 📫: Enable the [`Message`] buider
+//! * **builder** 📫: Enable the [`Message`] builder
 //! * **hostname** 📫: Try to use the actual system hostname in the `Message-ID` header
 //!
 //! ### SMTP transport
@@ -70,13 +70,13 @@
 //!
 //! _Use [tokio] or [async-std] as an async execution runtime for sending emails_
 //!
-//! The correct runtime version must be choosen in order for lettre to work correctly.
+//! The correct runtime version must be chosen in order for lettre to work correctly.
 //! For example, when sending emails from a Tokio 1.3.0 context, the Tokio 1.x executor
 //! ([`Tokio1Executor`]) must be used. Using a different version (for example Tokio 0.2.x),
 //! or async-std, would result in a runtime panic.
 //!
-//! * **tokio02**: Allow to asyncronously send emails using [Tokio 0.2.x]
-//! * **tokio1**: Allow to asyncronously send emails using [Tokio 1.x]
+//! * **tokio02**: Allow to asynchronously send emails using [Tokio 0.2.x]
+//! * **tokio1**: Allow to asynchronously send emails using [Tokio 1.x]
 //! * **async-std1**: Allow to asynchronously send emails using [async-std 1.x]
 //!
 //! NOTE: native-tls isn't supported with `async-std`
