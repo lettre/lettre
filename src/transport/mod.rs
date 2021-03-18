@@ -4,6 +4,27 @@
 //! for sending emails. It automatically manages the underlying resources and doesn't require any
 //! specific knowledge of email protocols in order to be used.
 //!
+//! ### Get started
+//!
+//! Sending emails from your programs requires using an email relay, as client libraries are not
+//! designed to handle email delivery by themselves. Depending on your infrastructure, your relay
+//! could be:
+//!
+//! * a service from your Cloud or hosting provider
+//! * an email server ([MTA] for Mail Transfer Agent, like Postfix or Exchange), running either
+//! locally on your servers or accessible over the network
+//! * a dedicated external service, like Mailchimp, Mailgun, etc.
+//!
+//! In most cases, the best option is to:
+//!
+//! * Use the [`SMTP`] transport, with the [`relay`] builder (or one of its async counterparts)
+//!   with your server's hostname. They provide modern and secure defaults.
+//! * Use the [`credentials`] method of the builder to pass your credentials.
+//!
+//! These should be enough to safely cover most use cases.
+//!
+//! ### Available transports
+//!
 //! The following transports are available:
 //!
 //! | Module       | Protocol | Sync API              | Async API                  | Description                                             |
@@ -63,6 +84,11 @@
 //! # fn main() {}
 //! ```
 //!
+//! [MTA]: https://en.wikipedia.org/wiki/Message_transfer_agent
+//! [`SMTP`]: crate::transport::smtp
+//! [`relay`]: crate::SmtpTransport::relay
+//! [`starttls_relay`]: crate::SmtpTransport::starttls_relay
+//! [`credentials`]: crate::transport::smtp::SmtpTransportBuilder::credentials
 //! [`Message`]: crate::Message
 //! [`file`]: self::file
 //! [`SmtpTransport`]: crate::SmtpTransport
