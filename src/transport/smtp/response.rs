@@ -122,7 +122,7 @@ impl Code {
     }
 
     /// Tells if the response is positive
-    pub fn is_positive(&self) -> bool {
+    pub fn is_positive(self) -> bool {
         matches!(
             self.severity,
             Severity::PositiveCompletion | Severity::PositiveIntermediate

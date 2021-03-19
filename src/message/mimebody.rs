@@ -175,7 +175,7 @@ fn make_boundary() -> String {
 
 impl MultiPartKind {
     fn to_mime<S: Into<String>>(&self, boundary: Option<S>) -> Mime {
-        let boundary = boundary.map_or_else(make_boundary, |s| s.into());
+        let boundary = boundary.map_or_else(make_boundary, Into::into);
 
         format!(
             "multipart/{}; boundary=\"{}\"{}",
