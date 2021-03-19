@@ -4,7 +4,7 @@
 //! for sending emails. It automatically manages the underlying resources and doesn't require any
 //! specific knowledge of email protocols in order to be used.
 //!
-//! ### Get started
+//! ### Getting started
 //!
 //! Sending emails from your programs requires using an email relay, as client libraries are not
 //! designed to handle email delivery by themselves. Depending on your infrastructure, your relay
