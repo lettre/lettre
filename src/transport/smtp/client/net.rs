@@ -2,6 +2,7 @@
 use std::sync::Arc;
 use std::{
     io::{self, Read, Write},
+    mem,
     net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
     time::Duration,
 };
@@ -14,7 +15,7 @@ use rustls::{ClientSession, StreamOwned};
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::InnerTlsParameters;
-use super::{MockStream, TlsParameters};
+use super::TlsParameters;
 use crate::transport::smtp::{error, Error};
 
 /// A network stream
@@ -35,17 +36,17 @@ enum InnerNetworkStream {
     /// Encrypted TCP stream
     #[cfg(feature = "rustls-tls")]
     RustlsTls(StreamOwned<ClientSession, TcpStream>),
-    /// Mock stream
-    Mock(MockStream),
+    /// Can't be built
+    None,
 }
 
 impl NetworkStream {
     fn new(inner: InnerNetworkStream) -> Self {
-        NetworkStream { inner }
-    }
+        if let InnerNetworkStream::None = inner {
+            debug_assert!(false, "InnerNetworkStream::None must never be built");
+        }
 
-    pub fn new_mock(mock: MockStream) -> Self {
-        Self::new(InnerNetworkStream::Mock(mock))
+        NetworkStream { inner }
     }
 
     /// Returns peer's address
@@ -56,10 +57,13 @@ impl NetworkStream {
             InnerNetworkStream::NativeTls(ref s) => s.get_ref().peer_addr(),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(ref s) => s.get_ref().peer_addr(),
-            InnerNetworkStream::Mock(_) => Ok(SocketAddr::V4(SocketAddrV4::new(
-                Ipv4Addr::new(127, 0, 0, 1),
-                80,
-            ))),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(SocketAddr::V4(SocketAddrV4::new(
+                    Ipv4Addr::new(127, 0, 0, 1),
+                    80,
+                )))
+            }
         }
     }
 
@@ -71,7 +75,10 @@ impl NetworkStream {
             InnerNetworkStream::NativeTls(ref s) => s.get_ref().shutdown(how),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(ref s) => s.get_ref().shutdown(how),
-            InnerNetworkStream::Mock(_) => Ok(()),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(())
+            }
         }
     }
 
@@ -116,8 +123,7 @@ impl NetworkStream {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             InnerNetworkStream::Tcp(_) => {
                 // get owned TcpStream
-                let tcp_stream =
-                    std::mem::replace(&mut self.inner, InnerNetworkStream::Mock(MockStream::new()));
+                let tcp_stream = mem::replace(&mut self.inner, InnerNetworkStream::None);
                 let tcp_stream = match tcp_stream {
                     InnerNetworkStream::Tcp(tcp_stream) => tcp_stream,
                     _ => unreachable!(),
@@ -161,11 +167,15 @@ impl NetworkStream {
 
     pub fn is_encrypted(&self) -> bool {
         match self.inner {
-            InnerNetworkStream::Tcp(_) | InnerNetworkStream::Mock(_) => false,
+            InnerNetworkStream::Tcp(_) => false,
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(_) => true,
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(_) => true,
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                false
+            }
         }
     }
 
@@ -180,7 +190,10 @@ impl NetworkStream {
             InnerNetworkStream::RustlsTls(ref mut stream) => {
                 stream.get_ref().set_read_timeout(duration)
             }
-            InnerNetworkStream::Mock(_) => Ok(()),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(())
+            }
         }
     }
 
@@ -198,7 +211,10 @@ impl NetworkStream {
                 stream.get_ref().set_write_timeout(duration)
             }
 
-            InnerNetworkStream::Mock(_) => Ok(()),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(())
+            }
         }
     }
 }
@@ -211,7 +227,10 @@ impl Read for NetworkStream {
             InnerNetworkStream::NativeTls(ref mut s) => s.read(buf),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(ref mut s) => s.read(buf),
-            InnerNetworkStream::Mock(ref mut s) => s.read(buf),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(0)
+            }
         }
     }
 }
@@ -224,7 +243,10 @@ impl Write for NetworkStream {
             InnerNetworkStream::NativeTls(ref mut s) => s.write(buf),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(ref mut s) => s.write(buf),
-            InnerNetworkStream::Mock(ref mut s) => s.write(buf),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(0)
+            }
         }
     }
 
@@ -235,7 +257,10 @@ impl Write for NetworkStream {
             InnerNetworkStream::NativeTls(ref mut s) => s.flush(),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(ref mut s) => s.flush(),
-            InnerNetworkStream::Mock(ref mut s) => s.flush(),
+            InnerNetworkStream::None => {
+                debug_assert!(false, "InnerNetworkStream::None must never be built");
+                Ok(())
+            }
         }
     }
 }
