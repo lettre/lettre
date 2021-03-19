@@ -5,6 +5,7 @@
 ))]
 use std::sync::Arc;
 use std::{
+    mem,
     net::SocketAddr,
     pin::Pin,
     task::{Context, Poll},
@@ -203,7 +204,7 @@ impl AsyncNetworkStream {
             #[cfg(any(feature = "tokio02-native-tls", feature = "tokio02-rustls-tls"))]
             InnerAsyncNetworkStream::Tokio02Tcp(_) => {
                 // get owned TcpStream
-                let tcp_stream = std::mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
+                let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
                 let tcp_stream = match tcp_stream {
                     InnerAsyncNetworkStream::Tokio02Tcp(tcp_stream) => tcp_stream,
                     _ => unreachable!(),
@@ -226,7 +227,7 @@ impl AsyncNetworkStream {
             #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
             InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 // get owned TcpStream
-                let tcp_stream = std::mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
+                let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
                 let tcp_stream = match tcp_stream {
                     InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) => tcp_stream,
                     _ => unreachable!(),
@@ -249,7 +250,7 @@ impl AsyncNetworkStream {
             #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
             InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
                 // get owned TcpStream
-                let tcp_stream = std::mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
+                let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
                 let tcp_stream = match tcp_stream {
                     InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream) => tcp_stream,
                     _ => unreachable!(),
@@ -270,7 +271,7 @@ impl AsyncNetworkStream {
         tcp_stream: Tokio02TcpStream,
         mut tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = std::mem::take(&mut tls_parameters.domain);
+        let domain = mem::take(&mut tls_parameters.domain);
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
@@ -319,7 +320,7 @@ impl AsyncNetworkStream {
         tcp_stream: Tokio1TcpStream,
         mut tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = std::mem::take(&mut tls_parameters.domain);
+        let domain = mem::take(&mut tls_parameters.domain);
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
@@ -368,7 +369,7 @@ impl AsyncNetworkStream {
         tcp_stream: AsyncStd1TcpStream,
         mut tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = std::mem::take(&mut tls_parameters.domain);
+        let domain = mem::take(&mut tls_parameters.domain);
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
