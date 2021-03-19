@@ -55,7 +55,7 @@ impl Display for Mail {
         write!(
             f,
             "MAIL FROM:<{}>",
-            self.sender.as_ref().map(|s| s.as_ref()).unwrap_or("")
+            self.sender.as_ref().map_or("", |s| s.as_ref())
         )?;
         for parameter in &self.parameters {
             write!(f, " {}", parameter)?;
