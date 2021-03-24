@@ -1,9 +1,9 @@
 use crate::message::{
     header::{
-        Charset, ContentDisposition, ContentTransferEncoding, ContentType, DispositionParam,
-        DispositionType, Header, Headers,
+        Charset, ContentDisposition, ContentId, ContentTransferEncoding, ContentType,
+        DispositionParam, DispositionType, Header, Headers,
     },
-    EmailFormat, IntoBody,
+    Body, EmailFormat, IntoBody,
 };
 use mime::Mime;
 use rand::Rng;
@@ -116,9 +116,8 @@ impl SinglePart {
         SinglePartBuilder::new()
     }
 
-    // Shortcut to avoid builder
     /// Directly create a `SinglePart` from a file content
-    pub fn file_content<T: IntoBody>(body: T, filename: &str, content_type: Mime) -> Self {
+    pub fn attachment_content<T: IntoBody>(body: T, filename: &str, content_type: Mime) -> Self {
         Self::builder()
             .header(ContentType(content_type))
             .header(ContentDisposition {
@@ -132,16 +131,47 @@ impl SinglePart {
             .body(body)
     }
 
-    // Shortcut to avoid builder
     /// Directly create a `SinglePart` from a file content
-    pub fn file(self, file: &Path, content_type: Mime) -> Result<Self, io::Error> {
-        let image = fs::read(file)?;
+    pub fn attachment(self, file: &str, content_type: Mime) -> Result<Self, io::Error> {
+        let path = Path::new(file);
+        let image = fs::read(path)?;
         let image_body = Body::new(image);
-        Ok(Self::file_content(
+        Ok(Self::attachment_content(
             image_body,
-            file.file_name(),
+            path.file_name()
+                // it has a filename as we could read it already
+                .unwrap()
+                .to_str()
+                // file is valid UTF-8
+                .unwrap()
+                .as_ref(),
             content_type,
         ))
+    }
+
+    /// Directly create a `SinglePart` from a file content with inline disposition
+    pub fn inline_content<T: IntoBody>(body: T, content_type: Mime, content_id: &str) -> Self {
+        Self::builder()
+            .header(ContentType(content_type))
+            .header(ContentDisposition {
+                disposition: DispositionType::Inline,
+                parameters: vec![],
+            })
+            .header(ContentId(content_id.into()))
+            .body(body)
+    }
+
+    /// Directly create a `SinglePart` from a file with inline disposition
+    pub fn inline(
+        self,
+        file: &str,
+        content_type: Mime,
+        content_id: &str,
+    ) -> Result<Self, io::Error> {
+        let path = Path::new(file);
+        let image = fs::read(path)?;
+        let image_body = Body::new(image);
+        Ok(Self::inline_content(image_body, content_type, content_id))
     }
 
     /// Get the headers from singlepart
