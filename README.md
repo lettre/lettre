@@ -28,13 +28,8 @@
 </div>
 
 <div align="center">
-<<<<<<< HEAD
   <a href="https://deps.rs/crate/lettre/0.10.0">
     <img src="https://deps.rs/crate/lettre/0.10.0/status.svg"
-=======
-  <a href="https://deps.rs/crate/lettre/0.10.0-beta.2">
-    <img src="https://deps.rs/crate/lettre/0.10.0-beta.2/status.svg"
->>>>>>> master
       alt="dependency status" />
   </a>
 </div>
