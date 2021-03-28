@@ -19,7 +19,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 idna = "0.2"
-tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
+tracing = { version = "0.1.16", default-features = false, features = ["std", "log"], optional = true } # feature
 
 # builder
 hyperx = { version = "1", optional = true, features = ["headers"] }
