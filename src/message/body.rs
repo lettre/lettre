@@ -1,5 +1,6 @@
 use std::{
     io::{self, Write},
+    mem,
     ops::Deref,
 };
 
@@ -30,19 +31,24 @@ impl Body {
     /// Automatically chooses the most efficient encoding between
     /// `7bit`, `quoted-printable` and `base64`.
     ///
+    /// If `String` is passed, line endings are converted to `CRLF`.
+    ///
     /// If `buf` is valid utf-8 a `String` should be supplied, as `String`s
     /// can be encoded as `7bit` or `quoted-printable`, while `Vec<u8>` always
     /// get encoded as `base64`.
     pub fn new<B: Into<MaybeString>>(buf: B) -> Self {
-        let buf: MaybeString = buf.into();
+        let mut buf: MaybeString = buf.into();
 
         let encoding = buf.encoding();
+        buf.encode_crlf();
         Self::new_impl(buf.into(), encoding)
     }
 
     /// Encode the supplied `buf`, using the provided `encoding`.
     ///
     /// [`Body::new`] is generally the better option.
+    ///
+    /// If `String` is passed, line endings are converted to `CRLF`.
     ///
     /// Returns an [`Err`] giving back the supplied `buf`, in case the chosen
     /// encoding would have resulted into `buf` being encoded
@@ -51,12 +57,13 @@ impl Body {
         buf: B,
         encoding: ContentTransferEncoding,
     ) -> Result<Self, Vec<u8>> {
-        let buf: MaybeString = buf.into();
+        let mut buf: MaybeString = buf.into();
 
         if !buf.is_encoding_ok(encoding) {
             return Err(buf.into());
         }
 
+        buf.encode_crlf();
         Ok(Self::new_impl(buf.into(), encoding))
     }
 
@@ -159,6 +166,14 @@ impl MaybeString {
             // TODO: consider when base64 would be a better option because of output size
             Self::String(_) => ContentTransferEncoding::QuotedPrintable,
             Self::Binary(_) => ContentTransferEncoding::Base64,
+        }
+    }
+
+    /// Encode line endings to CRLF if the variant is `String`
+    fn encode_crlf(&mut self) {
+        match self {
+            Self::String(string) => in_place_crlf_line_endings(string),
+            Self::Binary(_) => {}
         }
     }
 
@@ -322,9 +337,44 @@ where
     }
 }
 
+/// In place conversion to CRLF line endings
+fn in_place_crlf_line_endings(string: &mut String) {
+    let indices = find_all_lf_char_indices(&string);
+
+    for i in indices {
+        // this relies on `indices` being in reverse order
+        string.insert(i, '\r');
+    }
+}
+
+/// Find indices to all places where `\r` should be inserted
+/// in order to make `s` have CRLF line endings
+///
+/// The list is reversed, which is more efficient.
+fn find_all_lf_char_indices(s: &str) -> Vec<usize> {
+    let mut indices = Vec::new();
+
+    let mut found_lf = false;
+    for (i, c) in s.char_indices().rev() {
+        if mem::take(&mut found_lf) && c != '\r' {
+            // the previous character was `\n`, but this isn't a `\r`
+            indices.push(i + c.len_utf8());
+        }
+
+        found_lf = c == '\n';
+    }
+
+    if found_lf {
+        // the first character is `\n`
+        indices.push(0);
+    }
+
+    indices
+}
+
 #[cfg(test)]
 mod test {
-    use super::{Body, ContentTransferEncoding};
+    use super::{in_place_crlf_line_endings, Body, ContentTransferEncoding};
 
     #[test]
     fn seven_bit_detect() {
@@ -577,5 +627,32 @@ mod test {
             )
             .as_bytes()
         );
+    }
+
+    #[test]
+    fn crlf() {
+        let mut string = String::from("Send me a ✉️\nwith\nlettre!\n😀");
+
+        in_place_crlf_line_endings(&mut string);
+        assert_eq!(string, "Send me a ✉️\r\nwith\r\nlettre!\r\n😀");
+    }
+
+    #[test]
+    fn harsh_crlf() {
+        let mut string = String::from("\n\nSend me a ✉️\r\n\nwith\n\nlettre!\n\r\n😀");
+
+        in_place_crlf_line_endings(&mut string);
+        assert_eq!(
+            string,
+            "\r\n\r\nSend me a ✉️\r\n\r\nwith\r\n\r\nlettre!\r\n\r\n😀"
+        );
+    }
+
+    #[test]
+    fn crlf_noop() {
+        let mut string = String::from("\r\nSend me a ✉️\r\nwith\r\nlettre!\r\n😀");
+
+        in_place_crlf_line_endings(&mut string);
+        assert_eq!(string, "\r\nSend me a ✉️\r\nwith\r\nlettre!\r\n😀");
     }
 }
