@@ -167,7 +167,7 @@
 //!                                         disposition: header::DispositionType::Inline,
 //!                                         parameters: vec![],
 //!                                     })
-//!                                     .header(header::ContentId("<123>".into()))
+//!                                     .header(header::ContentId::from(String::from("<123>")))
 //!                                     .body(image_body),
 //!                             ),
 //!                     ),
@@ -318,7 +318,8 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.header(header::Subject(subject.into()))`.
     pub fn subject<S: Into<String>>(self, subject: S) -> Self {
-        self.header(header::Subject(subject.into()))
+        let s: String = subject.into();
+        self.header(header::Subject::from(s))
     }
 
     /// Set `Mime-Version` header to 1.0
@@ -336,7 +337,7 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.header(header::Sender(mbox))`.
     pub fn sender(self, mbox: Mailbox) -> Self {
-        self.header(header::Sender(mbox))
+        self.header(header::Sender::from(mbox))
     }
 
     /// Set or add mailbox to `From` header
@@ -345,7 +346,7 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.mailbox(header::From(mbox))`.
     pub fn from(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::From(mbox.into()))
+        self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `ReplyTo` header
@@ -381,13 +382,13 @@ impl MessageBuilder {
     /// Set or add message id to [`In-Reply-To`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     pub fn in_reply_to(self, id: String) -> Self {
-        self.header(header::InReplyTo(id))
+        self.header(header::InReplyTo::from(id))
     }
 
     /// Set or add message id to [`References`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     pub fn references(self, id: String) -> Self {
-        self.header(header::References(id))
+        self.header(header::References::from(id))
     }
 
     /// Set [Message-Id
@@ -399,7 +400,7 @@ impl MessageBuilder {
     /// `<UUID@HOSTNAME>`.
     pub fn message_id(self, id: Option<String>) -> Self {
         match id {
-            Some(i) => self.header(header::MessageId(i)),
+            Some(i) => self.header(header::MessageId::from(i)),
             None => {
                 #[cfg(feature = "hostname")]
                 let hostname = hostname::get()
@@ -409,7 +410,7 @@ impl MessageBuilder {
                 #[cfg(not(feature = "hostname"))]
                 let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_string();
 
-                self.header(header::MessageId(
+                self.header(header::MessageId::from(
                     // https://tools.ietf.org/html/rfc5322#section-3.6.4
                     format!("<{}@{}>", Uuid::new_v4(), hostname),
                 ))
@@ -420,7 +421,7 @@ impl MessageBuilder {
     /// Set [User-Agent
     /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
     pub fn user_agent(self, id: String) -> Self {
-        self.header(header::UserAgent(id))
+        self.header(header::UserAgent::from(id))
     }
 
     /// Force specific envelope (by default it is derived from headers)
@@ -595,7 +596,7 @@ mod test {
             .header(header::To(
                 vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
             ))
-            .header(header::Subject("яңа ел белән!".into()))
+            .header(header::Subject::from(String::from("яңа ел белән!")))
             .body(String::from("Happy new year!"))
             .unwrap();
 
@@ -641,7 +642,7 @@ mod test {
                                 disposition: header::DispositionType::Inline,
                                 parameters: vec![],
                             })
-                            .header(header::ContentId("<123>".into()))
+                            .header(header::ContentId::from(String::from("<123>")))
                             .body(img),
                     ),
             )

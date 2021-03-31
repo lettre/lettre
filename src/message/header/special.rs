@@ -4,18 +4,28 @@ use hyperx::{
 };
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
 pub struct MimeVersion {
-    pub major: u8,
-    pub minor: u8,
+    major: u8,
+    minor: u8,
 }
 
-pub const MIME_VERSION_1_0: MimeVersion = MimeVersion { major: 1, minor: 0 };
+pub const MIME_VERSION_1_0: MimeVersion = MimeVersion::new(1, 0);
 
 impl MimeVersion {
-    pub fn new(major: u8, minor: u8) -> Self {
+    pub const fn new(major: u8, minor: u8) -> Self {
         MimeVersion { major, minor }
+    }
+
+    #[inline]
+    pub const fn major(self) -> u8 {
+        self.major
+    }
+
+    #[inline]
+    pub const fn minor(self) -> u8 {
+        self.minor
     }
 }
 
