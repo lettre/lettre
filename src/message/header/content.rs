@@ -7,11 +7,6 @@ use std::{
     str::{from_utf8, FromStr},
 };
 
-header! {
-    /// `Content-Id` header, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
-    (ContentId, "Content-ID") => [String]
-}
-
 /// `Content-Transfer-Encoding` of the body
 ///
 /// The `Message` builder takes care of choosing the most
