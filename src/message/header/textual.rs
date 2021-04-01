@@ -1,5 +1,4 @@
 use super::{Header, HeaderName};
-use crate::message::utf8_b;
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
 macro_rules! text_header {

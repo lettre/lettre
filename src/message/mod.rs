@@ -248,7 +248,6 @@ mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
-mod utf8_b;
 
 use std::{convert::TryFrom, time::SystemTime};
 

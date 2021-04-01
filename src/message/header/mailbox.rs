@@ -1,8 +1,5 @@
 use super::{Header, HeaderName};
-use crate::message::{
-    mailbox::{Mailbox, Mailboxes},
-    utf8_b,
-};
+use crate::message::mailbox::{Mailbox, Mailboxes};
 use std::{fmt::Result as FmtResult, slice::Iter, str::from_utf8};
 
 /// Header which can contains multiple mailboxes
