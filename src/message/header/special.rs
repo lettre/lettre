@@ -1,8 +1,66 @@
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
-use std::{fmt::Result as FmtResult, str::from_utf8};
+use httpdate::HttpDate;
+
+use super::{Header, HeaderName};
+use std::{fmt::Result as FmtResult, str::from_utf8, time::SystemTime};
+
+/// https://tools.ietf.org/html/rfc2822
+#[allow(missing_copy_implementations)]
+#[derive(Clone)]
+pub struct Date(HttpDate);
+
+impl Date {
+    pub fn now() -> Self {
+        Self::from(SystemTime::now())
+    }
+}
+
+impl Header for Date {
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_static("Date")
+    }
+
+    fn parse_value(s: &str) -> Self {
+        let mut s = String::from(s);
+        let s = if s.ends_with(" -0000") {
+            s.truncate(s.len() - "-0000".len());
+            // UTC
+            s.push_str("GMT");
+            s
+        } else {
+            // UNEXPECTED
+            s
+        };
+
+        println!("{}", s);
+        Self(s.parse().unwrap())
+    }
+
+    fn display(&self) -> String {
+        let mut s = self.0.to_string();
+        if s.ends_with(" GMT") {
+            s.truncate(s.len() - "GMT".len());
+            // UTC
+            s.push_str("-0000");
+            s
+        } else {
+            // UNEXPECTED
+            s
+        }
+    }
+}
+
+impl From<SystemTime> for Date {
+    fn from(st: SystemTime) -> Self {
+        Self(HttpDate::from(st))
+    }
+}
+
+impl From<Date> for SystemTime {
+    #[inline]
+    fn from(this: Date) -> SystemTime {
+        this.0.into()
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
@@ -36,35 +94,29 @@ impl Default for MimeVersion {
 }
 
 impl Header for MimeVersion {
-    fn header_name() -> &'static str {
-        "MIME-Version"
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_static("MIME-Version")
     }
 
-    fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
-    where
-        T: RawLike<'a>,
-        Self: Sized,
-    {
-        raw.one().ok_or(HeaderError::Header).and_then(|r| {
-            let mut s = from_utf8(r).map_err(|_| HeaderError::Header)?.split('.');
+    fn parse_value(s: &str) -> Self {
+        let mut split = s.split('.');
 
-            let major = s.next().ok_or(HeaderError::Header)?;
-            let minor = s.next().ok_or(HeaderError::Header)?;
-            let major = major.parse().map_err(|_| HeaderError::Header)?;
-            let minor = minor.parse().map_err(|_| HeaderError::Header)?;
-            Ok(MimeVersion::new(major, minor))
-        })
+        let major = split.next().unwrap();
+        let minor = split.next().unwrap();
+        let major = major.parse().unwrap();
+        let minor = minor.parse().unwrap();
+        MimeVersion::new(major, minor)
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-        f.fmt_line(&format!("{}.{}", self.major, self.minor))
+    fn display(&self) -> String {
+        format!("{}.{}", self.major, self.minor)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::{MimeVersion, MIME_VERSION_1_0};
-    use hyperx::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_mime_version() {
@@ -83,12 +135,18 @@ mod test {
     fn parse_mime_version() {
         let mut headers = Headers::new();
 
-        headers.set_raw("MIME-Version", "1.0");
+        headers.set_raw(
+            HeaderName::new_from_ascii_static("MIME-Version"),
+            "1.0".into(),
+        );
 
-        assert_eq!(headers.get::<MimeVersion>(), Some(&MIME_VERSION_1_0));
+        assert_eq!(headers.get::<MimeVersion>(), Some(MIME_VERSION_1_0));
 
-        headers.set_raw("MIME-Version", "0.1");
+        headers.set_raw(
+            HeaderName::new_from_ascii_static("MIME-Version"),
+            "0.1".into(),
+        );
 
-        assert_eq!(headers.get::<MimeVersion>(), Some(&MimeVersion::new(0, 1)));
+        assert_eq!(headers.get::<MimeVersion>(), Some(MimeVersion::new(0, 1)));
     }
 }

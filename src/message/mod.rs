@@ -256,7 +256,7 @@ use uuid::Uuid;
 
 use crate::{
     address::Envelope,
-    message::header::{ContentTransferEncoding, EmailDate, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
     Error as EmailError,
 };
 
@@ -291,27 +291,36 @@ impl MessageBuilder {
     }
 
     /// Add mailbox to header
+    #[allow(clippy::unnecessary_unwrap)]
     pub fn mailbox<H: Header + MailboxesHeader>(mut self, header: H) -> Self {
-        if self.headers.has::<H>() {
-            self.headers.get_mut::<H>().unwrap().join_mailboxes(header);
-            self
+        // FIXME: this is very ugly, but lifetime issues are hard
+
+        let borrow = self.headers.get_mut::<H>();
+        if borrow.is_some() {
+            let mut handle = borrow.unwrap();
+
+            handle.join_mailboxes(header);
         } else {
-            self.header(header)
+            drop(borrow);
+
+            self.headers.set(header);
         }
+
+        self
     }
 
     /// Add `Date` header to message
     ///
     /// Shortcut for `self.header(header::Date(date))`.
-    pub fn date(self, date: EmailDate) -> Self {
-        self.header(header::Date(date))
+    pub fn date(self, date: SystemTime) -> Self {
+        self.header(header::Date::from(date))
     }
 
     /// Set `Date` header using current date/time
     ///
     /// Shortcut for `self.date(SystemTime::now())`.
     pub fn date_now(self) -> Self {
-        self.date(SystemTime::now().into())
+        self.date(SystemTime::now())
     }
 
     /// Set `Subject` header to message
@@ -355,28 +364,28 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
     pub fn reply_to(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::ReplyTo(mbox.into()))
+        self.mailbox(header::ReplyTo::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `To` header
     ///
     /// Shortcut for `self.mailbox(header::To(mbox))`.
     pub fn to(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::To(mbox.into()))
+        self.mailbox(header::To::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `Cc` header
     ///
     /// Shortcut for `self.mailbox(header::Cc(mbox))`.
     pub fn cc(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::Cc(mbox.into()))
+        self.mailbox(header::Cc::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `Bcc` header
     ///
     /// Shortcut for `self.mailbox(header::Bcc(mbox))`.
     pub fn bcc(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::Bcc(mbox.into()))
+        self.mailbox(header::Bcc::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add message id to [`In-Reply-To`
@@ -447,7 +456,7 @@ impl MessageBuilder {
         // Fail is missing correct originator (Sender or From)
         match res.headers.get::<header::From>() {
             Some(header::From(f)) => {
-                let from: Vec<Mailbox> = f.clone().into();
+                let from: Vec<Mailbox> = f.into();
                 if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
                     return Err(EmailError::TooManyFrom);
                 }
@@ -474,7 +483,7 @@ impl MessageBuilder {
     /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
     /// for `body`.
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
@@ -553,6 +562,10 @@ impl Default for MessageBuilder {
 
 #[cfg(test)]
 mod test {
+    use std::time::{Duration, SystemTime};
+
+    use httpdate::HttpDate;
+
     use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
 
     #[test]
@@ -582,7 +595,8 @@ mod test {
 
     #[test]
     fn email_message() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        let date: HttpDate = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        let date = SystemTime::from(date);
 
         let email = Message::builder()
             .date(date)
@@ -603,7 +617,7 @@ mod test {
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: Pony O.P. <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
@@ -614,9 +628,12 @@ mod test {
         );
     }
 
+    /*
     #[test]
     fn email_with_png() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        let date: HttpDate = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        let date = SystemTime::from(date);
+
         let img = std::fs::read("./docs/lettre.png").unwrap();
         let m = Message::builder()
             .date(date)
@@ -628,7 +645,7 @@ mod test {
                 MultiPart::related()
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType(
+                            .header(header::ContentType::from(
                                 "text/html; charset=utf8".parse().unwrap(),
                             ))
                             .body(String::from(
@@ -637,7 +654,7 @@ mod test {
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType("image/png".parse().unwrap()))
+                            .header(header::ContentType::from("image/png".parse().unwrap()))
                             .header(header::ContentDisposition {
                                 disposition: header::DispositionType::Inline,
                                 parameters: vec![],
@@ -660,4 +677,5 @@ mod test {
             assert_eq!(line.0, line.1)
         }
     }
+    */
 }

@@ -112,11 +112,11 @@ impl TryFrom<&Headers> for Envelope {
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let from = match headers.get::<header::Sender>() {
             // If there is a Sender, use it
-            Some(sender) => Some(Mailbox::from(sender.clone()).email),
+            Some(sender) => Some(Mailbox::from(sender).email),
             // ... else try From
             None => match headers.get::<header::From>() {
                 Some(header::From(a)) => {
-                    let from: Vec<Mailbox> = a.clone().into();
+                    let from: Vec<Mailbox> = a.into();
                     if from.len() > 1 {
                         return Err(Error::TooManyFrom);
                     }
@@ -128,18 +128,16 @@ impl TryFrom<&Headers> for Envelope {
 
         fn add_addresses_from_mailboxes(
             addresses: &mut Vec<Address>,
-            mailboxes: Option<&Mailboxes>,
+            mailboxes: Option<Mailboxes>,
         ) {
             if let Some(mailboxes) = mailboxes {
-                for mailbox in mailboxes.iter() {
-                    addresses.push(mailbox.email.clone());
-                }
+                addresses.extend(mailboxes.into_iter().map(|mailbox| mailbox.email));
             }
         }
         let mut to = vec![];
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| &h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| &h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| &h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| h.0));
 
         Self::new(from, to)
     }

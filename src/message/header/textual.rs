@@ -1,45 +1,36 @@
+use super::{Header, HeaderName};
 use crate::message::utf8_b;
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
 use std::{fmt::Result as FmtResult, str::from_utf8};
 
 macro_rules! text_header {
-    ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
+    ($(#[$attr:meta])* Header($type: ident, $name: expr )) => {
         #[derive(Debug, Clone, PartialEq)]
         $(#[$attr])*
-        pub struct $type_name(String);
+        pub struct $type(String);
 
-        impl Header for $type_name {
-            fn header_name() -> &'static str {
-                $header_name
+        impl Header for $type {
+            fn name() -> HeaderName {
+                HeaderName::new_from_ascii_static($name)
             }
 
-            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<$type_name>
-            where
-                T: RawLike<'a>,
-                Self: Sized,
-            {
-                raw.one()
-                    .ok_or(HeaderError::Header)
-                    .and_then(parse_text)
-                    .map($type_name)
+            fn parse_value(s: &str) -> Self {
+                assert!(!s.contains(','));
+                Self(String::from(s))
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-                fmt_text(&self.0, f)
+            fn display(&self) -> String {
+                self.0.clone()
             }
         }
 
-        impl From<String> for $type_name {
+        impl From<String> for $type {
             #[inline]
             fn from(text: String) -> Self {
                 Self(text)
             }
         }
 
-        impl AsRef<str> for $type_name {
+        impl AsRef<str> for $type {
             #[inline]
             fn as_ref(&self) -> &str {
                 &self.0
@@ -89,28 +80,15 @@ text_header! {
     Header(ContentId, "Content-ID")
 }
 
-fn parse_text(raw: &[u8]) -> HyperResult<String> {
-    if let Ok(src) = from_utf8(raw) {
-        if let Some(txt) = utf8_b::decode(src) {
-            return Ok(txt);
-        }
-    }
-    Err(HeaderError::Header)
-}
-
-fn fmt_text(s: &str, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-    f.fmt_line(&utf8_b::encode(s))
-}
-
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use hyperx::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_ascii() {
         let mut headers = Headers::new();
-        headers.set(Subject("Sample subject".into()));
+        headers.set(Subject::from(String::from("Sample subject")));
 
         assert_eq!(format!("{}", headers), "Subject: Sample subject\r\n");
     }
@@ -118,7 +96,7 @@ mod test {
     #[test]
     fn format_utf8() {
         let mut headers = Headers::new();
-        headers.set(Subject("Тема сообщения".into()));
+        headers.set(Subject::from(String::from("Тема сообщения")));
 
         assert_eq!(
             format!("{}", headers),
@@ -129,11 +107,14 @@ mod test {
     #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
-        headers.set_raw("Subject", "Sample subject");
+        headers.set_raw(
+            HeaderName::new_from_ascii_static("Subject"),
+            "Sample subject".into(),
+        );
 
         assert_eq!(
             headers.get::<Subject>(),
-            Some(&Subject("Sample subject".into()))
+            Some(Subject("Sample subject".into()))
         );
     }
 
@@ -141,13 +122,13 @@ mod test {
     fn parse_utf8() {
         let mut headers = Headers::new();
         headers.set_raw(
-            "Subject",
-            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=",
+            HeaderName::new_from_ascii_static("Subject"),
+            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=".into(),
         );
 
         assert_eq!(
-            headers.get::<Subject>(),
-            Some(&Subject("Тема сообщения".into()))
+            headers.to_string(),
+            "Subject: =?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=\r\n"
         );
     }
 }
