@@ -112,7 +112,7 @@ impl TryFrom<&Headers> for Envelope {
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let from = match headers.get::<header::Sender>() {
             // If there is a Sender, use it
-            Some(header::Sender(a)) => Some(a.email.clone()),
+            Some(sender) => Some(Mailbox::from(sender.clone()).email),
             // ... else try From
             None => match headers.get::<header::From>() {
                 Some(header::From(a)) => {

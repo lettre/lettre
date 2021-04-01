@@ -17,7 +17,7 @@ macro_rules! mailbox_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
         #[derive(Debug, Clone, PartialEq)]
-        pub struct $type_name(pub Mailbox);
+        pub struct $type_name(Mailbox);
 
         impl Header for $type_name {
             fn header_name() -> &'static str {
@@ -39,6 +39,20 @@ macro_rules! mailbox_header {
                 f.fmt_line(&self.0.recode_name(utf8_b::encode))
             }
         }
+
+        impl std::convert::From<Mailbox> for $type_name {
+            #[inline]
+            fn from(mailbox: Mailbox) -> Self {
+                Self(mailbox)
+            }
+        }
+
+        impl std::convert::From<$type_name> for Mailbox {
+            #[inline]
+            fn from(this: $type_name) -> Mailbox {
+                this.0
+            }
+        }
     };
 }
 
@@ -46,7 +60,7 @@ macro_rules! mailboxes_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
         #[derive(Debug, Clone, PartialEq)]
-        pub struct $type_name(pub Mailboxes);
+        pub struct $type_name(pub(crate) Mailboxes);
 
         impl MailboxesHeader for $type_name {
             fn join_mailboxes(&mut self, other: Self) {
@@ -72,6 +86,20 @@ macro_rules! mailboxes_header {
 
             fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
                 format_mailboxes(self.0.iter(), f)
+            }
+        }
+
+        impl std::convert::From<Mailboxes> for $type_name {
+            #[inline]
+            fn from(mailboxes: Mailboxes) -> Self {
+                Self(mailboxes)
+            }
+        }
+
+        impl std::convert::From<$type_name> for Mailboxes {
+            #[inline]
+            fn from(this: $type_name) -> Mailboxes {
+                this.0
             }
         }
     };

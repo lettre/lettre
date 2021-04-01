@@ -9,7 +9,7 @@ macro_rules! text_header {
     ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
         #[derive(Debug, Clone, PartialEq)]
         $(#[$attr])*
-        pub struct $type_name(pub String);
+        pub struct $type_name(String);
 
         impl Header for $type_name {
             fn header_name() -> &'static str {
@@ -29,6 +29,20 @@ macro_rules! text_header {
 
             fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
                 fmt_text(&self.0, f)
+            }
+        }
+
+        impl From<String> for $type_name {
+            #[inline]
+            fn from(text: String) -> Self {
+                Self(text)
+            }
+        }
+
+        impl AsRef<str> for $type_name {
+            #[inline]
+            fn as_ref(&self) -> &str {
+                &self.0
             }
         }
     };
@@ -69,6 +83,11 @@ text_header!(
     /// defined in [draft-melnikov-email-user-agent-00](https://tools.ietf.org/html/draft-melnikov-email-user-agent-00#section-3)
     Header(UserAgent, "User-Agent")
 );
+text_header! {
+    /// `Content-Id` header,
+    /// defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
+    Header(ContentId, "Content-ID")
+}
 
 fn parse_text(raw: &[u8]) -> HyperResult<String> {
     if let Ok(src) = from_utf8(raw) {
