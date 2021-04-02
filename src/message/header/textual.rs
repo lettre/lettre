@@ -1,5 +1,5 @@
 use super::{Header, HeaderName};
-use std::{fmt::Result as FmtResult, str::from_utf8};
+use crate::BoxError;
 
 macro_rules! text_header {
     ($(#[$attr:meta])* Header($type: ident, $name: expr )) => {
@@ -12,9 +12,8 @@ macro_rules! text_header {
                 HeaderName::new_from_ascii_static($name)
             }
 
-            fn parse_value(s: &str) -> Self {
-                assert!(!s.contains(','));
-                Self(String::from(s))
+            fn parse_value(s: &str) -> Result<Self, BoxError> {
+                Ok(Self(String::from(s)))
             }
 
             fn display(&self) -> String {

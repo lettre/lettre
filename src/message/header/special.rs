@@ -1,7 +1,8 @@
 use httpdate::HttpDate;
 
 use super::{Header, HeaderName};
-use std::{fmt::Result as FmtResult, str::from_utf8, time::SystemTime};
+use crate::BoxError;
+use std::time::SystemTime;
 
 /// https://tools.ietf.org/html/rfc2822
 #[allow(missing_copy_implementations)]
@@ -19,7 +20,7 @@ impl Header for Date {
         HeaderName::new_from_ascii_static("Date")
     }
 
-    fn parse_value(s: &str) -> Self {
+    fn parse_value(s: &str) -> Result<Self, BoxError> {
         let mut s = String::from(s);
         let s = if s.ends_with(" -0000") {
             s.truncate(s.len() - "-0000".len());
@@ -31,8 +32,7 @@ impl Header for Date {
             s
         };
 
-        println!("{}", s);
-        Self(s.parse().unwrap())
+        Ok(Self(s.parse()?))
     }
 
     fn display(&self) -> String {
@@ -98,14 +98,14 @@ impl Header for MimeVersion {
         HeaderName::new_from_ascii_static("MIME-Version")
     }
 
-    fn parse_value(s: &str) -> Self {
+    fn parse_value(s: &str) -> Result<Self, BoxError> {
         let mut split = s.split('.');
 
-        let major = split.next().unwrap();
-        let minor = split.next().unwrap();
-        let major = major.parse().unwrap();
-        let minor = minor.parse().unwrap();
-        MimeVersion::new(major, minor)
+        let major = split.next().ok_or("invalid MIME-Version header")?;
+        let minor = split.next().ok_or("invalid MIME-Version header")?;
+        let major = major.parse()?;
+        let minor = minor.parse()?;
+        Ok(MimeVersion::new(major, minor))
     }
 
     fn display(&self) -> String {

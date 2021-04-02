@@ -7,6 +7,8 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use crate::BoxError;
+
 mod content;
 mod mailbox;
 mod special;
@@ -17,7 +19,7 @@ pub use self::{content::*, mailbox::*, special::*, textual::*};
 pub trait Header: Clone {
     fn name() -> HeaderName;
 
-    fn parse_value(s: &str) -> Self;
+    fn parse_value(s: &str) -> Result<Self, BoxError>;
 
     fn display(&self) -> String;
 }
@@ -51,12 +53,13 @@ impl Headers {
     }
 
     pub fn get<H: Header>(&self) -> Option<H> {
-        self.get_raw(&H::name()).map(|raw| H::parse_value(raw))
+        self.get_raw(&H::name())
+            .and_then(|raw| H::parse_value(raw).ok())
     }
 
     pub fn get_mut<H: Header>(&mut self) -> Option<RawHeaderHandle<'_, H>> {
         let value = self.get_raw_mut(&H::name())?;
-        let header = Header::parse_value(&value);
+        let header = Header::parse_value(&value).ok()?;
 
         Some(RawHeaderHandle { value, header })
     }
@@ -67,7 +70,7 @@ impl Headers {
 
     pub fn remove<H: Header>(&mut self) -> Option<H> {
         self.remove_raw(&H::name())
-            .map(|(_name, raw)| H::parse_value(&raw))
+            .and_then(|(_name, raw)| H::parse_value(&raw).ok())
     }
 
     pub fn get_raw(&self, name: &str) -> Option<&str> {

@@ -1,9 +1,10 @@
 use mime::Mime;
 
 use super::{Header, HeaderName};
+use crate::BoxError;
 use std::{
     fmt::{Display, Formatter as FmtFormatter, Result as FmtResult},
-    str::{from_utf8, FromStr},
+    str::FromStr,
 };
 
 #[derive(Clone)]
@@ -14,8 +15,8 @@ impl Header for ContentType {
         HeaderName::new_from_ascii_static("Content-Type")
     }
 
-    fn parse_value(s: &str) -> Self {
-        unimplemented!()
+    fn parse_value(s: &str) -> Result<Self, BoxError> {
+        Ok(Self(s.parse()?))
     }
 
     fn display(&self) -> String {
@@ -89,8 +90,8 @@ impl Header for ContentTransferEncoding {
         HeaderName::new_from_ascii_static("Content-Transfer-Encoding")
     }
 
-    fn parse_value(s: &str) -> Self {
-        s.parse().unwrap()
+    fn parse_value(s: &str) -> Result<Self, BoxError> {
+        Ok(s.parse()?)
     }
 
     fn display(&self) -> String {

@@ -1,6 +1,6 @@
 use super::{Header, HeaderName};
 use crate::message::mailbox::{Mailbox, Mailboxes};
-use std::{fmt::Result as FmtResult, slice::Iter, str::from_utf8};
+use crate::BoxError;
 
 /// Header which can contains multiple mailboxes
 pub trait MailboxesHeader {
@@ -18,8 +18,8 @@ macro_rules! mailbox_header {
                 HeaderName::new_from_ascii_static($name)
             }
 
-            fn parse_value(s: &str) -> Self {
-                Self(s.parse().unwrap())
+            fn parse_value(s: &str) -> Result<Self,BoxError> {
+                Ok(Self(s.parse()?))
             }
 
             fn display(&self) -> String {
@@ -60,8 +60,8 @@ macro_rules! mailboxes_header {
                 HeaderName::new_from_ascii_static($name)
             }
 
-            fn parse_value(s: &str) -> Self {
-                Self(s.parse().unwrap())
+            fn parse_value(s: &str) -> Result<Self, BoxError> {
+                Ok(Self(s.parse()?))
             }
 
             fn display(&self) -> String {
