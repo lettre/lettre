@@ -298,17 +298,4 @@ mod test {
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
-
-    #[test]
-    fn parse_single_with_utf8_name() {
-        let from: Vec<Mailbox> = vec!["Кайо <kayo@example.com>".parse().unwrap()];
-
-        let mut headers = Headers::new();
-        headers.set_raw(
-            HeaderName::new_from_ascii_static("From"),
-            "=?utf-8?b?0JrQsNC50L4=?= <kayo@example.com>".into(),
-        );
-
-        assert_eq!(headers.get::<From>(), Some(From(from.into())));
-    }
 }
