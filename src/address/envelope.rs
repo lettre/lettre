@@ -116,11 +116,11 @@ impl TryFrom<&Headers> for Envelope {
             // ... else try From
             None => match headers.get::<header::From>() {
                 Some(header::From(a)) => {
-                    let from: Vec<Mailbox> = a.into();
+                    let mut from: Vec<Mailbox> = a.into();
                     if from.len() > 1 {
                         return Err(Error::TooManyFrom);
                     }
-                    Some(from[0].email.clone())
+                    Some(from.pop().unwrap().email)
                 }
                 None => None,
             },
