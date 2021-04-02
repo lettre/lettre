@@ -47,7 +47,7 @@ macro_rules! mailboxes_header {
     ($(#[$doc:meta])*($type: ident, $name: expr)) => {
         $(#[$doc])*
         #[derive(Debug, Clone, PartialEq)]
-        pub struct $type(pub(crate) Mailboxes);
+        pub struct $type(Mailboxes);
 
         impl MailboxesHeader for $type {
             fn join_mailboxes(&mut self, other: Self) {

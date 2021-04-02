@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 
 use super::Address;
 #[cfg(feature = "builder")]
-use crate::message::header::{self, Headers};
+use crate::message::header::{self, Header, Headers};
 #[cfg(feature = "builder")]
 use crate::message::{Mailbox, Mailboxes};
 use crate::Error;
@@ -115,8 +115,8 @@ impl TryFrom<&Headers> for Envelope {
             Some(sender) => Some(Mailbox::from(sender).email),
             // ... else try From
             None => match headers.get::<header::From>() {
-                Some(header::From(a)) => {
-                    let mut from: Vec<Mailbox> = a.into();
+                Some(from) => {
+                    let mut from: Vec<Mailbox> = Mailboxes::from(from).into();
                     if from.len() > 1 {
                         return Err(Error::TooManyFrom);
                     }
@@ -126,18 +126,19 @@ impl TryFrom<&Headers> for Envelope {
             },
         };
 
-        fn add_addresses_from_mailboxes(
+        fn add_addresses_from_mailboxes<H: Header + Into<Mailboxes>>(
             addresses: &mut Vec<Address>,
-            mailboxes: Option<Mailboxes>,
+            headers: &Headers,
         ) {
-            if let Some(mailboxes) = mailboxes {
+            if let Some(header) = headers.get::<H>() {
+                let mailboxes: Mailboxes = header.into();
                 addresses.extend(mailboxes.into_iter().map(|mailbox| mailbox.email));
             }
         }
         let mut to = vec![];
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| h.0));
+        add_addresses_from_mailboxes::<header::To>(&mut to, headers);
+        add_addresses_from_mailboxes::<header::Cc>(&mut to, headers);
+        add_addresses_from_mailboxes::<header::Bcc>(&mut to, headers);
 
         Self::new(from, to)
     }
