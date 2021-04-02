@@ -63,14 +63,6 @@ impl Mailbox {
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
     }
-
-    /// Encode addressee name using function
-    pub(crate) fn recode_name<F>(&self, f: F) -> Self
-    where
-        F: FnOnce(&str) -> String,
-    {
-        Mailbox::new(self.name.clone().map(|s| f(&s)), self.email.clone())
-    }
 }
 
 impl Display for Mailbox {
@@ -329,15 +321,7 @@ impl FromStr for Mailboxes {
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         src.split(',')
-            .map(|m| {
-                m.trim().parse().and_then(|Mailbox { name, email }| {
-                    if let Some(name) = name {
-                        Ok(Mailbox::new(Some(name), email))
-                    } else {
-                        Ok(Mailbox::new(None, email))
-                    }
-                })
-            })
+            .map(|m| m.trim().parse())
             .collect::<Result<Vec<_>, _>>()
             .map(Mailboxes)
     }
