@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use crate::message::{
     header::{ContentTransferEncoding, ContentType, Header, Headers},
     EmailFormat, IntoBody,
@@ -132,7 +134,8 @@ impl SinglePart {
 
 impl EmailFormat for SinglePart {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
         out.extend_from_slice(&self.body);
         out.extend_from_slice(b"\r\n");
@@ -390,7 +393,8 @@ impl MultiPart {
 
 impl EmailFormat for MultiPart {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
 
         let boundary = self.boundary();
