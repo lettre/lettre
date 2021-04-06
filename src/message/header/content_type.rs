@@ -67,6 +67,7 @@ impl FromStr for ContentType {
     }
 }
 
+/// An error occurred while trying to [`ContentType::parse`].
 #[derive(Debug)]
 pub struct ContentTypeErr(mime::FromStrError);
 
