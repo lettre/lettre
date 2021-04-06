@@ -250,7 +250,7 @@ mod mailbox;
 mod mimebody;
 mod utf8_b;
 
-use std::{convert::TryFrom, time::SystemTime};
+use std::{convert::TryFrom, io::Write, time::SystemTime};
 
 use uuid::Uuid;
 
@@ -533,7 +533,8 @@ impl Message {
 
 impl EmailFormat for Message {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
 
         match &self.body {
             MessageBody::Mime(p) => p.format(out),
