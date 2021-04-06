@@ -217,12 +217,6 @@ impl MultiPartKind {
     }
 }
 
-impl From<MultiPartKind> for Mime {
-    fn from(m: MultiPartKind) -> Mime {
-        m.to_mime::<String>(None)
-    }
-}
-
 /// Multipart builder
 #[derive(Debug, Clone)]
 pub struct MultiPartBuilder {
@@ -245,17 +239,17 @@ impl MultiPartBuilder {
 
     /// Set `Content-Type` header using [`MultiPartKind`]
     pub fn kind(self, kind: MultiPartKind) -> Self {
-        self.header(ContentType::from(Mime::from(kind)))
+        self.header(ContentType::from_mime(kind.to_mime::<String>(None)))
     }
 
     /// Set custom boundary
     pub fn boundary<S: AsRef<str>>(self, boundary: S) -> Self {
         let kind = {
-            let mime = Mime::from(self.headers.get::<ContentType>().unwrap());
-            MultiPartKind::from_mime(&mime).unwrap()
+            let mime = self.headers.get::<ContentType>().unwrap();
+            MultiPartKind::from_mime(mime.as_ref()).unwrap()
         };
         let mime = kind.to_mime(Some(boundary.as_ref()));
-        self.header(ContentType::from(mime))
+        self.header(ContentType::from_mime(mime))
     }
 
     /// Creates multipart without parts
@@ -356,8 +350,13 @@ impl MultiPart {
 
     /// Get the boundary of multipart contents
     pub fn boundary(&self) -> String {
-        let content_type = Mime::from(self.headers.get::<ContentType>().unwrap());
-        content_type.get_param("boundary").unwrap().as_str().into()
+        let content_type = self.headers.get::<ContentType>().unwrap();
+        content_type
+            .as_ref()
+            .get_param("boundary")
+            .unwrap()
+            .as_str()
+            .into()
     }
 
     /// Get the headers from the multipart
@@ -416,9 +415,7 @@ mod test {
     #[test]
     fn single_part_binary() {
         let part = SinglePart::builder()
-            .header(header::ContentType::from(
-                "text/plain; charset=utf8".parse::<Mime>().unwrap(),
-            ))
+            .header(header::ContentType::parse("text/plain; charset=utf8").unwrap())
             .header(header::ContentTransferEncoding::Binary)
             .body(String::from("Текст письма в уникоде"));
 
@@ -436,9 +433,7 @@ mod test {
     #[test]
     fn single_part_quoted_printable() {
         let part = SinglePart::builder()
-            .header(header::ContentType::from(
-                "text/plain; charset=utf8".parse::<Mime>().unwrap(),
-            ))
+            .header(header::ContentType::parse("text/plain; charset=utf8").unwrap())
             .header(header::ContentTransferEncoding::QuotedPrintable)
             .body(String::from("Текст письма в уникоде"));
 
@@ -457,9 +452,7 @@ mod test {
     #[test]
     fn single_part_base64() {
         let part = SinglePart::builder()
-            .header(header::ContentType::from(
-                "text/plain; charset=utf8".parse::<Mime>().unwrap(),
-            ))
+            .header(header::ContentType::parse("text/plain; charset=utf8").unwrap())
             .header(header::ContentTransferEncoding::Base64)
             .body(String::from("Текст письма в уникоде"));
 

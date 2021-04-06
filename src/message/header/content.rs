@@ -3,12 +3,28 @@ use mime::Mime;
 use super::{Header, HeaderName};
 use crate::BoxError;
 use std::{
-    fmt::{Display, Formatter as FmtFormatter, Result as FmtResult},
+    convert::TryFrom,
+    error::Error as StdError,
+    fmt::{self, Display, Formatter as FmtFormatter, Result as FmtResult},
     str::FromStr,
 };
 
 #[derive(Clone)]
 pub struct ContentType(Mime);
+
+impl ContentType {
+    pub fn parse(s: &str) -> Result<Self, ContentTypeErr> {
+        s.parse().map(Self).map_err(ContentTypeErr)
+    }
+
+    pub(crate) fn from_mime(mime: Mime) -> Self {
+        Self(mime)
+    }
+
+    pub(crate) fn as_ref(&self) -> &Mime {
+        &self.0
+    }
+}
 
 impl Header for ContentType {
     fn name() -> HeaderName {
@@ -24,17 +40,34 @@ impl Header for ContentType {
     }
 }
 
-impl From<Mime> for ContentType {
-    #[inline]
-    fn from(m: Mime) -> Self {
-        Self(m)
+#[derive(Debug)]
+pub struct ContentTypeErr(mime::FromStrError);
+
+impl FromStr for ContentType {
+    type Err = ContentTypeErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s)
     }
 }
 
-impl From<ContentType> for Mime {
-    #[inline]
-    fn from(this: ContentType) -> Mime {
-        this.0
+impl<'a> TryFrom<&'a str> for ContentType {
+    type Error = ContentTypeErr;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        Self::parse(s)
+    }
+}
+
+impl StdError for ContentTypeErr {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&self.0)
+    }
+}
+
+impl Display for ContentTypeErr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.0, f)
     }
 }
 

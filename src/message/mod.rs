@@ -242,8 +242,6 @@ pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
 
-pub use mime;
-
 mod body;
 pub mod header;
 mod mailbox;
@@ -564,7 +562,6 @@ mod test {
     use std::time::SystemTime;
 
     use httpdate::HttpDate;
-    use mime::Mime;
 
     use crate::message::{
         header,
@@ -645,16 +642,14 @@ mod test {
                 MultiPart::related()
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType::from(
-                                "text/html; charset=utf8".parse::<Mime>().unwrap(),
-                            ))
+                            .header(header::ContentType::parse("text/html; charset=utf8").unwrap())
                             .body(String::from(
                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
                             )),
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType::from("image/png".parse::<Mime>().unwrap()))
+                            .header(header::ContentType::parse("image/png").unwrap())
                             .header(header::ContentDisposition {
                                 disposition: header::DispositionType::Inline,
                                 file_name: None,
