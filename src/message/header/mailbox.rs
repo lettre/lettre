@@ -154,24 +154,6 @@ mailboxes_header! {
     (Bcc, "Bcc")
 }
 
-/*
-fn parse_mailboxes(raw: &[u8]) -> HyperResult<Mailboxes> {
-    if let Ok(src) = from_utf8(raw) {
-        if let Ok(mbs) = src.parse() {
-            return Ok(mbs);
-        }
-    }
-    Err(HeaderError::Header)
-}
-
-fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-    f.fmt_line(&Mailboxes::from(
-        mbs.map(|mb| mb.recode_name(utf8_b::encode))
-            .collect::<Vec<_>>(),
-    ))
-}
-*/
-
 #[cfg(test)]
 mod test {
     use super::{From, Mailbox, Mailboxes};
