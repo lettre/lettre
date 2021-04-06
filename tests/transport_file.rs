@@ -1,6 +1,15 @@
+use std::time::SystemTime;
+
+#[cfg(feature = "builder")]
+fn default_date() -> SystemTime {
+    let date: httpdate::HttpDate = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+    date.into()
+}
+
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder"))]
 mod sync {
+    use super::default_date;
     use lettre::{FileTransport, Message, Transport};
     use std::{
         env::temp_dir,
@@ -15,7 +24,7 @@ mod sync {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -32,7 +41,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -50,7 +59,7 @@ mod sync {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -70,7 +79,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -95,6 +104,7 @@ mod sync {
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder", feature = "tokio02"))]
 mod tokio_02 {
+    use super::default_date;
     use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio02Executor};
     use std::{
         env::temp_dir,
@@ -111,7 +121,7 @@ mod tokio_02 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -128,7 +138,7 @@ mod tokio_02 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -141,6 +151,7 @@ mod tokio_02 {
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
+    use super::default_date;
     use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
     use std::{
         env::temp_dir,
@@ -158,7 +169,7 @@ mod tokio_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -175,7 +186,7 @@ mod tokio_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -192,6 +203,7 @@ mod tokio_1 {
     feature = "async-std1"
 ))]
 mod asyncstd_1 {
+    use super::default_date;
     use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
     use std::{
         env::temp_dir,
@@ -206,7 +218,7 @@ mod asyncstd_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -223,7 +235,7 @@ mod asyncstd_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"

@@ -38,7 +38,6 @@ mod tokio_02 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -66,7 +65,6 @@ mod tokio_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -93,7 +91,6 @@ mod asyncstd_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
             .body(String::from("Be happy!"))
             .unwrap();
 
