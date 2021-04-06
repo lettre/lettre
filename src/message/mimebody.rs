@@ -5,7 +5,7 @@ use crate::message::{
     EmailFormat, IntoBody,
 };
 use mime::Mime;
-use rand::Rng;
+use std::iter::repeat_with;
 
 /// MIME part variants
 #[derive(Debug, Clone)]
@@ -168,12 +168,9 @@ pub enum MultiPartKind {
 }
 
 /// Create a random MIME boundary.
+/// (Not cryptographically random)
 fn make_boundary() -> String {
-    rand::thread_rng()
-        .sample_iter(rand::distributions::Alphanumeric)
-        .take(40)
-        .map(char::from)
-        .collect()
+    repeat_with(fastrand::alphanumeric).take(40).collect()
 }
 
 impl MultiPartKind {
