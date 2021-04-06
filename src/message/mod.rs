@@ -256,7 +256,7 @@ use uuid::Uuid;
 
 use crate::{
     address::Envelope,
-    message::header::{ContentTransferEncoding, EmailDate, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
     Error as EmailError,
 };
 
@@ -302,16 +302,16 @@ impl MessageBuilder {
 
     /// Add `Date` header to message
     ///
-    /// Shortcut for `self.header(header::Date(date))`.
-    pub fn date(self, date: EmailDate) -> Self {
-        self.header(header::Date(date))
+    /// Shortcut for `self.header(header::Date::new(st))`.
+    pub fn date(self, st: SystemTime) -> Self {
+        self.header(header::Date::new(st))
     }
 
     /// Set `Date` header using current date/time
     ///
     /// Shortcut for `self.date(SystemTime::now())`.
     pub fn date_now(self) -> Self {
-        self.date(SystemTime::now().into())
+        self.date(SystemTime::now())
     }
 
     /// Set `Subject` header to message
@@ -553,6 +553,8 @@ impl Default for MessageBuilder {
 
 #[cfg(test)]
 mod test {
+    use std::time::{Duration, SystemTime};
+
     use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
 
     #[test]
@@ -582,7 +584,8 @@ mod test {
 
     #[test]
     fn email_message() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
 
         let email = Message::builder()
             .date(date)
@@ -603,7 +606,7 @@ mod test {
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: Pony O.P. <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
@@ -616,7 +619,8 @@ mod test {
 
     #[test]
     fn email_with_png() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
         let img = std::fs::read("./docs/lettre.png").unwrap();
         let m = Message::builder()
             .date(date)
