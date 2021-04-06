@@ -99,6 +99,42 @@ impl Header for ContentTransferEncoding {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct ContentDisposition {
+    pub disposition: DispositionType,
+    pub file_name: Option<String>,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum DispositionType {
+    Inline,
+    Attachment,
+}
+
+impl Header for ContentDisposition {
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_static("Content-Disposition")
+    }
+
+    fn parse_value(s: &str) -> Result<Self, BoxError> {
+        todo!()
+    }
+
+    fn display(&self) -> String {
+        let type_str = match &self.disposition {
+            DispositionType::Inline => "inline",
+            DispositionType::Attachment => "attachment",
+        };
+
+        match &self.file_name {
+            Some(file_name) => {
+                format!("{}; filename=\"{}\"", type_str, file_name)
+            }
+            None => type_str.to_string(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ContentTransferEncoding;

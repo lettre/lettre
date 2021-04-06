@@ -561,11 +561,16 @@ impl Default for MessageBuilder {
 
 #[cfg(test)]
 mod test {
-    use std::time::{Duration, SystemTime};
+    use std::time::SystemTime;
 
     use httpdate::HttpDate;
+    use mime::Mime;
 
-    use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
+    use crate::message::{
+        header,
+        mailbox::{Mailbox, Mailboxes},
+        Message, MultiPart, SinglePart,
+    };
 
     #[test]
     fn email_missing_originator() {
@@ -599,16 +604,13 @@ mod test {
 
         let email = Message::builder()
             .date(date)
-            .header(header::From(
-                vec![Mailbox::new(
-                    Some("Каи".into()),
-                    "kayo@example.com".parse().unwrap(),
-                )]
-                .into(),
-            ))
-            .header(header::To(
-                vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
-            ))
+            .header(header::From::from(Mailboxes::from(vec![Mailbox::new(
+                Some("Каи".into()),
+                "kayo@example.com".parse().unwrap(),
+            )])))
+            .header(header::To::from(Mailboxes::from(vec![
+                "Pony O.P. <pony@domain.tld>".parse().unwrap(),
+            ])))
             .header(header::Subject::from(String::from("яңа ел белән!")))
             .body(String::from("Happy new year!"))
             .unwrap();
@@ -627,7 +629,6 @@ mod test {
         );
     }
 
-    /*
     #[test]
     fn email_with_png() {
         let date: HttpDate = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
@@ -645,7 +646,7 @@ mod test {
                     .singlepart(
                         SinglePart::builder()
                             .header(header::ContentType::from(
-                                "text/html; charset=utf8".parse().unwrap(),
+                                "text/html; charset=utf8".parse::<Mime>().unwrap(),
                             ))
                             .body(String::from(
                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
@@ -653,10 +654,10 @@ mod test {
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType::from("image/png".parse().unwrap()))
+                            .header(header::ContentType::from("image/png".parse::<Mime>().unwrap()))
                             .header(header::ContentDisposition {
                                 disposition: header::DispositionType::Inline,
-                                parameters: vec![],
+                                file_name: None,
                             })
                             .header(header::ContentId::from(String::from("<123>")))
                             .body(img),
@@ -669,12 +670,11 @@ mod test {
         let expected = String::from_utf8(file_expected).unwrap();
 
         for (i, line) in output.lines().zip(expected.lines()).enumerate() {
-            if i == 6 || i == 8 || i == 13 || i == 232 {
+            if i == 7 || i == 9 || i == 14 || i == 233 {
                 continue;
             }
 
             assert_eq!(line.0, line.1)
         }
     }
-    */
 }

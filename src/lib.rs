@@ -184,8 +184,8 @@ mod test {
         let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
-        headers.set(header::From(from));
-        headers.set(header::To(to));
+        headers.set(header::From::from(from));
+        headers.set(header::To::from(to));
 
         assert_eq!(
             Envelope::try_from(&headers).unwrap(),
