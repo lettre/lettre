@@ -92,7 +92,7 @@ impl Default for SinglePartBuilder {
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
-///     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+///     .header(header::ContentType::parse("text/plain; charset=utf8")?)
 ///     .body(String::from("Текст письма в уникоде"));
 /// # Ok(())
 /// # }

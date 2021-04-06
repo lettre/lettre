@@ -75,12 +75,12 @@
 //!         MultiPart::alternative()
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                     .header(header::ContentType::parse("text/plain; charset=utf8")?)
 //!                     .body(String::from("Hello, world! :)")),
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
+//!                     .header(header::ContentType::parse("text/html; charset=utf8")?)
 //!                     .body(String::from(
 //!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
 //!                     )),
@@ -146,26 +146,27 @@
 //!                 MultiPart::alternative()
 //!                     .singlepart(
 //!                         SinglePart::builder()
-//!                             .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                             .header(header::ContentType::parse("text/plain; charset=utf8")?)
 //!                             .body(String::from("Hello, world! :)")),
 //!                     )
 //!                     .multipart(
 //!                         MultiPart::related()
 //!                             .singlepart(
 //!                                 SinglePart::builder()
-//!                                     .header(header::ContentType(
-//!                                         "text/html; charset=utf8".parse()?,
-//!                                     ))
+//!                                     .header(header::ContentType::parse(
+//!                                         "text/html; charset=utf8"
+//!                                         )?,
+//!                                     )
 //!                                     .body(String::from(
 //!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
 //!                                     )),
 //!                             )
 //!                             .singlepart(
 //!                                 SinglePart::builder()
-//!                                     .header(header::ContentType("image/png".parse()?))
+//!                                     .header(header::ContentType::parse("image/png")?)
 //!                                     .header(header::ContentDisposition {
 //!                                         disposition: header::DispositionType::Inline,
-//!                                         parameters: vec![],
+//!                                         file_name: None,
 //!                                     })
 //!                                     .header(header::ContentId::from(String::from("<123>")))
 //!                                     .body(image_body),
@@ -174,14 +175,10 @@
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                     .header(header::ContentType::parse("text/plain; charset=utf8")?)
 //!                     .header(header::ContentDisposition {
 //!                         disposition: header::DispositionType::Attachment,
-//!                         parameters: vec![header::DispositionParam::Filename(
-//!                             header::Charset::Ext("utf-8".into()),
-//!                             None,
-//!                             "example.rs".as_bytes().into(),
-//!                         )],
+//!                         file_name: Some("example.rs".to_string()),
 //!                     })
 //!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
 //!             ),
