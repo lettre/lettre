@@ -29,16 +29,12 @@ fn main() {
             MultiPart::alternative() // This is composed of two parts.
                 .singlepart(
                     SinglePart::builder()
-                        .header(header::ContentType(
-                            "text/plain; charset=utf8".parse().unwrap(),
-                        ))
+                        .header(header::ContentType::PLAIN_STRING)
                         .body(String::from("Hello from Lettre! A mailer library for Rust")), // Every message should have a plain text fallback.
                 )
                 .singlepart(
                     SinglePart::builder()
-                        .header(header::ContentType(
-                            "text/html; charset=utf8".parse().unwrap(),
-                        ))
+                        .header(header::ContentType::HTML_STRING)
                         .body(String::from(html)),
                 ),
         )
