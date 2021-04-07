@@ -495,14 +495,7 @@ mod test {
                     .header(header::ContentType(
                         "text/plain; charset=utf8".parse().unwrap(),
                     ))
-                    .header(header::ContentDisposition {
-                        disposition: header::DispositionType::Attachment,
-                        parameters: vec![header::DispositionParam::Filename(
-                            header::Charset::Ext("utf-8".into()),
-                            None,
-                            "example.c".into(),
-                        )],
-                    })
+                    .header(header::ContentDisposition::attachment("example.c"))
                     .header(header::ContentTransferEncoding::Binary)
                     .body(String::from("int main() { return 0; }")),
             );
@@ -542,14 +535,9 @@ mod test {
                             .parse()
                             .unwrap(),
                     ))
-                    .header(header::ContentDisposition {
-                        disposition: header::DispositionType::Inline,
-                        parameters: vec![header::DispositionParam::Filename(
-                            header::Charset::Ext("utf-8".into()),
-                            None,
-                            "encrypted.asc".into(),
-                        )],
-                    })
+                    .header(header::ContentDisposition::inline_with_name(
+                        "encrypted.asc",
+                    ))
                     .body(String::from(concat!(
                         "-----BEGIN PGP MESSAGE-----\r\n",
                         "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
@@ -599,14 +587,7 @@ mod test {
                         .parse()
                         .unwrap(),
                 ))
-                .header(header::ContentDisposition {
-                    disposition: header::DispositionType::Attachment,
-                    parameters: vec![header::DispositionParam::Filename(
-                        header::Charset::Ext("utf-8".into()),
-                        None,
-                        "signature.asc".into(),
-                    )],
-                })
+                .header(header::ContentDisposition::attachment("signature.asc"))
                 .body(String::from(concat!(
                     "-----BEGIN PGP SIGNATURE-----\r\n",
                     "\r\n",
@@ -692,10 +673,7 @@ mod test {
                                              .body(String::from("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))))
             .singlepart(SinglePart::builder()
                              .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
-                             .header(header::ContentDisposition {
-                                 disposition: header::DispositionType::Attachment,
-                                 parameters: vec![header::DispositionParam::Filename(header::Charset::Ext("utf-8".into()), None, "example.c".into())]
-                             })
+                             .header(header::ContentDisposition::attachment("example.c"))
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("int main() { return 0; }")));
 

@@ -163,10 +163,7 @@
 //!                             .singlepart(
 //!                                 SinglePart::builder()
 //!                                     .header(header::ContentType("image/png".parse()?))
-//!                                     .header(header::ContentDisposition {
-//!                                         disposition: header::DispositionType::Inline,
-//!                                         parameters: vec![],
-//!                                     })
+//!                                     .header(header::ContentDisposition::inline())
 //!                                     .header(header::ContentId::from(String::from("<123>")))
 //!                                     .body(image_body),
 //!                             ),
@@ -175,14 +172,7 @@
 //!             .singlepart(
 //!                 SinglePart::builder()
 //!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                     .header(header::ContentDisposition {
-//!                         disposition: header::DispositionType::Attachment,
-//!                         parameters: vec![header::DispositionParam::Filename(
-//!                             header::Charset::Ext("utf-8".into()),
-//!                             None,
-//!                             "example.rs".as_bytes().into(),
-//!                         )],
-//!                     })
+//!                     .header(header::ContentDisposition::attachment("example.rs"))
 //!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
 //!             ),
 //!     )?;
@@ -639,10 +629,7 @@ mod test {
                     .singlepart(
                         SinglePart::builder()
                             .header(header::ContentType("image/png".parse().unwrap()))
-                            .header(header::ContentDisposition {
-                                disposition: header::DispositionType::Inline,
-                                parameters: vec![],
-                            })
+                            .header(header::ContentDisposition::inline())
                             .header(header::ContentId::from(String::from("<123>")))
                             .body(img),
                     ),
