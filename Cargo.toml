@@ -24,7 +24,6 @@ tracing = { version = "0.1.16", default-features = false, features = ["std"], op
 # builder
 hyperx = { version = "1", optional = true, features = ["headers"] }
 mime = { version = "0.3.4", optional = true }
-uuid = { version = "0.8", features = ["v4"] }
 fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
@@ -32,6 +31,7 @@ once_cell = "1"
 regex = { version = "1", default-features = false, features = ["std", "unicode-case"] }
 
 # file transport
+uuid = { version = "0.8", features = ["v4"], optional = true }
 serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 
@@ -84,7 +84,7 @@ default = ["smtp-transport", "native-tls", "hostname", "r2d2", "builder"]
 builder = ["mime", "base64", "hyperx", "fastrand", "quoted_printable"]
 
 # transports
-file-transport = []
+file-transport = ["uuid"]
 file-transport-envelope = ["serde", "serde_json", "file-transport"]
 sendmail-transport = []
 smtp-transport = ["base64", "nom"]
