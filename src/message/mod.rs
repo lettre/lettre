@@ -250,9 +250,7 @@ mod mailbox;
 mod mimebody;
 mod utf8_b;
 
-use std::{convert::TryFrom, io::Write, time::SystemTime};
-
-use uuid::Uuid;
+use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
 use crate::{
     address::Envelope,
@@ -412,7 +410,7 @@ impl MessageBuilder {
 
                 self.header(header::MessageId::from(
                     // https://tools.ietf.org/html/rfc5322#section-3.6.4
-                    format!("<{}@{}>", Uuid::new_v4(), hostname),
+                    format!("<{}@{}>", make_message_id(), hostname),
                 ))
             }
         }
@@ -552,11 +550,17 @@ impl Default for MessageBuilder {
     }
 }
 
+/// Create a random message id.
+/// (Not cryptographically random)
+fn make_message_id() -> String {
+    iter::repeat_with(fastrand::alphanumeric).take(36).collect()
+}
+
 #[cfg(test)]
 mod test {
     use std::time::{Duration, SystemTime};
 
-    use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
+    use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
     #[test]
     fn email_missing_originator() {
@@ -663,6 +667,22 @@ mod test {
             }
 
             assert_eq!(line.0, line.1)
+        }
+    }
+
+    #[test]
+    fn test_make_message_id() {
+        let mut ids = std::collections::HashSet::with_capacity(10);
+        for _ in 0..1000 {
+            ids.insert(make_message_id());
+        }
+
+        // Ensure there are no duplicates
+        assert_eq!(1000, ids.len());
+
+        // Ensure correct length
+        for id in ids {
+            assert_eq!(36, id.len());
         }
     }
 }
