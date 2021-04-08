@@ -94,7 +94,7 @@ impl Default for SinglePartBuilder {
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
-///     .header(header::ContentType::PLAIN_STRING)
+///     .header(header::ContentType::TEXT_PLAIN)
 ///     .body(String::from("Текст письма в уникоде"));
 /// # Ok(())
 /// # }
@@ -416,7 +416,7 @@ mod test {
     #[test]
     fn single_part_binary() {
         let part = SinglePart::builder()
-            .header(header::ContentType::PLAIN_STRING)
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::Binary)
             .body(String::from("Текст письма в уникоде"));
 
@@ -434,7 +434,7 @@ mod test {
     #[test]
     fn single_part_quoted_printable() {
         let part = SinglePart::builder()
-            .header(header::ContentType::PLAIN_STRING)
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::QuotedPrintable)
             .body(String::from("Текст письма в уникоде"));
 
@@ -453,7 +453,7 @@ mod test {
     #[test]
     fn single_part_base64() {
         let part = SinglePart::builder()
-            .header(header::ContentType::PLAIN_STRING)
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::Base64)
             .body(String::from("Текст письма в уникоде"));
 
@@ -474,13 +474,13 @@ mod test {
             .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
             .part(Part::Single(
                 SinglePart::builder()
-                    .header(header::ContentType::PLAIN_STRING)
+                    .header(header::ContentType::TEXT_PLAIN)
                     .header(header::ContentTransferEncoding::Binary)
                     .body(String::from("Текст письма в уникоде")),
             ))
             .singlepart(
                 SinglePart::builder()
-                    .header(header::ContentType::PLAIN_STRING)
+                    .header(header::ContentType::TEXT_PLAIN)
                     .header(header::ContentDisposition {
                         disposition: header::DispositionType::Attachment,
                         parameters: vec![header::DispositionParam::Filename(
@@ -572,7 +572,7 @@ mod test {
         .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
         .part(Part::Single(
             SinglePart::builder()
-                .header(header::ContentType::PLAIN_STRING)
+                .header(header::ContentType::TEXT_PLAIN)
                 .body(String::from("Test email for signature")),
         ))
         .singlepart(
@@ -632,11 +632,11 @@ mod test {
         let part = MultiPart::alternative()
             .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
             .part(Part::Single(SinglePart::builder()
-                             .header(header::ContentType::PLAIN_STRING)
+                             .header(header::ContentType::TEXT_PLAIN)
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("Текст письма в уникоде"))))
             .singlepart(SinglePart::builder()
-                             .header(header::ContentType::HTML_STRING)
+                             .header(header::ContentType::TEXT_HTML)
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
@@ -664,7 +664,7 @@ mod test {
             .multipart(MultiPart::related()
                             .boundary("E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh")
                             .singlepart(SinglePart::builder()
-                                             .header(header::ContentType::HTML_STRING)
+                                             .header(header::ContentType::TEXT_HTML)
                                              .header(header::ContentTransferEncoding::Binary)
                                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")))
                             .singlepart(SinglePart::builder()
@@ -673,7 +673,7 @@ mod test {
                                              .header(header::ContentTransferEncoding::Base64)
                                              .body(String::from("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))))
             .singlepart(SinglePart::builder()
-                             .header(header::ContentType::PLAIN_STRING)
+                             .header(header::ContentType::TEXT_PLAIN)
                              .header(header::ContentDisposition {
                                  disposition: header::DispositionType::Attachment,
                                  parameters: vec![header::DispositionParam::Filename(header::Charset::Ext("utf-8".into()), None, "example.c".into())]

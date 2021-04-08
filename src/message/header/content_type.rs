@@ -18,10 +18,14 @@ pub struct ContentType(Mime);
 
 impl ContentType {
     /// A `ContentType` of type `text/plain; charset=utf-8`
-    pub const PLAIN_STRING: ContentType = Self::from_mime(mime::TEXT_PLAIN_UTF_8);
+    ///
+    /// Indicates that the body is in utf-8 encoded plain text.
+    pub const TEXT_PLAIN: ContentType = Self::from_mime(mime::TEXT_PLAIN_UTF_8);
 
     /// A `ContentType` of type `text/html; charset=utf-8`
-    pub const HTML_STRING: ContentType = Self::from_mime(mime::TEXT_HTML_UTF_8);
+    ///
+    /// Indicates that the body is in utf-8 encoded html.
+    pub const TEXT_HTML: ContentType = Self::from_mime(mime::TEXT_HTML_UTF_8);
 
     /// Parse `s` into `ContentType`
     pub fn parse(s: &str) -> Result<ContentType, ContentTypeErr> {
@@ -93,14 +97,14 @@ mod test {
     fn format_content_type() {
         let mut headers = Headers::new();
 
-        headers.set(ContentType::PLAIN_STRING);
+        headers.set(ContentType::TEXT_PLAIN);
 
         assert_eq!(
             format!("{}", headers),
             "Content-Type: text/plain; charset=utf-8\r\n"
         );
 
-        headers.set(ContentType::HTML_STRING);
+        headers.set(ContentType::TEXT_HTML);
 
         assert_eq!(
             format!("{}", headers),
@@ -114,16 +118,10 @@ mod test {
 
         headers.set_raw("Content-Type", "text/plain; charset=utf-8");
 
-        assert_eq!(
-            headers.get::<ContentType>(),
-            Some(&ContentType::PLAIN_STRING)
-        );
+        assert_eq!(headers.get::<ContentType>(), Some(&ContentType::TEXT_PLAIN));
 
         headers.set_raw("Content-Type", "text/html; charset=utf-8");
 
-        assert_eq!(
-            headers.get::<ContentType>(),
-            Some(&ContentType::HTML_STRING)
-        );
+        assert_eq!(headers.get::<ContentType>(), Some(&ContentType::TEXT_HTML));
     }
 }

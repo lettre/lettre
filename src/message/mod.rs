@@ -75,12 +75,12 @@
 //!         MultiPart::alternative()
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType::PLAIN_STRING)
+//!                     .header(header::ContentType::TEXT_PLAIN)
 //!                     .body(String::from("Hello, world! :)")),
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType::HTML_STRING)
+//!                     .header(header::ContentType::TEXT_HTML)
 //!                     .body(String::from(
 //!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
 //!                     )),
@@ -146,14 +146,14 @@
 //!                 MultiPart::alternative()
 //!                     .singlepart(
 //!                         SinglePart::builder()
-//!                             .header(header::ContentType::PLAIN_STRING)
+//!                             .header(header::ContentType::TEXT_PLAIN)
 //!                             .body(String::from("Hello, world! :)")),
 //!                     )
 //!                     .multipart(
 //!                         MultiPart::related()
 //!                             .singlepart(
 //!                                 SinglePart::builder()
-//!                                     .header(header::ContentType::HTML_STRING)
+//!                                     .header(header::ContentType::TEXT_HTML)
 //!                                     .body(String::from(
 //!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
 //!                                     )),
@@ -172,7 +172,7 @@
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType::PLAIN_STRING)
+//!                     .header(header::ContentType::TEXT_PLAIN)
 //!                     .header(header::ContentDisposition {
 //!                         disposition: header::DispositionType::Attachment,
 //!                         parameters: vec![header::DispositionParam::Filename(
@@ -633,7 +633,7 @@ mod test {
                 MultiPart::related()
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType::HTML_STRING)
+                            .header(header::ContentType::TEXT_HTML)
                             .body(String::from(
                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
                             )),
