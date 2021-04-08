@@ -75,12 +75,12 @@
 //!         MultiPart::alternative()
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                     .header(header::ContentType::TEXT_PLAIN)
 //!                     .body(String::from("Hello, world! :)")),
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
+//!                     .header(header::ContentType::TEXT_HTML)
 //!                     .body(String::from(
 //!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
 //!                     )),
@@ -146,23 +146,21 @@
 //!                 MultiPart::alternative()
 //!                     .singlepart(
 //!                         SinglePart::builder()
-//!                             .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                             .header(header::ContentType::TEXT_PLAIN)
 //!                             .body(String::from("Hello, world! :)")),
 //!                     )
 //!                     .multipart(
 //!                         MultiPart::related()
 //!                             .singlepart(
 //!                                 SinglePart::builder()
-//!                                     .header(header::ContentType(
-//!                                         "text/html; charset=utf8".parse()?,
-//!                                     ))
+//!                                     .header(header::ContentType::TEXT_HTML)
 //!                                     .body(String::from(
 //!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
 //!                                     )),
 //!                             )
 //!                             .singlepart(
 //!                                 SinglePart::builder()
-//!                                     .header(header::ContentType("image/png".parse()?))
+//!                                     .header(header::ContentType::parse("image/png")?)
 //!                                     .header(header::ContentDisposition::inline())
 //!                                     .header(header::ContentId::from(String::from("<123>")))
 //!                                     .body(image_body),
@@ -171,7 +169,7 @@
 //!             )
 //!             .singlepart(
 //!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+//!                     .header(header::ContentType::TEXT_PLAIN)
 //!                     .header(header::ContentDisposition::attachment("example.rs"))
 //!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
 //!             ),
@@ -232,21 +230,17 @@ pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
 
-pub use mime;
-
 mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
 mod utf8_b;
 
-use std::{convert::TryFrom, io::Write, time::SystemTime};
-
-use uuid::Uuid;
+use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
 use crate::{
     address::Envelope,
-    message::header::{ContentTransferEncoding, EmailDate, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
     Error as EmailError,
 };
 
@@ -292,16 +286,16 @@ impl MessageBuilder {
 
     /// Add `Date` header to message
     ///
-    /// Shortcut for `self.header(header::Date(date))`.
-    pub fn date(self, date: EmailDate) -> Self {
-        self.header(header::Date(date))
+    /// Shortcut for `self.header(header::Date::new(st))`.
+    pub fn date(self, st: SystemTime) -> Self {
+        self.header(header::Date::new(st))
     }
 
     /// Set `Date` header using current date/time
     ///
     /// Shortcut for `self.date(SystemTime::now())`.
     pub fn date_now(self) -> Self {
-        self.date(SystemTime::now().into())
+        self.date(SystemTime::now())
     }
 
     /// Set `Subject` header to message
@@ -402,7 +396,7 @@ impl MessageBuilder {
 
                 self.header(header::MessageId::from(
                     // https://tools.ietf.org/html/rfc5322#section-3.6.4
-                    format!("<{}@{}>", Uuid::new_v4(), hostname),
+                    format!("<{}@{}>", make_message_id(), hostname),
                 ))
             }
         }
@@ -542,9 +536,17 @@ impl Default for MessageBuilder {
     }
 }
 
+/// Create a random message id.
+/// (Not cryptographically random)
+fn make_message_id() -> String {
+    iter::repeat_with(fastrand::alphanumeric).take(36).collect()
+}
+
 #[cfg(test)]
 mod test {
-    use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
+    use std::time::{Duration, SystemTime};
+
+    use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
     #[test]
     fn email_missing_originator() {
@@ -573,7 +575,8 @@ mod test {
 
     #[test]
     fn email_message() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
 
         let email = Message::builder()
             .date(date)
@@ -594,7 +597,7 @@ mod test {
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: Pony O.P. <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
@@ -607,7 +610,8 @@ mod test {
 
     #[test]
     fn email_with_png() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
         let img = std::fs::read("./docs/lettre.png").unwrap();
         let m = Message::builder()
             .date(date)
@@ -619,16 +623,14 @@ mod test {
                 MultiPart::related()
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType(
-                                "text/html; charset=utf8".parse().unwrap(),
-                            ))
+                            .header(header::ContentType::TEXT_HTML)
                             .body(String::from(
                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
                             )),
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType("image/png".parse().unwrap()))
+                            .header(header::ContentType::parse("image/png").unwrap())
                             .header(header::ContentDisposition::inline())
                             .header(header::ContentId::from(String::from("<123>")))
                             .body(img),
@@ -646,6 +648,22 @@ mod test {
             }
 
             assert_eq!(line.0, line.1)
+        }
+    }
+
+    #[test]
+    fn test_make_message_id() {
+        let mut ids = std::collections::HashSet::with_capacity(10);
+        for _ in 0..1000 {
+            ids.insert(make_message_id());
+        }
+
+        // Ensure there are no duplicates
+        assert_eq!(1000, ids.len());
+
+        // Ensure correct length
+        for id in ids {
+            assert_eq!(36, id.len());
         }
     }
 }
