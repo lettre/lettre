@@ -88,6 +88,11 @@ text_header! {
     /// defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
     Header(ContentId, "Content-ID")
 }
+text_header! {
+    /// `Content-Location` header,
+    /// defined in [RFC2110](https://tools.ietf.org/html/rfc2110#section-4.3)
+    Header(ContentLocation, "Content-Location")
+}
 
 fn parse_text(raw: &[u8]) -> HyperResult<String> {
     if let Ok(src) = from_utf8(raw) {
