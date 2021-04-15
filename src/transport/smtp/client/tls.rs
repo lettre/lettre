@@ -24,12 +24,15 @@ pub enum Tls {
     None,
     /// Start with insecure connection and use `STARTTLS` when available
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Opportunistic(TlsParameters),
     /// Start with insecure connection and require `STARTTLS`
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Required(TlsParameters),
     /// Use TLS wrapped connection
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Wrapper(TlsParameters),
 }
 
