@@ -1,10 +1,9 @@
-use std::{fmt::Result as FmtResult, str::from_utf8, time::SystemTime};
+use std::time::SystemTime;
 
 use httpdate::HttpDate;
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
+
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 /// Message `Date` header
 ///
@@ -27,36 +26,24 @@ impl Date {
 }
 
 impl Header for Date {
-    fn header_name() -> &'static str {
-        "Date"
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_str("Date")
     }
 
-    // FIXME HeaderError->HeaderError, same for result
-    fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
-    where
-        T: RawLike<'a>,
-        Self: Sized,
-    {
-        raw.one()
-            .ok_or(HeaderError::Header)
-            .and_then(|r| from_utf8(r).map_err(|_| HeaderError::Header))
-            .and_then(|s| {
-                let mut s = String::from(s);
-                if s.ends_with(" -0000") {
-                    // The httpdate crate expects the `Date` to end in ` GMT`, but email
-                    // uses `-0000`, so we crudely fix this issue here.
+    fn parse(s: &str) -> Result<Self, BoxError> {
+        let mut s = String::from(s);
+        if s.ends_with(" -0000") {
+            // The httpdate crate expects the `Date` to end in ` GMT`, but email
+            // uses `-0000`, so we crudely fix this issue here.
 
-                    s.truncate(s.len() - "-0000".len());
-                    s.push_str("GMT");
-                }
+            s.truncate(s.len() - "-0000".len());
+            s.push_str("GMT");
+        }
 
-                s.parse::<HttpDate>()
-                    .map(Self)
-                    .map_err(|_| HeaderError::Header)
-            })
+        Ok(Self(s.parse::<HttpDate>()?))
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
+    fn display(&self) -> String {
         let mut s = self.0.to_string();
         if s.ends_with(" GMT") {
             // The httpdate crate always appends ` GMT` to the end of the string,
@@ -67,7 +54,7 @@ impl Header for Date {
             s.push_str("-0000");
         }
 
-        f.fmt_line(&s)
+        s
     }
 }
 
@@ -85,10 +72,10 @@ impl From<Date> for SystemTime {
 
 #[cfg(test)]
 mod test {
-    use hyperx::header::Headers;
     use std::time::{Duration, SystemTime};
 
     use super::Date;
+    use crate::message::header::Headers;
 
     #[test]
     fn format_date() {

@@ -1,12 +1,6 @@
-use crate::message::{
-    mailbox::{Mailbox, Mailboxes},
-    utf8_b,
-};
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
-use std::{fmt::Result as FmtResult, slice::Iter, str::from_utf8};
+use super::{Header, HeaderName};
+use crate::message::mailbox::{Mailbox, Mailboxes};
+use crate::BoxError;
 
 /// Header which can contains multiple mailboxes
 pub trait MailboxesHeader {
@@ -20,23 +14,17 @@ macro_rules! mailbox_header {
         pub struct $type_name(Mailbox);
 
         impl Header for $type_name {
-            fn header_name() -> &'static str {
-                $header_name
+            fn name() -> HeaderName {
+                HeaderName::new_from_ascii_str($header_name)
             }
 
-            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self> where
-    T: RawLike<'a>,
-    Self: Sized {
-                raw.one()
-                    .ok_or(HeaderError::Header)
-                    .and_then(parse_mailboxes)
-                    .and_then(|mbs| {
-                        mbs.into_single().ok_or(HeaderError::Header)
-                    }).map($type_name)
+            fn parse(s: &str) -> Result<Self, BoxError> {
+                let mailbox: Mailbox = s.parse()?;
+                Ok(Self(mailbox))
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-                f.fmt_line(&self.0.recode_name(utf8_b::encode))
+            fn display(&self) -> String {
+                self.0.to_string()
             }
         }
 
@@ -69,23 +57,17 @@ macro_rules! mailboxes_header {
         }
 
         impl Header for $type_name {
-            fn header_name() -> &'static str {
-                $header_name
+            fn name() -> HeaderName {
+                HeaderName::new_from_ascii_str($header_name)
             }
 
-            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<$type_name>
-            where
-                T: RawLike<'a>,
-                Self: Sized,
-            {
-                raw.one()
-                    .ok_or(HeaderError::Header)
-                    .and_then(parse_mailboxes)
-                    .map($type_name)
+            fn parse(s: &str) -> Result<Self, BoxError> {
+                let mailbox: Mailboxes = s.parse()?;
+                Ok(Self(mailbox))
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-                format_mailboxes(self.0.iter(), f)
+            fn display(&self) -> String {
+                self.0.to_string()
             }
         }
 
@@ -174,26 +156,10 @@ mailboxes_header! {
     (Bcc, "Bcc")
 }
 
-fn parse_mailboxes(raw: &[u8]) -> HyperResult<Mailboxes> {
-    if let Ok(src) = from_utf8(raw) {
-        if let Ok(mbs) = src.parse() {
-            return Ok(mbs);
-        }
-    }
-    Err(HeaderError::Header)
-}
-
-fn format_mailboxes<'a>(mbs: Iter<'a, Mailbox>, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-    f.fmt_line(&Mailboxes::from(
-        mbs.map(|mb| mb.recode_name(utf8_b::encode))
-            .collect::<Vec<_>>(),
-    ))
-}
-
 #[cfg(test)]
 mod test {
     use super::{From, Mailbox, Mailboxes};
-    use hyperx::header::Headers;
+    use crate::message::header::Headers;
 
     #[test]
     fn format_single_without_name() {

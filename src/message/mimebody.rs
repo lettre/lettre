@@ -66,7 +66,7 @@ impl SinglePartBuilder {
 
     /// Build singlepart using body
     pub fn body<T: IntoBody>(mut self, body: T) -> SinglePart {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());

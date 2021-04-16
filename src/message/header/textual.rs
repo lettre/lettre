@@ -1,34 +1,23 @@
-use crate::message::utf8_b;
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
-use std::{fmt::Result as FmtResult, str::from_utf8};
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 macro_rules! text_header {
     ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
-        #[derive(Debug, Clone, PartialEq)]
         $(#[$attr])*
+        #[derive(Debug, Clone, PartialEq)]
         pub struct $type_name(String);
 
         impl Header for $type_name {
-            fn header_name() -> &'static str {
-                $header_name
+            fn name() -> HeaderName {
+                HeaderName::new_from_ascii_str($header_name)
             }
 
-            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<$type_name>
-            where
-                T: RawLike<'a>,
-                Self: Sized,
-            {
-                raw.one()
-                    .ok_or(HeaderError::Header)
-                    .and_then(parse_text)
-                    .map($type_name)
+            fn parse(s: &str) -> Result<Self, BoxError> {
+                Ok(Self(s.into()))
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-                fmt_text(&self.0, f)
+            fn display(&self) -> String {
+                self.0.clone()
             }
         }
 
@@ -94,23 +83,10 @@ text_header! {
     Header(ContentLocation, "Content-Location")
 }
 
-fn parse_text(raw: &[u8]) -> HyperResult<String> {
-    if let Ok(src) = from_utf8(raw) {
-        if let Some(txt) = utf8_b::decode(src) {
-            return Ok(txt);
-        }
-    }
-    Err(HeaderError::Header)
-}
-
-fn fmt_text(s: &str, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-    f.fmt_line(&utf8_b::encode(s))
-}
-
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use hyperx::header::Headers;
+    use crate::message::header::Headers;
 
     #[test]
     fn format_ascii() {

@@ -66,14 +66,6 @@ impl Mailbox {
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
     }
-
-    /// Encode addressee name using function
-    pub(crate) fn recode_name<F>(&self, f: F) -> Self
-    where
-        F: FnOnce(&str) -> String,
-    {
-        Mailbox::new(self.name.clone().map(|s| f(&s)), self.email.clone())
-    }
 }
 
 impl Display for Mailbox {

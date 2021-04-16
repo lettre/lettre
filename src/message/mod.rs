@@ -275,12 +275,13 @@ impl MessageBuilder {
     }
 
     /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(mut self, header: H) -> Self {
-        if self.headers.has::<H>() {
-            self.headers.get_mut::<H>().unwrap().join_mailboxes(header);
-            self
-        } else {
-            self.header(header)
+    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
+        match self.headers.get::<H>() {
+            Some(mut header_) => {
+                header_.join_mailboxes(header);
+                self.header(header_)
+            }
+            None => self.header(header),
         }
     }
 
@@ -458,7 +459,7 @@ impl MessageBuilder {
     /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
     /// for `body`.
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());

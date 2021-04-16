@@ -1,14 +1,13 @@
 use std::{
     error::Error as StdError,
-    fmt::{self, Display, Result as FmtResult},
-    str::{from_utf8, FromStr},
+    fmt::{self, Display},
+    str::FromStr,
 };
 
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
 use mime::Mime;
+
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 /// `Content-Type` of the body
 ///
@@ -42,24 +41,16 @@ impl ContentType {
 }
 
 impl Header for ContentType {
-    fn header_name() -> &'static str {
-        "Content-Type"
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_str("Content-Type")
     }
 
-    // FIXME HeaderError->HeaderError, same for result
-    fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
-    where
-        T: RawLike<'a>,
-        Self: Sized,
-    {
-        raw.one()
-            .ok_or(HeaderError::Header)
-            .and_then(|r| from_utf8(r).map_err(|_| HeaderError::Header))
-            .and_then(|s| s.parse::<Mime>().map(Self).map_err(|_| HeaderError::Header))
+    fn parse(s: &str) -> Result<Self, BoxError> {
+        Ok(Self(s.parse()?))
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-        f.fmt_line(&self.0)
+    fn display(&self) -> String {
+        self.0.to_string()
     }
 }
 
@@ -89,9 +80,8 @@ impl Display for ContentTypeErr {
 
 #[cfg(test)]
 mod test {
-    use hyperx::header::Headers;
-
     use super::ContentType;
+    use crate::message::header::Headers;
 
     #[test]
     fn format_content_type() {
