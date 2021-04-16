@@ -127,7 +127,7 @@ impl Display for Headers {
         for (name, value) in &self.headers {
             Display::fmt(name, f)?;
             f.write_str(": ")?;
-            Display::fmt(value, f)?;
+            HeaderValueEncoder::encode(&name, &value, f)?;
             f.write_str("\r\n")?;
         }
 
@@ -218,4 +218,255 @@ impl PartialEq<HeaderName> for &str {
         let s: &str = other.as_ref();
         *self == s
     }
+}
+
+const ENCODING_START_PREFIX: &str = "=?utf-8?b?";
+const ENCODING_END_SUFFIX: &str = "?=";
+const MAX_LINE_LEN: usize = 76;
+
+/// [RFC 1522](https://tools.ietf.org/html/rfc1522) header value encoder
+struct HeaderValueEncoder {
+    line_len: usize,
+    encode_buf: String,
+}
+
+impl HeaderValueEncoder {
+    fn encode(name: &str, value: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (words_iter, encoder) = Self::new(name, value);
+        encoder.format(words_iter, f)
+    }
+
+    fn new<'a>(name: &str, value: &'a str) -> (WordsPlusFillIterator<'a>, Self) {
+        (
+            WordsPlusFillIterator { s: value },
+            Self {
+                line_len: name.len() + ": ".len(),
+                encode_buf: String::new(),
+            },
+        )
+    }
+
+    fn format(
+        mut self,
+        words_iter: WordsPlusFillIterator<'_>,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        /// Estimate if an encoded string of `len` would fix in an empty line
+        fn would_fit_new_line(len: usize) -> bool {
+            len < (MAX_LINE_LEN - " ".len())
+        }
+
+        /// Estimate how long a string of `len` would be after base64 encoding plus
+        /// adding the encoding prefix and suffix to it
+        fn base64_len(len: usize) -> usize {
+            ENCODING_START_PREFIX.len() + (len * 4 / 3 + 4) + ENCODING_END_SUFFIX.len()
+        }
+
+        /// Estimate how many more bytes we can fit in the current line
+        fn available_len_to_max_encode_len(len: usize) -> usize {
+            len.saturating_sub(
+                ENCODING_START_PREFIX.len() + (len * 3 / 4 + 4) + ENCODING_END_SUFFIX.len(),
+            )
+        }
+
+        for next_word in words_iter {
+            let allowed = allowed_str(next_word);
+
+            if allowed {
+                // This word only contains allowed characters
+
+                // the next word is allowed, but we may have accumulated some words to encode
+                self.flush_encode_buf(f, true)?;
+
+                if next_word.len() > self.remaining_line_len() {
+                    // not enough space left on this line to encode word
+
+                    if self.something_written_to_this_line() && would_fit_new_line(next_word.len())
+                    {
+                        // word doesn't fit this line, but something had already been written to it,
+                        // and word would fit the next line, so go to a new line
+                        // so go to new line
+                        self.new_line(f)?;
+                    } else {
+                        // word neither fits this line and the next one, cut it
+                        // in the middle and make it fit
+
+                        let mut next_word = next_word;
+
+                        while !next_word.is_empty() {
+                            if self.remaining_line_len() == 0 {
+                                self.new_line(f)?;
+                            }
+
+                            let len = self.remaining_line_len().min(next_word.len());
+                            let first_part = &next_word[..len];
+                            next_word = &next_word[len..];
+
+                            f.write_str(first_part)?;
+                            self.line_len += first_part.len();
+                        }
+
+                        continue;
+                    }
+                }
+
+                // word fits, write it!
+                f.write_str(next_word)?;
+                self.line_len += next_word.len();
+            } else {
+                // This word contains unallowed characters
+
+                if self.remaining_line_len() >= base64_len(self.encode_buf.len() + next_word.len())
+                {
+                    // next_word fits
+                    self.encode_buf.push_str(next_word);
+                    continue;
+                }
+
+                // next_word doesn't fit this line
+
+                if would_fit_new_line(base64_len(next_word.len())) {
+                    // ...but it would fit the next one
+
+                    self.flush_encode_buf(f, false)?;
+                    self.new_line(f)?;
+
+                    self.encode_buf.push_str(next_word);
+                    continue;
+                }
+
+                // ...and also wouldn't fit the next one.
+                // chop it up into pieces
+
+                let mut next_word = next_word;
+
+                while !next_word.is_empty() {
+                    if self.remaining_line_len() <= base64_len(1) {
+                        self.flush_encode_buf(f, false)?;
+                        self.new_line(f)?;
+                    }
+
+                    // FIXME: don't cut the string on a char boundary
+
+                    let len = available_len_to_max_encode_len(self.remaining_line_len())
+                        .min(next_word.len());
+                    let first_part = &next_word[..len];
+                    next_word = &next_word[len..];
+
+                    self.encode_buf.push_str(first_part);
+                }
+            }
+        }
+
+        self.flush_encode_buf(f, false)?;
+
+        Ok(())
+    }
+
+    /// Returns the number of bytes left for the current line
+    fn remaining_line_len(&self) -> usize {
+        MAX_LINE_LEN - self.line_len
+    }
+
+    /// Returns true if something has been written to the current line
+    fn something_written_to_this_line(&self) -> bool {
+        self.line_len > 1
+    }
+
+    fn flush_encode_buf(
+        &mut self,
+        f: &mut fmt::Formatter<'_>,
+        switching_to_allowed: bool,
+    ) -> fmt::Result {
+        use std::fmt::Write;
+
+        if self.encode_buf.is_empty() {
+            // nothing to encode
+            return Ok(());
+        }
+
+        let mut write_after = None;
+
+        if switching_to_allowed {
+            // If the next word only contains allowed characters, and the string to encode
+            // ends with a space, take the space out of the part to encode
+
+            let last_char = self.encode_buf.pop().expect("self.encode_buf isn't empty");
+            if is_space_like(last_char) {
+                write_after = Some(last_char);
+            } else {
+                self.encode_buf.push(last_char);
+            }
+        }
+
+        f.write_str(ENCODING_START_PREFIX)?;
+        let encoded = base64::display::Base64Display::with_config(
+            self.encode_buf.as_bytes(),
+            base64::STANDARD,
+        );
+        Display::fmt(&encoded, f)?;
+        f.write_str(ENCODING_END_SUFFIX)?;
+
+        self.line_len += ENCODING_START_PREFIX.len();
+        self.line_len += self.encode_buf.len() * 4 / 3 + 4;
+        self.line_len += ENCODING_END_SUFFIX.len();
+
+        if let Some(write_after) = write_after {
+            f.write_char(write_after)?;
+            self.line_len += 1;
+        }
+
+        self.encode_buf.clear();
+        Ok(())
+    }
+
+    fn new_line(&mut self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("\r\n ")?;
+        self.line_len = 1;
+
+        Ok(())
+    }
+}
+
+/// Iterator yielding a string split space by space, but including all space
+/// characters between it and the next word
+struct WordsPlusFillIterator<'a> {
+    s: &'a str,
+}
+
+impl<'a> Iterator for WordsPlusFillIterator<'a> {
+    type Item = &'a str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.s.is_empty() {
+            return None;
+        }
+
+        let next_word = self
+            .s
+            .char_indices()
+            .skip(1)
+            .skip_while(|&(_i, c)| !is_space_like(c))
+            .find(|&(_i, c)| !is_space_like(c))
+            .map(|(i, _)| i);
+
+        let word = &self.s[..next_word.unwrap_or_else(|| self.s.len())];
+        self.s = &self.s[word.len()..];
+        Some(word)
+    }
+}
+
+const fn is_space_like(c: char) -> bool {
+    c == ',' || c == ' '
+}
+
+fn allowed_str(s: &str) -> bool {
+    s.chars().all(allowed_char)
+}
+
+const fn allowed_char(c: char) -> bool {
+    c >= 1 as char && c <= 9 as char
+        || c == 11 as char
+        || c == 12 as char
+        || c >= 14 as char && c <= 127 as char
 }
