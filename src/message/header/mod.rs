@@ -470,3 +470,194 @@ const fn allowed_char(c: char) -> bool {
         || c == 12 as char
         || c >= 14 as char && c <= 127 as char
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{HeaderName, Headers};
+
+    // names taken randomly from https://it.wikipedia.org/wiki/Pinco_Pallino
+
+    #[test]
+    fn format_ascii() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "John Doe <example@example.com>, Jean Dupont <jean@example.com>".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            "To: John Doe <example@example.com>, Jean Dupont <jean@example.com>\r\n"
+        );
+    }
+
+    #[test]
+    fn format_ascii_with_folding() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand <jemand@example.com>, Jean Dupont <jean@example.com>".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "To: Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith \r\n",
+                " <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand \r\n",
+                " <jemand@example.com>, Jean Dupont <jean@example.com>\r\n"
+            )
+        );
+    }
+
+    #[test]
+    fn format_ascii_with_folding_long_line() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "Subject: Hello! This is lettre, and this \r\n ",
+                "IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I \r\n",
+                " guess that's it!\r\n"
+            )
+        );
+    }
+
+    #[test]
+    fn format_ascii_with_folding_very_long_line() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoYouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know".to_string()
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "Subject: Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoY\r\n",
+                " ouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn format_ascii_with_folding_giant_word() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijklmnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdefghijklmnopqrstuvwxyz".to_string()
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "Subject: 1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijkl\r\n",
+                " mnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdef\r\n",
+                " ghijklmnopqrstuvwxyz\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn format_special() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "Seán <sean@example.com>".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            "To: =?utf-8?b?U2XDoW4=?= <sean@example.com>\r\n"
+        );
+    }
+
+    #[test]
+    fn format_special_emoji() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "🌎 <world@example.com>".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            "To: =?utf-8?b?8J+Mjg==?= <world@example.com>\r\n"
+        );
+    }
+
+    #[test]
+    fn format_special_with_folding() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= \r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyIA==?=\r\n",
+                " =?utf-8?b?0JjQstCw0L0g0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, \r\n",
+                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n"
+            )
+        );
+    }
+
+    #[test]
+    fn format_bad_stuff() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Hello! \r\n This is \" bad \0. 👋".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            "Subject: Hello! =?utf-8?b?DQo=?= This is \" bad =?utf-8?b?AC4g8J+Riw==?=\r\n"
+        );
+    }
+
+    #[test]
+    fn format_everything() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
+        );
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("To"),
+            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+        );
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "Someone <somewhere@example.com>".to_string(),
+        );
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
+            "quoted-printable".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "Subject: Hello! This is lettre, and this \r\n",
+                " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I \r\n",
+                " guess that's it!\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= \r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyIA==?=\r\n",
+                " =?utf-8?b?0JjQstCw0L0g0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, \r\n",
+                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
+                "From: Someone <somewhere@example.com>\r\n",
+                "Content-Transfer-Encoding: quoted-printable\r\n",
+            )
+        );
+    }
+}
