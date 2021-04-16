@@ -120,18 +120,4 @@ mod test {
             Some(Subject("Sample subject".into()))
         );
     }
-
-    #[test]
-    fn parse_utf8() {
-        let mut headers = Headers::new();
-        headers.set_raw(
-            HeaderName::new_from_ascii_str("Subject"),
-            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=".to_string(),
-        );
-
-        assert_eq!(
-            headers.get::<Subject>(),
-            Some(Subject("Тема сообщения".into()))
-        );
-    }
 }
