@@ -346,10 +346,12 @@ impl HeaderValueEncoder {
                         self.new_line(f)?;
                     }
 
-                    // FIXME: don't cut the string on a char boundary
-
-                    let len = available_len_to_max_encode_len(self.remaining_line_len())
+                    let mut len = available_len_to_max_encode_len(self.remaining_line_len())
                         .min(next_word.len());
+                    // avoid slicing on a char boundary
+                    while !next_word.is_char_boundary(len) {
+                        len += 1;
+                    }
                     let first_part = &next_word[..len];
                     next_word = &next_word[len..];
 
@@ -607,6 +609,20 @@ mod tests {
                 " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, \r\n",
                 " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n"
             )
+        );
+    }
+
+    #[test]
+    fn format_slice_on_char_boundary_bug() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            "Subject: =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz?=\r\n"
         );
     }
 
