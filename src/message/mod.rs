@@ -226,6 +226,8 @@
 //! ```
 //! </details>
 
+use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+
 pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
@@ -234,9 +236,6 @@ mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
-mod utf8_b;
-
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
 use crate::{
     address::Envelope,

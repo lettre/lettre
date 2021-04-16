@@ -1,7 +1,4 @@
-use crate::{
-    address::{Address, AddressError},
-    message::utf8_b,
-};
+use crate::address::{Address, AddressError};
 use std::{
     convert::TryFrom,
     fmt::{Display, Formatter, Result as FmtResult, Write},
@@ -324,19 +321,7 @@ impl FromStr for Mailboxes {
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         src.split(',')
-            .map(|m| {
-                m.trim().parse().and_then(|Mailbox { name, email }| {
-                    if let Some(name) = name {
-                        if let Some(name) = utf8_b::decode(&name) {
-                            Ok(Mailbox::new(Some(name), email))
-                        } else {
-                            Err(AddressError::InvalidUtf8b)
-                        }
-                    } else {
-                        Ok(Mailbox::new(None, email))
-                    }
-                })
-            })
+            .map(|m| m.trim().parse())
             .collect::<Result<Vec<_>, _>>()
             .map(Mailboxes)
     }
