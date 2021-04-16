@@ -81,7 +81,7 @@ impl Display for ContentTypeErr {
 #[cfg(test)]
 mod test {
     use super::ContentType;
-    use crate::message::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_content_type() {
@@ -90,14 +90,14 @@ mod test {
         headers.set(ContentType::TEXT_PLAIN);
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "Content-Type: text/plain; charset=utf-8\r\n"
         );
 
         headers.set(ContentType::TEXT_HTML);
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "Content-Type: text/html; charset=utf-8\r\n"
         );
     }
@@ -106,12 +106,18 @@ mod test {
     fn parse_content_type() {
         let mut headers = Headers::new();
 
-        headers.set_raw("Content-Type", "text/plain; charset=utf-8");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Content-Type"),
+            "text/plain; charset=utf-8".to_string(),
+        );
 
-        assert_eq!(headers.get::<ContentType>(), Some(&ContentType::TEXT_PLAIN));
+        assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_PLAIN));
 
-        headers.set_raw("Content-Type", "text/html; charset=utf-8");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Content-Type"),
+            "text/html; charset=utf-8".to_string(),
+        );
 
-        assert_eq!(headers.get::<ContentType>(), Some(&ContentType::TEXT_HTML));
+        assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_HTML));
     }
 }

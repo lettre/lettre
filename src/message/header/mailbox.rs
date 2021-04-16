@@ -159,7 +159,7 @@ mailboxes_header! {
 #[cfg(test)]
 mod test {
     use super::{From, Mailbox, Mailboxes};
-    use crate::message::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_single_without_name() {
@@ -168,7 +168,7 @@ mod test {
         let mut headers = Headers::new();
         headers.set(From(from));
 
-        assert_eq!(format!("{}", headers), "From: kayo@example.com\r\n");
+        assert_eq!(headers.to_string(), "From: kayo@example.com\r\n");
     }
 
     #[test]
@@ -178,7 +178,7 @@ mod test {
         let mut headers = Headers::new();
         headers.set(From(from));
 
-        assert_eq!(format!("{}", headers), "From: K. <kayo@example.com>\r\n");
+        assert_eq!(headers.to_string(), "From: K. <kayo@example.com>\r\n");
     }
 
     #[test]
@@ -191,7 +191,7 @@ mod test {
         headers.set(From(from));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "From: kayo@example.com, pony@domain.tld\r\n"
         );
     }
@@ -207,7 +207,7 @@ mod test {
         headers.set(From(from.into()));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "From: K. <kayo@example.com>, Pony P. <pony@domain.tld>\r\n"
         );
     }
@@ -220,7 +220,7 @@ mod test {
         headers.set(From(from.into()));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "From: =?utf-8?b?0JrQsNC50L4=?= <kayo@example.com>\r\n"
         );
     }
@@ -230,9 +230,12 @@ mod test {
         let from = vec!["kayo@example.com".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.set_raw("From", "kayo@example.com");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "kayo@example.com".to_string(),
+        );
 
-        assert_eq!(headers.get::<From>(), Some(&From(from)));
+        assert_eq!(headers.get::<From>(), Some(From(from)));
     }
 
     #[test]
@@ -240,9 +243,12 @@ mod test {
         let from = vec!["K. <kayo@example.com>".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.set_raw("From", "K. <kayo@example.com>");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "K. <kayo@example.com>".to_string(),
+        );
 
-        assert_eq!(headers.get::<From>(), Some(&From(from)));
+        assert_eq!(headers.get::<From>(), Some(From(from)));
     }
 
     #[test]
@@ -253,9 +259,12 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.set_raw("From", "kayo@example.com, pony@domain.tld");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "kayo@example.com, pony@domain.tld".to_string(),
+        );
 
-        assert_eq!(headers.get::<From>(), Some(&From(from.into())));
+        assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
 
     #[test]
@@ -266,9 +275,12 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.set_raw("From", "K. <kayo@example.com>, Pony P. <pony@domain.tld>");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_string(),
+        );
 
-        assert_eq!(headers.get::<From>(), Some(&From(from.into())));
+        assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
 
     #[test]
@@ -276,8 +288,11 @@ mod test {
         let from: Vec<Mailbox> = vec!["Кайо <kayo@example.com>".parse().unwrap()];
 
         let mut headers = Headers::new();
-        headers.set_raw("From", "=?utf-8?b?0JrQsNC50L4=?= <kayo@example.com>");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("From"),
+            "=?utf-8?b?0JrQsNC50L4=?= <kayo@example.com>".to_string(),
+        );
 
-        assert_eq!(headers.get::<From>(), Some(&From(from.into())));
+        assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
 }

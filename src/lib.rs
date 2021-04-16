@@ -173,10 +173,11 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use super::*;
-    use crate::message::{header, Mailbox, Mailboxes};
-    use hyperx::header::Headers;
     use std::convert::TryFrom;
+
+    use super::*;
+    use crate::message::header::{HeaderName, Headers};
+    use crate::message::{header, Mailbox, Mailboxes};
 
     #[test]
     fn envelope_from_headers() {

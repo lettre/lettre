@@ -70,7 +70,7 @@ impl Default for ContentTransferEncoding {
 #[cfg(test)]
 mod test {
     use super::ContentTransferEncoding;
-    use crate::message::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_content_transfer_encoding() {
@@ -78,35 +78,35 @@ mod test {
 
         headers.set(ContentTransferEncoding::SevenBit);
 
-        assert_eq!(
-            format!("{}", headers),
-            "Content-Transfer-Encoding: 7bit\r\n"
-        );
+        assert_eq!(headers.to_string(), "Content-Transfer-Encoding: 7bit\r\n");
 
         headers.set(ContentTransferEncoding::Base64);
 
-        assert_eq!(
-            format!("{}", headers),
-            "Content-Transfer-Encoding: base64\r\n"
-        );
+        assert_eq!(headers.to_string(), "Content-Transfer-Encoding: base64\r\n");
     }
 
     #[test]
     fn parse_content_transfer_encoding() {
         let mut headers = Headers::new();
 
-        headers.set_raw("Content-Transfer-Encoding", "7bit");
-
-        assert_eq!(
-            headers.get::<ContentTransferEncoding>(),
-            Some(&ContentTransferEncoding::SevenBit)
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
+            "7bit".to_string(),
         );
 
-        headers.set_raw("Content-Transfer-Encoding", "base64");
+        assert_eq!(
+            headers.get::<ContentTransferEncoding>(),
+            Some(ContentTransferEncoding::SevenBit)
+        );
+
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
+            "base64".to_string(),
+        );
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),
-            Some(&ContentTransferEncoding::Base64)
+            Some(ContentTransferEncoding::Base64)
         );
     }
 }

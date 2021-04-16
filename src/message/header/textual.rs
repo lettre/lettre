@@ -86,14 +86,14 @@ text_header! {
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use crate::message::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_ascii() {
         let mut headers = Headers::new();
         headers.set(Subject("Sample subject".into()));
 
-        assert_eq!(format!("{}", headers), "Subject: Sample subject\r\n");
+        assert_eq!(headers.to_string(), "Subject: Sample subject\r\n");
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod test {
         headers.set(Subject("Тема сообщения".into()));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "Subject: =?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=\r\n"
         );
     }
@@ -110,11 +110,14 @@ mod test {
     #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
-        headers.set_raw("Subject", "Sample subject");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Sample subject".to_string(),
+        );
 
         assert_eq!(
             headers.get::<Subject>(),
-            Some(&Subject("Sample subject".into()))
+            Some(Subject("Sample subject".into()))
         );
     }
 
@@ -122,13 +125,13 @@ mod test {
     fn parse_utf8() {
         let mut headers = Headers::new();
         headers.set_raw(
-            "Subject",
-            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=",
+            HeaderName::new_from_ascii_str("Subject"),
+            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=".to_string(),
         );
 
         assert_eq!(
             headers.get::<Subject>(),
-            Some(&Subject("Тема сообщения".into()))
+            Some(Subject("Тема сообщения".into()))
         );
     }
 }

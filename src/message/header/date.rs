@@ -75,7 +75,7 @@ mod test {
     use std::time::{Duration, SystemTime};
 
     use super::Date;
-    use crate::message::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_date() {
@@ -87,8 +87,8 @@ mod test {
         ));
 
         assert_eq!(
-            format!("{}", headers),
-            "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n"
+            headers.to_string(),
+            "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n".to_string()
         );
 
         // Tue, 15 Nov 1994 08:12:32 GMT
@@ -97,7 +97,7 @@ mod test {
         ));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "Date: Tue, 15 Nov 1994 08:12:32 -0000\r\n"
         );
     }
@@ -106,20 +106,26 @@ mod test {
     fn parse_date() {
         let mut headers = Headers::new();
 
-        headers.set_raw("Date", "Tue, 15 Nov 1994 08:12:31 -0000");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Date"),
+            "Tue, 15 Nov 1994 08:12:31 -0000".to_string(),
+        );
 
         assert_eq!(
             headers.get::<Date>(),
-            Some(&Date::from(
+            Some(Date::from(
                 SystemTime::UNIX_EPOCH + Duration::from_secs(784887151),
             ))
         );
 
-        headers.set_raw("Date", "Tue, 15 Nov 1994 08:12:32 -0000");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Date"),
+            "Tue, 15 Nov 1994 08:12:32 -0000".to_string(),
+        );
 
         assert_eq!(
             headers.get::<Date>(),
-            Some(&Date::from(
+            Some(Date::from(
                 SystemTime::UNIX_EPOCH + Duration::from_secs(784887152),
             ))
         );
