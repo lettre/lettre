@@ -650,7 +650,7 @@ mod test {
                                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")))
                             .singlepart(SinglePart::builder()
                                              .header(header::ContentType::parse("image/png").unwrap())
-                                             .header(header::ContentLocation("/image.png".into()))
+                                             .header(header::ContentLocation::from(String::from("/image.png")))
                                              .header(header::ContentTransferEncoding::Base64)
                                              .body(String::from("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))))
             .singlepart(SinglePart::builder()
