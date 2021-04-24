@@ -1,8 +1,7 @@
 //! Headers widely used in email messages
 
 pub use hyperx::header::{
-    Charset, ContentDisposition, ContentLocation, DispositionParam, DispositionType, Header,
-    Headers,
+    Charset, ContentDisposition, DispositionParam, DispositionType, Header, Headers,
 };
 
 pub use self::content_type::{ContentType, ContentTypeErr};
