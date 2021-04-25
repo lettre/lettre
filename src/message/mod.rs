@@ -643,7 +643,7 @@ mod test {
         let expected = String::from_utf8(file_expected).unwrap();
 
         for (i, line) in output.lines().zip(expected.lines()).enumerate() {
-            if i == 6 || i == 8 || i == 13 || i == 232 {
+            if i == 7 || i == 9 || i == 14 || i == 233 {
                 continue;
             }
 

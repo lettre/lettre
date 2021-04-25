@@ -176,7 +176,7 @@ mod test {
     use std::convert::TryFrom;
 
     use super::*;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::Headers;
     use crate::message::{header, Mailbox, Mailboxes};
 
     #[test]
