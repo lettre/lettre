@@ -112,11 +112,11 @@ impl TryFrom<&Headers> for Envelope {
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let from = match headers.get::<header::Sender>() {
             // If there is a Sender, use it
-            Some(sender) => Some(Mailbox::from(sender.clone()).email),
+            Some(sender) => Some(Mailbox::from(sender).email),
             // ... else try From
             None => match headers.get::<header::From>() {
                 Some(header::From(a)) => {
-                    let from: Vec<Mailbox> = a.clone().into();
+                    let from: Vec<Mailbox> = a.into();
                     if from.len() > 1 {
                         return Err(Error::TooManyFrom);
                     }

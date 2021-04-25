@@ -431,7 +431,7 @@ impl MessageBuilder {
         // Fail is missing correct originator (Sender or From)
         match res.headers.get::<header::From>() {
             Some(header::From(f)) => {
-                let from: Vec<Mailbox> = f.clone().into();
+                let from: Vec<Mailbox> = f.into();
                 if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
                     return Err(EmailError::TooManyFrom);
                 }
