@@ -1,5 +1,7 @@
-use crate::message::header::{Header, HeaderName};
-use crate::BoxError;
+use crate::{
+    message::header::{Header, HeaderName},
+    BoxError,
+};
 
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
 #[derive(Debug, Copy, Clone, PartialEq)]

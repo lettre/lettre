@@ -176,8 +176,7 @@ mod test {
     use std::convert::TryFrom;
 
     use super::*;
-    use crate::message::header::Headers;
-    use crate::message::{header, Mailbox, Mailboxes};
+    use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 
     #[test]
     fn envelope_from_headers() {
