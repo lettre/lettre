@@ -1,9 +1,3 @@
-#[cfg(any(
-    feature = "tokio02-rustls-tls",
-    feature = "tokio1-rustls-tls",
-    feature = "async-std1-rustls-tls"
-))]
-use std::sync::Arc;
 use std::{
     mem,
     net::SocketAddr,
@@ -303,7 +297,7 @@ impl AsyncNetworkStream {
                     let domain =
                         DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
-                    let connector = TlsConnector::from(Arc::new(config));
+                    let connector = TlsConnector::from(config);
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await
@@ -352,7 +346,7 @@ impl AsyncNetworkStream {
                     let domain =
                         DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
-                    let connector = TlsConnector::from(Arc::new(config));
+                    let connector = TlsConnector::from(config);
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await
@@ -404,7 +398,7 @@ impl AsyncNetworkStream {
                     let domain =
                         DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
 
-                    let connector = TlsConnector::from(Arc::new(config));
+                    let connector = TlsConnector::from(config);
                     let stream = connector
                         .connect(domain, tcp_stream)
                         .await

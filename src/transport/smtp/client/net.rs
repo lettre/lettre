@@ -1,5 +1,3 @@
-#[cfg(feature = "rustls-tls")]
-use std::sync::Arc;
 use std::{
     io::{self, Read, Write},
     mem,
@@ -155,10 +153,7 @@ impl NetworkStream {
 
                 let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())
                     .map_err(error::connection)?;
-                let stream = StreamOwned::new(
-                    ClientSession::new(&Arc::new(connector.clone()), domain),
-                    tcp_stream,
-                );
+                let stream = StreamOwned::new(ClientSession::new(&connector, domain), tcp_stream);
 
                 InnerNetworkStream::RustlsTls(stream)
             }
