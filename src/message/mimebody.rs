@@ -66,7 +66,7 @@ impl SinglePartBuilder {
 
     /// Build singlepart using body
     pub fn body<T: IntoBody>(mut self, body: T) -> SinglePart {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
@@ -471,7 +471,7 @@ mod test {
     #[test]
     fn multi_part_mixed() {
         let part = MultiPart::mixed()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(
                 SinglePart::builder()
                     .header(header::ContentType::TEXT_PLAIN)
@@ -486,27 +486,31 @@ mod test {
                     .body(String::from("int main() { return 0; }")),
             );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf-8\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "Текст письма в уникоде\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf-8\r\n",
-                           "Content-Disposition: attachment; filename=\"example.c\"\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "int main() { return 0; }\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/mixed; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "Текст письма в уникоде\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Disposition: attachment; filename=\"example.c\"\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "int main() { return 0; }\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
     #[test]
     fn multi_part_encrypted() {
         let part = MultiPart::encrypted("application/pgp-encrypted".to_owned())
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(
                 SinglePart::builder()
                     .header(header::ContentType::parse("application/pgp-encrypted").unwrap())
@@ -529,27 +533,31 @@ mod test {
                     ))),
             );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/encrypted;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
-                           " protocol=\"application/pgp-encrypted\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/pgp-encrypted\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "Version: 1\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
-                           "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "-----BEGIN PGP MESSAGE-----\r\n",
-                           "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
-                           "...\r\n",
-                           "-----END PGP MESSAGE-----\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/encrypted; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                " protocol=\"application/pgp-encrypted\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/pgp-encrypted\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Version: 1\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
+                "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "-----BEGIN PGP MESSAGE-----\r\n",
+                "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
+                "...\r\n",
+                "-----END PGP MESSAGE-----\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
     #[test]
     fn multi_part_signed() {
@@ -557,7 +565,7 @@ mod test {
             "application/pgp-signature".to_owned(),
             "pgp-sha256".to_owned(),
         )
-        .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+        .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
         .part(Part::Single(
             SinglePart::builder()
                 .header(header::ContentType::TEXT_PLAIN)
@@ -581,37 +589,41 @@ mod test {
                 ))),
         );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/signed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
-                           " protocol=\"application/pgp-signature\";",
-                           " micalg=\"pgp-sha256\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf-8\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "Test email for signature\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
-                           "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "-----BEGIN PGP SIGNATURE-----\r\n",
-                            "\r\n",
-                            "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
-                            "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
-                            "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
-                            "=3FYZ\r\n",
-                            "-----END PGP SIGNATURE-----\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/signed; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                " protocol=\"application/pgp-signature\";",
+                " micalg=\"pgp-sha256\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Test email for signature\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
+                "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "-----BEGIN PGP SIGNATURE-----\r\n",
+                "\r\n",
+                "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
+                "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
+                "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
+                "=3FYZ\r\n",
+                "-----END PGP SIGNATURE-----\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
 
     #[test]
     fn multi_part_alternative() {
         let part = MultiPart::alternative()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(SinglePart::builder()
                              .header(header::ContentType::TEXT_PLAIN)
                              .header(header::ContentTransferEncoding::Binary)
@@ -622,28 +634,28 @@ mod test {
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/alternative;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
+                   concat!("Content-Type: multipart/alternative; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: text/plain; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "Текст письма в уникоде\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: text/html; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
     }
 
     #[test]
     fn multi_part_mixed_related() {
         let part = MultiPart::mixed()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .multipart(MultiPart::related()
-                            .boundary("E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh")
+                            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
                             .singlepart(SinglePart::builder()
                                              .header(header::ContentType::TEXT_HTML)
                                              .header(header::ContentTransferEncoding::Binary)
@@ -660,19 +672,19 @@ mod test {
                              .body(String::from("int main() { return 0; }")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
+                   concat!("Content-Type: multipart/mixed; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: multipart/related;",
-                           " boundary=\"E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\"\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: multipart/related; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: text/html; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: image/png\r\n",
                            "Content-Location: /image.png\r\n",
                            "Content-Transfer-Encoding: base64\r\n",
@@ -680,14 +692,14 @@ mod test {
                            "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3\r\n",
                            "ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0\r\n",
                            "NTY3ODkwMTIzNDU2Nzg5MA==\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh--\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: text/plain; charset=utf-8\r\n",
                            "Content-Disposition: attachment; filename=\"example.c\"\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "int main() { return 0; }\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
     }
 
     #[test]

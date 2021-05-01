@@ -1,9 +1,5 @@
-use std::{fmt::Result as FmtResult, str::from_utf8};
-
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 /// `Content-Disposition` of an attachment
 ///
@@ -32,31 +28,23 @@ impl ContentDisposition {
 }
 
 impl Header for ContentDisposition {
-    fn header_name() -> &'static str {
-        "Content-Disposition"
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_str("Content-Disposition")
     }
 
-    // FIXME HeaderError->HeaderError, same for result
-    fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
-    where
-        T: RawLike<'a>,
-        Self: Sized,
-    {
-        raw.one()
-            .ok_or(HeaderError::Header)
-            .and_then(|r| from_utf8(r).map_err(|_| HeaderError::Header))
-            .map(|s| Self(s.into()))
+    fn parse(s: &str) -> Result<Self, BoxError> {
+        Ok(Self(s.into()))
     }
 
-    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-        f.fmt_line(&self.0)
+    fn display(&self) -> String {
+        self.0.clone()
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::ContentDisposition;
-    use hyperx::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_content_disposition() {
@@ -78,21 +66,24 @@ mod test {
     fn parse_content_disposition() {
         let mut headers = Headers::new();
 
-        headers.set_raw("Content-Disposition", "inline");
+        headers.set_raw(
+            HeaderName::new_from_ascii_str("Content-Disposition"),
+            "inline".to_string(),
+        );
 
         assert_eq!(
             headers.get::<ContentDisposition>(),
-            Some(&ContentDisposition::inline())
+            Some(ContentDisposition::inline())
         );
 
         headers.set_raw(
-            "Content-Disposition",
-            "attachment; filename=\"something.txt\"",
+            HeaderName::new_from_ascii_str("Content-Disposition"),
+            "attachment; filename=\"something.txt\"".to_string(),
         );
 
         assert_eq!(
             headers.get::<ContentDisposition>(),
-            Some(&ContentDisposition::attachment("something.txt"))
+            Some(ContentDisposition::attachment("something.txt"))
         );
     }
 }

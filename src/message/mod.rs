@@ -226,6 +226,8 @@
 //! ```
 //! </details>
 
+use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+
 pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
@@ -234,9 +236,6 @@ mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
-mod utf8_b;
-
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
 use crate::{
     address::Envelope,
@@ -275,12 +274,13 @@ impl MessageBuilder {
     }
 
     /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(mut self, header: H) -> Self {
-        if self.headers.has::<H>() {
-            self.headers.get_mut::<H>().unwrap().join_mailboxes(header);
-            self
-        } else {
-            self.header(header)
+    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
+        match self.headers.get::<H>() {
+            Some(mut header_) => {
+                header_.join_mailboxes(header);
+                self.header(header_)
+            }
+            None => self.header(header),
         }
     }
 
@@ -431,7 +431,7 @@ impl MessageBuilder {
         // Fail is missing correct originator (Sender or From)
         match res.headers.get::<header::From>() {
             Some(header::From(f)) => {
-                let from: Vec<Mailbox> = f.clone().into();
+                let from: Vec<Mailbox> = f.into();
                 if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
                     return Err(EmailError::TooManyFrom);
                 }
@@ -458,7 +458,7 @@ impl MessageBuilder {
     /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
     /// for `body`.
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
@@ -643,7 +643,7 @@ mod test {
         let expected = String::from_utf8(file_expected).unwrap();
 
         for (i, line) in output.lines().zip(expected.lines()).enumerate() {
-            if i == 6 || i == 8 || i == 13 || i == 232 {
+            if i == 7 || i == 9 || i == 14 || i == 233 {
                 continue;
             }
 
