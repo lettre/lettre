@@ -179,7 +179,7 @@ impl TlsParametersBuilder {
 
         tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
         Ok(TlsParameters {
-            connector: InnerTlsParameters::RustlsTls(tls),
+            connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
             domain: self.domain,
         })
     }
@@ -190,7 +190,7 @@ pub enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
     NativeTls(TlsConnector),
     #[cfg(feature = "rustls-tls")]
-    RustlsTls(ClientConfig),
+    RustlsTls(Arc<ClientConfig>),
 }
 
 impl TlsParameters {
