@@ -480,6 +480,60 @@ const fn allowed_char(c: char) -> bool {
 mod tests {
     use super::{HeaderName, Headers};
 
+    #[test]
+    fn valid_headername() {
+        assert!(HeaderName::new_from_ascii(String::from("From")).is_some());
+    }
+
+    #[test]
+    fn non_ascii_headername() {
+        assert!(HeaderName::new_from_ascii(String::from("🌎")).is_none());
+    }
+
+    #[test]
+    fn spaces_in_headername() {
+        assert!(HeaderName::new_from_ascii(String::from("From ")).is_none());
+    }
+
+    #[test]
+    fn colons_in_headername() {
+        assert!(HeaderName::new_from_ascii(String::from("From:")).is_none());
+    }
+
+    #[test]
+    fn empty_headername() {
+        assert!(HeaderName::new_from_ascii(String::from("")).is_none());
+    }
+
+    #[test]
+    fn const_valid_headername() {
+        let _ = HeaderName::new_from_ascii_str("From");
+    }
+
+    #[test]
+    #[should_panic]
+    fn const_non_ascii_headername() {
+        let _ = HeaderName::new_from_ascii_str("🌎");
+    }
+
+    #[test]
+    #[should_panic]
+    fn const_spaces_in_headername() {
+        let _ = HeaderName::new_from_ascii_str("From ");
+    }
+
+    #[test]
+    #[should_panic]
+    fn const_colons_in_headername() {
+        let _ = HeaderName::new_from_ascii_str("From:");
+    }
+
+    #[test]
+    #[should_panic]
+    fn const_empty_headername() {
+        let _ = HeaderName::new_from_ascii_str("");
+    }
+
     // names taken randomly from https://it.wikipedia.org/wiki/Pinco_Pallino
 
     #[test]
