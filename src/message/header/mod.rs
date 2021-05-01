@@ -70,10 +70,6 @@ impl Headers {
         self.find_header(name).map(|(_name, value)| value)
     }
 
-    pub fn get_raw_mut(&mut self, name: &str) -> Option<&mut String> {
-        self.find_header_mut(name).map(|(_name, value)| value)
-    }
-
     pub fn insert_raw(&mut self, name: HeaderName, value: String) {
         match self.find_header_mut(&name) {
             Some((_name, prev_value)) => {
