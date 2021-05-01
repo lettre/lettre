@@ -1,6 +1,8 @@
 use super::{Header, HeaderName};
-use crate::message::mailbox::{Mailbox, Mailboxes};
-use crate::BoxError;
+use crate::{
+    message::mailbox::{Mailbox, Mailboxes},
+    BoxError,
+};
 
 /// Header which can contains multiple mailboxes
 pub trait MailboxesHeader {

@@ -19,7 +19,9 @@ pub struct Body {
 /// makes for a more efficient `Content-Transfer-Encoding` to be chosen.
 #[derive(Debug, Clone)]
 pub enum MaybeString {
+    /// Binary data
     Binary(Vec<u8>),
+    /// UTF-8 string
     String(String),
 }
 
@@ -204,6 +206,7 @@ impl MaybeString {
 /// **NOTE:** if using the specified `encoding` would result into a malformed
 /// body, this will panic!
 pub trait IntoBody {
+    /// Encode as valid body
     fn into_body(self, encoding: Option<ContentTransferEncoding>) -> Body;
 }
 

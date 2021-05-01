@@ -2,14 +2,20 @@
 
 use std::{
     borrow::Cow,
+    error::Error,
     fmt::{self, Display, Formatter},
     ops::Deref,
 };
 
-pub use self::content_disposition::ContentDisposition;
-pub use self::content_type::{ContentType, ContentTypeErr};
-pub use self::date::Date;
-pub use self::{content::*, mailbox::*, special::*, textual::*};
+pub use self::{
+    content::*,
+    content_disposition::ContentDisposition,
+    content_type::{ContentType, ContentTypeErr},
+    date::Date,
+    mailbox::*,
+    special::*,
+    textual::*,
+};
 use crate::BoxError;
 
 mod content;
@@ -131,22 +137,47 @@ impl Display for Headers {
     }
 }
 
+/// A possible error when converting a `HeaderName` from another type.
+// comes from `http` crate
+#[allow(missing_copy_implementations)]
+pub struct InvalidHeaderName {
+    _priv: (),
+}
+
+impl fmt::Debug for InvalidHeaderName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("InvalidHeaderName")
+            // skip _priv noise
+            .finish()
+    }
+}
+
+impl fmt::Display for InvalidHeaderName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("invalid header name")
+    }
+}
+
+impl Error for InvalidHeaderName {}
+
 #[derive(Debug, Clone)]
 pub struct HeaderName(Cow<'static, str>);
 
 impl HeaderName {
-    pub fn new_from_ascii(ascii: String) -> Option<Self> {
+    /// Creates a new header name
+    pub fn new_from_ascii(ascii: String) -> Result<Self, InvalidHeaderName> {
         if !ascii.is_empty()
             && ascii.len() <= 76
             && ascii.is_ascii()
             && !ascii.contains(|c| c == ':' || c == ' ')
         {
-            Some(Self(Cow::Owned(ascii)))
+            Ok(Self(Cow::Owned(ascii)))
         } else {
-            None
+            Err(InvalidHeaderName { _priv: () })
         }
     }
 
+    /// Creates a new header name, panics on invalid name
     pub const fn new_from_ascii_str(ascii: &'static str) -> Self {
         macro_rules! static_assert {
             ($condition:expr) => {
@@ -482,27 +513,27 @@ mod tests {
 
     #[test]
     fn valid_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("From")).is_some());
+        assert!(HeaderName::new_from_ascii(String::from("From")).is_ok());
     }
 
     #[test]
     fn non_ascii_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("🌎")).is_none());
+        assert!(HeaderName::new_from_ascii(String::from("🌎")).is_err());
     }
 
     #[test]
     fn spaces_in_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("From ")).is_none());
+        assert!(HeaderName::new_from_ascii(String::from("From ")).is_err());
     }
 
     #[test]
     fn colons_in_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("From:")).is_none());
+        assert!(HeaderName::new_from_ascii(String::from("From:")).is_err());
     }
 
     #[test]
     fn empty_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("")).is_none());
+        assert!(HeaderName::new_from_ascii(String::from("")).is_err());
     }
 
     #[test]

@@ -224,10 +224,15 @@ impl AsRef<OsStr> for Address {
 #[derive(Debug, PartialEq, Clone, Copy)]
 /// Errors in email addresses parsing
 pub enum AddressError {
+    /// Missing domain or user
     MissingParts,
+    /// Unbalanced angle bracket
     Unbalanced,
+    /// Invalid email user
     InvalidUser,
+    /// Invalid email domain
     InvalidDomain,
+    /// Invalid UTF8b data
     InvalidUtf8b,
 }
 

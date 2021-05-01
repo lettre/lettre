@@ -13,11 +13,15 @@ use crate::BoxError;
 /// use-caches this header shouldn't be set manually.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentTransferEncoding {
+    /// ASCII
     SevenBit,
+    /// Quoted-Printable encoding
     QuotedPrintable,
+    /// base64 encoding
     Base64,
-    // 8BITMIME
+    /// Requires `8BITMIME`
     EightBit,
+    /// Binary data
     Binary,
 }
 
