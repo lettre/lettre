@@ -148,19 +148,22 @@ impl HeaderName {
     }
 
     pub const fn new_from_ascii_str(ascii: &'static str) -> Self {
-        let make_panic = [(); 1];
+        macro_rules! static_assert {
+            ($condition:expr) => {
+                let _ = [()][(!($condition)) as usize];
+            };
+        }
+
+        static_assert!(!ascii.is_empty());
+        static_assert!(ascii.len() <= 76);
 
         let bytes = ascii.as_bytes();
-        // the following line panics if ascii is longer than 76 characters
-        let _ = make_panic[(bytes.is_empty() || bytes.len() > 76) as usize];
         let mut i = 0;
         while i < bytes.len() {
-            let is_ascii = bytes[i].is_ascii();
-            // the following line panics if the character isn't ascii
-            let _ = make_panic[!is_ascii as usize];
-            let is_unacceptable_char = bytes[i] == b' ' || bytes[i] == b':';
-            // the following line panics if the character isn't acceptable in an header name
-            let _ = make_panic[is_unacceptable_char as usize];
+            static_assert!(bytes[i].is_ascii());
+            static_assert!(bytes[i] != b' ');
+            static_assert!(bytes[i] != b':');
+
             i += 1;
         }
 
