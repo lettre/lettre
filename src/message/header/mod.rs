@@ -140,6 +140,7 @@ impl Display for Headers {
 /// A possible error when converting a `HeaderName` from another type.
 // comes from `http` crate
 #[allow(missing_copy_implementations)]
+#[derive(Clone)]
 pub struct InvalidHeaderName {
     _priv: (),
 }

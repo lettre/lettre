@@ -232,8 +232,6 @@ pub enum AddressError {
     InvalidUser,
     /// Invalid email domain
     InvalidDomain,
-    /// Invalid UTF8b data
-    InvalidUtf8b,
 }
 
 impl Error for AddressError {}
@@ -245,7 +243,6 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
-            AddressError::InvalidUtf8b => f.write_str("Invalid UTF8b data"),
         }
     }
 }
