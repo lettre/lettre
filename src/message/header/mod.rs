@@ -135,12 +135,16 @@ impl Display for Headers {
 pub struct HeaderName(Cow<'static, str>);
 
 impl HeaderName {
-    pub fn new_from_ascii(ascii: String) -> Self {
-        assert!(ascii.is_ascii());
-        assert!(!ascii.is_empty() && ascii.len() <= 76);
-        assert!(ascii.trim().len() == ascii.len());
-        assert!(!ascii.contains(':'));
-        Self(Cow::Owned(ascii))
+    pub fn new_from_ascii(ascii: String) -> Option<Self> {
+        if !ascii.is_empty()
+            && ascii.len() <= 76
+            && ascii.is_ascii()
+            && !ascii.contains(|c| c == ':' || c == ' ')
+        {
+            Some(Self(Cow::Owned(ascii)))
+        } else {
+            None
+        }
     }
 
     pub const fn new_from_ascii_str(ascii: &'static str) -> Self {
