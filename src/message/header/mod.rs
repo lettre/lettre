@@ -34,12 +34,16 @@ pub trait Header: Clone {
     fn display(&self) -> String;
 }
 
+/// A set of email headers
 #[derive(Debug, Clone, Default)]
 pub struct Headers {
     headers: Vec<(HeaderName, String)>,
 }
 
 impl Headers {
+    /// Create an empty `Headers`
+    ///
+    /// This function does not allocate.
     #[inline]
     pub const fn new() -> Self {
         Self {
@@ -47,6 +51,9 @@ impl Headers {
         }
     }
 
+    /// Create an empty `Headers` with a pre-allocated capacity
+    ///
+    /// Pre-allocates a capacity of at least `capacity`.
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
@@ -54,28 +61,46 @@ impl Headers {
         }
     }
 
+    /// Returns a copy of an `Header` present in `Headers`
+    ///
+    /// Returns `None` if `Header` isn't present in `Headers`.
     pub fn get<H: Header>(&self) -> Option<H> {
         self.get_raw(&H::name()).and_then(|raw| H::parse(raw).ok())
     }
 
+    /// Sets `Header` into `Headers`, overriding `Header` if it
+    /// was already present in `Headers`
     pub fn set<H: Header>(&mut self, header: H) {
         self.set_raw(H::name(), header.display());
     }
 
+    /// Remove `Header` from `Headers`, returning it
+    ///
+    /// Returns `None` if `Header` isn't in `Headers`.
     pub fn remove<H: Header>(&mut self) -> Option<H> {
         self.remove_raw(&H::name())
             .and_then(|(_name, raw)| H::parse(&raw).ok())
     }
 
+    /// Clears `Headers`, removing all headers from it
+    ///
+    /// Any pre-allocated capacity is left untouched.
     #[inline]
     pub fn clear(&mut self) {
         self.headers.clear();
     }
 
+    /// Returns a reference to the raw value of header `name`
+    ///
+    /// Returns `None` if `name` isn't present in `Headers`.
     pub fn get_raw(&self, name: &str) -> Option<&str> {
         self.find_header(name).map(|(_name, value)| value)
     }
 
+    /// Appends a raw header into `Headers`
+    ///
+    /// If a header with a name of `name` is already present,
+    /// appends `, ` + `value` to it's current value.
     pub fn insert_raw(&mut self, name: HeaderName, value: String) {
         match self.find_header_mut(&name) {
             Some((_name, prev_value)) => {
@@ -86,6 +111,8 @@ impl Headers {
         }
     }
 
+    /// Inserts a raw header into `Headers`, overriding `value` if it
+    /// was already present in `Headers`.
     pub fn set_raw(&mut self, name: HeaderName, value: String) {
         match self.find_header_mut(&name) {
             Some((_, current_value)) => {
@@ -97,6 +124,9 @@ impl Headers {
         }
     }
 
+    /// Remove a raw header from `Headers`, returning it
+    ///
+    /// Returns `None` if `name` isn't present in `Headers`.
     pub fn remove_raw(&mut self, name: &str) -> Option<(HeaderName, String)> {
         self.find_header_index(name).map(|i| self.headers.remove(i))
     }
@@ -125,6 +155,7 @@ impl Headers {
 }
 
 impl Display for Headers {
+    /// Formats `Headers`, ready to put them into an email
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for (name, value) in &self.headers {
             Display::fmt(name, f)?;
@@ -161,6 +192,7 @@ impl fmt::Display for InvalidHeaderName {
 
 impl Error for InvalidHeaderName {}
 
+/// A valid header name
 #[derive(Debug, Clone)]
 pub struct HeaderName(Cow<'static, str>);
 
