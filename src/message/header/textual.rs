@@ -110,7 +110,7 @@ mod test {
     #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Subject"),
             "Sample subject".to_string(),
         );

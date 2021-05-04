@@ -232,7 +232,7 @@ mod test {
         let from = vec!["kayo@example.com".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com".to_string(),
         );
@@ -245,7 +245,7 @@ mod test {
         let from = vec!["K. <kayo@example.com>".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>".to_string(),
         );
@@ -261,7 +261,7 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com, pony@domain.tld".to_string(),
         );
@@ -277,7 +277,7 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_string(),
         );

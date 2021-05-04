@@ -93,7 +93,7 @@ mod test {
     fn parse_content_transfer_encoding() {
         let mut headers = Headers::new();
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "7bit".to_string(),
         );
@@ -103,7 +103,7 @@ mod test {
             Some(ContentTransferEncoding::SevenBit)
         );
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "base64".to_string(),
         );

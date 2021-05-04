@@ -106,7 +106,7 @@ mod test {
     fn parse_date() {
         let mut headers = Headers::new();
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Date"),
             "Tue, 15 Nov 1994 08:12:31 -0000".to_string(),
         );
@@ -118,7 +118,7 @@ mod test {
             ))
         );
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Date"),
             "Tue, 15 Nov 1994 08:12:32 -0000".to_string(),
         );
