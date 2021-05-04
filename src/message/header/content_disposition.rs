@@ -66,7 +66,7 @@ mod test {
     fn parse_content_disposition() {
         let mut headers = Headers::new();
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Disposition"),
             "inline".to_string(),
         );
@@ -76,7 +76,7 @@ mod test {
             Some(ContentDisposition::inline())
         );
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Disposition"),
             "attachment; filename=\"something.txt\"".to_string(),
         );

@@ -106,14 +106,14 @@ mod test {
     fn parse_content_type() {
         let mut headers = Headers::new();
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/plain; charset=utf-8".to_string(),
         );
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_PLAIN));
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/html; charset=utf-8".to_string(),
         );

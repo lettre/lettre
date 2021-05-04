@@ -71,7 +71,7 @@ impl Headers {
     /// Sets `Header` into `Headers`, overriding `Header` if it
     /// was already present in `Headers`
     pub fn set<H: Header>(&mut self, header: H) {
-        self.set_raw(H::name(), header.display());
+        self.insert_raw(H::name(), header.display());
     }
 
     /// Remove `Header` from `Headers`, returning it
@@ -97,23 +97,9 @@ impl Headers {
         self.find_header(name).map(|(_name, value)| value)
     }
 
-    /// Appends a raw header into `Headers`
-    ///
-    /// If a header with a name of `name` is already present,
-    /// appends `, ` + `value` to it's current value.
-    pub fn insert_raw(&mut self, name: HeaderName, value: String) {
-        match self.find_header_mut(&name) {
-            Some((_name, prev_value)) => {
-                prev_value.push_str(", ");
-                prev_value.push_str(&value);
-            }
-            None => self.headers.push((name, value)),
-        }
-    }
-
     /// Inserts a raw header into `Headers`, overriding `value` if it
     /// was already present in `Headers`.
-    pub fn set_raw(&mut self, name: HeaderName, value: String) {
+    pub fn insert_raw(&mut self, name: HeaderName, value: String) {
         match self.find_header_mut(&name) {
             Some((_, current_value)) => {
                 *current_value = value;
@@ -121,6 +107,20 @@ impl Headers {
             None => {
                 self.headers.push((name, value));
             }
+        }
+    }
+
+    /// Appends a raw header into `Headers`
+    ///
+    /// If a header with a name of `name` is already present,
+    /// appends `, ` + `value` to it's current value.
+    pub fn append_raw(&mut self, name: HeaderName, value: String) {
+        match self.find_header_mut(&name) {
+            Some((_name, prev_value)) => {
+                prev_value.push_str(", ");
+                prev_value.push_str(&value);
+            }
+            None => self.headers.push((name, value)),
         }
     }
 

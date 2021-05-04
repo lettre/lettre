@@ -80,14 +80,14 @@ mod test {
     fn parse_mime_version() {
         let mut headers = Headers::new();
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "1.0".to_string(),
         );
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MIME_VERSION_1_0));
 
-        headers.set_raw(
+        headers.insert_raw(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "0.1".to_string(),
         );
