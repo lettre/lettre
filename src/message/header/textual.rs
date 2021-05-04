@@ -65,7 +65,7 @@ text_header!(
 text_header!(
     /// `Message-Id` header. Contains a unique message identifier,
     /// defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.4)
-    Header(MessageId, "Message-Id")
+    Header(MessageId, "Message-ID")
 );
 text_header!(
     /// `User-Agent` header. Contains information about the client,

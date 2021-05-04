@@ -375,7 +375,7 @@ impl MessageBuilder {
         self.header(header::References::from(id))
     }
 
-    /// Set [Message-Id
+    /// Set [Message-ID
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     ///
     /// Should generally be inserted by the mail relay.
