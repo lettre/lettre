@@ -17,6 +17,7 @@ use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
+use std::time::Duration;
 
 /// Asynchronously sends emails using the SMTP protocol
 #[cfg_attr(
@@ -233,6 +234,12 @@ impl AsyncSmtpTransportBuilder {
     /// Set the authentication mechanism to use
     pub fn authentication(mut self, mechanisms: Vec<Mechanism>) -> Self {
         self.info.authentication = mechanisms;
+        self
+    }
+
+    /// Set the timeout duration
+    pub fn timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.info.timeout = timeout;
         self
     }
 
