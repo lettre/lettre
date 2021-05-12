@@ -1,5 +1,7 @@
-use std::fmt::{self, Debug};
-use std::marker::PhantomData;
+use std::{
+    fmt::{self, Debug},
+    marker::PhantomData,
+};
 
 use async_trait::async_trait;
 

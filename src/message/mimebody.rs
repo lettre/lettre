@@ -1,9 +1,11 @@
+use std::io::Write;
+
 use crate::message::{
     header::{ContentTransferEncoding, ContentType, Header, Headers},
     EmailFormat, IntoBody,
 };
 use mime::Mime;
-use rand::Rng;
+use std::iter::repeat_with;
 
 /// MIME part variants
 #[derive(Debug, Clone)]
@@ -64,7 +66,7 @@ impl SinglePartBuilder {
 
     /// Build singlepart using body
     pub fn body<T: IntoBody>(mut self, body: T) -> SinglePart {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
@@ -92,7 +94,7 @@ impl Default for SinglePartBuilder {
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
 /// let part = SinglePart::builder()
-///     .header(header::ContentType("text/plain; charset=utf8".parse()?))
+///     .header(header::ContentType::TEXT_PLAIN)
 ///     .body(String::from("Текст письма в уникоде"));
 /// # Ok(())
 /// # }
@@ -132,7 +134,8 @@ impl SinglePart {
 
 impl EmailFormat for SinglePart {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
         out.extend_from_slice(&self.body);
         out.extend_from_slice(b"\r\n");
@@ -165,16 +168,13 @@ pub enum MultiPartKind {
 }
 
 /// Create a random MIME boundary.
+/// (Not cryptographically random)
 fn make_boundary() -> String {
-    rand::thread_rng()
-        .sample_iter(rand::distributions::Alphanumeric)
-        .take(40)
-        .map(char::from)
-        .collect()
+    repeat_with(fastrand::alphanumeric).take(40).collect()
 }
 
 impl MultiPartKind {
-    fn to_mime<S: Into<String>>(&self, boundary: Option<S>) -> Mime {
+    pub(crate) fn to_mime<S: Into<String>>(&self, boundary: Option<S>) -> Mime {
         let boundary = boundary.map_or_else(make_boundary, Into::into);
 
         format!(
@@ -217,12 +217,6 @@ impl MultiPartKind {
     }
 }
 
-impl From<MultiPartKind> for Mime {
-    fn from(m: MultiPartKind) -> Self {
-        m.to_mime::<String>(None)
-    }
-}
-
 /// Multipart builder
 #[derive(Debug, Clone)]
 pub struct MultiPartBuilder {
@@ -245,17 +239,17 @@ impl MultiPartBuilder {
 
     /// Set `Content-Type` header using [`MultiPartKind`]
     pub fn kind(self, kind: MultiPartKind) -> Self {
-        self.header(ContentType(kind.into()))
+        self.header(ContentType::from_mime(kind.to_mime::<String>(None)))
     }
 
     /// Set custom boundary
-    pub fn boundary<S: AsRef<str>>(self, boundary: S) -> Self {
+    pub fn boundary<S: Into<String>>(self, boundary: S) -> Self {
         let kind = {
-            let mime = &self.headers.get::<ContentType>().unwrap().0;
-            MultiPartKind::from_mime(mime).unwrap()
+            let content_type = self.headers.get::<ContentType>().unwrap();
+            MultiPartKind::from_mime(content_type.as_ref()).unwrap()
         };
-        let mime = kind.to_mime(Some(boundary.as_ref()));
-        self.header(ContentType(mime))
+        let mime = kind.to_mime(Some(boundary));
+        self.header(ContentType::from_mime(mime))
     }
 
     /// Creates multipart without parts
@@ -356,8 +350,13 @@ impl MultiPart {
 
     /// Get the boundary of multipart contents
     pub fn boundary(&self) -> String {
-        let content_type = &self.headers.get::<ContentType>().unwrap().0;
-        content_type.get_param("boundary").unwrap().as_str().into()
+        let content_type = self.headers.get::<ContentType>().unwrap();
+        content_type
+            .as_ref()
+            .get_param("boundary")
+            .unwrap()
+            .as_str()
+            .into()
     }
 
     /// Get the headers from the multipart
@@ -390,7 +389,8 @@ impl MultiPart {
 
 impl EmailFormat for MultiPart {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
 
         let boundary = self.boundary();
@@ -416,16 +416,14 @@ mod test {
     #[test]
     fn single_part_binary() {
         let part = SinglePart::builder()
-            .header(header::ContentType(
-                "text/plain; charset=utf8".parse().unwrap(),
-            ))
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::Binary)
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: text/plain; charset=utf8\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
                 "Content-Transfer-Encoding: binary\r\n",
                 "\r\n",
                 "Текст письма в уникоде\r\n"
@@ -436,16 +434,14 @@ mod test {
     #[test]
     fn single_part_quoted_printable() {
         let part = SinglePart::builder()
-            .header(header::ContentType(
-                "text/plain; charset=utf8".parse().unwrap(),
-            ))
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::QuotedPrintable)
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: text/plain; charset=utf8\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
                 "\r\n",
                 "=D0=A2=D0=B5=D0=BA=D1=81=D1=82 =D0=BF=D0=B8=D1=81=D1=8C=D0=BC=D0=B0 =D0=B2 =\r\n",
@@ -457,16 +453,14 @@ mod test {
     #[test]
     fn single_part_base64() {
         let part = SinglePart::builder()
-            .header(header::ContentType(
-                "text/plain; charset=utf8".parse().unwrap(),
-            ))
+            .header(header::ContentType::TEXT_PLAIN)
             .header(header::ContentTransferEncoding::Base64)
             .body(String::from("Текст письма в уникоде"));
 
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: text/plain; charset=utf8\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
                 "Content-Transfer-Encoding: base64\r\n",
                 "\r\n",
                 "0KLQtdC60YHRgiDQv9C40YHRjNC80LAg0LIg0YPQvdC40LrQvtC00LU=\r\n"
@@ -477,75 +471,60 @@ mod test {
     #[test]
     fn multi_part_mixed() {
         let part = MultiPart::mixed()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(
                 SinglePart::builder()
-                    .header(header::ContentType(
-                        "text/plain; charset=utf8".parse().unwrap(),
-                    ))
+                    .header(header::ContentType::TEXT_PLAIN)
                     .header(header::ContentTransferEncoding::Binary)
                     .body(String::from("Текст письма в уникоде")),
             ))
             .singlepart(
                 SinglePart::builder()
-                    .header(header::ContentType(
-                        "text/plain; charset=utf8".parse().unwrap(),
-                    ))
-                    .header(header::ContentDisposition {
-                        disposition: header::DispositionType::Attachment,
-                        parameters: vec![header::DispositionParam::Filename(
-                            header::Charset::Ext("utf-8".into()),
-                            None,
-                            "example.c".into(),
-                        )],
-                    })
+                    .header(header::ContentType::TEXT_PLAIN)
+                    .header(header::ContentDisposition::attachment("example.c"))
                     .header(header::ContentTransferEncoding::Binary)
                     .body(String::from("int main() { return 0; }")),
             );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf8\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "Текст письма в уникоде\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf8\r\n",
-                           "Content-Disposition: attachment; filename=\"example.c\"\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "int main() { return 0; }\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/mixed; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "Текст письма в уникоде\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Disposition: attachment; filename=\"example.c\"\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "int main() { return 0; }\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
     #[test]
     fn multi_part_encrypted() {
         let part = MultiPart::encrypted("application/pgp-encrypted".to_owned())
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(
                 SinglePart::builder()
-                    .header(header::ContentType(
-                        "application/pgp-encrypted".parse().unwrap(),
-                    ))
+                    .header(header::ContentType::parse("application/pgp-encrypted").unwrap())
                     .body(String::from("Version: 1")),
             ))
             .singlepart(
                 SinglePart::builder()
-                    .header(ContentType(
-                        "application/octet-stream; name=\"encrypted.asc\""
-                            .parse()
+                    .header(
+                        ContentType::parse("application/octet-stream; name=\"encrypted.asc\"")
                             .unwrap(),
+                    )
+                    .header(header::ContentDisposition::inline_with_name(
+                        "encrypted.asc",
                     ))
-                    .header(header::ContentDisposition {
-                        disposition: header::DispositionType::Inline,
-                        parameters: vec![header::DispositionParam::Filename(
-                            header::Charset::Ext("utf-8".into()),
-                            None,
-                            "encrypted.asc".into(),
-                        )],
-                    })
                     .body(String::from(concat!(
                         "-----BEGIN PGP MESSAGE-----\r\n",
                         "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
@@ -554,27 +533,31 @@ mod test {
                     ))),
             );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/encrypted;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
-                           " protocol=\"application/pgp-encrypted\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/pgp-encrypted\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "Version: 1\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
-                           "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "-----BEGIN PGP MESSAGE-----\r\n",
-                           "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
-                           "...\r\n",
-                           "-----END PGP MESSAGE-----\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/encrypted; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                " protocol=\"application/pgp-encrypted\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/pgp-encrypted\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Version: 1\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/octet-stream; name=\"encrypted.asc\"\r\n",
+                "Content-Disposition: inline; filename=\"encrypted.asc\"\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "-----BEGIN PGP MESSAGE-----\r\n",
+                "wV4D0dz5vDXklO8SAQdA5lGX1UU/eVQqDxNYdHa7tukoingHzqUB6wQssbMfHl8w\r\n",
+                "...\r\n",
+                "-----END PGP MESSAGE-----\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
     #[test]
     fn multi_part_signed() {
@@ -582,27 +565,19 @@ mod test {
             "application/pgp-signature".to_owned(),
             "pgp-sha256".to_owned(),
         )
-        .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+        .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
         .part(Part::Single(
             SinglePart::builder()
-                .header(header::ContentType("text/plain".parse().unwrap()))
+                .header(header::ContentType::TEXT_PLAIN)
                 .body(String::from("Test email for signature")),
         ))
         .singlepart(
             SinglePart::builder()
-                .header(ContentType(
-                    "application/pgp-signature; name=\"signature.asc\""
-                        .parse()
+                .header(
+                    ContentType::parse("application/pgp-signature; name=\"signature.asc\"")
                         .unwrap(),
-                ))
-                .header(header::ContentDisposition {
-                    disposition: header::DispositionType::Attachment,
-                    parameters: vec![header::DispositionParam::Filename(
-                        header::Charset::Ext("utf-8".into()),
-                        None,
-                        "signature.asc".into(),
-                    )],
-                })
+                )
+                .header(header::ContentDisposition::attachment("signature.asc"))
                 .body(String::from(concat!(
                     "-----BEGIN PGP SIGNATURE-----\r\n",
                     "\r\n",
@@ -614,101 +589,102 @@ mod test {
                 ))),
         );
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/signed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\";",
-                           " protocol=\"application/pgp-signature\";",
-                           " micalg=\"pgp-sha256\"\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "Test email for signature\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
-                           "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
-                           "Content-Transfer-Encoding: 7bit\r\n",
-                           "\r\n",
-                           "-----BEGIN PGP SIGNATURE-----\r\n",
-                            "\r\n",
-                            "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
-                            "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
-                            "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
-                            "=3FYZ\r\n",
-                            "-----END PGP SIGNATURE-----\r\n",
-                           "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/signed; \r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                " protocol=\"application/pgp-signature\";",
+                " micalg=\"pgp-sha256\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Test email for signature\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: application/pgp-signature; name=\"signature.asc\"\r\n",
+                "Content-Disposition: attachment; filename=\"signature.asc\"\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "-----BEGIN PGP SIGNATURE-----\r\n",
+                "\r\n",
+                "iHUEARYIAB0WIQTNsp3S/GbdE0KoiQ+IGQOscREZuQUCXyOzDAAKCRCIGQOscREZ\r\n",
+                "udgDAQCv3FJ3QWW5bRaGZAa0Ug6vASFdkvDMKoRwcoFnHPthjQEAiQ8skkIyE2GE\r\n",
+                "PoLpAXiKpT+NU8S8+8dfvwutnb4dSwM=\r\n",
+                "=3FYZ\r\n",
+                "-----END PGP SIGNATURE-----\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
 
     #[test]
     fn multi_part_alternative() {
         let part = MultiPart::alternative()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .part(Part::Single(SinglePart::builder()
-                             .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
+                             .header(header::ContentType::TEXT_PLAIN)
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("Текст письма в уникоде"))))
             .singlepart(SinglePart::builder()
-                             .header(header::ContentType("text/html; charset=utf8".parse().unwrap()))
+                             .header(header::ContentType::TEXT_HTML)
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/alternative;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
+                   concat!("Content-Type: multipart/alternative; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf8\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: text/plain; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "Текст письма в уникоде\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/html; charset=utf8\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: text/html; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
     }
 
     #[test]
     fn multi_part_mixed_related() {
         let part = MultiPart::mixed()
-            .boundary("F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK")
+            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
             .multipart(MultiPart::related()
-                            .boundary("E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh")
+                            .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
                             .singlepart(SinglePart::builder()
-                                             .header(header::ContentType("text/html; charset=utf8".parse().unwrap()))
+                                             .header(header::ContentType::TEXT_HTML)
                                              .header(header::ContentTransferEncoding::Binary)
                                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")))
                             .singlepart(SinglePart::builder()
-                                             .header(header::ContentType("image/png".parse().unwrap()))
-                                             .header(header::ContentLocation("/image.png".into()))
+                                             .header(header::ContentType::parse("image/png").unwrap())
+                                             .header(header::ContentLocation::from(String::from("/image.png")))
                                              .header(header::ContentTransferEncoding::Base64)
                                              .body(String::from("1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"))))
             .singlepart(SinglePart::builder()
-                             .header(header::ContentType("text/plain; charset=utf8".parse().unwrap()))
-                             .header(header::ContentDisposition {
-                                 disposition: header::DispositionType::Attachment,
-                                 parameters: vec![header::DispositionParam::Filename(header::Charset::Ext("utf-8".into()), None, "example.c".into())]
-                             })
+                             .header(header::ContentType::TEXT_PLAIN)
+                             .header(header::ContentDisposition::attachment("example.c"))
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("int main() { return 0; }")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed;",
-                           " boundary=\"F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\"\r\n",
+                   concat!("Content-Type: multipart/mixed; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: multipart/related;",
-                           " boundary=\"E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\"\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: multipart/related; \r\n",
+                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\r\n",
-                           "Content-Type: text/html; charset=utf8\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: text/html; charset=utf-8\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: image/png\r\n",
                            "Content-Location: /image.png\r\n",
                            "Content-Transfer-Encoding: base64\r\n",
@@ -716,14 +692,14 @@ mod test {
                            "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3\r\n",
                            "ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0\r\n",
                            "NTY3ODkwMTIzNDU2Nzg5MA==\r\n",
-                           "--E912L4JH3loAAAAAFu/33Gx7PEoTMmhGaxG3FlbVMQHctj96q4nHvBM+7DTtXo/im8gh--\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK\r\n",
-                           "Content-Type: text/plain; charset=utf8\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                           "Content-Type: text/plain; charset=utf-8\r\n",
                            "Content-Disposition: attachment; filename=\"example.c\"\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "int main() { return 0; }\r\n",
-                           "--F2mTKN843loAAAAA8porEdAjCKhArPxGeahYoZYSftse1GT/84tup+O0bs8eueVuAlMK--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
     }
 
     #[test]

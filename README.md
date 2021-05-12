@@ -60,7 +60,6 @@ one of our dependencies bumping their MSRV or by a new patch release of lettre.
 
 To use this library, add the following to your `Cargo.toml`:
 
-
 ```toml
 [dependencies]
 lettre = "0.10"
@@ -75,7 +74,7 @@ let email = Message::builder()
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
     .subject("Happy new year")
-    .body("Be happy!")
+    .body(String::from("Be happy!"))
     .unwrap();
 
 let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());

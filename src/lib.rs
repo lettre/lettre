@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.45 or newer.
+//! Lettre requires Rust 1.46 or newer.
 //!
 //! ## Features
 //!
@@ -122,10 +122,6 @@ mod executor;
 pub mod message;
 pub mod transport;
 
-#[cfg(feature = "builder")]
-#[macro_use]
-extern crate hyperx;
-
 #[cfg(feature = "async-std1")]
 pub use self::executor::AsyncStd1Executor;
 #[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
@@ -177,10 +173,10 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use super::*;
-    use crate::message::{header, Mailbox, Mailboxes};
-    use hyperx::header::Headers;
     use std::convert::TryFrom;
+
+    use super::*;
+    use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 
     #[test]
     fn envelope_from_headers() {
@@ -208,9 +204,9 @@ mod test {
         let to = Mailboxes::new().with("amousset@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
-        headers.set(header::From(from));
-        headers.set(header::Sender(sender));
-        headers.set(header::To(to));
+        headers.set(header::From::from(from));
+        headers.set(header::Sender::from(sender));
+        headers.set(header::To::from(to));
 
         assert_eq!(
             Envelope::try_from(&headers).unwrap(),
@@ -228,8 +224,8 @@ mod test {
         let sender = Mailbox::new(None, "kayo2@example.com".parse().unwrap());
 
         let mut headers = Headers::new();
-        headers.set(header::From(from));
-        headers.set(header::Sender(sender));
+        headers.set(header::From::from(from));
+        headers.set(header::Sender::from(sender));
 
         assert!(Envelope::try_from(&headers).is_err(),);
     }

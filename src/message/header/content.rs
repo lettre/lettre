@@ -1,16 +1,10 @@
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
 use std::{
     fmt::{Display, Formatter as FmtFormatter, Result as FmtResult},
-    str::{from_utf8, FromStr},
+    str::FromStr,
 };
 
-header! {
-    /// `Content-Id` header, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
-    (ContentId, "Content-ID") => [String]
-}
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 /// `Content-Transfer-Encoding` of the body
 ///
@@ -19,17 +13,29 @@ header! {
 /// use-caches this header shouldn't be set manually.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ContentTransferEncoding {
+    /// ASCII
     SevenBit,
+    /// Quoted-Printable encoding
     QuotedPrintable,
+    /// base64 encoding
     Base64,
-    // 8BITMIME
+    /// Requires `8BITMIME`
     EightBit,
+    /// Binary data
     Binary,
 }
 
-impl Default for ContentTransferEncoding {
-    fn default() -> Self {
-        ContentTransferEncoding::Base64
+impl Header for ContentTransferEncoding {
+    fn name() -> HeaderName {
+        HeaderName::new_from_ascii_str("Content-Transfer-Encoding")
+    }
+
+    fn parse(s: &str) -> Result<Self, BoxError> {
+        Ok(s.parse()?)
+    }
+
+    fn display(&self) -> String {
+        self.to_string()
     }
 }
 
@@ -59,35 +65,16 @@ impl FromStr for ContentTransferEncoding {
     }
 }
 
-impl Header for ContentTransferEncoding {
-    fn header_name() -> &'static str {
-        "Content-Transfer-Encoding"
-    }
-
-    // FIXME HeaderError->HeaderError, same for result
-    fn parse_header<'a, T>(raw: &'a T) -> HyperResult<Self>
-    where
-        T: RawLike<'a>,
-        Self: Sized,
-    {
-        raw.one()
-            .ok_or(HeaderError::Header)
-            .and_then(|r| from_utf8(r).map_err(|_| HeaderError::Header))
-            .and_then(|s| {
-                s.parse::<ContentTransferEncoding>()
-                    .map_err(|_| HeaderError::Header)
-            })
-    }
-
-    fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-        f.fmt_line(&format!("{}", self))
+impl Default for ContentTransferEncoding {
+    fn default() -> Self {
+        ContentTransferEncoding::Base64
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::ContentTransferEncoding;
-    use hyperx::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_content_transfer_encoding() {
@@ -95,35 +82,35 @@ mod test {
 
         headers.set(ContentTransferEncoding::SevenBit);
 
-        assert_eq!(
-            format!("{}", headers),
-            "Content-Transfer-Encoding: 7bit\r\n"
-        );
+        assert_eq!(headers.to_string(), "Content-Transfer-Encoding: 7bit\r\n");
 
         headers.set(ContentTransferEncoding::Base64);
 
-        assert_eq!(
-            format!("{}", headers),
-            "Content-Transfer-Encoding: base64\r\n"
-        );
+        assert_eq!(headers.to_string(), "Content-Transfer-Encoding: base64\r\n");
     }
 
     #[test]
     fn parse_content_transfer_encoding() {
         let mut headers = Headers::new();
 
-        headers.set_raw("Content-Transfer-Encoding", "7bit");
-
-        assert_eq!(
-            headers.get::<ContentTransferEncoding>(),
-            Some(&ContentTransferEncoding::SevenBit)
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
+            "7bit".to_string(),
         );
 
-        headers.set_raw("Content-Transfer-Encoding", "base64");
+        assert_eq!(
+            headers.get::<ContentTransferEncoding>(),
+            Some(ContentTransferEncoding::SevenBit)
+        );
+
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
+            "base64".to_string(),
+        );
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),
-            Some(&ContentTransferEncoding::Base64)
+            Some(ContentTransferEncoding::Base64)
         );
     }
 }
