@@ -28,10 +28,10 @@
 //! # }
 //! ```
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use crate::AsyncTransport;
 use crate::{address::Envelope, Transport};
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use async_trait::async_trait;
 use std::{error::Error as StdError, fmt};
 
@@ -80,7 +80,7 @@ impl Transport for StubTransport {
     }
 }
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 #[async_trait]
 impl AsyncTransport for StubTransport {
     type Ok = ();

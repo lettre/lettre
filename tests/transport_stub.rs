@@ -21,30 +21,6 @@ mod sync {
 }
 
 #[cfg(test)]
-#[cfg(all(feature = "builder", feature = "tokio02"))]
-mod tokio_02 {
-    use lettre::{transport::stub::StubTransport, AsyncTransport, Message};
-
-    use tokio02_crate as tokio;
-
-    #[tokio::test]
-    async fn stub_transport_tokio02() {
-        let sender_ok = StubTransport::new_ok();
-        let sender_ko = StubTransport::new_error();
-        let email = Message::builder()
-            .from("NoBody <nobody@domain.tld>".parse().unwrap())
-            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-            .to("Hei <hei@domain.tld>".parse().unwrap())
-            .subject("Happy new year")
-            .body(String::from("Be happy!"))
-            .unwrap();
-
-        sender_ok.send(email.clone()).await.unwrap();
-        sender_ko.send(email).await.unwrap_err();
-    }
-}
-
-#[cfg(test)]
 #[cfg(all(feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
     use lettre::{transport::stub::StubTransport, AsyncTransport, Message};

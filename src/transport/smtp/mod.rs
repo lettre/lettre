@@ -116,7 +116,7 @@
 //! # }
 //! ```
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
@@ -137,7 +137,7 @@ use crate::transport::smtp::{
 use client::Tls;
 use std::time::Duration;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_transport;
 pub mod authentication;
 pub mod client;
