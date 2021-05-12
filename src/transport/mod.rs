@@ -99,7 +99,7 @@
 //! [`AsyncFileTransport`]: crate::AsyncFileTransport
 //! [`StubTransport`]: crate::transport::stub::StubTransport
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use async_trait::async_trait;
 
 use crate::Envelope;
@@ -136,11 +136,8 @@ pub trait Transport {
 }
 
 /// Async Transport method for emails
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 #[async_trait]
 pub trait AsyncTransport {
     /// Response produced by the Transport
