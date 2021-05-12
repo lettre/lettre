@@ -28,19 +28,11 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.10.0-beta.4">
-    <img src="https://deps.rs/crate/lettre/0.10.0-beta.4/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.10.0">
+    <img src="https://deps.rs/crate/lettre/0.10.0/status.svg"
       alt="dependency status" />
   </a>
 </div>
-
----
-
-**NOTE**: this readme refers to the 0.10 version of lettre, which is
-still being worked on. The master branch and the alpha releases will see
-API breaking changes and some features may be missing or incomplete until
-the stable 0.10.0 release is out.
-Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x) branch for stable releases.
 
 ---
 
@@ -58,15 +50,19 @@ Lettre does not provide (for now):
 
 * Email parsing
 
+## Supported Rust Versions
+
+Lettre supports all Rust versions released in the last 6 months. At the time of writing
+the minimum supported Rust version is 1.45, but this could change at any time either from
+one of our dependencies bumping their MSRV or by a new patch release of lettre.
+
 ## Example
 
-This library requires Rust 1.46 or newer.
 To use this library, add the following to your `Cargo.toml`:
-
 
 ```toml
 [dependencies]
-lettre = "0.10.0-beta.4"
+lettre = "0.10"
 ```
 
 ```rust,no_run
