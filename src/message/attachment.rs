@@ -10,6 +10,9 @@ enum Disposition {
     Inline,
 }
 
+/// `SinglePart` builder for attachments
+///
+/// Allows building attachment parts easily.
 pub struct Attachment {
     filename: Option<String>,
     content_disposition: Disposition,
@@ -24,6 +27,7 @@ impl Default for Attachment {
 }
 
 impl Attachment {
+    /// Creates a new attachment
     pub fn new() -> Self {
         Self {
             filename: None,
@@ -33,6 +37,7 @@ impl Attachment {
         }
     }
 
+    /// Creates a new inline attachment
     pub fn new_inline() -> Self {
         Self {
             filename: None,
@@ -42,23 +47,30 @@ impl Attachment {
         }
     }
 
+    /// Specify a MIME type for the attachment
     pub fn content_type(mut self, content_type: Mime) -> Self {
         self.content_type = Some(content_type);
         self
     }
 
+    /// Specify a file name (optional for inline attachments)
     pub fn filename(mut self, filename: String) -> Self {
         self.filename = Some(filename);
         self
     }
 
-    /// For use in inline attachments
+    /// For use in inline attachments to allow referencing it.
+    ///
+    /// The `<>` are inserted automatically.
     pub fn content_id(mut self, content_id: String) -> Self {
         self.content_id = Some(format!("<{}>", content_id));
         self
     }
 
     /// Build the attachment part
+    ///
+    /// This method panics if used with attachment disposition and no
+    /// filename was provided.
     pub fn body<T: IntoBody>(self, content: T) -> SinglePart {
         let mut builder = SinglePart::builder();
 
