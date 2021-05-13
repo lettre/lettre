@@ -71,9 +71,9 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .multipart(MultiPart::alternative_html_plain(
-//!         String::from("<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>"),
+//!     .multipart(MultiPart::alternative_plain_html(
 //!         String::from("Hello, world! :)"),
+//!         String::from("<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>"),
 //!     ))?;
 //! # Ok(())
 //! # }
@@ -140,19 +140,15 @@
 //!                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
 //!                             )))
 //!                             .singlepart(
-//!                                 Attachment::new_inline()
-//!                                     .content_id(String::from("<123>"))
-//!                                     .content_type("image/png".parse().unwrap())
-//!                                     .body(image_body),
+//!                                 Attachment::new_inline(String::from("123"))
+//!                                     .body(image_body, "image/png".parse().unwrap()),
 //!                             ),
 //!                     ),
 //!             )
-//!             .singlepart(
-//!                 Attachment::new()
-//!                     .content_type("text/plain".parse().unwrap())
-//!                     .filename(String::from("example.rs"))
-//!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
-//!             ),
+//!             .singlepart(Attachment::new(String::from("example.rs")).body(
+//!                 String::from("fn main() { println!(\"Hello, World!\") }"),
+//!                 "text/plain".parse().unwrap(),
+//!             )),
 //!     )?;
 //! # Ok(())
 //! # }

@@ -345,10 +345,10 @@ impl MultiPart {
     }
 
     /// Alias for HTML and plain text versions of an email
-    pub fn alternative_html_plain<T: IntoBody>(html: T, plain: T) -> Self {
+    pub fn alternative_plain_html<T: IntoBody, V: IntoBody>(plain: T, html: V) -> Self {
         Self::alternative()
-            .singlepart(SinglePart::html(html))
             .singlepart(SinglePart::plain(plain))
+            .singlepart(SinglePart::html(html))
     }
 
     /// Add part to multipart
