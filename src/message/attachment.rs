@@ -54,7 +54,7 @@ impl Attachment {
 
     /// For use in inline attachments
     pub fn content_id(mut self, content_id: String) -> Self {
-        self.content_id = Some(content_id);
+        self.content_id = Some(format!("<{}>", content_id));
         self
     }
 
@@ -84,5 +84,42 @@ impl Attachment {
         }
 
         builder.body(content)
+    }
+}
+
+mod tests {
+    #[test]
+    fn attachment() {
+        let part = super::Attachment::new()
+            .filename(String::from("test.txt"))
+            .content_type("test/plain".parse().unwrap())
+            .body(String::from("Hello world!"));
+        assert_eq!(
+            &String::from_utf8_lossy(&part.formatted()),
+            concat!(
+                "Content-Disposition: attachment; filename=\"test.txt\"\r\n",
+                "Content-Type: test/plain\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n\r\n",
+                "Hello world!\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn attachment_inline() {
+        let part = super::Attachment::new_inline()
+            .content_id(String::from("id"))
+            .content_type("test/plain".parse().unwrap())
+            .body(String::from("Hello world!"));
+        assert_eq!(
+            &String::from_utf8_lossy(&part.formatted()),
+            concat!(
+                "Content-Disposition: inline\r\n",
+                "Content-Type: test/plain\r\n",
+                "Content-ID: <id>\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n\r\n",
+                "Hello world!\r\n"
+            )
+        );
     }
 }
