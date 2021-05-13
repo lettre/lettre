@@ -92,7 +92,7 @@ impl Attachment {
         }
 
         if let Some(content_id) = self.content_id {
-            builder = builder.header(header::ContentId::parse(&content_id).unwrap())
+            builder = builder.header(header::ContentId::from(&content_id))
         }
 
         builder.body(content)
