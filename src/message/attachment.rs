@@ -35,9 +35,6 @@ impl Attachment {
     }
 
     /// Build the attachment part
-    ///
-    /// This method panics if used with attachment disposition and no
-    /// filename was provided.
     pub fn body<T: IntoBody>(self, content: T, content_type: ContentType) -> SinglePart {
         let mut builder = SinglePart::builder();
         builder = match self.disposition {
