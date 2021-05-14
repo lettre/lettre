@@ -37,10 +37,15 @@
 ---
 
 **NOTE**: this readme refers to the 0.10 version of lettre, which is
-still being worked on. The master branch and the alpha releases will see
-API breaking changes and some features may be missing or incomplete until
-the stable 0.10.0 release is out.
-Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x) branch for stable releases.
+in release candidate state. Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x)
+branch for the previous stable release.
+
+0.10 is already widely used and is already thought to be more reliable than 0.9, so it should generally be used
+for new projects.
+
+We'd love to hear your feedback about 0.10 design and APIs before final release!
+Start a [discussion](https://github.com/lettre/lettre/discussions) in the repository, whether for
+feedback or if you need help or advice using or upgrading lettre 0.10.
 
 ---
 
