@@ -63,7 +63,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
@@ -113,7 +113,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Attachment, Body, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //! use std::fs;
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
