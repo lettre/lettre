@@ -9,7 +9,7 @@ use std::iter::repeat_with;
 
 /// MIME part variants
 #[derive(Debug, Clone)]
-pub enum Part {
+pub(super) enum Part {
     /// Single part with content
     Single(SinglePart),
 
@@ -25,18 +25,6 @@ impl EmailFormat for Part {
         }
     }
 }
-
-impl Part {
-    /// Get message content formatted for SMTP
-    pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        self.format(&mut out);
-        out
-    }
-}
-
-/// Parts of multipart body
-pub type Parts = Vec<Part>;
 
 /// Creates builder for single part
 #[derive(Debug, Clone)]
@@ -274,11 +262,6 @@ impl MultiPartBuilder {
         }
     }
 
-    /// Creates multipart using part
-    pub fn part(self, part: Part) -> MultiPart {
-        self.build().part(part)
-    }
-
     /// Creates multipart using singlepart
     pub fn singlepart(self, part: SinglePart) -> MultiPart {
         self.build().singlepart(part)
@@ -300,7 +283,7 @@ impl Default for MultiPartBuilder {
 #[derive(Debug, Clone)]
 pub struct MultiPart {
     headers: Headers,
-    parts: Parts,
+    parts: Vec<Part>,
 }
 
 impl MultiPart {
@@ -351,12 +334,6 @@ impl MultiPart {
             .singlepart(SinglePart::html(html))
     }
 
-    /// Add part to multipart
-    pub fn part(mut self, part: Part) -> Self {
-        self.parts.push(part);
-        self
-    }
-
     /// Add single part to multipart
     pub fn singlepart(mut self, part: SinglePart) -> Self {
         self.parts.push(Part::Single(part));
@@ -388,16 +365,6 @@ impl MultiPart {
     /// Get a mutable reference to the headers
     pub fn headers_mut(&mut self) -> &mut Headers {
         &mut self.headers
-    }
-
-    /// Get the parts from the multipart
-    pub fn parts(&self) -> &Parts {
-        &self.parts
-    }
-
-    /// Get a mutable reference to the parts
-    pub fn parts_mut(&mut self) -> &mut Parts {
-        &mut self.parts
     }
 
     /// Get message content formatted for SMTP
@@ -493,12 +460,12 @@ mod test {
     fn multi_part_mixed() {
         let part = MultiPart::mixed()
             .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
-            .part(Part::Single(
+            .singlepart(
                 SinglePart::builder()
                     .header(header::ContentType::TEXT_PLAIN)
                     .header(header::ContentTransferEncoding::Binary)
                     .body(String::from("Текст письма в уникоде")),
-            ))
+            )
             .singlepart(
                 SinglePart::builder()
                     .header(header::ContentType::TEXT_PLAIN)
@@ -532,11 +499,11 @@ mod test {
     fn multi_part_encrypted() {
         let part = MultiPart::encrypted("application/pgp-encrypted".to_owned())
             .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
-            .part(Part::Single(
+            .singlepart(
                 SinglePart::builder()
                     .header(header::ContentType::parse("application/pgp-encrypted").unwrap())
                     .body(String::from("Version: 1")),
-            ))
+            )
             .singlepart(
                 SinglePart::builder()
                     .header(
@@ -587,11 +554,11 @@ mod test {
             "pgp-sha256".to_owned(),
         )
         .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
-        .part(Part::Single(
+        .singlepart(
             SinglePart::builder()
                 .header(header::ContentType::TEXT_PLAIN)
                 .body(String::from("Test email for signature")),
-        ))
+        )
         .singlepart(
             SinglePart::builder()
                 .header(
@@ -645,10 +612,10 @@ mod test {
     fn multi_part_alternative() {
         let part = MultiPart::alternative()
             .boundary("0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1")
-            .part(Part::Single(SinglePart::builder()
+            .singlepart(SinglePart::builder()
                              .header(header::ContentType::TEXT_PLAIN)
                              .header(header::ContentTransferEncoding::Binary)
-                             .body(String::from("Текст письма в уникоде"))))
+                             .body(String::from("Текст письма в уникоде")))
             .singlepart(SinglePart::builder()
                              .header(header::ContentType::TEXT_HTML)
                              .header(header::ContentTransferEncoding::Binary)
