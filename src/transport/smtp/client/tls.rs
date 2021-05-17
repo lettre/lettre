@@ -24,12 +24,15 @@ pub enum Tls {
     None,
     /// Start with insecure connection and use `STARTTLS` when available
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Opportunistic(TlsParameters),
     /// Start with insecure connection and require `STARTTLS`
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Required(TlsParameters),
     /// Use TLS wrapped connection
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     Wrapper(TlsParameters),
 }
 
@@ -128,18 +131,12 @@ impl TlsParametersBuilder {
     /// depending on which one is available
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
     #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
-    // TODO: remove below line once native-tls is supported with async-std
-    #[allow(unreachable_code)]
     pub fn build(self) -> Result<TlsParameters, Error> {
-        // TODO: remove once native-tls is supported with async-std
-        #[cfg(all(feature = "rustls-tls", feature = "async-std1"))]
+        #[cfg(feature = "rustls-tls")]
         return self.build_rustls();
 
-        #[cfg(feature = "native-tls")]
+        #[cfg(not(feature = "rustls-tls"))]
         return self.build_native();
-
-        #[cfg(not(feature = "native-tls"))]
-        return self.build_rustls();
     }
 
     /// Creates a new `TlsParameters` using native-tls with the provided configuration
@@ -182,7 +179,7 @@ impl TlsParametersBuilder {
 
         tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
         Ok(TlsParameters {
-            connector: InnerTlsParameters::RustlsTls(tls),
+            connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
             domain: self.domain,
         })
     }
@@ -193,7 +190,7 @@ pub enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
     NativeTls(TlsConnector),
     #[cfg(feature = "rustls-tls")]
-    RustlsTls(ClientConfig),
+    RustlsTls(Arc<ClientConfig>),
 }
 
 impl TlsParameters {

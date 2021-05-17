@@ -48,6 +48,7 @@ impl SmtpTransport {
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     pub fn relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -68,6 +69,7 @@ impl SmtpTransport {
     /// An error is returned if the connection can't be upgraded. No credentials
     /// or emails will be sent to the server, protecting from downgrade attacks.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -152,6 +154,7 @@ impl SmtpTransportBuilder {
 
     /// Set the TLS settings to use
     #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
     pub fn tls(mut self, tls: Tls) -> Self {
         self.info.tls = tls;
         self

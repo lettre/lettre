@@ -27,15 +27,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "sender@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients);
     /// # Ok(())
@@ -59,15 +56,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "from@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert_eq!(envelope.to(), recipients.as_slice());
@@ -82,15 +76,12 @@ impl Envelope {
     ///
     /// # Examples
     ///
-    /// ```
-    /// use std::str::FromStr;
-    /// # use lettre::Address;
-    /// # use lettre::address::Envelope;
-    ///
+    /// ```rust
+    /// # use lettre::address::{Address, Envelope};
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let sender = Address::from_str("from@email.com")?;
-    /// let recipients = vec![Address::from_str("to@email.com")?];
+    /// let sender = "from@email.com".parse::<Address>()?;
+    /// let recipients = vec!["to@email.com".parse::<Address>()?];
     ///
     /// let envelope = Envelope::new(Some(sender), recipients.clone())?;
     /// assert!(envelope.from().is_some());
@@ -121,15 +112,16 @@ impl TryFrom<&Headers> for Envelope {
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let from = match headers.get::<header::Sender>() {
             // If there is a Sender, use it
-            Some(header::Sender(a)) => Some(a.email.clone()),
+            Some(sender) => Some(Mailbox::from(sender).email),
             // ... else try From
             None => match headers.get::<header::From>() {
                 Some(header::From(a)) => {
-                    let from: Vec<Mailbox> = a.clone().into();
+                    let mut from: Vec<Mailbox> = a.into();
                     if from.len() > 1 {
                         return Err(Error::TooManyFrom);
                     }
-                    Some(from[0].email.clone())
+                    let from = from.pop().expect("From header has 1 Mailbox");
+                    Some(from.email)
                 }
                 None => None,
             },
@@ -137,18 +129,16 @@ impl TryFrom<&Headers> for Envelope {
 
         fn add_addresses_from_mailboxes(
             addresses: &mut Vec<Address>,
-            mailboxes: Option<&Mailboxes>,
+            mailboxes: Option<Mailboxes>,
         ) {
             if let Some(mailboxes) = mailboxes {
-                for mailbox in mailboxes.iter() {
-                    addresses.push(mailbox.email.clone());
-                }
+                addresses.extend(mailboxes.into_iter().map(|mb| mb.email));
             }
         }
         let mut to = vec![];
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| &h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| &h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| &h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| h.0));
+        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| h.0));
 
         Self::new(from, to)
     }

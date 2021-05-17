@@ -46,10 +46,7 @@ mod test {
         assert!(second.is_ok());
     }
 
-    #[cfg(all(
-        feature = "tokio1-pool",
-        not(any(feature = "tokio02", feature = "async-std1"))
-    ))]
+    #[cfg(all(feature = "tokio1-pool", not(feature = "async-std1")))]
     #[tokio::test]
     async fn send_one_with_pool_async() {
         use lettre::transport::smtp::AsyncPoolConfig;

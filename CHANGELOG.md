@@ -5,7 +5,7 @@
 
 Several breaking changes were made between 0.9 and 0.10, but changes should be straightforward:
 
-* MSRV is now 1.45.2
+* MSRV is now 1.46
 * The `lettre_email` crate has been merged into `lettre`. To migrate, replace `lettre_email` with `lettre::message`
   and make sure to enable the `builder` feature (it's enabled by default).
 * `SendableEmail` has been renamed to `Email` and `EmailBuilder::build()` produces it directly. To migrate,
@@ -14,7 +14,7 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 #### Features
 
-* Add `tokio` 0.2 and 1.0 support
+* Add `tokio` 1 support
 * Add `rustls` support
 * Add `async-std` support. NOTE: native-tls isn't supported when using async-std for the smtp transport.
 * Allow enabling multiple SMTP authentication mechanisms

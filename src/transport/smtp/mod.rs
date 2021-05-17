@@ -118,7 +118,7 @@
 
 #[cfg(feature = "bb8")]
 pub use self::async_pool::AsyncPoolConfig;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
@@ -141,7 +141,7 @@ use std::time::Duration;
 
 #[cfg(feature = "bb8")]
 mod async_pool;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_transport;
 pub mod authentication;
 pub mod client;

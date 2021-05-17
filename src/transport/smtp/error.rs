@@ -76,8 +76,7 @@ impl Error {
     /// Returns the status code, if the error was generated from a response.
     pub fn status(&self) -> Option<Code> {
         match self.inner.kind {
-            Kind::Transient(code) => Some(code),
-            Kind::Permanent(code) => Some(code),
+            Kind::Transient(code) | Kind::Permanent(code) => Some(code),
             _ => None,
         }
     }

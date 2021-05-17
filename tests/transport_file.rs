@@ -1,6 +1,15 @@
+#[cfg(all(feature = "file-transport", feature = "builder"))]
+fn default_date() -> std::time::SystemTime {
+    use std::time::{Duration, SystemTime};
+
+    // Tue, 15 Nov 1994 08:12:31 GMT
+    SystemTime::UNIX_EPOCH + Duration::from_secs(784887151)
+}
+
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder"))]
 mod sync {
+    use crate::default_date;
     use lettre::{FileTransport, Message, Transport};
     use std::{
         env::temp_dir,
@@ -15,7 +24,7 @@ mod sync {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -32,7 +41,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -50,7 +59,7 @@ mod sync {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -70,7 +79,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -93,54 +102,9 @@ mod sync {
 }
 
 #[cfg(test)]
-#[cfg(all(feature = "file-transport", feature = "builder", feature = "tokio02"))]
-mod tokio_02 {
-    use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio02Executor};
-    use std::{
-        env::temp_dir,
-        fs::{read_to_string, remove_file},
-    };
-
-    use tokio02_crate as tokio;
-
-    #[tokio::test]
-    async fn file_transport_tokio02() {
-        let sender = AsyncFileTransport::<Tokio02Executor>::new(temp_dir());
-        let email = Message::builder()
-            .from("NoBody <nobody@domain.tld>".parse().unwrap())
-            .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-            .to("Hei <hei@domain.tld>".parse().unwrap())
-            .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
-            .body(String::from("Be happy!"))
-            .unwrap();
-
-        let result = sender.send(email).await;
-        let id = result.unwrap();
-
-        let eml_file = temp_dir().join(format!("{}.eml", id));
-        let eml = read_to_string(&eml_file).unwrap();
-
-        assert_eq!(
-            eml,
-            concat!(
-                "From: NoBody <nobody@domain.tld>\r\n",
-                "Reply-To: Yuin <yuin@domain.tld>\r\n",
-                "To: Hei <hei@domain.tld>\r\n",
-                "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
-                "Content-Transfer-Encoding: 7bit\r\n",
-                "\r\n",
-                "Be happy!"
-            )
-        );
-        remove_file(eml_file).unwrap();
-    }
-}
-
-#[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
+    use crate::default_date;
     use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
     use std::{
         env::temp_dir,
@@ -149,7 +113,6 @@ mod tokio_1 {
 
     use tokio1_crate as tokio;
 
-    #[cfg(feature = "tokio02")]
     #[tokio::test]
     async fn file_transport_tokio1() {
         let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
@@ -158,7 +121,7 @@ mod tokio_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -175,7 +138,7 @@ mod tokio_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -192,6 +155,7 @@ mod tokio_1 {
     feature = "async-std1"
 ))]
 mod asyncstd_1 {
+    use crate::default_date;
     use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
     use std::{
         env::temp_dir,
@@ -206,7 +170,7 @@ mod asyncstd_1 {
             .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
             .to("Hei <hei@domain.tld>".parse().unwrap())
             .subject("Happy new year")
-            .date("Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap())
+            .date(default_date())
             .body(String::from("Be happy!"))
             .unwrap();
 
@@ -223,7 +187,7 @@ mod asyncstd_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"

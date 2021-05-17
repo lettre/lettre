@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.10.0-beta.2">
-    <img src="https://deps.rs/crate/lettre/0.10.0-beta.2/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.10.0-rc.1">
+    <img src="https://deps.rs/crate/lettre/0.10.0-rc.1/status.svg"
       alt="dependency status" />
   </a>
 </div>
@@ -37,10 +37,15 @@
 ---
 
 **NOTE**: this readme refers to the 0.10 version of lettre, which is
-still being worked on. The master branch and the alpha releases will see
-API breaking changes and some features may be missing or incomplete until
-the stable 0.10.0 release is out.
-Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x) branch for stable releases.
+in release candidate state. Use the [`v0.9.x`](https://github.com/lettre/lettre/tree/v0.9.x)
+branch for the previous stable release.
+
+0.10 is already widely used and is already thought to be more reliable than 0.9, so it should generally be used
+for new projects.
+
+We'd love to hear your feedback about 0.10 design and APIs before final release!
+Start a [discussion](https://github.com/lettre/lettre/discussions) in the repository, whether for
+feedback or if you need help or advice using or upgrading lettre 0.10.
 
 ---
 
@@ -60,13 +65,13 @@ Lettre does not provide (for now):
 
 ## Example
 
-This library requires Rust 1.45 or newer.
+This library requires Rust 1.46 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 
 ```toml
 [dependencies]
-lettre = "0.10.0-beta.2"
+lettre = "0.10.0-rc.1"
 ```
 
 ```rust,no_run
@@ -78,7 +83,7 @@ let email = Message::builder()
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
     .subject("Happy new year")
-    .body("Be happy!")
+    .body(String::from("Be happy!"))
     .unwrap();
 
 let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());

@@ -63,7 +63,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
@@ -71,21 +71,10 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .multipart(
-//!         MultiPart::alternative()
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                     .body(String::from("Hello, world! :)")),
-//!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/html; charset=utf8".parse()?))
-//!                     .body(String::from(
-//!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
-//!                     )),
-//!             ),
-//!     )?;
+//!     .multipart(MultiPart::alternative_plain_html(
+//!         String::from("Hello, world! :)"),
+//!         String::from("<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>"),
+//!     ))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -124,7 +113,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Body, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //! use std::fs;
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
@@ -144,47 +133,22 @@
 //!         MultiPart::mixed()
 //!             .multipart(
 //!                 MultiPart::alternative()
-//!                     .singlepart(
-//!                         SinglePart::builder()
-//!                             .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                             .body(String::from("Hello, world! :)")),
-//!                     )
+//!                     .singlepart(SinglePart::plain(String::from("Hello, world! :)")))
 //!                     .multipart(
 //!                         MultiPart::related()
+//!                             .singlepart(SinglePart::html(String::from(
+//!                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
+//!                             )))
 //!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType(
-//!                                         "text/html; charset=utf8".parse()?,
-//!                                     ))
-//!                                     .body(String::from(
-//!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
-//!                                     )),
-//!                             )
-//!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType("image/png".parse()?))
-//!                                     .header(header::ContentDisposition {
-//!                                         disposition: header::DispositionType::Inline,
-//!                                         parameters: vec![],
-//!                                     })
-//!                                     .header(header::ContentId("<123>".into()))
-//!                                     .body(image_body),
+//!                                 Attachment::new_inline(String::from("123"))
+//!                                     .body(image_body, "image/png".parse().unwrap()),
 //!                             ),
 //!                     ),
 //!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType("text/plain; charset=utf8".parse()?))
-//!                     .header(header::ContentDisposition {
-//!                         disposition: header::DispositionType::Attachment,
-//!                         parameters: vec![header::DispositionParam::Filename(
-//!                             header::Charset::Ext("utf-8".into()),
-//!                             None,
-//!                             "example.rs".as_bytes().into(),
-//!                         )],
-//!                     })
-//!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
-//!             ),
+//!             .singlepart(Attachment::new(String::from("example.rs")).body(
+//!                 String::from("fn main() { println!(\"Hello, World!\") }"),
+//!                 "text/plain".parse().unwrap(),
+//!             )),
 //!     )?;
 //! # Ok(())
 //! # }
@@ -238,25 +202,22 @@
 //! ```
 //! </details>
 
+use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+
+pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
 pub use mimebody::*;
 
-pub use mime;
-
+mod attachment;
 mod body;
 pub mod header;
 mod mailbox;
 mod mimebody;
-mod utf8_b;
-
-use std::{convert::TryFrom, time::SystemTime};
-
-use uuid::Uuid;
 
 use crate::{
     address::Envelope,
-    message::header::{ContentTransferEncoding, EmailDate, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
     Error as EmailError,
 };
 
@@ -291,37 +252,40 @@ impl MessageBuilder {
     }
 
     /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(mut self, header: H) -> Self {
-        if self.headers.has::<H>() {
-            self.headers.get_mut::<H>().unwrap().join_mailboxes(header);
-            self
-        } else {
-            self.header(header)
+    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
+        match self.headers.get::<H>() {
+            Some(mut header_) => {
+                header_.join_mailboxes(header);
+                self.header(header_)
+            }
+            None => self.header(header),
         }
     }
 
     /// Add `Date` header to message
     ///
-    /// Shortcut for `self.header(header::Date(date))`.
-    pub fn date(self, date: EmailDate) -> Self {
-        self.header(header::Date(date))
+    /// Shortcut for `self.header(header::Date::new(st))`.
+    pub fn date(self, st: SystemTime) -> Self {
+        self.header(header::Date::new(st))
     }
 
     /// Set `Date` header using current date/time
     ///
-    /// Shortcut for `self.date(SystemTime::now())`.
+    /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
+    /// if no date has been provided.
     pub fn date_now(self) -> Self {
-        self.date(SystemTime::now().into())
+        self.date(SystemTime::now())
     }
 
     /// Set `Subject` header to message
     ///
     /// Shortcut for `self.header(header::Subject(subject.into()))`.
     pub fn subject<S: Into<String>>(self, subject: S) -> Self {
-        self.header(header::Subject(subject.into()))
+        let s: String = subject.into();
+        self.header(header::Subject::from(s))
     }
 
-    /// Set `Mime-Version` header to 1.0
+    /// Set `MIME-Version` header to 1.0
     ///
     /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
     ///
@@ -336,7 +300,7 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.header(header::Sender(mbox))`.
     pub fn sender(self, mbox: Mailbox) -> Self {
-        self.header(header::Sender(mbox))
+        self.header(header::Sender::from(mbox))
     }
 
     /// Set or add mailbox to `From` header
@@ -345,7 +309,7 @@ impl MessageBuilder {
     ///
     /// Shortcut for `self.mailbox(header::From(mbox))`.
     pub fn from(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::From(mbox.into()))
+        self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `ReplyTo` header
@@ -381,16 +345,16 @@ impl MessageBuilder {
     /// Set or add message id to [`In-Reply-To`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     pub fn in_reply_to(self, id: String) -> Self {
-        self.header(header::InReplyTo(id))
+        self.header(header::InReplyTo::from(id))
     }
 
     /// Set or add message id to [`References`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     pub fn references(self, id: String) -> Self {
-        self.header(header::References(id))
+        self.header(header::References::from(id))
     }
 
-    /// Set [Message-Id
+    /// Set [Message-ID
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     ///
     /// Should generally be inserted by the mail relay.
@@ -399,7 +363,7 @@ impl MessageBuilder {
     /// `<UUID@HOSTNAME>`.
     pub fn message_id(self, id: Option<String>) -> Self {
         match id {
-            Some(i) => self.header(header::MessageId(i)),
+            Some(i) => self.header(header::MessageId::from(i)),
             None => {
                 #[cfg(feature = "hostname")]
                 let hostname = hostname::get()
@@ -409,9 +373,9 @@ impl MessageBuilder {
                 #[cfg(not(feature = "hostname"))]
                 let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_string();
 
-                self.header(header::MessageId(
+                self.header(header::MessageId::from(
                     // https://tools.ietf.org/html/rfc5322#section-3.6.4
-                    format!("<{}@{}>", Uuid::new_v4(), hostname),
+                    format!("<{}@{}>", make_message_id(), hostname),
                 ))
             }
         }
@@ -420,7 +384,7 @@ impl MessageBuilder {
     /// Set [User-Agent
     /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
     pub fn user_agent(self, id: String) -> Self {
-        self.header(header::UserAgent(id))
+        self.header(header::UserAgent::from(id))
     }
 
     /// Force specific envelope (by default it is derived from headers)
@@ -446,7 +410,7 @@ impl MessageBuilder {
         // Fail is missing correct originator (Sender or From)
         match res.headers.get::<header::From>() {
             Some(header::From(f)) => {
-                let from: Vec<Mailbox> = f.clone().into();
+                let from: Vec<Mailbox> = f.into();
                 if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
                     return Err(EmailError::TooManyFrom);
                 }
@@ -473,7 +437,7 @@ impl MessageBuilder {
     /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
     /// for `body`.
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>().copied();
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
@@ -532,7 +496,8 @@ impl Message {
 
 impl EmailFormat for Message {
     fn format(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(self.headers.to_string().as_bytes());
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
 
         match &self.body {
             MessageBody::Mime(p) => p.format(out),
@@ -550,9 +515,17 @@ impl Default for MessageBuilder {
     }
 }
 
+/// Create a random message id.
+/// (Not cryptographically random)
+fn make_message_id() -> String {
+    iter::repeat_with(fastrand::alphanumeric).take(36).collect()
+}
+
 #[cfg(test)]
 mod test {
-    use crate::message::{header, mailbox::Mailbox, Message, MultiPart, SinglePart};
+    use std::time::{Duration, SystemTime};
+
+    use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
     #[test]
     fn email_missing_originator() {
@@ -581,7 +554,8 @@ mod test {
 
     #[test]
     fn email_message() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
 
         let email = Message::builder()
             .date(date)
@@ -595,14 +569,14 @@ mod test {
             .header(header::To(
                 vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
             ))
-            .header(header::Subject("яңа ел белән!".into()))
+            .header(header::Subject::from(String::from("яңа ел белән!")))
             .body(String::from("Happy new year!"))
             .unwrap();
 
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 GMT\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: Pony O.P. <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
@@ -615,7 +589,8 @@ mod test {
 
     #[test]
     fn email_with_png() {
-        let date = "Tue, 15 Nov 1994 08:12:31 GMT".parse().unwrap();
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
         let img = std::fs::read("./docs/lettre.png").unwrap();
         let m = Message::builder()
             .date(date)
@@ -627,21 +602,16 @@ mod test {
                 MultiPart::related()
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType(
-                                "text/html; charset=utf8".parse().unwrap(),
-                            ))
+                            .header(header::ContentType::TEXT_HTML)
                             .body(String::from(
                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
                             )),
                     )
                     .singlepart(
                         SinglePart::builder()
-                            .header(header::ContentType("image/png".parse().unwrap()))
-                            .header(header::ContentDisposition {
-                                disposition: header::DispositionType::Inline,
-                                parameters: vec![],
-                            })
-                            .header(header::ContentId("<123>".into()))
+                            .header(header::ContentType::parse("image/png").unwrap())
+                            .header(header::ContentDisposition::inline())
+                            .header(header::ContentId::from(String::from("<123>")))
                             .body(img),
                     ),
             )
@@ -652,11 +622,27 @@ mod test {
         let expected = String::from_utf8(file_expected).unwrap();
 
         for (i, line) in output.lines().zip(expected.lines()).enumerate() {
-            if i == 6 || i == 8 || i == 13 || i == 232 {
+            if i == 7 || i == 9 || i == 14 || i == 233 {
                 continue;
             }
 
             assert_eq!(line.0, line.1)
+        }
+    }
+
+    #[test]
+    fn test_make_message_id() {
+        let mut ids = std::collections::HashSet::with_capacity(10);
+        for _ in 0..1000 {
+            ids.insert(make_message_id());
+        }
+
+        // Ensure there are no duplicates
+        assert_eq!(1000, ids.len());
+
+        // Ensure correct length
+        for id in ids {
+            assert_eq!(36, id.len());
         }
     }
 }

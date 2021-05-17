@@ -1,34 +1,37 @@
-use crate::message::utf8_b;
-use hyperx::{
-    header::{Formatter as HeaderFormatter, Header, RawLike},
-    Error as HeaderError, Result as HyperResult,
-};
-use std::{fmt::Result as FmtResult, str::from_utf8};
+use super::{Header, HeaderName};
+use crate::BoxError;
 
 macro_rules! text_header {
     ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
-        #[derive(Debug, Clone, PartialEq)]
         $(#[$attr])*
-        pub struct $type_name(pub String);
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct $type_name(String);
 
         impl Header for $type_name {
-            fn header_name() -> &'static str {
-                $header_name
+            fn name() -> HeaderName {
+                HeaderName::new_from_ascii_str($header_name)
             }
 
-            fn parse_header<'a, T>(raw: &'a T) -> HyperResult<$type_name>
-            where
-                T: RawLike<'a>,
-                Self: Sized,
-            {
-                raw.one()
-                    .ok_or(HeaderError::Header)
-                    .and_then(parse_text)
-                    .map($type_name)
+            fn parse(s: &str) -> Result<Self, BoxError> {
+                Ok(Self(s.into()))
             }
 
-            fn fmt_header(&self, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-                fmt_text(&self.0, f)
+            fn display(&self) -> String {
+                self.0.clone()
+            }
+        }
+
+        impl From<String> for $type_name {
+            #[inline]
+            fn from(text: String) -> Self {
+                Self(text)
+            }
+        }
+
+        impl AsRef<str> for $type_name {
+            #[inline]
+            fn as_ref(&self) -> &str {
+                &self.0
             }
         }
     };
@@ -62,38 +65,35 @@ text_header!(
 text_header!(
     /// `Message-Id` header. Contains a unique message identifier,
     /// defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.4)
-    Header(MessageId, "Message-Id")
+    Header(MessageId, "Message-ID")
 );
 text_header!(
     /// `User-Agent` header. Contains information about the client,
     /// defined in [draft-melnikov-email-user-agent-00](https://tools.ietf.org/html/draft-melnikov-email-user-agent-00#section-3)
     Header(UserAgent, "User-Agent")
 );
-
-fn parse_text(raw: &[u8]) -> HyperResult<String> {
-    if let Ok(src) = from_utf8(raw) {
-        if let Some(txt) = utf8_b::decode(src) {
-            return Ok(txt);
-        }
-    }
-    Err(HeaderError::Header)
+text_header! {
+    /// `Content-Id` header,
+    /// defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-7)
+    Header(ContentId, "Content-ID")
 }
-
-fn fmt_text(s: &str, f: &mut HeaderFormatter<'_, '_>) -> FmtResult {
-    f.fmt_line(&utf8_b::encode(s))
+text_header! {
+    /// `Content-Location` header,
+    /// defined in [RFC2110](https://tools.ietf.org/html/rfc2110#section-4.3)
+    Header(ContentLocation, "Content-Location")
 }
 
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use hyperx::header::Headers;
+    use crate::message::header::{HeaderName, Headers};
 
     #[test]
     fn format_ascii() {
         let mut headers = Headers::new();
         headers.set(Subject("Sample subject".into()));
 
-        assert_eq!(format!("{}", headers), "Subject: Sample subject\r\n");
+        assert_eq!(headers.to_string(), "Subject: Sample subject\r\n");
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod test {
         headers.set(Subject("Тема сообщения".into()));
 
         assert_eq!(
-            format!("{}", headers),
+            headers.to_string(),
             "Subject: =?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=\r\n"
         );
     }
@@ -110,25 +110,14 @@ mod test {
     #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
-        headers.set_raw("Subject", "Sample subject");
-
-        assert_eq!(
-            headers.get::<Subject>(),
-            Some(&Subject("Sample subject".into()))
-        );
-    }
-
-    #[test]
-    fn parse_utf8() {
-        let mut headers = Headers::new();
-        headers.set_raw(
-            "Subject",
-            "=?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=",
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "Sample subject".to_string(),
         );
 
         assert_eq!(
             headers.get::<Subject>(),
-            Some(&Subject("Тема сообщения".into()))
+            Some(Subject("Sample subject".into()))
         );
     }
 }
