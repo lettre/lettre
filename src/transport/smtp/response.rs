@@ -137,10 +137,10 @@ impl Code {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Response {
     /// Response code
-    pub code: Code,
+    code: Code,
     /// Server response string (optional)
     /// Handle multiline responses
-    pub message: Vec<String>,
+    message: Vec<String>,
 }
 
 impl FromStr for Response {
@@ -179,6 +179,16 @@ impl Response {
     /// Returns only the line of the message if possible
     pub fn first_line(&self) -> Option<&str> {
         self.message.first().map(String::as_str)
+    }
+
+    /// Response code
+    pub fn code(&self) -> Code {
+        self.code
+    }
+
+    /// Server response string (array of lines)
+    pub fn message(&self) -> Vec<&str> {
+        self.message.iter().map(String::as_str).collect()
     }
 }
 

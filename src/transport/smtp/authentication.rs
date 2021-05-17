@@ -4,6 +4,7 @@ use crate::transport::smtp::error::{self, Error};
 use std::fmt::{self, Debug, Display, Formatter};
 
 /// Accepted authentication mechanisms
+///
 /// Trying LOGIN last as it is deprecated.
 pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 

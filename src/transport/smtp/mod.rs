@@ -148,7 +148,7 @@ pub mod extension;
 mod pool;
 pub mod response;
 mod transport;
-pub mod util;
+mod util;
 
 // Registered port numbers:
 // https://www.iana.
@@ -164,7 +164,7 @@ pub const SUBMISSION_PORT: u16 = 587;
 pub const SUBMISSIONS_PORT: u16 = 465;
 
 /// Default timeout
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone)]
 struct SmtpInfo {
