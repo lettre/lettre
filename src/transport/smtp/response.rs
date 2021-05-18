@@ -187,8 +187,8 @@ impl Response {
     }
 
     /// Server response string (array of lines)
-    pub fn message(&self) -> Vec<&str> {
-        self.message.iter().map(String::as_str).collect()
+    pub fn message(&self) -> impl Iterator<Item = &str> {
+        self.message.iter().map(String::as_str)
     }
 }
 
