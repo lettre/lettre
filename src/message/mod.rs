@@ -401,7 +401,7 @@ impl MessageBuilder {
         // https://tools.ietf.org/html/rfc5322#section-3.6
 
         // Insert Date if missing
-        let res = if self.headers.get::<header::Date>().is_none() {
+        let mut res = if self.headers.get::<header::Date>().is_none() {
             self.date_now()
         } else {
             self
@@ -424,6 +424,10 @@ impl MessageBuilder {
             Some(e) => e,
             None => Envelope::try_from(&res.headers)?,
         };
+
+        // Remove `Bcc` headers now the envelope is set
+        res.headers.remove::<header::Bcc>();
+
         Ok(Message {
             headers: res.headers,
             body,
@@ -559,6 +563,7 @@ mod test {
 
         let email = Message::builder()
             .date(date)
+            .bcc("hidden@example.com".parse().unwrap())
             .header(header::From(
                 vec![Mailbox::new(
                     Some("Каи".into()),
