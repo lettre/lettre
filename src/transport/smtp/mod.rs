@@ -148,7 +148,7 @@ pub mod extension;
 mod pool;
 pub mod response;
 mod transport;
-mod util;
+pub(super) mod util;
 
 // Registered port numbers:
 // https://www.iana.
