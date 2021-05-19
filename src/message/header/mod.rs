@@ -26,6 +26,9 @@ mod mailbox;
 mod special;
 mod textual;
 
+/// Represents an email header
+///
+/// Email header as defined in [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322) and extensions.
 pub trait Header: Clone {
     fn name() -> HeaderName;
 

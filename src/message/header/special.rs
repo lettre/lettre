@@ -10,6 +10,9 @@ pub struct MimeVersion {
     minor: u8,
 }
 
+/// MIME version 1.0
+///
+/// Should be used in all MIME messages.
 pub const MIME_VERSION_1_0: MimeVersion = MimeVersion::new(1, 0);
 
 impl MimeVersion {

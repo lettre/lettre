@@ -72,6 +72,7 @@ impl ClientId {
 /// Supported ESMTP keywords
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -107,11 +108,11 @@ pub struct ServerInfo {
     /// Server name
     ///
     /// The name given in the server banner
-    pub name: String,
+    name: String,
     /// ESMTP features supported by the server
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
-    pub features: HashSet<Extension>,
+    features: HashSet<Extension>,
 }
 
 impl Display for ServerInfo {
@@ -135,7 +136,7 @@ impl ServerInfo {
 
         let mut features: HashSet<Extension> = HashSet::new();
 
-        for line in response.message.as_slice() {
+        for line in response.message() {
             if line.is_empty() {
                 continue;
             }
@@ -196,6 +197,11 @@ impl ServerInfo {
             }
         }
         None
+    }
+
+    /// The name given in the server banner
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
     }
 }
 
