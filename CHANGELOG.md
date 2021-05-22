@@ -1,3 +1,11 @@
+<a name="v0.9.6"></a>
+### v0.9.6 (2021-05-22)
+
+#### Bug Fixes
+
+* **transport**
+  * **SECURITY**: Prevent SMTP command injection in smtp transport
+
 <a name="v0.9.5"></a>
 ### v0.9.5 (2020-11-11)
 
