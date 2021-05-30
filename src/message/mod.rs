@@ -480,6 +480,24 @@ impl Message {
         MessageBuilder::new()
     }
 
+    /// Turn a finalized message back into a builder and body.
+    pub fn into_parts(self) -> (MessageBuilder, Body) {
+        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
+        let builder = MessageBuilder {
+            envelope: Some(self.envelope),
+            headers: self.headers,
+        };
+        let mut out = Vec::new();
+        match self.body {
+            MessageBody::Mime(p) => p.format(&mut out),
+            MessageBody::Raw(r) => {
+                out.extend_from_slice(&r)
+            }
+        }
+        let body = out.into_body(maybe_encoding);
+        (builder, body)
+    }
+
     /// Get the headers from the Message
     pub fn headers(&self) -> &Headers {
         &self.headers
@@ -649,5 +667,33 @@ mod test {
         for id in ids {
             assert_eq!(36, id.len());
         }
+    }
+
+    #[test]
+    fn test_into_parts() {
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
+        let email = Message::builder()
+            .date(date)
+            .bcc("hidden@example.com".parse().unwrap())
+            .header(header::From(
+                vec![Mailbox::new(
+                    Some("Каи".into()),
+                    "kayo@example.com".parse().unwrap(),
+                )]
+                .into(),
+            ))
+            .header(header::To(
+                vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
+            ))
+            .header(header::Subject::from(String::from("яңа ел белән!")))
+            .body(String::from("Happy new year!"))
+            .unwrap();
+        let (builder, body) = email.clone().into_parts();
+        let reconstructed = builder.body(body).unwrap();
+        assert_eq!(
+            String::from_utf8(email.formatted()).unwrap(),
+            String::from_utf8(reconstructed.formatted()).unwrap(),
+        );
     }
 }
