@@ -490,9 +490,7 @@ impl Message {
         let mut out = Vec::new();
         match self.body {
             MessageBody::Mime(p) => p.format(&mut out),
-            MessageBody::Raw(r) => {
-                out.extend_from_slice(&r)
-            }
+            MessageBody::Raw(r) => out.extend_from_slice(&r),
         }
         let body = out.into_body(maybe_encoding);
         (builder, body)
