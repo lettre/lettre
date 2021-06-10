@@ -26,29 +26,6 @@
 //! # fn main() {}
 //! ```
 //!
-//! ## Async tokio 0.2 example
-//!
-//! ```rust,no_run
-//! # use std::error::Error;
-//! #
-//! # #[cfg(all(feature = "tokio02", feature = "sendmail-transport", feature = "builder"))]
-//! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncTransport, Tokio02Executor, AsyncSendmailTransport, SendmailTransport};
-//!
-//! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse()?)
-//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
-//!     .to("Hei <hei@domain.tld>".parse()?)
-//!     .subject("Happy new year")
-//!     .body(String::from("Be happy!"))?;
-//!
-//! let sender = AsyncSendmailTransport::<Tokio02Executor>::new();
-//! let result = sender.send(email).await;
-//! assert!(result.is_ok());
-//! # Ok(())
-//! # }
-//! ```
-//!
 //! ## Async tokio 1.x example
 //!
 //! ```rust,no_run
@@ -98,16 +75,14 @@
 pub use self::error::Error;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Executor;
-#[cfg(feature = "tokio02")]
-use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 use crate::Tokio1Executor;
 use crate::{address::Envelope, Transport};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use crate::{AsyncTransport, Executor};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use async_trait::async_trait;
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use std::marker::PhantomData;
 use std::{
     ffi::OsString,
@@ -130,11 +105,8 @@ pub struct SendmailTransport {
 /// Asynchronously sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSendmailTransport<E: Executor> {
     inner: SendmailTransport,
     marker_: PhantomData<E>,
@@ -170,7 +142,7 @@ impl SendmailTransport {
     }
 }
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 impl<E> AsyncSendmailTransport<E>
 where
     E: Executor,
@@ -189,24 +161,6 @@ where
             inner: SendmailTransport::new_with_command(command),
             marker_: PhantomData,
         }
-    }
-
-    #[cfg(feature = "tokio02")]
-    fn tokio02_command(&self, envelope: &Envelope) -> tokio02_crate::process::Command {
-        use tokio02_crate::process::Command;
-
-        let mut c = Command::new(&self.inner.command);
-        c.kill_on_drop(true);
-        c.arg("-i");
-        if let Some(from) = envelope.from() {
-            c.arg("-f").arg(from);
-        }
-        c.arg("--")
-            .args(envelope.to())
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
-        c
     }
 
     #[cfg(feature = "tokio1")]
@@ -253,7 +207,7 @@ impl Default for SendmailTransport {
     }
 }
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 impl<E> Default for AsyncSendmailTransport<E>
 where
     E: Executor,
@@ -310,38 +264,6 @@ impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
             .await
             .map_err(error::client)?;
         let output = process.output().await.map_err(error::client)?;
-
-        if output.status.success() {
-            Ok(())
-        } else {
-            let stderr = String::from_utf8(output.stderr).map_err(error::response)?;
-            Err(error::client(stderr))
-        }
-    }
-}
-
-#[cfg(feature = "tokio02")]
-#[async_trait]
-impl AsyncTransport for AsyncSendmailTransport<Tokio02Executor> {
-    type Ok = ();
-    type Error = Error;
-
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        use tokio02_crate::io::AsyncWriteExt;
-
-        let mut command = self.tokio02_command(envelope);
-
-        // Spawn the sendmail command
-        let mut process = command.spawn().map_err(error::client)?;
-
-        process
-            .stdin
-            .as_mut()
-            .unwrap()
-            .write_all(&email)
-            .await
-            .map_err(error::client)?;
-        let output = process.wait_with_output().await.map_err(error::client)?;
 
         if output.status.success() {
             Ok(())

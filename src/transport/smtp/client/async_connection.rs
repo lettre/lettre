@@ -47,20 +47,6 @@ impl AsyncSmtpConnection {
     /// Connects to the configured server
     ///
     /// Sends EHLO and parses server information
-    #[cfg(feature = "tokio02")]
-    pub async fn connect_tokio02(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls_parameters: Option<TlsParameters>,
-    ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_tokio02(hostname, port, tls_parameters).await?;
-        Self::connect_impl(stream, hello_name).await
-    }
-
-    /// Connects to the configured server
-    ///
-    /// Sends EHLO and parses server information
     #[cfg(feature = "tokio1")]
     pub async fn connect_tokio1(
         hostname: &str,
@@ -312,7 +298,7 @@ impl AsyncSmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(response.code))
+                        Err(error::code(response.code()))
                     }
                 }
                 Err(nom::Err::Failure(e)) => {

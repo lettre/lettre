@@ -276,7 +276,7 @@ impl SmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(response.code))
+                        Err(error::code(response.code()))
                     };
                 }
                 Err(nom::Err::Failure(e)) => {

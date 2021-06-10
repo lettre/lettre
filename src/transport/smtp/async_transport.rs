@@ -10,41 +10,18 @@ use super::{
 };
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Executor;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use crate::AsyncTransport;
-#[cfg(feature = "tokio02")]
-use crate::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
 use std::time::Duration;
 
 /// Asynchronously sends emails using the SMTP protocol
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSmtpTransport<E> {
     // TODO: pool
     inner: AsyncSmtpClient<E>,
-}
-
-#[cfg(feature = "tokio02")]
-#[async_trait]
-impl AsyncTransport for AsyncSmtpTransport<Tokio02Executor> {
-    type Ok = Response;
-    type Error = Error;
-
-    /// Sends an email
-    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        let mut conn = self.inner.connection().await?;
-
-        let result = conn.send(envelope, email).await?;
-
-        conn.quit().await?;
-
-        Ok(result)
-    }
 }
 
 #[cfg(feature = "tokio1")]
@@ -94,8 +71,6 @@ where
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(
-        feature = "tokio02-native-tls",
-        feature = "tokio02-rustls-tls",
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
         feature = "async-std1-native-tls",
@@ -104,8 +79,6 @@ where
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
-            feature = "tokio02-native-tls",
-            feature = "tokio02-rustls-tls",
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls-tls",
             feature = "async-std1-rustls-tls"
@@ -133,8 +106,6 @@ where
     /// An error is returned if the connection can't be upgraded. No credentials
     /// or emails will be sent to the server, protecting from downgrade attacks.
     #[cfg(any(
-        feature = "tokio02-native-tls",
-        feature = "tokio02-rustls-tls",
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
         feature = "async-std1-native-tls",
@@ -143,8 +114,6 @@ where
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
-            feature = "tokio02-native-tls",
-            feature = "tokio02-rustls-tls",
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls-tls",
             feature = "async-std1-rustls-tls"
@@ -209,10 +178,7 @@ where
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
 #[derive(Debug, Clone)]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
 }
@@ -251,8 +217,6 @@ impl AsyncSmtpTransportBuilder {
 
     /// Set the TLS settings to use
     #[cfg(any(
-        feature = "tokio02-native-tls",
-        feature = "tokio02-rustls-tls",
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
         feature = "async-std1-native-tls",
@@ -261,8 +225,6 @@ impl AsyncSmtpTransportBuilder {
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
-            feature = "tokio02-native-tls",
-            feature = "tokio02-rustls-tls",
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls-tls",
             feature = "async-std1-rustls-tls"

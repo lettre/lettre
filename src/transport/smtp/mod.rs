@@ -116,7 +116,7 @@
 //! # }
 //! ```
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
 #[cfg(feature = "r2d2")]
 pub use self::pool::PoolConfig;
@@ -137,7 +137,7 @@ use crate::transport::smtp::{
 use client::Tls;
 use std::time::Duration;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_transport;
 pub mod authentication;
 pub mod client;
@@ -148,7 +148,7 @@ pub mod extension;
 mod pool;
 pub mod response;
 mod transport;
-pub mod util;
+pub(super) mod util;
 
 // Registered port numbers:
 // https://www.iana.
@@ -164,7 +164,7 @@ pub const SUBMISSION_PORT: u16 = 587;
 pub const SUBMISSIONS_PORT: u16 = 465;
 
 /// Default timeout
-pub const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone)]
 struct SmtpInfo {
