@@ -5,6 +5,8 @@ use std::fmt::Debug;
 use std::io::Result as IoResult;
 #[cfg(feature = "file-transport")]
 use std::path::Path;
+#[cfg(feature = "smtp-transport")]
+use std::time::Duration;
 
 #[cfg(all(
     feature = "smtp-transport",
@@ -43,6 +45,7 @@ pub trait Executor: Debug + Send + Sync + private::Sealed {
     async fn connect(
         hostname: &str,
         port: u16,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
     ) -> Result<AsyncSmtpConnection, Error>;
@@ -79,6 +82,7 @@ impl Executor for Tokio1Executor {
     async fn connect(
         hostname: &str,
         port: u16,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
     ) -> Result<AsyncSmtpConnection, Error> {
@@ -89,8 +93,13 @@ impl Executor for Tokio1Executor {
             _ => None,
         };
         #[allow(unused_mut)]
-        let mut conn =
-            AsyncSmtpConnection::connect_tokio1(hostname, port, hello_name, tls_parameters).await?;
+        let mut conn = AsyncSmtpConnection::connect_tokio1(
+            (hostname, port),
+            timeout,
+            hello_name,
+            tls_parameters,
+        )
+        .await?;
 
         #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
         match tls {
@@ -144,6 +153,7 @@ impl Executor for AsyncStd1Executor {
     async fn connect(
         hostname: &str,
         port: u16,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
     ) -> Result<AsyncSmtpConnection, Error> {
@@ -154,9 +164,13 @@ impl Executor for AsyncStd1Executor {
             _ => None,
         };
         #[allow(unused_mut)]
-        let mut conn =
-            AsyncSmtpConnection::connect_asyncstd1(hostname, port, hello_name, tls_parameters)
-                .await?;
+        let mut conn = AsyncSmtpConnection::connect_asyncstd1(
+            (hostname, port),
+            timeout,
+            hello_name,
+            tls_parameters,
+        )
+        .await?;
 
         #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
         match tls {

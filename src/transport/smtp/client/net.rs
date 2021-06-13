@@ -90,12 +90,20 @@ impl NetworkStream {
             timeout: Duration,
         ) -> Result<TcpStream, Error> {
             let addrs = server.to_socket_addrs().map_err(error::connection)?;
+
+            let mut last_err = None;
+
             for addr in addrs {
-                if let Ok(result) = TcpStream::connect_timeout(&addr, timeout) {
-                    return Ok(result);
+                match TcpStream::connect_timeout(&addr, timeout) {
+                    Ok(stream) => return Ok(stream),
+                    Err(err) => last_err = Some(err),
                 }
             }
-            Err(error::connection("Could not connect"))
+
+            Err(match last_err {
+                Some(last_err) => error::connection(last_err),
+                None => error::connection("could not resolve to any address"),
+            })
         }
 
         let tcp_stream = match timeout {
