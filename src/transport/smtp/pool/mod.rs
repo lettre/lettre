@@ -39,6 +39,8 @@ impl PoolConfig {
     /// Connection timeout
     ///
     /// Defaults to `30 seconds`
+    #[doc(hidden)]
+    #[deprecated(note = "The Connection timeout is already configured on the SMTP transport")]
     pub fn connection_timeout(mut self, connection_timeout: Duration) -> Self {
         self.connection_timeout = connection_timeout;
         self
