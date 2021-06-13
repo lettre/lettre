@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures_util::lock::Mutex;
+use futures_util::stream::{self, StreamExt};
 
 use crate::executor::SpawnHandle;
 use crate::transport::smtp::async_transport::AsyncSmtpClient;
@@ -82,9 +83,9 @@ impl<E: Executor> Pool<E> {
                                 connections.push(ParkedConnection::park(conn));
                             }
 
-                            for conn in dropped {
-                                let mut conn = conn.unpark();
-                                conn.abort().await;
+                            if !dropped.is_empty() {
+                                abort_concurrent(dropped.into_iter().map(|conn| conn.unpark()))
+                                    .await;
                             }
                         }
                         None => break,
@@ -186,10 +187,7 @@ impl<E: Executor> Drop for Pool<E> {
                 handle.shutdown().await;
             }
 
-            for conn in connections {
-                let mut conn = conn.unpark();
-                conn.abort().await;
-            }
+            abort_concurrent(connections.into_iter().map(|conn| conn.unpark())).await;
         });
     }
 }
@@ -246,4 +244,15 @@ impl<E: Executor> Drop for PooledConnection<E> {
             pool.recycle(conn).await;
         });
     }
+}
+
+async fn abort_concurrent<I>(iter: I)
+where
+    I: Iterator<Item = AsyncSmtpConnection>,
+{
+    stream::iter(iter)
+        .for_each_concurrent(8, |mut conn| async move {
+            conn.abort().await;
+        })
+        .await;
 }
