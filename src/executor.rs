@@ -81,7 +81,6 @@ pub trait Executor: Debug + Send + Sync + 'static + private::Sealed {
 #[doc(hidden)]
 #[cfg(feature = "smtp-transport")]
 #[async_trait]
-
 pub trait SpawnHandle: Debug + Send + Sync + 'static + private::Sealed {
     async fn shutdown(self);
 }
