@@ -306,6 +306,8 @@ impl<E> Debug for AsyncSmtpClient<E> {
     }
 }
 
+// `clone` is unused when the `pool` feature is on
+#[allow(dead_code)]
 impl<E> AsyncSmtpClient<E>
 where
     E: Executor,
