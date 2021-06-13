@@ -49,9 +49,11 @@ impl<E: Executor> Pool<E> {
             let pool = Arc::downgrade(&pool_);
 
             let handle = E::spawn(async move {
-                // prepare for tracing
                 #[allow(clippy::while_let_loop)]
                 loop {
+                    #[cfg(feature = "tracing")]
+                    tracing::trace!("running cleanup tasks");
+
                     match pool.upgrade() {
                         Some(pool) => {
                             #[allow(clippy::needless_collect)]
@@ -73,6 +75,8 @@ impl<E: Executor> Pool<E> {
                                 (connections.len() - dropped.len(), dropped)
                             };
 
+                            #[cfg(feature = "tracing")]
+                            let mut created = 0;
                             for _ in count..=(min_idle as usize) {
                                 let conn = match pool.client.connection().await {
                                     Ok(conn) => conn,
@@ -81,14 +85,33 @@ impl<E: Executor> Pool<E> {
 
                                 let mut connections = pool.connections.lock().await;
                                 connections.push(ParkedConnection::park(conn));
+
+                                #[cfg(feature = "tracing")]
+                                {
+                                    created += 1;
+                                }
+                            }
+
+                            #[cfg(feature = "tracing")]
+                            if created > 0 {
+                                tracing::debug!("created {} idle connections", created)
                             }
 
                             if !dropped.is_empty() {
+                                #[cfg(feature = "tracing")]
+                                tracing::debug!("dropping {} idle connections", dropped.len());
+
                                 abort_concurrent(dropped.into_iter().map(|conn| conn.unpark()))
                                     .await;
                             }
                         }
-                        None => break,
+                        None => {
+                            #[cfg(feature = "tracing")]
+                            tracing::warn!(
+                                "breaking out of task - no more references to Pool are available"
+                            );
+                            break;
+                        }
                     }
 
                     E::sleep(idle_timeout).await;
@@ -116,13 +139,22 @@ impl<E: Executor> Pool<E> {
 
                     // TODO: handle the client try another connection if this one isn't good
                     if !conn.test_connected().await {
+                        #[cfg(feature = "tracing")]
+                        tracing::debug!("dropping a broken connection");
+
                         conn.abort().await;
                         continue;
                     }
 
+                    #[cfg(feature = "tracing")]
+                    tracing::debug!("reusing a pooled connection");
+
                     return Ok(PooledConnection::wrap(conn, self.clone()));
                 }
                 None => {
+                    #[cfg(feature = "tracing")]
+                    tracing::debug!("creating a new connection");
+
                     let conn = self.client.connection().await?;
                     return Ok(PooledConnection::wrap(conn, self.clone()));
                 }
@@ -132,9 +164,15 @@ impl<E: Executor> Pool<E> {
 
     async fn recycle(&self, mut conn: AsyncSmtpConnection) {
         if conn.has_broken() {
+            #[cfg(feature = "tracing")]
+            tracing::debug!("dropping a broken connection instead of recycling it");
+
             conn.abort().await;
             drop(conn);
         } else {
+            #[cfg(feature = "tracing")]
+            tracing::debug!("recycling connection");
+
             let mut connections = self.connections.lock().await;
             if connections.len() >= self.config.max_size as usize {
                 drop(connections);
@@ -176,6 +214,9 @@ impl<E: Executor> Debug for Pool<E> {
 
 impl<E: Executor> Drop for Pool<E> {
     fn drop(&mut self) {
+        #[cfg(feature = "tracing")]
+        tracing::debug!("dropping Pool");
+
         let connections = mem::take(self.connections.get_mut());
         let handle = self
             .handle
