@@ -149,11 +149,11 @@ where
     /// [`AsyncSmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder {
-        let new = SmtpInfo {
+        let info = SmtpInfo {
             server: server.into(),
             ..Default::default()
         };
-        AsyncSmtpTransportBuilder { info: new }
+        AsyncSmtpTransportBuilder { info }
     }
 }
 
@@ -245,6 +245,7 @@ impl AsyncSmtpTransportBuilder {
             info: self.info,
             marker_: PhantomData,
         };
+
         AsyncSmtpTransport { inner: client }
     }
 }
