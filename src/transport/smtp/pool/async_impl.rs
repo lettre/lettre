@@ -48,6 +48,8 @@ impl<E: Executor> Pool<E> {
             let pool = Arc::downgrade(&pool_);
 
             let handle = E::spawn(async move {
+                // prepare for tracing
+                #[allow(clippy::while_let_loop)]
                 loop {
                     match pool.upgrade() {
                         Some(pool) => {
