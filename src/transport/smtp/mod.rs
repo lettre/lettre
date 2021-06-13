@@ -144,7 +144,7 @@ pub mod client;
 pub mod commands;
 mod error;
 pub mod extension;
-#[cfg(feature = "r2d2")]
+#[cfg(any(feature = "r2d2", feature = "pool"))]
 mod pool;
 pub mod response;
 mod transport;

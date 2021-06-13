@@ -57,7 +57,7 @@ async-std = { version = "1.8", optional = true, features = ["unstable"] }
 async-rustls = { version = "0.2", optional = true }
 
 ## tokio
-tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "net", "io-util"], optional = true }
+tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.22", optional = true }
 
@@ -76,7 +76,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-default = ["smtp-transport", "native-tls", "hostname", "r2d2", "builder"]
+default = ["smtp-transport", "pool", "native-tls", "hostname", "r2d2", "builder"]
 builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
 
 # transports
@@ -84,6 +84,8 @@ file-transport = ["uuid"]
 file-transport-envelope = ["serde", "serde_json", "file-transport"]
 sendmail-transport = []
 smtp-transport = ["base64", "nom"]
+
+pool = ["futures-util"]
 
 rustls-tls = ["webpki", "webpki-roots", "rustls"]
 

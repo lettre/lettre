@@ -1,10 +1,15 @@
 use std::{
     fmt::{self, Debug},
     marker::PhantomData,
+    sync::Arc,
 };
 
 use async_trait::async_trait;
 
+#[cfg(feature = "pool")]
+use super::pool::async_impl::Pool;
+#[cfg(feature = "pool")]
+use super::PoolConfig;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
@@ -18,8 +23,10 @@ use crate::{Envelope, Executor};
 
 /// Asynchronously sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
-pub struct AsyncSmtpTransport<E> {
-    // TODO: pool
+pub struct AsyncSmtpTransport<E: Executor> {
+    #[cfg(feature = "pool")]
+    inner: Arc<Pool<E>>,
+    #[cfg(not(feature = "pool"))]
     inner: AsyncSmtpClient<E>,
 }
 
@@ -35,6 +42,7 @@ impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
 
         let result = conn.send(envelope, email).await?;
 
+        #[cfg(not(feature = "pool"))]
         conn.quit().await?;
 
         Ok(result)
@@ -151,11 +159,15 @@ where
             server: server.into(),
             ..Default::default()
         };
-        AsyncSmtpTransportBuilder { info }
+        AsyncSmtpTransportBuilder {
+            info,
+            #[cfg(feature = "pool")]
+            pool_config: PoolConfig::default(),
+        }
     }
 }
 
-impl<E> Debug for AsyncSmtpTransport<E> {
+impl<E: Executor> Debug for AsyncSmtpTransport<E> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut builder = f.debug_struct("AsyncSmtpTransport");
         builder.field("inner", &self.inner);
@@ -180,6 +192,8 @@ where
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSmtpTransportBuilder {
     info: SmtpInfo,
+    #[cfg(feature = "pool")]
+    pool_config: PoolConfig,
 }
 
 /// Builder for the SMTP `AsyncSmtpTransport`
@@ -228,6 +242,16 @@ impl AsyncSmtpTransportBuilder {
         self
     }
 
+    /// Use a custom configuration for the connection pool
+    ///
+    /// Defaults can be found at [`PoolConfig`]
+    #[cfg(feature = "pool")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pool")))]
+    pub fn pool_config(mut self, pool_config: PoolConfig) -> Self {
+        self.pool_config = pool_config;
+        self
+    }
+
     /// Build the transport
     pub fn build<E>(self) -> AsyncSmtpTransport<E>
     where
@@ -237,6 +261,9 @@ impl AsyncSmtpTransportBuilder {
             info: self.info,
             marker_: PhantomData,
         };
+
+        #[cfg(feature = "pool")]
+        let client = Pool::new(self.pool_config, client);
 
         AsyncSmtpTransport { inner: client }
     }
