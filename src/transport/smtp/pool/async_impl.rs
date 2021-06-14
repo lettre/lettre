@@ -72,7 +72,7 @@ impl<E: Executor> Pool<E> {
                                     .map(|i| connections.remove(i))
                                     .collect::<Vec<_>>();
 
-                                (connections.len() - dropped.len(), dropped)
+                                (connections.len(), dropped)
                             };
 
                             #[cfg(feature = "tracing")]
