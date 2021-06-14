@@ -50,7 +50,6 @@ impl<E: Executor> Pool<E> {
             let pool = Arc::downgrade(&pool_);
 
             let handle = E::spawn(async move {
-                #[allow(clippy::while_let_loop)]
                 loop {
                     #[cfg(feature = "tracing")]
                     tracing::trace!("running cleanup tasks");
@@ -81,7 +80,14 @@ impl<E: Executor> Pool<E> {
                             for _ in count..=(min_idle as usize) {
                                 let conn = match pool.client.connection().await {
                                     Ok(conn) => conn,
-                                    Err(_) => break,
+                                    Err(err) => {
+                                        #[cfg(feature = "tracing")]
+                                        tracing::warn!("couldn't create idle connection {}", err);
+                                        #[cfg(not(feature = "tracing"))]
+                                        let _ = err;
+
+                                        break;
+                                    }
                                 };
 
                                 let mut connections = pool.connections.lock().await;
@@ -95,12 +101,12 @@ impl<E: Executor> Pool<E> {
 
                             #[cfg(feature = "tracing")]
                             if created > 0 {
-                                tracing::debug!("created {} idle connections", created)
+                                tracing::debug!("created {} idle connections", created);
                             }
 
                             if !dropped.is_empty() {
                                 #[cfg(feature = "tracing")]
-                                tracing::debug!("dropping {} idle connections", dropped.len());
+                                tracing::debug!("dropped {} idle connections", dropped.len());
 
                                 abort_concurrent(dropped.into_iter().map(|conn| conn.unpark()))
                                     .await;
