@@ -1,18 +1,16 @@
 use std::time::Duration;
 
-#[cfg(all(feature = "pool", any(feature = "tokio1", feature = "async-std1")))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub mod async_impl;
-#[cfg(feature = "r2d2")]
 pub mod sync_impl;
 
 /// Configuration for a connection pool
 #[derive(Debug, Clone)]
 #[allow(missing_copy_implementations)]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "r2d2", feature = "pool"))))]
+#[cfg_attr(docsrs, doc(cfg(feature = "pool")))]
 pub struct PoolConfig {
     min_idle: u32,
     max_size: u32,
-    connection_timeout: Duration,
     idle_timeout: Duration,
 }
 
@@ -43,8 +41,8 @@ impl PoolConfig {
     /// Defaults to `30 seconds`
     #[doc(hidden)]
     #[deprecated(note = "The Connection timeout is already configured on the SMTP transport")]
-    pub fn connection_timeout(mut self, connection_timeout: Duration) -> Self {
-        self.connection_timeout = connection_timeout;
+    pub fn connection_timeout(self, connection_timeout: Duration) -> Self {
+        let _ = connection_timeout;
         self
     }
 
@@ -62,7 +60,6 @@ impl Default for PoolConfig {
         Self {
             min_idle: 0,
             max_size: 10,
-            connection_timeout: Duration::from_secs(30),
             idle_timeout: Duration::from_secs(60),
         }
     }
