@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 
 use futures_util::lock::Mutex;
 use futures_util::stream::{self, StreamExt};
+use once_cell::sync::OnceCell;
 
 use crate::executor::SpawnHandle;
 use crate::transport::smtp::async_transport::AsyncSmtpClient;
@@ -19,7 +20,7 @@ pub struct Pool<E: Executor> {
     config: PoolConfig,
     connections: Mutex<Vec<ParkedConnection>>,
     client: AsyncSmtpClient<E>,
-    handle: Mutex<Option<E::Handle>>,
+    handle: OnceCell<E::Handle>,
 }
 
 struct ParkedConnection {
@@ -38,7 +39,7 @@ impl<E: Executor> Pool<E> {
             config,
             connections: Mutex::new(Vec::new()),
             client,
-            handle: Mutex::new(None),
+            handle: OnceCell::new(),
         });
 
         {
@@ -117,10 +118,10 @@ impl<E: Executor> Pool<E> {
                     E::sleep(idle_timeout).await;
                 }
             });
-            *pool_
+            pool_
                 .handle
-                .try_lock()
-                .expect("Pool handle shouldn't be locked") = Some(handle);
+                .set(handle)
+                .expect("handle hasn't been set yet");
         }
 
         pool
@@ -200,12 +201,9 @@ impl<E: Executor> Debug for Pool<E> {
             .field("client", &self.client)
             .field(
                 "handle",
-                &match self.handle.try_lock() {
-                    Some(handle) => match &*handle {
-                        Some(_) => "Some(JoinHandle)",
-                        None => "None",
-                    },
-                    None => "LOCKED",
+                &match self.handle.get() {
+                    Some(_) => "Some(JoinHandle)",
+                    None => "None",
                 },
             )
             .finish()
@@ -218,11 +216,7 @@ impl<E: Executor> Drop for Pool<E> {
         tracing::debug!("dropping Pool");
 
         let connections = mem::take(self.connections.get_mut());
-        let handle = self
-            .handle
-            .try_lock()
-            .expect("Handle shouldn't be locked")
-            .take();
+        let handle = self.handle.take();
         E::spawn(async move {
             if let Some(handle) = handle {
                 handle.shutdown().await;
