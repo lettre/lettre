@@ -1,8 +1,9 @@
 use std::{
-    mem,
+    io, mem,
     net::SocketAddr,
     pin::Pin,
     task::{Context, Poll},
+    time::Duration,
 };
 
 use futures_io::{
@@ -13,9 +14,9 @@ use futures_io::{
 use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
 
 #[cfg(feature = "async-std1")]
-use async_std::net::TcpStream as AsyncStd1TcpStream;
+use async_std::net::{TcpStream as AsyncStd1TcpStream, ToSocketAddrs as AsyncStd1ToSocketAddrs};
 #[cfg(feature = "tokio1")]
-use tokio1_crate::net::TcpStream as Tokio1TcpStream;
+use tokio1_crate::net::{TcpStream as Tokio1TcpStream, ToSocketAddrs as Tokio1ToSocketAddrs};
 
 #[cfg(feature = "async-std1-native-tls")]
 use async_native_tls::TlsStream as AsyncStd1TlsStream;
@@ -107,14 +108,47 @@ impl AsyncNetworkStream {
     }
 
     #[cfg(feature = "tokio1")]
-    pub async fn connect_tokio1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_tokio1<T: Tokio1ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncNetworkStream, Error> {
-        let tcp_stream = Tokio1TcpStream::connect((hostname, port))
-            .await
-            .map_err(error::connection)?;
+        async fn try_connect_timeout<T: Tokio1ToSocketAddrs>(
+            server: T,
+            timeout: Duration,
+        ) -> Result<Tokio1TcpStream, Error> {
+            let addrs = tokio1_crate::net::lookup_host(server)
+                .await
+                .map_err(error::connection)?;
+
+            let mut last_err = None;
+
+            for addr in addrs {
+                let connect_future = Tokio1TcpStream::connect(&addr);
+                match tokio1_crate::time::timeout(timeout, connect_future).await {
+                    Ok(Ok(stream)) => return Ok(stream),
+                    Ok(Err(err)) => last_err = Some(err),
+                    Err(_) => {
+                        last_err = Some(io::Error::new(
+                            io::ErrorKind::TimedOut,
+                            "connection timed out",
+                        ))
+                    }
+                }
+            }
+
+            Err(match last_err {
+                Some(last_err) => error::connection(last_err),
+                None => error::connection("could not resolve to any address"),
+            })
+        }
+
+        let tcp_stream = match timeout {
+            Some(t) => try_connect_timeout(server, t).await?,
+            None => Tokio1TcpStream::connect(server)
+                .await
+                .map_err(error::connection)?,
+        };
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
@@ -124,14 +158,45 @@ impl AsyncNetworkStream {
     }
 
     #[cfg(feature = "async-std1")]
-    pub async fn connect_asyncstd1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_asyncstd1<T: AsyncStd1ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncNetworkStream, Error> {
-        let tcp_stream = AsyncStd1TcpStream::connect((hostname, port))
-            .await
-            .map_err(error::connection)?;
+        async fn try_connect_timeout<T: AsyncStd1ToSocketAddrs>(
+            server: T,
+            timeout: Duration,
+        ) -> Result<AsyncStd1TcpStream, Error> {
+            let addrs = server.to_socket_addrs().await.map_err(error::connection)?;
+
+            let mut last_err = None;
+
+            for addr in addrs {
+                let connect_future = AsyncStd1TcpStream::connect(&addr);
+                match async_std::future::timeout(timeout, connect_future).await {
+                    Ok(Ok(stream)) => return Ok(stream),
+                    Ok(Err(err)) => last_err = Some(err),
+                    Err(_) => {
+                        last_err = Some(io::Error::new(
+                            io::ErrorKind::TimedOut,
+                            "connection timed out",
+                        ))
+                    }
+                }
+            }
+
+            Err(match last_err {
+                Some(last_err) => error::connection(last_err),
+                None => error::connection("could not resolve to any address"),
+            })
+        }
+
+        let tcp_stream = match timeout {
+            Some(t) => try_connect_timeout(server, t).await?,
+            None => AsyncStd1TcpStream::connect(server)
+                .await
+                .map_err(error::connection)?,
+        };
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {

@@ -2,6 +2,7 @@ use std::{
     fmt::{self, Debug},
     marker::PhantomData,
     sync::Arc,
+    time::Duration,
 };
 
 use async_trait::async_trait;
@@ -149,6 +150,7 @@ where
     ///
     /// * No authentication
     /// * No TLS
+    /// * A 60 seconds timeout for smtp commands
     /// * Port 25
     ///
     /// Consider using [`AsyncSmtpTransport::relay`](#method.relay) or
@@ -222,6 +224,12 @@ impl AsyncSmtpTransportBuilder {
         self
     }
 
+    /// Set the timeout duration
+    pub fn timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.info.timeout = timeout;
+        self
+    }
+
     /// Set the TLS settings to use
     #[cfg(any(
         feature = "tokio1-native-tls",
@@ -286,6 +294,7 @@ where
         let mut conn = E::connect(
             &self.info.server,
             self.info.port,
+            self.info.timeout,
             &self.info.hello_name,
             &self.info.tls,
         )
