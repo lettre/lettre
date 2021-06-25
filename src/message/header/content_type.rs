@@ -20,6 +20,7 @@ impl ContentType {
     ///
     /// Indicates that the body is in utf-8 encoded html.
     pub const TEXT_HTML: ContentType = Self::from_mime(mime::TEXT_HTML_UTF_8);
+
     /// A `ContentType` of type `text/plain; charset=utf-8`
     ///
     /// Indicates that the body is in utf-8 encoded plain text.
