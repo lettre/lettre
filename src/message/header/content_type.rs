@@ -16,15 +16,14 @@ use crate::BoxError;
 pub struct ContentType(Mime);
 
 impl ContentType {
-    /// A `ContentType` of type `text/plain; charset=utf-8`
-    ///
-    /// Indicates that the body is in utf-8 encoded plain text.
-    pub const TEXT_PLAIN: ContentType = Self::from_mime(mime::TEXT_PLAIN_UTF_8);
-
     /// A `ContentType` of type `text/html; charset=utf-8`
     ///
     /// Indicates that the body is in utf-8 encoded html.
     pub const TEXT_HTML: ContentType = Self::from_mime(mime::TEXT_HTML_UTF_8);
+    /// A `ContentType` of type `text/plain; charset=utf-8`
+    ///
+    /// Indicates that the body is in utf-8 encoded plain text.
+    pub const TEXT_PLAIN: ContentType = Self::from_mime(mime::TEXT_PLAIN_UTF_8);
 
     /// Parse `s` into `ContentType`
     pub fn parse(s: &str) -> Result<ContentType, ContentTypeErr> {
@@ -78,13 +77,13 @@ impl Display for ContentTypeErr {
     }
 }
 
-// ------------------
-// Serde feature
-// ------------------
+// --------------------------------------
+// Serialization and Deserialization
+// --------------------------------------
 #[cfg(feature = "serde")]
 mod serde {
-    use serde::ser::{Serialize, Serializer};
     use serde::de::{self, Deserialize, Deserializer, Visitor};
+    use serde::ser::{Serialize, Serializer};
 
     use std::fmt;
 
@@ -92,55 +91,58 @@ mod serde {
 
     impl Serialize for ContentType {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                // So the value in `ContentType` is `Mime`, so we are using
-                // its "essence" name as the value. For example "text/html"
-                serializer.serialize_newtype_struct(
-                    "ContentType", &self.0.essence_str())
+        where
+            S: Serializer,
+        {
+            // So the value in `ContentType` is `Mime`, so we are using
+            // its "essence" name as the value. For example "text/html"
+            serializer
+                .serialize_newtype_struct("ContentType", &self.0.essence_str())
 
-                    // we don't serialize the two constant values `TEXT_PLAIN` and
-                    // `TEXT_HTML` because, well... they are constants...
-            }
+            // we don't serialize the two constant values `TEXT_PLAIN` and
+            // `TEXT_HTML` because, well... they are constants...
+        }
     }
 
     impl<'de> Deserialize<'de> for ContentType {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                struct ContentTypeVisitor;
+        where
+            D: Deserializer<'de>,
+        {
+            struct ContentTypeVisitor;
 
-                impl<'de> Visitor<'de> for ContentTypeVisitor {
-                    type Value = ContentType;
+            impl<'de> Visitor<'de> for ContentTypeVisitor {
+                type Value = ContentType;
 
-                    // The error message which states what the Visitor expects to
-                    // receive
-                    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-                        formatter.write_str(
-                            concat![
-                            "Visitor expects a string which ",
-                            "represents a mime type, for example `text/plain`",
-                            " (as a string)",
-                            ]
-                            )
-                    }
-
-                    fn visit_str<E>(self, mime: &str) -> Result<ContentType, E>
-                        where
-                            E: de::Error,
-                        {
-                            match ContentType::parse(mime) {
-                                Ok(content_type) => Ok(content_type),
-                                Err(_) => 
-                                    Err(E::custom(format!("Couldn't parse the following MIME-Type: {}", mime)))
-                            }
-                        }
+                // The error message which states what the Visitor expects to
+                // receive
+                fn expecting(
+                    &self,
+                    formatter: &mut fmt::Formatter<'_>,
+                ) -> fmt::Result {
+                    formatter.write_str(concat![
+                        "Visitor expects a string which ",
+                        "represents a mime type, for example `text/plain`",
+                        " (as a string)",
+                    ])
                 }
 
-                deserializer.deserialize_str(ContentTypeVisitor)
+                fn visit_str<E>(self, mime: &str) -> Result<ContentType, E>
+                where
+                    E: de::Error,
+                {
+                    match ContentType::parse(mime) {
+                        Ok(content_type) => Ok(content_type),
+                        Err(_) => Err(E::custom(format!(
+                            "Couldn't parse the following MIME-Type: {}",
+                            mime
+                        ))),
+                    }
+                }
             }
+
+            deserializer.deserialize_str(ContentTypeVisitor)
+        }
     }
 }
 
@@ -158,14 +160,14 @@ mod test {
         assert_eq!(
             headers.to_string(),
             "Content-Type: text/plain; charset=utf-8\r\n"
-            );
+        );
 
         headers.set(ContentType::TEXT_HTML);
 
         assert_eq!(
             headers.to_string(),
             "Content-Type: text/html; charset=utf-8\r\n"
-            );
+        );
     }
 
     #[test]
@@ -175,14 +177,14 @@ mod test {
         headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/plain; charset=utf-8".to_string(),
-            );
+        );
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_PLAIN));
 
         headers.insert_raw(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/html; charset=utf-8".to_string(),
-            );
+        );
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_HTML));
     }
