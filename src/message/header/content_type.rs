@@ -12,6 +12,13 @@ use crate::BoxError;
 /// `Content-Type` of the body
 ///
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
+///
+/// The two constants in ContentType are just for convenience, since those are
+/// the two most common content types for email, but using `ContentType::parse`
+/// you can build a ContentType of any other valid mime type. A list of all
+/// mime types can be seen [here].
+///
+/// [here]: https://docs.rs/mime/0.3.16/mime/#constants
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContentType(Mime);
 
