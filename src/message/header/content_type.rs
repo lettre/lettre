@@ -96,8 +96,7 @@ mod serde {
         {
             // So the value in `ContentType` is `Mime`, so we are using
             // its "essence" name as the value. For example "text/html"
-            serializer
-                .serialize_newtype_struct("ContentType", &self.0.essence_str())
+            serializer.serialize_newtype_struct("ContentType", &self.0.essence_str())
 
             // we don't serialize the two constant values `TEXT_PLAIN` and
             // `TEXT_HTML` because, well... they are constants...
@@ -116,10 +115,7 @@ mod serde {
 
                 // The error message which states what the Visitor expects to
                 // receive
-                fn expecting(
-                    &self,
-                    formatter: &mut fmt::Formatter<'_>,
-                ) -> fmt::Result {
+                fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                     formatter.write_str(concat![
                         "Visitor expects a string which ",
                         "represents a mime type, for example `text/plain`",
