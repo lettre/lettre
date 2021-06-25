@@ -12,7 +12,7 @@ use crate::BoxError;
 /// `Content-Type` of the body
 ///
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentType(Mime);
 
 impl ContentType {
