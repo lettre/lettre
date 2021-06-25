@@ -78,6 +78,71 @@ impl Display for ContentTypeErr {
     }
 }
 
+// --------------------------------------
+// Serialization and Deserialization
+// --------------------------------------
+#[cfg(feature = "serde")]
+mod serde {
+    use serde::de::{self, Deserialize, Deserializer, Visitor};
+    use serde::ser::{Serialize, Serializer};
+
+    use std::fmt;
+
+    use super::ContentType;
+
+    impl Serialize for ContentType {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            // So the value in `ContentType` is `Mime`, so we are using
+            // its "essence" name as the value. For example "text/html"
+            serializer.serialize_newtype_struct("ContentType", &self.0.essence_str())
+
+            // we don't serialize the two constant values `TEXT_PLAIN` and
+            // `TEXT_HTML` because, well... they are constants...
+        }
+    }
+
+    impl<'de> Deserialize<'de> for ContentType {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            struct ContentTypeVisitor;
+
+            impl<'de> Visitor<'de> for ContentTypeVisitor {
+                type Value = ContentType;
+
+                // The error message which states what the Visitor expects to
+                // receive
+                fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    formatter.write_str(concat![
+                        "Visitor expects a string which ",
+                        "represents a mime type, for example `text/plain`",
+                        " (as a string)",
+                    ])
+                }
+
+                fn visit_str<E>(self, mime: &str) -> Result<ContentType, E>
+                where
+                    E: de::Error,
+                {
+                    match ContentType::parse(mime) {
+                        Ok(content_type) => Ok(content_type),
+                        Err(_) => Err(E::custom(format!(
+                            "Couldn't parse the following MIME-Type: {}",
+                            mime
+                        ))),
+                    }
+                }
+            }
+
+            deserializer.deserialize_str(ContentTypeVisitor)
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::ContentType;
