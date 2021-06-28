@@ -9,16 +9,13 @@ use mime::Mime;
 use super::{Header, HeaderName};
 use crate::BoxError;
 
-/// `Content-Type` of the body
+/// This struct can represent any valid [mime type] by using its `parse`
+/// function! There are just these two constant values `TEXT_PLAIN` and
+/// `TEXT_HTML` because they are the most-used mime-types.
 ///
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
 ///
-/// The two constants in ContentType are just for convenience, since those are
-/// the two most common content types for email, but using `ContentType::parse`
-/// you can build a ContentType of any other valid mime type. A list of all
-/// mime types can be seen [here].
-///
-/// [here]: https://docs.rs/mime/0.3.16/mime/#constants
+/// [mime type]: https://www.iana.org/assignments/media-types/media-types.xhtml
 #[derive(Debug, Clone, PartialEq)]
 pub struct ContentType(Mime);
 
