@@ -11,7 +11,7 @@ use crate::{
     Envelope,
 };
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use std::fmt::Display;
+use std::{fmt::Display, time::Duration};
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
@@ -48,13 +48,13 @@ impl AsyncSmtpConnection {
     ///
     /// Sends EHLO and parses server information
     #[cfg(feature = "tokio1")]
-    pub async fn connect_tokio1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_tokio1<T: tokio1_crate::net::ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_tokio1(hostname, port, tls_parameters).await?;
+        let stream = AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
@@ -62,13 +62,13 @@ impl AsyncSmtpConnection {
     ///
     /// Sends EHLO and parses server information
     #[cfg(feature = "async-std1")]
-    pub async fn connect_asyncstd1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_asyncstd1<T: async_std::net::ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_asyncstd1(hostname, port, tls_parameters).await?;
+        let stream = AsyncNetworkStream::connect_asyncstd1(server, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
