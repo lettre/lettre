@@ -28,6 +28,7 @@
 //!
 //! * **smtp-transport** 📫: Enable the SMTP transport
 //! * **r2d2** 📫: Connection pool for SMTP transport
+//! * **pool** 📫: Async connection pool for SMTP transport
 //! * **hostname** 📫: Try to use the actual system hostname for the SMTP `CLIENTID`
 //!
 //! #### SMTP over TLS via the native-tls crate
