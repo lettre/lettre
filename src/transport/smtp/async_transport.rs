@@ -150,7 +150,7 @@ where
     ///
     /// * No authentication
     /// * No TLS
-    /// * A 60 seconds timeout for smtp commands
+    /// * A 30 seconds connection timeout
     /// * Port 25
     ///
     /// Consider using [`AsyncSmtpTransport::relay`](#method.relay) or
@@ -224,9 +224,15 @@ impl AsyncSmtpTransportBuilder {
         self
     }
 
-    /// Set the timeout duration
-    pub fn timeout(mut self, timeout: Option<Duration>) -> Self {
-        self.info.timeout = timeout;
+    #[doc(hidden)]
+    #[deprecated(note = "Renamed to `connection_timeout`")]
+    pub fn timeout(self, timeout: Option<Duration>) -> Self {
+        self.connection_timeout(timeout)
+    }
+
+    /// Set the connection timeout duration
+    pub fn connection_timeout(mut self, connection_timeout: Option<Duration>) -> Self {
+        self.info.connection_timeout = connection_timeout;
         self
     }
 
@@ -294,7 +300,7 @@ where
         let mut conn = E::connect(
             &self.info.server,
             self.info.port,
-            self.info.timeout,
+            self.info.connection_timeout,
             &self.info.hello_name,
             &self.info.tls,
         )
