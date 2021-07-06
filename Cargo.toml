@@ -42,9 +42,10 @@ hostname = { version = "0.3", optional = true } # feature
 
 ## tls
 native-tls = { version = "0.2", optional = true } # feature
-rustls = { version = "0.19", features = ["dangerous_configuration"], optional = true }
-webpki = { version = "0.21", optional = true }
-webpki-roots = { version = "0.21", optional = true }
+rustls = { git = "https://github.com/ctz/rustls", features = ["dangerous_configuration"], optional = true }
+rustls-pemfile = { version = "0.2.1", optional = true }
+ct-logs = { version = "0.9", optional = true }
+webpki-roots = { version = "0.22", optional = true }
 
 # async
 futures-io = { version = "0.3.7", optional = true }
@@ -59,7 +60,7 @@ async-rustls = { version = "0.2", optional = true }
 ## tokio
 tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
-tokio1_rustls = { package = "tokio-rustls", version = "0.22", optional = true }
+tokio1_rustls = { package = "tokio-rustls", git = "https://github.com/tokio-rs/tls.git", branch = "eliza/rustls-0.20", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -87,7 +88,7 @@ smtp-transport = ["base64", "nom"]
 
 pool = ["futures-util"]
 
-rustls-tls = ["webpki", "webpki-roots", "rustls"]
+rustls-tls = ["webpki-roots", "rustls", "rustls-pemfile", "ct-logs"]
 
 # async
 async-std1 = ["async-std", "async-trait", "futures-io", "futures-util"]

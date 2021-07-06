@@ -3,12 +3,13 @@ use crate::transport::smtp::{error, Error};
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
-use rustls::{ClientConfig, RootCertStore, ServerCertVerified, ServerCertVerifier, TLSError};
+use rustls::{
+    ClientConfig, Error as TlsError, RootCertStore, ServerCertVerified, ServerCertVerifier,
+    ServerName, WebPkiVerifier,
+};
 use std::fmt::{self, Debug};
 #[cfg(feature = "rustls-tls")]
-use std::sync::Arc;
-#[cfg(feature = "rustls-tls")]
-use webpki::DNSNameRef;
+use std::{sync::Arc, time::SystemTime};
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
@@ -165,19 +166,27 @@ impl TlsParametersBuilder {
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
         use webpki_roots::TLS_SERVER_ROOTS;
 
-        let mut tls = ClientConfig::new();
+        let tls = ClientConfig::builder();
+        let tls = tls.with_safe_defaults();
 
-        for cert in self.root_certs {
-            for rustls_cert in cert.rustls {
-                tls.root_store.add(&rustls_cert).map_err(error::tls)?;
+        let tls = if self.accept_invalid_certs {
+            tls.with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
+        } else {
+            let mut root_cert_store = RootCertStore::empty();
+            for cert in self.root_certs {
+                for rustls_cert in cert.rustls {
+                    root_cert_store.add(&rustls_cert).map_err(error::tls)?;
+                }
             }
-        }
-        if self.accept_invalid_certs {
-            tls.dangerous()
-                .set_certificate_verifier(Arc::new(InvalidCertsVerifier {}));
-        }
+            root_cert_store.add_server_trust_anchors(TLS_SERVER_ROOTS.0);
 
-        tls.root_store.add_server_trust_anchors(&TLS_SERVER_ROOTS);
+            tls.with_custom_certificate_verifier(Arc::new(WebPkiVerifier::new(
+                root_cert_store,
+                &ct_logs::LOGS,
+            )))
+        };
+        let tls = tls.with_no_client_auth();
+
         Ok(TlsParameters {
             connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
             domain: self.domain,
@@ -257,11 +266,14 @@ impl Certificate {
 
         #[cfg(feature = "rustls-tls")]
         let rustls_cert = {
-            use rustls::internal::pemfile;
             use std::io::Cursor;
 
             let mut pem = Cursor::new(pem);
-            pemfile::certs(&mut pem).map_err(|_| error::tls("invalid certificates"))?
+            rustls_pemfile::certs(&mut pem)
+                .map_err(|_| error::tls("invalid certificates"))?
+                .into_iter()
+                .map(rustls::Certificate)
+                .collect::<Vec<_>>()
         };
 
         Ok(Self {
@@ -286,11 +298,13 @@ struct InvalidCertsVerifier;
 impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
-        _roots: &RootCertStore,
-        _presented_certs: &[rustls::Certificate],
-        _dns_name: DNSNameRef<'_>,
+        _end_entity: &rustls::Certificate,
+        _intermediates: &[rustls::Certificate],
+        _server_name: &ServerName,
+        _scts: &mut dyn Iterator<Item = &[u8]>,
         _ocsp_response: &[u8],
-    ) -> Result<ServerCertVerified, TLSError> {
+        _now: SystemTime,
+    ) -> Result<ServerCertVerified, TlsError> {
         Ok(ServerCertVerified::assertion())
     }
 }
