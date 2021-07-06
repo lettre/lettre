@@ -118,10 +118,8 @@
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
-#[cfg(any(feature = "r2d2", feature = "pool"))]
+#[cfg(feature = "pool")]
 pub use self::pool::PoolConfig;
-#[cfg(feature = "r2d2")]
-pub(crate) use self::transport::SmtpClient;
 pub use self::{
     error::Error,
     transport::{SmtpTransport, SmtpTransportBuilder},
@@ -144,7 +142,7 @@ pub mod client;
 pub mod commands;
 mod error;
 pub mod extension;
-#[cfg(any(feature = "r2d2", feature = "pool"))]
+#[cfg(feature = "pool")]
 mod pool;
 pub mod response;
 mod transport;
