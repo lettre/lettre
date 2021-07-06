@@ -9,9 +9,10 @@ use mime::Mime;
 use super::{Header, HeaderName};
 use crate::BoxError;
 
-/// This struct can represent any valid [mime type] by using its `parse`
-/// function! There are just these two constant values `TEXT_PLAIN` and
-/// `TEXT_HTML` because they are the most-used mime-types.
+/// `Content-Type` of the body
+///
+/// This struct can represent any valid [mime type], which can be parsed via
+/// [`ContentType::parse`]. Constants are provided for the most-used mime-types.
 ///
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
 ///
