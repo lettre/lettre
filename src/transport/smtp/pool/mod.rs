@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+#[cfg(all(feature = "pool", any(feature = "tokio1", feature = "async-std1")))]
+pub mod async_impl;
 #[cfg(feature = "r2d2")]
 pub mod sync_impl;
 

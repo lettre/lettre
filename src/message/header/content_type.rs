@@ -17,7 +17,7 @@ use crate::BoxError;
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
 ///
 /// [mime type]: https://www.iana.org/assignments/media-types/media-types.xhtml
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentType(Mime);
 
 impl ContentType {
@@ -80,6 +80,62 @@ impl StdError for ContentTypeErr {
 impl Display for ContentTypeErr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.0, f)
+    }
+}
+
+// --------------------------------------
+// Serialization and Deserialization
+// --------------------------------------
+#[cfg(feature = "serde")]
+mod serde {
+    use serde::de::{self, Deserialize, Deserializer, Visitor};
+    use serde::ser::{Serialize, Serializer};
+
+    use std::fmt;
+
+    use super::ContentType;
+
+    impl Serialize for ContentType {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            serializer.serialize_newtype_struct("ContentType", &format!("{}", &self.0))
+        }
+    }
+
+    impl<'de> Deserialize<'de> for ContentType {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            struct ContentTypeVisitor;
+
+            impl<'de> Visitor<'de> for ContentTypeVisitor {
+                type Value = ContentType;
+
+                // The error message which states what the Visitor expects to
+                // receive
+                fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    formatter.write_str("a ContentType string like `text/plain`")
+                }
+
+                fn visit_str<E>(self, mime: &str) -> Result<ContentType, E>
+                where
+                    E: de::Error,
+                {
+                    match ContentType::parse(mime) {
+                        Ok(content_type) => Ok(content_type),
+                        Err(_) => Err(E::custom(format!(
+                            "Couldn't parse the following MIME-Type: {}",
+                            mime
+                        ))),
+                    }
+                }
+            }
+
+            deserializer.deserialize_str(ContentTypeVisitor)
+        }
     }
 }
 
