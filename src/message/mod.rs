@@ -523,7 +523,7 @@ impl EmailFormat for Message {
             MessageBody::Mime(p) => p.format(out),
             MessageBody::Raw(r) => {
                 out.extend_from_slice(b"\r\n");
-                out.extend_from_slice(&r)
+                out.extend_from_slice(r)
             }
         }
     }

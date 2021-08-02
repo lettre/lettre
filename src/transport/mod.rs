@@ -152,7 +152,7 @@ pub trait AsyncTransport {
     async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
         let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
+        self.send_raw(envelope, &raw).await
     }
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
