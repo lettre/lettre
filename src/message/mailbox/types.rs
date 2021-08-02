@@ -70,7 +70,7 @@ impl Display for Mailbox {
         if let Some(ref name) = self.name {
             let name = name.trim();
             if !name.is_empty() {
-                f.write_str(&name)?;
+                f.write_str(name)?;
                 f.write_str(" <")?;
                 self.email.fmt(f)?;
                 return f.write_char('>');

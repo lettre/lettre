@@ -161,7 +161,7 @@ impl NetworkStream {
 
                 let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())
                     .map_err(error::connection)?;
-                let stream = StreamOwned::new(ClientSession::new(&connector, domain), tcp_stream);
+                let stream = StreamOwned::new(ClientSession::new(connector, domain), tcp_stream);
 
                 InnerNetworkStream::RustlsTls(stream)
             }
