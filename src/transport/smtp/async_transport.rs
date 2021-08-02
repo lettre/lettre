@@ -307,7 +307,7 @@ where
         .await?;
 
         if let Some(credentials) = &self.info.credentials {
-            conn.auth(&self.info.authentication, &credentials).await?;
+            conn.auth(&self.info.authentication, credentials).await?;
         }
         Ok(conn)
     }

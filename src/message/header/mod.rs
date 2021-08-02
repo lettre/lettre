@@ -163,7 +163,7 @@ impl Display for Headers {
         for (name, value) in &self.headers {
             Display::fmt(name, f)?;
             f.write_str(": ")?;
-            HeaderValueEncoder::encode(&name, &value, f)?;
+            HeaderValueEncoder::encode(name, value, f)?;
             f.write_str("\r\n")?;
         }
 
@@ -240,7 +240,7 @@ impl HeaderName {
 
 impl Display for HeaderName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&self)
+        f.write_str(self)
     }
 }
 
@@ -411,13 +411,14 @@ impl HeaderValueEncoder {
                 let mut next_word = next_word;
 
                 while !next_word.is_empty() {
-                    if self.remaining_line_len() <= base64_len(1) {
+                    let mut len = available_len_to_max_encode_len(self.remaining_line_len())
+                        .min(next_word.len());
+
+                    if len == 0 {
                         self.flush_encode_buf(f, false)?;
                         self.new_line(f)?;
                     }
 
-                    let mut len = available_len_to_max_encode_len(self.remaining_line_len())
-                        .min(next_word.len());
                     // avoid slicing on a char boundary
                     while !next_word.is_char_boundary(len) {
                         len += 1;
@@ -797,6 +798,23 @@ mod tests {
                 " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn issue_653() {
+        let mut headers = Headers::new();
+        headers.insert_raw(
+            HeaderName::new_from_ascii_str("Subject"),
+            "＋仮名 :a;go; ;;;;;s;;;;;;;;;;;;;;;;fffeinmjgggggggggｆっ".to_string(),
+        );
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go; \r\n",
+                " =?utf-8?b?Ozs7OztzOzs7Ozs7Ozs7Ozs7Ozs7O2ZmZmVpbm1qZ2dnZ2dnZ2dn772G44Gj?=\r\n"
             )
         );
     }

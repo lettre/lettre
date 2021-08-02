@@ -231,7 +231,7 @@ impl SmtpClient {
         }
 
         if let Some(credentials) = &self.info.credentials {
-            conn.auth(&self.info.authentication, &credentials)?;
+            conn.auth(&self.info.authentication, credentials)?;
         }
         Ok(conn)
     }
