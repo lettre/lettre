@@ -163,7 +163,7 @@ impl Display for Headers {
         for (name, value) in &self.headers {
             Display::fmt(name, f)?;
             f.write_str(": ")?;
-            HeaderValueEncoder::encode(&name, &value, f)?;
+            HeaderValueEncoder::encode(name, value, f)?;
             f.write_str("\r\n")?;
         }
 
@@ -240,7 +240,7 @@ impl HeaderName {
 
 impl Display for HeaderName {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.write_str(&self)
+        f.write_str(self)
     }
 }
 
