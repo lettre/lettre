@@ -260,7 +260,7 @@ impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
             .stdin
             .as_mut()
             .unwrap()
-            .write_all(&email)
+            .write_all(email)
             .await
             .map_err(error::client)?;
         let output = process.output().await.map_err(error::client)?;
@@ -292,7 +292,7 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio1Executor> {
             .stdin
             .as_mut()
             .unwrap()
-            .write_all(&email)
+            .write_all(email)
             .await
             .map_err(error::client)?;
         let output = process.wait_with_output().await.map_err(error::client)?;
