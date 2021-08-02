@@ -183,8 +183,8 @@ impl MaybeString {
     /// would result into an invalid encoded body.
     fn is_encoding_ok(&self, encoding: ContentTransferEncoding) -> bool {
         match encoding {
-            ContentTransferEncoding::SevenBit => is_7bit_encoded(&self),
-            ContentTransferEncoding::EightBit => is_8bit_encoded(&self),
+            ContentTransferEncoding::SevenBit => is_7bit_encoded(self),
+            ContentTransferEncoding::EightBit => is_8bit_encoded(self),
             ContentTransferEncoding::Binary
             | ContentTransferEncoding::QuotedPrintable
             | ContentTransferEncoding::Base64 => true,
@@ -342,7 +342,7 @@ where
 
 /// In place conversion to CRLF line endings
 fn in_place_crlf_line_endings(string: &mut String) {
-    let indices = find_all_lf_char_indices(&string);
+    let indices = find_all_lf_char_indices(string);
 
     for i in indices {
         // this relies on `indices` being in reverse order
