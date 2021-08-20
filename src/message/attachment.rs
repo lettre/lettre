@@ -23,7 +23,7 @@ impl Attachment {
     /// Create a new attachment
     ///
     /// This attachment will be displayed as a normal attachment,
-    /// with the choosen `filename` appearing as the file name.
+    /// with the chosen `filename` appearing as the file name.
     ///
     /// ```rust
     /// # use std::error::Error;
