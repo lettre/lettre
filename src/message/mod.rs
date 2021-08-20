@@ -4,15 +4,8 @@
 //!
 //! This section demonstrates how to build messages.
 //!
-//! <!--
-//! style for <details><summary>Blablabla</summary> Lots of stuff</details>
-//! borrowed from https://docs.rs/time/0.2.23/src/time/lib.rs.html#49-54
-//! -->
 //! <style>
 //! summary, details:not([open]) { cursor: pointer; }
-//! summary { display: list-item; }
-//! summary::marker { content: '▶ '; }
-//! details[open] summary::marker { content: '▼ '; }
 //! </style>
 //!
 //!
