@@ -174,15 +174,10 @@ impl FromStr for Address {
     type Err = AddressError;
 
     fn from_str(val: &str) -> Result<Self, AddressError> {
-        let mut parts = val.rsplitn(2, '@');
-        let domain = parts.next().ok_or(AddressError::MissingParts)?;
-        let user = parts.next().ok_or(AddressError::MissingParts)?;
-
-        Address::check_user(user)?;
-        Address::check_domain(domain)?;
+        let at_start = check_address(val)?;
         Ok(Address {
             serialized: val.into(),
-            at_start: user.len(),
+            at_start,
         })
     }
 }
@@ -209,6 +204,18 @@ where
     }
 }
 
+impl TryFrom<String> for Address {
+    type Error = AddressError;
+
+    fn try_from(serialized: String) -> Result<Self, AddressError> {
+        let at_start = check_address(&serialized)?;
+        Ok(Address {
+            serialized,
+            at_start,
+        })
+    }
+}
+
 impl AsRef<str> for Address {
     fn as_ref(&self) -> &str {
         &self.serialized
@@ -219,6 +226,16 @@ impl AsRef<OsStr> for Address {
     fn as_ref(&self) -> &OsStr {
         self.serialized.as_ref()
     }
+}
+
+fn check_address(val: &str) -> Result<usize, AddressError> {
+    let mut parts = val.rsplitn(2, '@');
+    let domain = parts.next().ok_or(AddressError::MissingParts)?;
+    let user = parts.next().ok_or(AddressError::MissingParts)?;
+
+    Address::check_user(user)?;
+    Address::check_domain(domain)?;
+    Ok(user.len())
 }
 
 #[derive(Debug, PartialEq, Clone, Copy)]
