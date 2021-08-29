@@ -110,52 +110,55 @@
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(all(
-    feature = "tokio1",
-    feature = "native-tls",
-    not(feature = "tokio1-native-tls")
-))]
-compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
+#[cfg(not(lettre_ci))]
+mod compiletime_checks {
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "native-tls",
+        not(feature = "tokio1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
 If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
 If you're building a library which depends on lettre import it without default features and enable just the features you need.");
 
-#[cfg(all(
-    feature = "tokio1",
-    feature = "rustls-tls",
-    not(feature = "tokio1-rustls-tls")
-))]
-compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "rustls-tls",
+        not(feature = "tokio1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
 If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake.
 If you're building a library which depends on lettre import it without default features and enable just the features you need.");
 
-/*
-#[cfg(all(
-    feature = "async-std1",
-    feature = "native-tls",
-    not(feature = "async-std1-native-tls")
-))]
-compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the `async-std1-native-tls` feature hasn't been turned on.
-If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
-If you're building a library which depends on lettre import it without default features and enable just the features you need.");
-*/
-#[cfg(all(
-    feature = "async-std1",
-    feature = "native-tls",
-    not(feature = "async-std1-native-tls")
-))]
-compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
+    /*
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the `async-std1-native-tls` feature hasn't been turned on.
+    If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+    If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+    */
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
 If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
 If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
 If you're building a library which depends on lettre import lettre without default features and enable just the features you need.");
 
-#[cfg(all(
-    feature = "async-std1",
-    feature = "rustls-tls",
-    not(feature = "async-std1-rustls-tls")
-))]
-compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "rustls-tls",
+        not(feature = "async-std1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
 If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
 If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+}
 
 pub mod address;
 pub mod error;

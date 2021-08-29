@@ -7,6 +7,7 @@ on:
       - master
 
 env:
+  RUSTFLAGS: "--cfg lettre_ci"
   RUST_BACKTRACE: full
 
 jobs:
