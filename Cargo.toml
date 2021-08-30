@@ -99,7 +99,7 @@ tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs", "--cfg", "lettre_ci"]
 
 [[example]]
 name = "basic_html"
