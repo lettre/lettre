@@ -164,7 +164,6 @@ impl NetworkStream {
                 let connection =
                     ClientConnection::new(connector.clone(), domain).map_err(error::connection)?;
                 let stream = StreamOwned::new(connection, tcp_stream);
-
                 InnerNetworkStream::RustlsTls(stream)
             }
         })
