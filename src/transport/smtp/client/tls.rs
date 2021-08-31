@@ -4,8 +4,8 @@ use crate::transport::smtp::{error, Error};
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
-    ClientConfig, Error as TlsError, RootCertStore, ServerCertVerified, ServerCertVerifier,
-    ServerName, WebPkiVerifier,
+    client::{ServerCertVerified, ServerCertVerifier, WebPkiVerifier},
+    ClientConfig, Error as TlsError, OwnedTrustAnchor, RootCertStore, ServerName,
 };
 use std::fmt::{self, Debug};
 #[cfg(feature = "rustls-tls")]
@@ -164,8 +164,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "rustls-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
-        use webpki_roots::TLS_SERVER_ROOTS;
-
         let tls = ClientConfig::builder();
         let tls = tls.with_safe_defaults();
 
@@ -178,7 +176,15 @@ impl TlsParametersBuilder {
                     root_cert_store.add(&rustls_cert).map_err(error::tls)?;
                 }
             }
-            root_cert_store.add_server_trust_anchors(TLS_SERVER_ROOTS.0);
+            root_cert_store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(
+                |ta| {
+                    OwnedTrustAnchor::from_subject_spki_name_constraints(
+                        ta.subject,
+                        ta.spki,
+                        ta.name_constraints,
+                    )
+                },
+            ));
 
             tls.with_custom_certificate_verifier(Arc::new(WebPkiVerifier::new(
                 root_cert_store,
