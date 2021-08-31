@@ -110,7 +110,7 @@
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-#[cfg(not(lettre_ci))]
+#[cfg(not(lettre_ignore_tls_mismatch))]
 mod compiletime_checks {
     #[cfg(all(
         feature = "tokio1",

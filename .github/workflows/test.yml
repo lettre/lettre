@@ -7,8 +7,8 @@ on:
       - master
 
 env:
-  RUSTFLAGS: "--cfg lettre_ci"
-  RUSTDOCFLAGS: "--cfg lettre_ci"
+  RUSTFLAGS: "--cfg lettre_ignore_tls_mismatch"
+  RUSTDOCFLAGS: "--cfg lettre_ignore_tls_mismatch"
   RUST_BACKTRACE: full
 
 jobs:
