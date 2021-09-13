@@ -510,16 +510,15 @@ impl Message {
     /// use lettre::Message;
     /// use lettre::message::dkim::DkimConfig;
     ///
-    /// fn main() {
-    ///     println!("Hello, world!");
-    ///     let mut message = Message::builder()
-    ///     .from("Alice <alice@example.org>".parse().unwrap())
-    ///     .reply_to("Bob <bob@example.org".parse().unwrap())
-    ///     .to("Carla <carla@example.net>".parse().unwrap())
-    ///     .subject("Hello")
-    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
-    ///     .unwrap();
-    ///     let key = "-----BEGIN RSA PRIVATE KEY-----
+    /// println!("Hello, world!");
+    /// let mut message = Message::builder()
+    /// .from("Alice <alice@example.org>".parse().unwrap())
+    /// .reply_to("Bob <bob@example.org".parse().unwrap())
+    /// .to("Carla <carla@example.net>".parse().unwrap())
+    /// .subject("Hello")
+    /// .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
+    /// .unwrap();
+    /// let key = "-----BEGIN RSA PRIVATE KEY-----
     /// MIIEowIBAAKCAQEAt2gawjoybf0mAz0mSX0cq1ah5F9cPazZdCwLnFBhRufxaZB8
     /// NLTdc9xfPIOK8l/xGrN7Nd63J4cTATqZukumczkA46O8YKHwa53pNT6NYwCNtDUL
     /// eBu+7xUW18GmDzkIFkxGO2R5kkTeWPlKvKpEiicIMfl0OmyW/fI3AbtM7e/gmqQ4
@@ -546,9 +545,8 @@ impl Message {
     /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
     /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
     /// -----END RSA PRIVATE KEY-----";
-    ///     message.sign(DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
-    ///     println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
-    /// }
+    /// message.sign(DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
+    /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
     /// ```
 
     pub fn sign(&mut self, dkim_config: DkimConfig) {
