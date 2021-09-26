@@ -188,7 +188,7 @@ impl TlsParametersBuilder {
 
             tls.with_custom_certificate_verifier(Arc::new(WebPkiVerifier::new(
                 root_cert_store,
-                &ct_logs::LOGS,
+                None,
             )))
         };
         let tls = tls.with_no_client_auth();

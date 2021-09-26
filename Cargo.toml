@@ -42,9 +42,8 @@ hostname = { version = "0.3", optional = true } # feature
 
 ## tls
 native-tls = { version = "0.2", optional = true } # feature
-rustls = { git = "https://github.com/ctz/rustls", features = ["dangerous_configuration"], optional = true }
+rustls = { version = "0.20", features = ["dangerous_configuration"], optional = true }
 rustls-pemfile = { version = "0.2.1", optional = true }
-ct-logs = { version = "0.9", optional = true }
 webpki-roots = { version = "0.22", optional = true }
 
 # async
@@ -88,7 +87,7 @@ smtp-transport = ["base64", "nom"]
 
 pool = ["futures-util"]
 
-rustls-tls = ["webpki-roots", "rustls", "rustls-pemfile", "ct-logs"]
+rustls-tls = ["webpki-roots", "rustls", "rustls-pemfile"]
 
 # async
 async-std1 = ["async-std", "async-trait", "futures-io", "futures-util"]
