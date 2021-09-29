@@ -513,10 +513,9 @@ impl Message {
     /// use lettre::Message;
     /// use lettre::message::dkim::DkimConfig;
     ///
-    /// println!("Hello, world!");
     /// let mut message = Message::builder()
     /// .from("Alice <alice@example.org>".parse().unwrap())
-    /// .reply_to("Bob <bob@example.org".parse().unwrap())
+    /// .reply_to("Bob <bob@example.org>".parse().unwrap())
     /// .to("Carla <carla@example.net>".parse().unwrap())
     /// .subject("Hello")
     /// .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
