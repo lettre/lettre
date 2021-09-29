@@ -83,9 +83,7 @@ impl Display for ContentTypeErr {
     }
 }
 
-// --------------------------------------
-// Serialization and Deserialization
-// --------------------------------------
+// -- Serialization and Deserialization --
 #[cfg(feature = "serde")]
 mod serde {
     use serde::de::{self, Deserialize, Deserializer, Visitor};
