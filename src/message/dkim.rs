@@ -1,9 +1,8 @@
 use crate::message::{header::HeaderName, Headers, Message};
 use base64::encode;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 use regex::Regex;
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
+use sha2::{Digest, Sha256};
 use std::fmt::Display;
 use std::time::SystemTime;
 
@@ -163,21 +162,6 @@ fn dkim_canonicalize_headers(
     }
 }
 
-/// Hash input using Sha256 into result
-///
-/// Example
-/// ```
-/// let mut hash=[b'1';32];
-/// dkim_hash("test",&hash);
-/// assert_eq(hash,[b'\0';32])
-/// ```
-fn dkim_hash(input: String, result: &mut [u8; 32]) {
-    let mut hasher = Sha256::new();
-    *result = [b'\0'; 32];
-    hasher.input_str(&input);
-    hasher.result(result);
-}
-
 /// Sign with Dkim a message by adding Dkim-Signture header created with configuration expressed by
 /// dkim_config
 ///
@@ -191,10 +175,8 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
             .as_secs()
     );
     let headers = message.headers();
-    let mut body_hash = [b'\0'; 32];
-    dkim_hash(
-        dkim_canonicalize_body(&message.body_raw(), dkim_config.canonicalization.body),
-        &mut body_hash,
+    let body_hash = Sha256::digest(
+        dkim_canonicalize_body(&message.body_raw(), dkim_config.canonicalization.body).as_bytes(),
     );
     let bh = encode(body_hash);
     let signed_headers_list = match dkim_config.canonicalization.header {
@@ -224,8 +206,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
     let canonicalized_dkim_header = canonicalized_dkim_header.trim_end();
     let to_be_signed = format!("{}{}", signed_headers, canonicalized_dkim_header);
     let to_be_signed = to_be_signed.trim_end();
-    let mut hashed_headers = [b'\0'; 32];
-    dkim_hash(to_be_signed.to_string(), &mut hashed_headers);
+    let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
     let signature = encode(
         private_key
             .sign(
@@ -257,7 +238,7 @@ mod test {
         super::header::HeaderName,
         super::{Header, Message},
         dkim_canonicalize_body, dkim_canonicalize_header_value, dkim_canonicalize_headers,
-        dkim_hash, DkimCanonicalizationType,
+        DkimCanonicalizationType,
     };
     use crate::StdError;
 
@@ -276,17 +257,6 @@ mod test {
         fn display(&self) -> String {
             self.0.clone()
         }
-    }
-
-    #[test]
-    fn test_dkim_hash() {
-        let mut hash = [b'1'; 32];
-        let expected = [
-            159, 134, 208, 129, 136, 76, 125, 101, 154, 47, 234, 160, 197, 90, 208, 21, 163, 191,
-            79, 27, 43, 11, 130, 44, 209, 93, 108, 21, 176, 240, 10, 8,
-        ];
-        dkim_hash("test".to_string(), &mut hash);
-        assert_eq!(hash, expected)
     }
 
     #[test]
