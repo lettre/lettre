@@ -85,6 +85,7 @@
 //! * **serde**: Serialization/Deserialization of entities
 //! * **tracing**: Logging using the `tracing` crate
 //! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
+//! * **dkim**: Add support for signing email with DKIM
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail
@@ -97,6 +98,7 @@
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
 //! [mime 0.3]: https://docs.rs/mime/0.3
+//! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-rc.3")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]

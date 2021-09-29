@@ -61,8 +61,8 @@ tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optio
 tokio1_rustls = { package = "tokio-rustls", version = "0.23", optional = true }
 
 ## dkim
-rust-crypto = "0.2.36"
-rsa = "0.5.0"
+rust-crypto = { version = "0.2.36", optional = true }
+rsa = { version = "0.5.0", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
@@ -100,6 +100,8 @@ async-std1-rustls-tls = ["async-std1", "rustls-tls", "futures-rustls"]
 tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
+
+dkim = ["rust-crypto", "rsa"]
 
 [package.metadata.docs.rs]
 all-features = true

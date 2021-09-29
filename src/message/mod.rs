@@ -199,12 +199,14 @@ use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
+#[cfg(feature = "dkim")]
 pub use dkim::*;
 pub use mailbox::*;
 pub use mimebody::*;
 
 mod attachment;
 mod body;
+#[cfg(feature = "dkim")]
 pub mod dkim;
 pub mod header;
 mod mailbox;
@@ -492,6 +494,7 @@ impl Message {
         out
     }
 
+    #[cfg(feature = "dkim")]
     /// Format body for signing
     pub(crate) fn body_raw(&self) -> Vec<u8> {
         let mut out = Vec::new();
@@ -549,6 +552,7 @@ impl Message {
     /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
     /// ```
 
+    #[cfg(feature = "dkim")]
     pub fn sign(&mut self, dkim_config: DkimConfig) {
         dkim_sign(self, dkim_config);
     }
