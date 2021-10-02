@@ -85,16 +85,19 @@
 //!
 //! * **serde**: Serialization/Deserialization of entities
 //! * **tracing**: Logging using the `tracing` crate
+//! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail
 //! [`file`]: crate::transport::file
+//! [`ContentType`]: crate::message::header::ContentType
 //! [tokio]: https://docs.rs/tokio/1
 //! [async-std]: https://docs.rs/async-std/1
 //! [ring]: https://github.com/briansmith/ring#ring
 //! [ring-support]: https://github.com/briansmith/ring#online-automated-testing
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
+//! [mime 0.3]: https://docs.rs/mime/0.3
 
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-rc.3")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]

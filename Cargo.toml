@@ -78,6 +78,7 @@ name = "transport_smtp"
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "r2d2", "builder"]
 builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
+mime03 = ["mime"]
 
 # transports
 file-transport = ["uuid"]
