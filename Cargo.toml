@@ -59,7 +59,7 @@ async-rustls = { version = "0.2", optional = true }
 ## tokio
 tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
-tokio1_rustls = { package = "tokio-rustls", git = "https://github.com/djc/tls.git", branch = "eliza/rustls-0.20", optional = true }
+tokio1_rustls = { package = "tokio-rustls", git = "https://github.com/tokio-rs/tls.git", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
