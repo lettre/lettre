@@ -145,7 +145,7 @@ impl SmtpConnection {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
-                try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
+                self.stream.get_mut().upgrade_tls(tls_parameters)?;
                 #[cfg(feature = "tracing")]
                 tracing::debug!("connection encrypted");
                 // Send EHLO again
