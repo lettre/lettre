@@ -5,10 +5,11 @@ use regex::Regex;
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 use std::fmt::Display;
+use std::fmt::Write;
 use std::time::SystemTime;
 
 /// Describe Dkim Canonicalization to apply to either body or headers
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub enum DkimCanonicalizationType {
     Simple,
     Relaxed,
@@ -24,7 +25,7 @@ impl Display for DkimCanonicalizationType {
 }
 
 /// Describe Canonicalization to be applied before signing
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct DkimCanonicalization {
     header: DkimCanonicalizationType,
     body: DkimCanonicalizationType,
@@ -156,11 +157,7 @@ fn dkim_canonicalize_headers(
     for h in headers_list.into_iter() {
         let h = match canonicalization {
             DkimCanonicalizationType::Simple => h,
-            DkimCanonicalizationType::Relaxed => {
-                let mut ret = String::new();
-                ret.push_str(&h);
-                ret.to_lowercase()
-            }
+            DkimCanonicalizationType::Relaxed => h.to_lowercase(),
         };
         if let Some(value) = mail_headers.get_raw(&h) {
             match canonicalization {
@@ -168,11 +165,13 @@ fn dkim_canonicalize_headers(
                     HeaderName::new_from_ascii(h).unwrap(),
                     dkim_canonicalize_header_value(value, canonicalization),
                 ),
-                DkimCanonicalizationType::Relaxed => signed_headers_relaxed.push_str(&format!(
+                DkimCanonicalizationType::Relaxed => write!(
+                    &mut signed_headers_relaxed,
                     "{}:{}",
                     h,
                     dkim_canonicalize_header_value(value, canonicalization)
-                )),
+                )
+                .unwrap(),
             }
         }
     }
@@ -223,8 +222,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         &dkim_header,
         dkim_config.canonicalization.header,
     );
-    let canonicalized_dkim_header = canonicalized_dkim_header.trim_end();
-    let to_be_signed = format!("{}{}", signed_headers, canonicalized_dkim_header);
+    let to_be_signed = signed_headers + &canonicalized_dkim_header;
     let to_be_signed = to_be_signed.trim_end();
     let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
     let signature = match dkim_config.signing_algorithm {
