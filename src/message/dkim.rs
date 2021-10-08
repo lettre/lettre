@@ -1,5 +1,6 @@
 use crate::message::{header::HeaderName, Headers, Message};
-use base64::encode;
+use base64::{decode, encode};
+use ed25519_dalek::Signer;
 use regex::Regex;
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
@@ -36,6 +37,21 @@ impl Display for DkimCanonicalization {
     }
 }
 
+/// Describe the algorithm used for signing the message
+#[derive(Copy, Clone)]
+pub enum DkimSigningAlgorithm {
+    Rsa,
+    Ed25519,
+}
+
+impl Display for DkimSigningAlgorithm {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        match self {
+            DkimSigningAlgorithm::Rsa => write!(fmt, "rsa"),
+            DkimSigningAlgorithm::Ed25519 => write!(fmt, "ed25519"),
+        }
+    }
+}
 /// A struct to describe Dkim configuration applied when signing a message
 /// selector: the name of the key publied in DNS
 /// domain: the domain for which we sign the message
@@ -43,6 +59,7 @@ impl Display for DkimCanonicalization {
 /// headers: a list of headers name to be included in the signature. Signing of more than one
 /// header with same name is not supported
 /// canonicalization: the canonicalization to be applied on the message
+/// pub signing_algorithm: the signing algorithm to be used when signing
 #[derive(Clone)]
 pub struct DkimConfig {
     selector: String,
@@ -50,6 +67,7 @@ pub struct DkimConfig {
     private_key: String,
     headers: Vec<String>,
     canonicalization: DkimCanonicalization,
+    pub signing_algorithm: DkimSigningAlgorithm,
 }
 
 impl DkimConfig {
@@ -70,6 +88,7 @@ impl DkimConfig {
                 header: DkimCanonicalizationType::Simple,
                 body: DkimCanonicalizationType::Relaxed,
             },
+            signing_algorithm: DkimSigningAlgorithm::Rsa,
         }
     }
 }
@@ -83,13 +102,14 @@ fn dkim_header_format(
     headers_list: String,
     body_hash: String,
     signature: String,
+    signing_algorithm: DkimSigningAlgorithm,
 ) -> Headers {
     let mut headers = Headers::new();
     let header_name = match canon.header {
         DkimCanonicalizationType::Simple => HeaderName::new_from_ascii_str("DKIM-Signature"),
         DkimCanonicalizationType::Relaxed => HeaderName::new_from_ascii_str("dkim-signature"),
     };
-    headers.append_raw(header_name, format!("v=1; a=rsa-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=domain, selector=selector,canon=canon,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature));
+    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=domain, selector=selector,canon=canon,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=signing_algorithm));
     headers
 }
 
@@ -191,13 +211,13 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         signed_headers_list.clone(),
         bh.clone(),
         "".to_string(),
+        dkim_config.signing_algorithm,
     );
     let signed_headers = dkim_canonicalize_headers(
         dkim_config.headers.clone(),
         headers,
         dkim_config.canonicalization.header,
     );
-    let private_key = RsaPrivateKey::from_pkcs1_pem(&dkim_config.private_key).unwrap();
     let canonicalized_dkim_header = dkim_canonicalize_headers(
         vec!["DKIM-Signature".to_string()],
         &dkim_header,
@@ -207,14 +227,25 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
     let to_be_signed = format!("{}{}", signed_headers, canonicalized_dkim_header);
     let to_be_signed = to_be_signed.trim_end();
     let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
-    let signature = encode(
-        private_key
-            .sign(
-                PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
-                &hashed_headers,
+    let signature = match dkim_config.signing_algorithm {
+        DkimSigningAlgorithm::Rsa => {
+            let private_key = RsaPrivateKey::from_pkcs1_pem(&dkim_config.private_key).unwrap();
+            encode(
+                private_key
+                    .sign(
+                        PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
+                        &hashed_headers,
+                    )
+                    .unwrap(),
             )
-            .unwrap(),
-    );
+        }
+        DkimSigningAlgorithm::Ed25519 => {
+            let keypair =
+                ed25519_dalek::Keypair::from_bytes(&decode(dkim_config.private_key).unwrap())
+                    .unwrap();
+            encode(keypair.sign(&hashed_headers).to_bytes())
+        }
+    };
     let dkim_header = dkim_header_format(
         dkim_config.domain,
         dkim_config.selector,
@@ -223,6 +254,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         signed_headers_list,
         bh,
         signature,
+        dkim_config.signing_algorithm,
     );
     let mut headers = headers.clone();
     headers.append_raw(
