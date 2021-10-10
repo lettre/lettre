@@ -1,6 +1,7 @@
 use crate::message::{header::HeaderName, Headers, Message};
 use base64::{decode, encode};
 use ed25519_dalek::Signer;
+use lazy_static::lazy_static;
 use regex::Regex;
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
@@ -114,15 +115,19 @@ fn dkim_header_format(
 /// Canonicalize the body of an email
 fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> String {
     let body = std::str::from_utf8(body).unwrap();
-    let re = Regex::new("(\r\n)+$").unwrap();
+    lazy_static! {
+        static ref RE: Regex = Regex::new("(\r\n)+$").unwrap();
+    }
     match canonicalization {
-        DkimCanonicalizationType::Simple => re.replace(body, "\r\n").to_string(),
+        DkimCanonicalizationType::Simple => RE.replace(body, "\r\n").to_string(),
         DkimCanonicalizationType::Relaxed => {
-            let re_double_space = Regex::new("[\\t ]+").unwrap();
-            let body = re_double_space.replace_all(body, " ").to_string();
-            let re_space_eol = Regex::new("[\t ]\r\n").unwrap();
-            let body = re_space_eol.replace_all(&body, "\r\n").to_string();
-            re.replace(&body, "\r\n").to_string()
+            lazy_static! {
+                static ref RE_DOUBLE_SPACE: Regex = Regex::new("[\\t ]+").unwrap();
+                static ref RE_SPACE_EOL: Regex = Regex::new("[\t ]\r\n").unwrap();
+            }
+            let body = RE_DOUBLE_SPACE.replace_all(body, " ").to_string();
+            let body = RE_SPACE_EOL.replace_all(&body, "\r\n").to_string();
+            RE.replace(&body, "\r\n").to_string()
         }
     }
 }
@@ -135,10 +140,15 @@ fn dkim_canonicalize_header_value(
     match canonicalization {
         DkimCanonicalizationType::Simple => value.to_string(),
         DkimCanonicalizationType::Relaxed => {
-            let re = Regex::new("\r\n").unwrap();
-            let value = re.replace_all(value, "").to_string();
-            let re = Regex::new("[\\t ]+").unwrap();
-            format!("{}\r\n", re.replace_all(&value, " ").to_string().trim_end())
+            lazy_static! {
+                static ref RE_EOL: Regex = Regex::new("\r\n").unwrap();
+                static ref RE_SPACES: Regex = Regex::new("[\\t ]+").unwrap();
+            }
+            let value = RE_EOL.replace_all(value, "").to_string();
+            format!(
+                "{}\r\n",
+                RE_SPACES.replace_all(&value, " ").to_string().trim_end()
+            )
         }
     }
 }
