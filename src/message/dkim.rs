@@ -96,21 +96,18 @@ impl DkimConfig {
 
 /// Create a Headers struct with a Dkim-Signature Header created from given parameters
 fn dkim_header_format(
-    domain: String,
-    selector: String,
-    canon: DkimCanonicalization,
+    config: &DkimConfig,
     timestamp: String,
     headers_list: String,
     body_hash: String,
     signature: String,
-    signing_algorithm: DkimSigningAlgorithm,
 ) -> Headers {
     let mut headers = Headers::new();
-    let header_name = match canon.header {
+    let header_name = match config.canonicalization.header {
         DkimCanonicalizationType::Simple => HeaderName::new_from_ascii_str("DKIM-Signature"),
         DkimCanonicalizationType::Relaxed => HeaderName::new_from_ascii_str("dkim-signature"),
     };
-    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=domain, selector=selector,canon=canon,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=signing_algorithm));
+    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.signing_algorithm));
     headers
 }
 
@@ -203,14 +200,11 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         DkimCanonicalizationType::Relaxed => dkim_config.headers.join(":").to_lowercase(),
     };
     let dkim_header = dkim_header_format(
-        dkim_config.domain.clone(),
-        dkim_config.selector.clone(),
-        dkim_config.canonicalization,
+        &dkim_config,
         timestamp.clone(),
         signed_headers_list.clone(),
         bh.clone(),
         "".to_string(),
-        dkim_config.signing_algorithm,
     );
     let signed_headers = dkim_canonicalize_headers(
         dkim_config.headers.clone(),
@@ -239,21 +233,13 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         }
         DkimSigningAlgorithm::Ed25519 => {
             let keypair =
-                ed25519_dalek::Keypair::from_bytes(&decode(dkim_config.private_key).unwrap())
+                ed25519_dalek::Keypair::from_bytes(&decode(&dkim_config.private_key).unwrap())
                     .unwrap();
             encode(keypair.sign(&hashed_headers).to_bytes())
         }
     };
-    let dkim_header = dkim_header_format(
-        dkim_config.domain,
-        dkim_config.selector,
-        dkim_config.canonicalization,
-        timestamp,
-        signed_headers_list,
-        bh,
-        signature,
-        dkim_config.signing_algorithm,
-    );
+    let dkim_header =
+        dkim_header_format(&dkim_config, timestamp, signed_headers_list, bh, signature);
     let mut headers = headers.clone();
     headers.append_raw(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
