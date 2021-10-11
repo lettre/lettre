@@ -547,12 +547,12 @@ impl Message {
     /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
     /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
     /// -----END RSA PRIVATE KEY-----";
-    /// message.sign(DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
+    /// message.sign(&DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
     /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
     /// ```
 
     #[cfg(feature = "dkim")]
-    pub fn sign(&mut self, dkim_config: DkimConfig) {
+    pub fn sign(&mut self, dkim_config: &DkimConfig) {
         dkim_sign(self, dkim_config);
     }
 }

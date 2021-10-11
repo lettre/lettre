@@ -192,7 +192,7 @@ fn dkim_canonicalize_headers(
 /// dkim_config
 ///
 
-pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
+pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let timestamp = format!(
         "{}",
         SystemTime::now()
@@ -210,7 +210,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         DkimCanonicalizationType::Relaxed => dkim_config.headers.join(":").to_lowercase(),
     };
     let dkim_header = dkim_header_format(
-        &dkim_config,
+        dkim_config,
         timestamp.clone(),
         signed_headers_list.clone(),
         bh.clone(),
@@ -249,13 +249,11 @@ pub fn dkim_sign(message: &mut Message, dkim_config: DkimConfig) {
         }
     };
     let dkim_header =
-        dkim_header_format(&dkim_config, timestamp, signed_headers_list, bh, signature);
-    let mut headers = headers.clone();
-    headers.append_raw(
+        dkim_header_format(dkim_config, timestamp, signed_headers_list, bh, signature);
+    message.headers.append_raw(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
         dkim_header.get_raw("DKIM-Signature").unwrap().to_string(),
     );
-    message.headers = headers;
 }
 
 #[cfg(test)]
