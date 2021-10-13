@@ -1,8 +1,8 @@
 use crate::message::{header::HeaderName, Headers, Message};
 use base64::{decode, encode};
 use ed25519_dalek::Signer;
-use lazy_static::lazy_static;
-use regex::{Regex, bytes::Regex as BRegex};
+use once_cell::sync::Lazy;
+use regex::{bytes::Regex as BRegex, Regex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 use std::fmt::Display;
@@ -157,16 +157,12 @@ fn dkim_header_format(
 
 /// Canonicalize the body of an email
 fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> Vec<u8> {
-    lazy_static! {
-        static ref RE: BRegex = BRegex::new("(\r\n)+$").unwrap();
-    }
+    static RE: Lazy<BRegex> = Lazy::new(|| BRegex::new("(\r\n)+$").unwrap());
+    static RE_DOUBLE_SPACE: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\\t ]+").unwrap());
+    static RE_SPACE_EOL: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\t ]\r\n").unwrap());
     match canonicalization {
         DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]).into_owned(),
         DkimCanonicalizationType::Relaxed => {
-            lazy_static! {
-                static ref RE_DOUBLE_SPACE: BRegex = BRegex::new("[\\t ]+").unwrap();
-                static ref RE_SPACE_EOL: BRegex = BRegex::new("[\t ]\r\n").unwrap();
-            }
             let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]).into_owned();
             let body = RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]).into_owned();
             RE.replace(&body, &b"\r\n"[..]).into_owned()
@@ -182,10 +178,8 @@ fn dkim_canonicalize_header_value(
     match canonicalization {
         DkimCanonicalizationType::Simple => value.to_string(),
         DkimCanonicalizationType::Relaxed => {
-            lazy_static! {
-                static ref RE_EOL: Regex = Regex::new("\r\n").unwrap();
-                static ref RE_SPACES: Regex = Regex::new("[\\t ]+").unwrap();
-            }
+            static RE_EOL: Lazy<Regex> = Lazy::new(|| Regex::new("\r\n").unwrap());
+            static RE_SPACES: Lazy<Regex> = Lazy::new(|| Regex::new("[\\t ]+").unwrap());
             let value = RE_EOL.replace_all(value, "").to_string();
             format!(
                 "{}\r\n",
