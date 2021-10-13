@@ -550,7 +550,6 @@ impl Message {
     /// message.sign(&DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
     /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
     /// ```
-
     #[cfg(feature = "dkim")]
     pub fn sign(&mut self, dkim_config: &DkimConfig) {
         dkim_sign(self, dkim_config);

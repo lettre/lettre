@@ -73,6 +73,12 @@ impl DkimSigningKey {
             ),
         }
     }
+    fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
+        match self {
+            DkimSigningKey::Rsa(_) => DkimSigningAlgorithm::Rsa,
+            DkimSigningKey::Ed25519(_) => DkimSigningAlgorithm::Ed25519,
+        }
+    }
 }
 
 /// A struct to describe Dkim configuration applied when signing a message
@@ -89,7 +95,6 @@ pub struct DkimConfig {
     private_key: DkimSigningKey,
     headers: Vec<String>,
     canonicalization: DkimCanonicalization,
-    pub signing_algorithm: DkimSigningAlgorithm,
 }
 
 impl DkimConfig {
@@ -110,12 +115,10 @@ impl DkimConfig {
                 header: DkimCanonicalizationType::Simple,
                 body: DkimCanonicalizationType::Relaxed,
             },
-            signing_algorithm: DkimSigningAlgorithm::Rsa,
         }
     }
-    /// Update the key and signing algorithm from a DkimConfig
-    pub fn update_key(&mut self, private_key: String, algorithm: DkimSigningAlgorithm) {
-        self.signing_algorithm = algorithm;
+    /// Set the signing key with given signing algorithm for a DkimConfig
+    pub fn set_signing_key(&mut self, private_key: String, algorithm: DkimSigningAlgorithm) {
         self.private_key = DkimSigningKey::new(private_key, algorithm);
     }
     /// Create a DkimConfig
@@ -125,7 +128,6 @@ impl DkimConfig {
         private_key: String,
         headers: Vec<String>,
         canonicalization: DkimCanonicalization,
-        signing_algorithm: DkimSigningAlgorithm,
     ) -> DkimConfig {
         DkimConfig {
             selector,
@@ -133,7 +135,6 @@ impl DkimConfig {
             private_key: DkimSigningKey::new(private_key, DkimSigningAlgorithm::Rsa),
             headers,
             canonicalization,
-            signing_algorithm,
         }
     }
 }
@@ -147,11 +148,10 @@ fn dkim_header_format(
     signature: String,
 ) -> Headers {
     let mut headers = Headers::new();
-    let header_name = match config.canonicalization.header {
-        DkimCanonicalizationType::Simple => HeaderName::new_from_ascii_str("DKIM-Signature"),
-        DkimCanonicalizationType::Relaxed => HeaderName::new_from_ascii_str("dkim-signature"),
-    };
-    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.signing_algorithm));
+    let header_name =
+        dkim_canonicalize_header_tag("DKIM-Signature".to_string(), config.canonicalization.header);
+    let header_name = HeaderName::new_from_ascii(header_name).unwrap();
+    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.private_key.get_signing_algorithm()));
     headers
 }
 
@@ -189,6 +189,17 @@ fn dkim_canonicalize_header_value(
     }
 }
 
+/// Canonicalize header tag
+fn dkim_canonicalize_header_tag(
+    name: String,
+    canonicalization: DkimCanonicalizationType,
+) -> String {
+    match canonicalization {
+        DkimCanonicalizationType::Simple => name,
+        DkimCanonicalizationType::Relaxed => name.to_lowercase(),
+    }
+}
+
 /// Canonicalize signed headers passed as headers_list among mail_headers using canonicalization
 fn dkim_canonicalize_headers(
     headers_list: Vec<String>,
@@ -197,11 +208,8 @@ fn dkim_canonicalize_headers(
 ) -> String {
     let mut signed_headers = Headers::new();
     let mut signed_headers_relaxed = String::new();
-    for h in headers_list.into_iter() {
-        let h = match canonicalization {
-            DkimCanonicalizationType::Simple => h,
-            DkimCanonicalizationType::Relaxed => h.to_lowercase(),
-        };
+    for h in headers_list {
+        let h = dkim_canonicalize_header_tag(h, canonicalization);
         if let Some(value) = mail_headers.get_raw(&h) {
             match canonicalization {
                 DkimCanonicalizationType::Simple => signed_headers.append_raw(
@@ -219,23 +227,20 @@ fn dkim_canonicalize_headers(
         }
     }
     match canonicalization {
-        DkimCanonicalizationType::Simple => format!("{}", signed_headers),
+        DkimCanonicalizationType::Simple => signed_headers.to_string(),
         DkimCanonicalizationType::Relaxed => signed_headers_relaxed,
     }
 }
 
 /// Sign with Dkim a message by adding Dkim-Signture header created with configuration expressed by
 /// dkim_config
-///
 
 pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
-    let timestamp = format!(
-        "{}",
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs()
-    );
+    let timestamp = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+        .to_string();
     let headers = message.headers();
     let body_hash = Sha256::digest(&dkim_canonicalize_body(
         &message.body_raw(),
