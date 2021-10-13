@@ -2,7 +2,7 @@ use crate::message::{header::HeaderName, Headers, Message};
 use base64::{decode, encode};
 use ed25519_dalek::Signer;
 use lazy_static::lazy_static;
-use regex::Regex;
+use regex::{Regex, bytes::Regex as BRegex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 use std::fmt::Display;
@@ -156,21 +156,20 @@ fn dkim_header_format(
 }
 
 /// Canonicalize the body of an email
-fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> String {
-    let body = std::str::from_utf8(body).unwrap();
+fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> Vec<u8> {
     lazy_static! {
-        static ref RE: Regex = Regex::new("(\r\n)+$").unwrap();
+        static ref RE: BRegex = BRegex::new("(\r\n)+$").unwrap();
     }
     match canonicalization {
-        DkimCanonicalizationType::Simple => RE.replace(body, "\r\n").to_string(),
+        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]).into_owned(),
         DkimCanonicalizationType::Relaxed => {
             lazy_static! {
-                static ref RE_DOUBLE_SPACE: Regex = Regex::new("[\\t ]+").unwrap();
-                static ref RE_SPACE_EOL: Regex = Regex::new("[\t ]\r\n").unwrap();
+                static ref RE_DOUBLE_SPACE: BRegex = BRegex::new("[\\t ]+").unwrap();
+                static ref RE_SPACE_EOL: BRegex = BRegex::new("[\t ]\r\n").unwrap();
             }
-            let body = RE_DOUBLE_SPACE.replace_all(body, " ").to_string();
-            let body = RE_SPACE_EOL.replace_all(&body, "\r\n").to_string();
-            RE.replace(&body, "\r\n").to_string()
+            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]).into_owned();
+            let body = RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]).into_owned();
+            RE.replace(&body, &b"\r\n"[..]).into_owned()
         }
     }
 }
@@ -244,9 +243,10 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
             .as_secs()
     );
     let headers = message.headers();
-    let body_hash = Sha256::digest(
-        dkim_canonicalize_body(&message.body_raw(), dkim_config.canonicalization.body).as_bytes(),
-    );
+    let body_hash = Sha256::digest(&dkim_canonicalize_body(
+        &message.body_raw(),
+        dkim_config.canonicalization.body,
+    ));
     let bh = encode(body_hash);
     let signed_headers_list = match dkim_config.canonicalization.header {
         DkimCanonicalizationType::Simple => dkim_config.headers.join(":"),
@@ -322,20 +322,20 @@ mod test {
 
     #[test]
     fn test_body_simple_canonicalize() {
-        let body = "test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = "test\r\n\r\ntest   \ttest\r\n";
+        let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
+        let expected = b"test\r\n\r\ntest   \ttest\r\n";
         assert_eq!(
-            dkim_canonicalize_body(body.as_bytes(), DkimCanonicalizationType::Simple),
-            expected.to_string()
+            dkim_canonicalize_body(body, DkimCanonicalizationType::Simple),
+            expected
         )
     }
     #[test]
     fn test_body_relaxed_canonicalize() {
-        let body = "test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = "test\r\n\r\ntest test\r\n";
+        let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
+        let expected = b"test\r\n\r\ntest test\r\n";
         assert_eq!(
-            dkim_canonicalize_body(body.as_bytes(), DkimCanonicalizationType::Relaxed),
-            expected.to_string()
+            dkim_canonicalize_body(body, DkimCanonicalizationType::Relaxed),
+            expected
         )
     }
     #[test]
