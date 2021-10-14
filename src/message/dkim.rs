@@ -118,6 +118,7 @@ impl DkimSigningKey {
 /// header with same name is not supported
 /// canonicalization: the canonicalization to be applied on the message
 /// pub signing_algorithm: the signing algorithm to be used when signing
+#[derive(Debug)]
 pub struct DkimConfig {
     selector: String,
     domain: String,
