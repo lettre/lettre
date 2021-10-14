@@ -55,22 +55,51 @@ impl Display for DkimSigningAlgorithm {
     }
 }
 
+/// Describe DkimSigning key error
+#[derive(Debug)]
+pub enum DkimSigningKeyError {
+    DecodeError(base64::DecodeError),
+    RsaError(rsa::pkcs1::Error),
+    Ed25519Error(ed25519_dalek::ed25519::Error),
+}
+
+impl From<rsa::pkcs1::Error> for DkimSigningKeyError {
+    fn from(err: rsa::pkcs1::Error) -> DkimSigningKeyError {
+        DkimSigningKeyError::RsaError(err)
+    }
+}
+
+impl From<base64::DecodeError> for DkimSigningKeyError {
+    fn from(err: base64::DecodeError) -> DkimSigningKeyError {
+        DkimSigningKeyError::DecodeError(err)
+    }
+}
+
+impl From<ed25519_dalek::ed25519::Error> for DkimSigningKeyError {
+    fn from(err: ed25519_dalek::ed25519::Error) -> DkimSigningKeyError {
+        DkimSigningKeyError::Ed25519Error(err)
+    }
+}
+
 /// Describe a signing key to be carried by DkimConfig struct
 #[derive(Debug)]
-enum DkimSigningKey {
+pub enum DkimSigningKey {
     Rsa(RsaPrivateKey),
     Ed25519(ed25519_dalek::Keypair),
 }
 
 impl DkimSigningKey {
-    pub fn new(private_key: String, algorithm: DkimSigningAlgorithm) -> DkimSigningKey {
+    pub fn new(
+        private_key: String,
+        algorithm: DkimSigningAlgorithm,
+    ) -> Result<DkimSigningKey, DkimSigningKeyError> {
         match algorithm {
-            DkimSigningAlgorithm::Rsa => {
-                DkimSigningKey::Rsa(RsaPrivateKey::from_pkcs1_pem(&private_key).unwrap())
-            }
-            DkimSigningAlgorithm::Ed25519 => DkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(&decode(private_key).unwrap()).unwrap(),
-            ),
+            DkimSigningAlgorithm::Rsa => Ok(DkimSigningKey::Rsa(RsaPrivateKey::from_pkcs1_pem(
+                &private_key,
+            )?)),
+            DkimSigningAlgorithm::Ed25519 => Ok(DkimSigningKey::Ed25519(
+                ed25519_dalek::Keypair::from_bytes(&decode(private_key)?)?,
+            )),
         }
     }
     fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
@@ -100,11 +129,15 @@ pub struct DkimConfig {
 impl DkimConfig {
     /// Create a default signature configuration with a set of headers and "simple/relaxed"
     /// canonicalization
-    pub fn default_config(selector: String, domain: String, private_key: String) -> DkimConfig {
+    pub fn default_config(
+        selector: String,
+        domain: String,
+        private_key: DkimSigningKey,
+    ) -> DkimConfig {
         DkimConfig {
             selector,
             domain,
-            private_key: DkimSigningKey::new(private_key, DkimSigningAlgorithm::Rsa),
+            private_key,
             headers: vec![
                 "From".to_string(),
                 "Subject".to_string(),
@@ -118,21 +151,21 @@ impl DkimConfig {
         }
     }
     /// Set the signing key with given signing algorithm for a DkimConfig
-    pub fn set_signing_key(&mut self, private_key: String, algorithm: DkimSigningAlgorithm) {
-        self.private_key = DkimSigningKey::new(private_key, algorithm);
+    pub fn set_signing_key(&mut self, private_key: DkimSigningKey) {
+        self.private_key = private_key;
     }
     /// Create a DkimConfig
     pub fn new(
         selector: String,
         domain: String,
-        private_key: String,
+        private_key: DkimSigningKey,
         headers: Vec<String>,
         canonicalization: DkimCanonicalization,
     ) -> DkimConfig {
         DkimConfig {
             selector,
             domain,
-            private_key: DkimSigningKey::new(private_key, DkimSigningAlgorithm::Rsa),
+            private_key,
             headers,
             canonicalization,
         }

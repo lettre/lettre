@@ -511,7 +511,7 @@ impl Message {
     /// Example:
     /// ```rust
     /// use lettre::Message;
-    /// use lettre::message::dkim::DkimConfig;
+    /// use lettre::message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey};
     ///
     /// let mut message = Message::builder()
     /// .from("Alice <alice@example.org>".parse().unwrap())
@@ -547,7 +547,8 @@ impl Message {
     /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
     /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
     /// -----END RSA PRIVATE KEY-----";
-    /// message.sign(&DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),key.to_string()));
+    /// let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
+    /// message.sign(&DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),signing_key));
     /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
     /// ```
     #[cfg(feature = "dkim")]
