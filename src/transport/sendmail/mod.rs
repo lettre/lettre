@@ -153,7 +153,7 @@ where
     /// Creates a new transport with the `sendmail` command
     ///
     /// Note: This uses the `sendmail` command in the current `PATH`. To use another command,
-    /// use [SendmailTransport::new_with_command].
+    /// use [AsyncSendmailTransport::new_with_command].
     pub fn new() -> Self {
         Self {
             inner: SendmailTransport::new(),
