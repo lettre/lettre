@@ -161,10 +161,7 @@ impl AsyncSmtpConnection {
     ) -> Result<(), Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             try_smtp!(self.command(Starttls).await, self);
-            try_smtp!(
-                self.stream.get_mut().upgrade_tls(tls_parameters).await,
-                self
-            );
+            self.stream.get_mut().upgrade_tls(tls_parameters).await?;
             #[cfg(feature = "tracing")]
             tracing::debug!("connection encrypted");
             // Send EHLO again
