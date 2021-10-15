@@ -67,6 +67,14 @@ impl FromStr for ContentType {
     }
 }
 
+#[cfg(feature = "mime03")]
+#[cfg_attr(docsrs, doc(cfg(feature = "mime03")))]
+impl From<Mime> for ContentType {
+    fn from(mime: Mime) -> Self {
+        Self::from_mime(mime)
+    }
+}
+
 /// An error occurred while trying to [`ContentType::parse`].
 #[derive(Debug)]
 pub struct ContentTypeErr(mime::FromStrError);
@@ -83,9 +91,7 @@ impl Display for ContentTypeErr {
     }
 }
 
-// --------------------------------------
-// Serialization and Deserialization
-// --------------------------------------
+// -- Serialization and Deserialization --
 #[cfg(feature = "serde")]
 mod serde {
     use serde::de::{self, Deserialize, Deserializer, Visitor};

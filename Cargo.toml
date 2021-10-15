@@ -36,7 +36,7 @@ serde = { version = "1", optional = true, features = ["derive"] }
 serde_json = { version = "1", optional = true }
 
 # smtp
-nom = { version = "6", default-features = false, features = ["alloc", "std"], optional = true }
+nom = { version = "7", optional = true }
 hostname = { version = "0.3", optional = true } # feature
 
 ## tls
@@ -77,6 +77,7 @@ name = "transport_smtp"
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
 builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
+mime03 = ["mime"]
 
 # transports
 file-transport = ["uuid"]
@@ -98,7 +99,7 @@ tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 
 [package.metadata.docs.rs]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs", "--cfg", "lettre_ignore_tls_mismatch"]
 
 [[example]]
 name = "basic_html"

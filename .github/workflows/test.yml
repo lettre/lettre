@@ -7,6 +7,8 @@ on:
       - master
 
 env:
+  RUSTFLAGS: "--cfg lettre_ignore_tls_mismatch"
+  RUSTDOCFLAGS: "--cfg lettre_ignore_tls_mismatch"
   RUST_BACKTRACE: full
 
 jobs:
@@ -79,8 +81,8 @@ jobs:
             rust: stable
           - name: beta
             rust: beta
-          - name: 1.46.0
-            rust: 1.46.0
+          - name: 1.52.1
+            rust: 1.52.1
 
     steps:
       - name: Checkout

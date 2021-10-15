@@ -65,7 +65,7 @@ Lettre does not provide (for now):
 
 ## Example
 
-This library requires Rust 1.46 or newer.
+This library requires Rust 1.52.1 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 
@@ -103,7 +103,8 @@ match mailer.send(&email) {
 
 ## Testing
 
-The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command.
+The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed 
+such a server can be launched with `python -m smtpd -n -c DebuggingServer localhost:2525`
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
 

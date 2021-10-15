@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.46 or newer.
+//! Lettre requires Rust 1.52.1 or newer.
 //!
 //! ## Features
 //!
@@ -84,16 +84,19 @@
 //!
 //! * **serde**: Serialization/Deserialization of entities
 //! * **tracing**: Logging using the `tracing` crate
+//! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail
 //! [`file`]: crate::transport::file
+//! [`ContentType`]: crate::message::header::ContentType
 //! [tokio]: https://docs.rs/tokio/1
 //! [async-std]: https://docs.rs/async-std/1
 //! [ring]: https://github.com/briansmith/ring#ring
 //! [ring-support]: https://github.com/briansmith/ring#online-automated-testing
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
+//! [mime 0.3]: https://docs.rs/mime/0.3
 
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-rc.3")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
@@ -108,6 +111,56 @@
     rust_2018_idioms
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+
+#[cfg(not(lettre_ignore_tls_mismatch))]
+mod compiletime_checks {
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "native-tls",
+        not(feature = "tokio1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
+If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "rustls-tls",
+        not(feature = "tokio1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
+If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake.
+If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+
+    /*
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the `async-std1-native-tls` feature hasn't been turned on.
+    If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+    If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+    */
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
+If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
+If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+If you're building a library which depends on lettre import lettre without default features and enable just the features you need.");
+
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "rustls-tls",
+        not(feature = "async-std1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
+If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+}
 
 pub mod address;
 pub mod error;
