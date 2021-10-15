@@ -332,9 +332,11 @@ mod test {
         super::header::HeaderName,
         super::{Header, Message},
         dkim_canonicalize_body, dkim_canonicalize_header_value, dkim_canonicalize_headers,
-        DkimCanonicalizationType,
+        DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm, DkimSigningKey,
     };
     use crate::StdError;
+    use std::io::Write;
+    use std::process::{Command, Stdio};
 
     #[derive(Clone)]
     struct TestHeader(String);
@@ -408,5 +410,57 @@ mod test {
     fn test_headers_relaxed_canonicalize() {
         let message = test_message();
         assert_eq!(dkim_canonicalize_headers(vec!["From".to_string(), "Test".to_string()], &message.headers, DkimCanonicalizationType::Relaxed),"from:Test <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n")
+    }
+    #[test]
+    fn test_signature_rsa() {
+        let mut message = test_message();
+        let key = "-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAz+FHbM8BwkBBz/Ux5OYLQ5Bp1HVuCHTP6Rr3HXTnome/2cGl
+/ze0tsmmFbCjjsS89MXbMGs9xJhjv18LmL1N0UTllblOizzVjorQyN4RwBOfG34j
+7SS56pwzrA738Ry8FAbL5InPWEgVzbOhXuTCs8yuzcqTnm4sH/csnIl7cMWeQkVn
+1FR9LKMtUG0fjhDPkdX0jx3qTX1L3Z7a7gX6geY191yNd9i9DvE2/+wMigMYz1LA
+ts4alk2g86MQhtbjc8AOR7EC15hSw37/lmamlunYLa3wC+PzHNMA8sAfnmkgNvip
+ssjh8LnelD9qn+VtsjQB5ppkeQx3TcUPvz5z+QIDAQABAoIBAQCzRa5ZEbSMlumq
+s+PRaOox3CrIRHUd6c8bUlvmFVllX1++JRhInvvD3ubSMcD7cIMb/D1o5jMgheMP
+uKHBmQ+w91+e3W30+gOZp/EiKRDZupIuHXxSGKgUwZx2N3pvfr5b7viLIKWllpTn
+DpCNy251rIDbjGX97Tk0X+8jGBVSTCxtruGJR5a+hz4t9Z7bz7JjZWcRNJC+VA+Q
+ATjnV7AHO1WR+0tAdPJaHsRLI7drKFSqTYq0As+MksZ40p7T6blZW8NUXA09fJRn
+3mP2TZdWjjfBXZje026v4T7TZl+TELKw5WirL/UJ8Zw8dGGV6EZvbfMacZuUB1YQ
+0vZnGe4BAoGBAO63xWP3OV8oLAMF90umuusPaQNSc6DnpjnP+sTAcXEYJA0Sa4YD
+y8dpTAdFJ4YvUQhLxtbZFK5Ih3x7ZhuerLSJiZiDPC2IJJb7j/812zQQriOi4mQ8
+bimxM4Nzql8FKGaXMppE5grFLsy8tw7neIM9KE4uwe9ajwJrRrOTUY8ZAoGBAN7t
++xFeuhg4F9expyaPpCvKT2YNAdMcDzpm7GtLX292u+DQgBfg50Ur9XmbS+RPlx1W
+r2Sw3bTjRjJU9QnSZLL2w3hiii/wdaePI4SCaydHdLi4ZGz/pNUsUY+ck2pLptS0
+F7rL+s9MV9lUyhvX+pIh+O3idMWAdaymzs7ZlgfhAoGAVoFn2Wrscmw3Tr0puVNp
+JudFsbt+RU/Mr+SLRiNKuKX74nTLXBwiC1hAAd5wjTK2VaBIJPEzilikKFr7TIT6
+ps20e/0KoKFWSRROQTh9/+cPg8Bx88rmTNt3BGq00Ywn8M1XvAm9pyd/Zxf36kG9
+LSnLYlGVW6xgaIsBau+2vXkCgYAeChVdxtTutIhJ8U9ju9FUcUN3reMEDnDi3sGW
+x6ZJf8dbSN0p2o1vXbgLNejpD+x98JNbzxVg7Ysk9xu5whb9opC+ZRDX2uAPvxL7
+JRPJTDCnP3mQ0nXkn78xydh3Z1BIsyfLbPcT/eaMi4dcbyL9lARWEcDIaEHzDNsr
+NlioIQKBgQCXIZp5IBfG5WSXzFk8xvP4BUwHKEI5bttClBmm32K+vaSz8qO6ak6G
+4frg+WVopFg3HBHdK9aotzPEd0eHMXJv3C06Ynt2lvF+Rgi/kwGbkuq/mFVnmYYR
+Fz0TZ6sKrTAF3fdkN3bcQv6JG1CfnWENDGtekemwcCEA9v46/RsOfg==
+-----END RSA PRIVATE KEY-----";
+        let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
+        message.sign(&DkimConfig::default_config(
+            "dkimtest".to_string(),
+            "example.org".to_string(),
+            signing_key,
+        ));
+        println!("{}", std::str::from_utf8(&message.formatted()).unwrap());
+        let mut verify_command = Command::new("dkimverify")
+            .stdin(Stdio::piped())
+            .spawn()
+            .expect("Fail to verify message signature");
+        let mut stdin = verify_command.stdin.take().expect("Failed to open stdin");
+        std::thread::spawn(move || {
+            stdin
+                .write_all(&message.formatted())
+                .expect("Failed to write to stdin");
+        });
+        assert!(verify_command
+            .wait()
+            .expect("Command did not run")
+            .success());
     }
 }
