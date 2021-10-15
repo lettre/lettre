@@ -92,7 +92,7 @@ use std::{
 
 mod error;
 
-const DEFAULT_SENDMAIL: &str = "/usr/sbin/sendmail";
+const DEFAULT_SENDMAIL: &str = "sendmail";
 
 /// Sends emails using the `sendmail` command
 #[derive(Debug, Clone)]
@@ -113,7 +113,10 @@ pub struct AsyncSendmailTransport<E: Executor> {
 }
 
 impl SendmailTransport {
-    /// Creates a new transport with the default `/usr/sbin/sendmail` command
+    /// Creates a new transport with the `sendmail` command
+    ///
+    /// Note: This uses the `sendmail` command in the current `PATH`. To use another command,
+    /// use [SendmailTransport::new_with_command].
     pub fn new() -> SendmailTransport {
         SendmailTransport {
             command: DEFAULT_SENDMAIL.into(),
@@ -147,7 +150,10 @@ impl<E> AsyncSendmailTransport<E>
 where
     E: Executor,
 {
-    /// Creates a new transport with the default `/usr/sbin/sendmail` command
+    /// Creates a new transport with the `sendmail` command
+    ///
+    /// Note: This uses the `sendmail` command in the current `PATH`. To use another command,
+    /// use [SendmailTransport::new_with_command].
     pub fn new() -> Self {
         Self {
             inner: SendmailTransport::new(),
