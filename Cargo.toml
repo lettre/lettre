@@ -37,7 +37,6 @@ serde_json = { version = "1", optional = true }
 
 # smtp
 nom = { version = "7", optional = true }
-r2d2 = { version = "0.8", optional = true } # feature
 hostname = { version = "0.3", optional = true } # feature
 
 ## tls
@@ -76,7 +75,7 @@ harness = false
 name = "transport_smtp"
 
 [features]
-default = ["smtp-transport", "pool", "native-tls", "hostname", "r2d2", "builder"]
+default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
 builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
 mime03 = ["mime"]
 
