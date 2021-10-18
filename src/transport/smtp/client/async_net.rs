@@ -24,7 +24,7 @@ use async_native_tls::TlsStream as AsyncStd1TlsStream;
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 
 #[cfg(feature = "async-std1-rustls-tls")]
-use async_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
 use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 
@@ -347,7 +347,7 @@ impl AsyncNetworkStream {
                 return {
                     use std::convert::TryFrom;
 
-                    use async_rustls::TlsConnector;
+                    use futures_rustls::TlsConnector;
                     use rustls::ServerName;
 
                     let domain = ServerName::try_from(domain.as_str())

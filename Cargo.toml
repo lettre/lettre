@@ -54,7 +54,7 @@ async-trait = { version = "0.1", optional = true }
 ## async-std
 async-std = { version = "1.8", optional = true, features = ["unstable"] }
 #async-native-tls = { version = "0.3.3", optional = true }
-async-rustls = { version = "0.2", optional = true }
+futures-rustls = { version = "0.22", optional = true }
 
 ## tokio
 tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
@@ -93,7 +93,7 @@ rustls-tls = ["webpki-roots", "rustls", "rustls-pemfile"]
 # async
 async-std1 = ["async-std", "async-trait", "futures-io", "futures-util"]
 #async-std1-native-tls = ["async-std1", "native-tls", "async-native-tls"]
-async-std1-rustls-tls = ["async-std1", "rustls-tls", "async-rustls"]
+async-std1-rustls-tls = ["async-std1", "rustls-tls", "futures-rustls"]
 tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
