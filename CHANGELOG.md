@@ -31,7 +31,8 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 * When the hostname feature is disabled or hostname cannot be fetched, `127.0.0.1` is used instead of `localhost` as EHLO parameter (for better RFC compliance and mail server compatibility)
 * The `new` method of `ClientId` is deprecated
 * Rename `serde-impls` feature to `serde`
-
+* The `SendmailTransport` now uses the `sendmail` command in current `PATH` by default instead of
+  `/usr/bin/sendmail`.
 
 #### Bug Fixes
 
