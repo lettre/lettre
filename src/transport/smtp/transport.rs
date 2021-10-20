@@ -107,6 +107,21 @@ impl SmtpTransport {
             pool_config: PoolConfig::default(),
         }
     }
+
+    /// Tests the SMTP connection
+    ///
+    /// `test_connection()` tests the connection by using the SMTP NOOP command.
+    /// The connection is closed afterwards if a connection pool is not used.
+    pub fn test_connection(&self) -> Result<bool, Error> {
+        let mut conn = self.inner.connection()?;
+
+        let is_connected = conn.test_connected();
+
+        #[cfg(not(feature = "pool"))]
+        conn.quit()?;
+
+        Ok(is_connected)
+    }
 }
 
 /// Contains client configuration.

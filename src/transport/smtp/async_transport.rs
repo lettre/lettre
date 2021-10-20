@@ -167,6 +167,21 @@ where
             pool_config: PoolConfig::default(),
         }
     }
+
+    /// Tests the SMTP connection
+    ///
+    /// `test_connection()` tests the connection by using the SMTP NOOP command.
+    /// The connection is closed afterwards if a connection pool is not used.
+    pub async fn test_connection(&self) -> Result<bool, Error> {
+        let mut conn = self.inner.connection().await?;
+
+        let is_connected = conn.test_connected().await;
+
+        #[cfg(not(feature = "pool"))]
+        conn.quit().await?;
+
+        Ok(is_connected)
+    }
 }
 
 impl<E: Executor> Debug for AsyncSmtpTransport<E> {
