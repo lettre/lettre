@@ -24,7 +24,7 @@ use async_native_tls::TlsStream as AsyncStd1TlsStream;
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 
 #[cfg(feature = "async-std1-rustls-tls")]
-use async_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
 use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 
@@ -261,9 +261,9 @@ impl AsyncNetworkStream {
     #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
     async fn upgrade_tokio1_tls(
         tcp_stream: Tokio1TcpStream,
-        mut tls_parameters: TlsParameters,
+        tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = mem::take(&mut tls_parameters.domain);
+        let domain = tls_parameters.domain().to_string();
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
@@ -290,10 +290,13 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "tokio1-rustls-tls")]
                 return {
-                    use tokio1_rustls::{webpki::DNSNameRef, TlsConnector};
+                    use std::convert::TryFrom;
 
-                    let domain =
-                        DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
+                    use rustls::ServerName;
+                    use tokio1_rustls::TlsConnector;
+
+                    let domain = ServerName::try_from(domain.as_str())
+                        .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
@@ -342,10 +345,13 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
-                    use async_rustls::{webpki::DNSNameRef, TlsConnector};
+                    use std::convert::TryFrom;
 
-                    let domain =
-                        DNSNameRef::try_from_ascii_str(&domain).map_err(error::connection)?;
+                    use futures_rustls::TlsConnector;
+                    use rustls::ServerName;
+
+                    let domain = ServerName::try_from(domain.as_str())
+                        .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
