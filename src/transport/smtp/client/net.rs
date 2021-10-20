@@ -1,3 +1,5 @@
+#[cfg(feature = "rustls-tls")]
+use std::convert::TryFrom;
 use std::{
     io::{self, Read, Write},
     mem,
@@ -9,7 +11,7 @@ use std::{
 use native_tls::TlsStream;
 
 #[cfg(feature = "rustls-tls")]
-use rustls::{ClientSession, StreamOwned};
+use rustls::{ClientConnection, ServerName, StreamOwned};
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::InnerTlsParameters;
@@ -33,7 +35,7 @@ enum InnerNetworkStream {
     NativeTls(TlsStream<TcpStream>),
     /// Encrypted TCP stream
     #[cfg(feature = "rustls-tls")]
-    RustlsTls(StreamOwned<ClientSession, TcpStream>),
+    RustlsTls(StreamOwned<ClientConnection, TcpStream>),
     /// Can't be built
     None,
 }
@@ -157,12 +159,11 @@ impl NetworkStream {
             }
             #[cfg(feature = "rustls-tls")]
             InnerTlsParameters::RustlsTls(connector) => {
-                use webpki::DNSNameRef;
-
-                let domain = DNSNameRef::try_from_ascii_str(tls_parameters.domain())
-                    .map_err(error::connection)?;
-                let stream = StreamOwned::new(ClientSession::new(connector, domain), tcp_stream);
-
+                let domain = ServerName::try_from(tls_parameters.domain())
+                    .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
+                let connection =
+                    ClientConnection::new(connector.clone(), domain).map_err(error::connection)?;
+                let stream = StreamOwned::new(connection, tcp_stream);
                 InnerNetworkStream::RustlsTls(stream)
             }
         })
