@@ -1,4 +1,4 @@
-#[cfg(all(test, feature = "smtp-transport", feature = "r2d2"))]
+#[cfg(all(test, feature = "smtp-transport", feature = "pool"))]
 mod sync {
     use lettre::{address::Envelope, SmtpTransport, Transport};
     use std::{sync::mpsc, thread};
