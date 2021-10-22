@@ -10,7 +10,7 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo565.org>"]
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
-edition = "2018"
+edition = "2021"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
