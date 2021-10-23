@@ -28,8 +28,17 @@ impl Display for DkimCanonicalizationType {
 /// Describe Canonicalization to be applied before signing
 #[derive(Copy, Clone, Debug)]
 pub struct DkimCanonicalization {
-    header: DkimCanonicalizationType,
-    body: DkimCanonicalizationType,
+    pub header: DkimCanonicalizationType,
+    pub body: DkimCanonicalizationType,
+}
+
+impl Default for DkimCanonicalization {
+    fn default() -> Self {
+        DkimCanonicalization {
+            header: DkimCanonicalizationType::Simple,
+            body: DkimCanonicalizationType::Relaxed,
+        }
+    }
 }
 
 /// Format canonicalization to be shown in Dkim header
