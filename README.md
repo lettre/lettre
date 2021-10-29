@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.10.0-rc.3">
-    <img src="https://deps.rs/crate/lettre/0.10.0-rc.3/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.10.0-rc.4">
+    <img src="https://deps.rs/crate/lettre/0.10.0-rc.4/status.svg"
       alt="dependency status" />
   </a>
 </div>
@@ -71,7 +71,7 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.10.0-rc.3"
+lettre = "0.10.0-rc.4"
 ```
 
 ```rust,no_run
