@@ -117,6 +117,7 @@ Check if your service provider offers an SMTP relay service, and ensure you are 
 Validate your DNS records. (DMARC, SPF, DKIM, MX)
 Verify your SSL/TLS certificates are setup properly. (ensure cert and bundled ca-certificates are current and valid, check file permissions)
 Determine if SSL and/or StarTLS are setup as required by remote hosts.
+Investigate if filtering, formatting, or filesize limits are causing messages to be lost by relays or remote hosts.
 
 
 ## Code of conduct
