@@ -113,7 +113,7 @@ Alternatively only unit tests can be run by doing `cargo test --lib`.
 These are general steps to be followed when troubleshooting SMTP related issues.
 - Ensure basic connectivity, ensure requisite ports are open and daemons are listening.
 - Confirm that your service provider allows traffic on the ports being used for mail transfer. (traffic on ports 25, 2525, 587, and 465 is commonly blocked by some service providers.)
-- Check if your service provider requires using an SMTP relay, and ensure you are correctly authenticated to use this relay.
+- Check SMTP relay authentication and configuration.
 - Validate your DNS records. (DMARC, SPF, DKIM, MX)
 - Verify your SSL/TLS certificates are setup properly. (ensure cert and bundled ca-certificates are up to date and valid, check file permissions)
 - Determine if SSL and/or StarTLS are supported and setup as required by remote hosts.
