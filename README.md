@@ -116,7 +116,7 @@ These are general steps to be followed when troubleshooting SMTP related issues.
 - Confirm that your service provider allows traffic on the ports being used for mail transfer.
 - Check SMTP relay authentication and configuration.
 - Validate your DNS records. (DMARC, SPF, DKIM, MX)
-- Verify your SSL/TLS certificates are setup properly. (ensure cert and bundled ca-certificates are up to date and valid, check file permissions)
+- Verify your SSL/TLS certificates are setup properly.
 - Investigate if filtering, formatting, or filesize limits are causing messages to be lost, delayed, or blocked by relays or remote hosts.
 
 ## Code of conduct
