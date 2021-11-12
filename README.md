@@ -108,6 +108,17 @@ such a server can be launched with `python -m smtpd -n -c DebuggingServer localh
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
 
+## Troubleshooting
+
+These are general steps to be followed when troubleshooting SMTP related issues.
+
+- Ensure basic connectivity, ensure requisite ports are open and daemons are listening.
+- Confirm that your service provider allows traffic on the ports being used for mail transfer.
+- Check SMTP relay authentication and configuration.
+- Validate your DNS records. (DMARC, SPF, DKIM, MX)
+- Verify your SSL/TLS certificates are setup properly.
+- Investigate if filtering, formatting, or filesize limits are causing messages to be lost, delayed, or blocked by relays or remote hosts.
+
 ## Code of conduct
 
 Anyone who interacts with Lettre in any space, including but not limited to
