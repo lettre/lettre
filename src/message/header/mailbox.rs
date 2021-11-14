@@ -175,12 +175,12 @@ mod test {
 
     #[test]
     fn format_single_with_name() {
-        let from = Mailboxes::new().with("K. <kayo@example.com>".parse().unwrap());
+        let from = Mailboxes::new().with("Kayo <kayo@example.com>".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(From(from));
 
-        assert_eq!(headers.to_string(), "From: K. <kayo@example.com>\r\n");
+        assert_eq!(headers.to_string(), "From: Kayo <kayo@example.com>\r\n");
     }
 
     #[test]
@@ -201,7 +201,7 @@ mod test {
     #[test]
     fn format_multi_with_name() {
         let from = vec![
-            "K. <kayo@example.com>".parse().unwrap(),
+            "Kayo <kayo@example.com>".parse().unwrap(),
             "Pony P. <pony@domain.tld>".parse().unwrap(),
         ];
 
@@ -210,7 +210,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "From: K. <kayo@example.com>, Pony P. <pony@domain.tld>\r\n"
+            "From: Kayo <kayo@example.com>, \"Pony P.\" <pony@domain.tld>\r\n"
         );
     }
 
