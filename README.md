@@ -47,12 +47,11 @@ lettre_email = "0.9"
 extern crate lettre;
 extern crate lettre_email;
 
-use lettre::{SmtpTransport};
+use lettre::SmtpTransport;
 use lettre_email::EmailBuilder;
 use std::path::Path;
 
-fn main() 
-{
+fn main() {
     let email = EmailBuilder::new()
         // Addresses can be specified by the tuple (email, alias)
         .to(("user@example.org", "Firstname Lastname"))
