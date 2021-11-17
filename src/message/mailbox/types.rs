@@ -70,7 +70,7 @@ impl Display for Mailbox {
         if let Some(ref name) = self.name {
             let name = name.trim();
             if !name.is_empty() {
-                f.write_str(name)?;
+                write_word(f, name)?;
                 f.write_str(" <")?;
                 self.email.fmt(f)?;
                 return f.write_char('>');
@@ -327,6 +327,87 @@ impl FromStr for Mailboxes {
     }
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
+fn write_word(f: &mut Formatter<'_>, s: &str) -> FmtResult {
+    if s.as_bytes().iter().copied().all(is_valid_atom_char) {
+        f.write_str(s)
+    } else {
+        // Quoted string: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
+        f.write_char('"')?;
+        for &c in s.as_bytes() {
+            write_quoted_string_char(f, c)?;
+        }
+        f.write_char('"')?;
+
+        Ok(())
+    }
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.4
+fn is_valid_atom_char(c: u8) -> bool {
+    matches!(c,
+		// Not really allowed but can be inserted between atoms.
+		b'\t' |
+		b' ' |
+
+		b'!' |
+		b'#' |
+		b'$' |
+		b'%' |
+		b'&' |
+		b'\'' |
+		b'*' |
+		b'+' |
+		b'-' |
+		b'/' |
+		b'0'..=b'8' |
+		b'=' |
+		b'?' |
+		b'A'..=b'Z' |
+		b'^' |
+		b'_' |
+		b'`' |
+		b'a'..=b'z' |
+		b'{' |
+		b'|' |
+		b'}' |
+		b'~' |
+
+		// Not techically allowed but will be escaped into allowed characters.
+		128..=255)
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
+fn write_quoted_string_char(f: &mut Formatter<'_>, c: u8) -> FmtResult {
+    match c {
+		// NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
+		1..=8 | 11 | 12 | 14..=31 | 127 |
+
+		// Note, not qcontent but can be put before or after any qcontent.
+		b'\t' |
+		b' ' |
+
+		// The rest of the US-ASCII except \ and "
+		33 |
+		35..=91 |
+		93..=126 |
+
+		// Non-ascii characters will be escaped separately later.
+		128..=255
+
+		=> f.write_char(c.into()),
+
+		// Can not be encoded.
+		b'\n' | b'\r' => Err(std::fmt::Error),
+
+		c => {
+			// quoted-pair https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.2
+			f.write_char('\\')?;
+			f.write_char(c.into())
+		}
+	}
+}
+
 #[cfg(test)]
 mod test {
     use super::Mailbox;
@@ -350,7 +431,35 @@ mod test {
                 "{}",
                 Mailbox::new(Some("K.".into()), "kayo@example.com".parse().unwrap())
             ),
-            "K. <kayo@example.com>"
+            "\"K.\" <kayo@example.com>"
+        );
+    }
+
+    #[test]
+    fn mailbox_format_address_with_comma() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(
+                    Some("Last, First".into()),
+                    "kayo@example.com".parse().unwrap()
+                )
+            ),
+            r#""Last, First" <kayo@example.com>"#
+        );
+    }
+
+    #[test]
+    fn mailbox_format_address_with_color() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(
+                    Some("Chris's Wiki :: blog".into()),
+                    "kayo@example.com".parse().unwrap()
+                )
+            ),
+            r#""Chris's Wiki :: blog" <kayo@example.com>"#
         );
     }
 
@@ -372,7 +481,7 @@ mod test {
                 "{}",
                 Mailbox::new(Some(" K. ".into()), "kayo@example.com".parse().unwrap())
             ),
-            "K. <kayo@example.com>"
+            "\"K.\" <kayo@example.com>"
         );
     }
 
