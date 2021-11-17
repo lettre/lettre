@@ -154,10 +154,10 @@ impl StdError for Error {
     }
 }
 
-pub(crate) fn code(c: Code) -> Error {
+pub(crate) fn code(c: Code, s: Option<String>) -> Error {
     match c.severity {
-        Severity::TransientNegativeCompletion => Error::new::<Error>(Kind::Transient(c), None),
-        Severity::PermanentNegativeCompletion => Error::new::<Error>(Kind::Permanent(c), None),
+        Severity::TransientNegativeCompletion => Error::new(Kind::Transient(c), s),
+        Severity::PermanentNegativeCompletion => Error::new(Kind::Permanent(c), s),
         _ => client("Unknown error code"),
     }
 }

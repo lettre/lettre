@@ -295,7 +295,10 @@ impl AsyncSmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(response.code()))
+                        Err(error::code(
+                            response.code(),
+                            response.first_line().map(|s| s.to_owned()),
+                        ))
                     }
                 }
                 Err(nom::Err::Failure(e)) => {
