@@ -38,10 +38,6 @@ macro_rules! text_header {
 }
 
 text_header!(
-    /// `Subject` of the message, defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.5)
-    Header(Subject, "Subject")
-);
-text_header!(
     /// `Comments` of the message, defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.5)
     Header(Comments, "Comments")
 );

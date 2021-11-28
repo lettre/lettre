@@ -1,10 +1,12 @@
-use crate::address::{Address, AddressError};
 use std::{
     convert::TryFrom,
     fmt::{Display, Formatter, Result as FmtResult, Write},
+    iter::FromIterator,
     slice::Iter,
     str::FromStr,
 };
+
+use crate::address::{Address, AddressError};
 
 /// Represents an email address with an optional name for the sender/recipient.
 ///
@@ -218,6 +220,14 @@ impl Mailboxes {
         self.into()
     }
 
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// Creates an iterator over the [`Mailbox`] instances that are currently stored.
     ///
     /// # Examples
@@ -291,11 +301,25 @@ impl IntoIterator for Mailboxes {
     }
 }
 
+impl FromIterator<Mailbox> for Mailboxes {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Mailbox>,
+    {
+        // TODO: use specialization to make creating a `Mailboxes`
+        // from a `T` of `Mailboxes` a zero-cost conversion
+
+        let iter = iter.into_iter();
+
+        let mut mailboxes = Self::new();
+        mailboxes.extend(iter);
+        mailboxes
+    }
+}
+
 impl Extend<Mailbox> for Mailboxes {
     fn extend<T: IntoIterator<Item = Mailbox>>(&mut self, iter: T) {
-        for elem in iter {
-            self.0.push(elem);
-        }
+        self.0.extend(iter);
     }
 }
 

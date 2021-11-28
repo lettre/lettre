@@ -12,7 +12,6 @@ pub use self::{
     content_disposition::ContentDisposition,
     content_type::{ContentType, ContentTypeErr},
     date::Date,
-    mailbox::*,
     special::*,
     textual::*,
 };
@@ -22,7 +21,6 @@ mod content;
 mod content_disposition;
 mod content_type;
 mod date;
-mod mailbox;
 mod special;
 mod textual;
 
@@ -62,6 +60,14 @@ impl Headers {
         Self {
             headers: Vec::with_capacity(capacity),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        self.headers.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.headers.is_empty()
     }
 
     /// Returns a copy of an `Header` present in `Headers`

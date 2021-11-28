@@ -1,11 +1,6 @@
-#[cfg(feature = "builder")]
-use std::convert::TryFrom;
-
 use super::Address;
 #[cfg(feature = "builder")]
-use crate::message::header::{self, Headers};
-#[cfg(feature = "builder")]
-use crate::message::{Mailbox, Mailboxes};
+use crate::message::Mailboxes;
 use crate::Error;
 
 /// Simple email envelope representation
@@ -103,43 +98,18 @@ impl Envelope {
             .chain(self.forward_path.iter())
             .any(|a| !a.is_ascii())
     }
-}
 
-#[cfg(feature = "builder")]
-impl TryFrom<&Headers> for Envelope {
-    type Error = Error;
+    #[cfg(feature = "builder")]
+    pub(crate) fn build(from: Address, to: Mailboxes, cc: Mailboxes, bcc: Mailboxes) -> Self {
+        let mut forward_path = Vec::new();
 
-    fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
-        let from = match headers.get::<header::Sender>() {
-            // If there is a Sender, use it
-            Some(sender) => Some(Mailbox::from(sender).email),
-            // ... else try From
-            None => match headers.get::<header::From>() {
-                Some(header::From(a)) => {
-                    let mut from: Vec<Mailbox> = a.into();
-                    if from.len() > 1 {
-                        return Err(Error::TooManyFrom);
-                    }
-                    let from = from.pop().expect("From header has 1 Mailbox");
-                    Some(from.email)
-                }
-                None => None,
-            },
-        };
+        forward_path.extend(to.into_iter().map(|mailbox| mailbox.email));
+        forward_path.extend(cc.into_iter().map(|mailbox| mailbox.email));
+        forward_path.extend(bcc.into_iter().map(|mailbox| mailbox.email));
 
-        fn add_addresses_from_mailboxes(
-            addresses: &mut Vec<Address>,
-            mailboxes: Option<Mailboxes>,
-        ) {
-            if let Some(mailboxes) = mailboxes {
-                addresses.extend(mailboxes.into_iter().map(|mb| mb.email));
-            }
+        Self {
+            forward_path,
+            reverse_path: Some(from),
         }
-        let mut to = vec![];
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::To>().map(|h| h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Cc>().map(|h| h.0));
-        add_addresses_from_mailboxes(&mut to, headers.get::<header::Bcc>().map(|h| h.0));
-
-        Self::new(from, to)
     }
 }

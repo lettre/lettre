@@ -7,9 +7,10 @@ fn main() {
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
+        .no_cc()
+        .no_bcc()
         .subject("Happy new year")
-        .body(String::from("Be happy!"))
-        .unwrap();
+        .body(String::from("Be happy!"));
 
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
