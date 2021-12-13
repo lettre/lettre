@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.10.0-rc.3">
-    <img src="https://deps.rs/crate/lettre/0.10.0-rc.3/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.10.0-rc.4">
+    <img src="https://deps.rs/crate/lettre/0.10.0-rc.4/status.svg"
       alt="dependency status" />
   </a>
 </div>
@@ -71,7 +71,7 @@ To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-lettre = "0.10.0-rc.3"
+lettre = "0.10.0-rc.4"
 ```
 
 ```rust,no_run
@@ -107,6 +107,17 @@ The `lettre` tests require an open mail server listening locally on port 2525 an
 such a server can be launched with `python -m smtpd -n -c DebuggingServer localhost:2525`
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
+
+## Troubleshooting
+
+These are general steps to be followed when troubleshooting SMTP related issues.
+
+- Ensure basic connectivity, ensure requisite ports are open and daemons are listening.
+- Confirm that your service provider allows traffic on the ports being used for mail transfer.
+- Check SMTP relay authentication and configuration.
+- Validate your DNS records. (DMARC, SPF, DKIM, MX)
+- Verify your SSL/TLS certificates are setup properly.
+- Investigate if filtering, formatting, or filesize limits are causing messages to be lost, delayed, or blocked by relays or remote hosts.
 
 ## Code of conduct
 
