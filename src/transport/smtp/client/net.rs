@@ -183,6 +183,30 @@ impl NetworkStream {
         }
     }
 
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
+        match &self.inner {
+            InnerNetworkStream::Tcp(_) => Err(error::client("Connection is not encrypted")),
+            #[cfg(feature = "native-tls")]
+            InnerNetworkStream::NativeTls(stream) => Ok(stream
+                .peer_certificate()
+                .map_err(|e| error::tls(e))?
+                .unwrap()
+                .to_der()
+                .map_err(|e| error::tls(e))?),
+            #[cfg(feature = "rustls-tls")]
+            InnerNetworkStream::RustlsTls(stream) => Ok(stream
+                .conn
+                .peer_certificates()
+                .unwrap()
+                .first()
+                .unwrap()
+                .clone()
+                .0),
+            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+        }
+    }
+
     pub fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
         match self.inner {
             InnerNetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
