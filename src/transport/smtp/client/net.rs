@@ -190,10 +190,10 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(stream) => Ok(stream
                 .peer_certificate()
-                .map_err(|e| error::tls(e))?
+                .map_err(error::tls)?
                 .unwrap()
                 .to_der()
-                .map_err(|e| error::tls(e))?),
+                .map_err(error::tls)?),
             #[cfg(feature = "rustls-tls")]
             InnerNetworkStream::RustlsTls(stream) => Ok(stream
                 .conn

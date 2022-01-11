@@ -392,10 +392,10 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1NativeTls(stream) => Ok(stream
                 .get_ref()
                 .peer_certificate()
-                .map_err(|e| error::tls(e))?
+                .map_err(error::tls)?
                 .unwrap()
                 .to_der()
-                .map_err(|e| error::tls(e))?),
+                .map_err(error::tls)?),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(stream) => Ok(stream
                 .get_ref()
