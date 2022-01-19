@@ -195,8 +195,12 @@
 //! ```
 //! </details>
 
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+use std::{io::Write, iter};
 
+pub use self::builder::{
+    MessageBuilder, WantsBody, WantsEnvelopeOrSubject, WantsFrom, WantsRecipients1,
+    WantsRecipients2, WantsRecipients3, WantsReplyTo, WantsSubject,
+};
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
 pub use mailbox::*;
@@ -204,15 +208,12 @@ pub use mimebody::*;
 
 mod attachment;
 mod body;
+mod builder;
 pub mod header;
 mod mailbox;
 mod mimebody;
 
-use crate::{
-    address::Envelope,
-    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
-    Error as EmailError,
-};
+use crate::{address::Envelope, message::header::Headers};
 
 const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 
@@ -220,236 +221,6 @@ const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 trait EmailFormat {
     // Use a writer?
     fn format(&self, out: &mut Vec<u8>);
-}
-
-/// A builder for messages
-#[derive(Debug, Clone)]
-pub struct MessageBuilder {
-    headers: Headers,
-    envelope: Option<Envelope>,
-}
-
-impl MessageBuilder {
-    /// Creates a new default message builder
-    pub fn new() -> Self {
-        Self {
-            headers: Headers::new(),
-            envelope: None,
-        }
-    }
-
-    /// Set custom header to message
-    pub fn header<H: Header>(mut self, header: H) -> Self {
-        self.headers.set(header);
-        self
-    }
-
-    /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
-        match self.headers.get::<H>() {
-            Some(mut header_) => {
-                header_.join_mailboxes(header);
-                self.header(header_)
-            }
-            None => self.header(header),
-        }
-    }
-
-    /// Add `Date` header to message
-    ///
-    /// Shortcut for `self.header(header::Date::new(st))`.
-    pub fn date(self, st: SystemTime) -> Self {
-        self.header(header::Date::new(st))
-    }
-
-    /// Set `Date` header using current date/time
-    ///
-    /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
-    /// if no date has been provided.
-    pub fn date_now(self) -> Self {
-        self.date(SystemTime::now())
-    }
-
-    /// Set `Subject` header to message
-    ///
-    /// Shortcut for `self.header(header::Subject(subject.into()))`.
-    pub fn subject<S: Into<String>>(self, subject: S) -> Self {
-        let s: String = subject.into();
-        self.header(header::Subject::from(s))
-    }
-
-    /// Set `MIME-Version` header to 1.0
-    ///
-    /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
-    ///
-    /// Not exposed as it is set by body methods
-    fn mime_1_0(self) -> Self {
-        self.header(header::MIME_VERSION_1_0)
-    }
-
-    /// Set `Sender` header. Should be used when providing several `From` mailboxes.
-    ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
-    ///
-    /// Shortcut for `self.header(header::Sender(mbox))`.
-    pub fn sender(self, mbox: Mailbox) -> Self {
-        self.header(header::Sender::from(mbox))
-    }
-
-    /// Set or add mailbox to `From` header
-    ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
-    ///
-    /// Shortcut for `self.mailbox(header::From(mbox))`.
-    pub fn from(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::From::from(Mailboxes::from(mbox)))
-    }
-
-    /// Set or add mailbox to `ReplyTo` header
-    ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
-    ///
-    /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
-    pub fn reply_to(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::ReplyTo(mbox.into()))
-    }
-
-    /// Set or add mailbox to `To` header
-    ///
-    /// Shortcut for `self.mailbox(header::To(mbox))`.
-    pub fn to(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::To(mbox.into()))
-    }
-
-    /// Set or add mailbox to `Cc` header
-    ///
-    /// Shortcut for `self.mailbox(header::Cc(mbox))`.
-    pub fn cc(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::Cc(mbox.into()))
-    }
-
-    /// Set or add mailbox to `Bcc` header
-    ///
-    /// Shortcut for `self.mailbox(header::Bcc(mbox))`.
-    pub fn bcc(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::Bcc(mbox.into()))
-    }
-
-    /// Set or add message id to [`In-Reply-To`
-    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
-    pub fn in_reply_to(self, id: String) -> Self {
-        self.header(header::InReplyTo::from(id))
-    }
-
-    /// Set or add message id to [`References`
-    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
-    pub fn references(self, id: String) -> Self {
-        self.header(header::References::from(id))
-    }
-
-    /// Set [Message-ID
-    /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
-    ///
-    /// Should generally be inserted by the mail relay.
-    ///
-    /// If `None` is provided, an id will be generated in the
-    /// `<UUID@HOSTNAME>`.
-    pub fn message_id(self, id: Option<String>) -> Self {
-        match id {
-            Some(i) => self.header(header::MessageId::from(i)),
-            None => {
-                #[cfg(feature = "hostname")]
-                let hostname = hostname::get()
-                    .map_err(|_| ())
-                    .and_then(|s| s.into_string().map_err(|_| ()))
-                    .unwrap_or_else(|_| DEFAULT_MESSAGE_ID_DOMAIN.to_string());
-                #[cfg(not(feature = "hostname"))]
-                let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_string();
-
-                self.header(header::MessageId::from(
-                    // https://tools.ietf.org/html/rfc5322#section-3.6.4
-                    format!("<{}@{}>", make_message_id(), hostname),
-                ))
-            }
-        }
-    }
-
-    /// Set [User-Agent
-    /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
-    pub fn user_agent(self, id: String) -> Self {
-        self.header(header::UserAgent::from(id))
-    }
-
-    /// Force specific envelope (by default it is derived from headers)
-    pub fn envelope(mut self, envelope: Envelope) -> Self {
-        self.envelope = Some(envelope);
-        self
-    }
-
-    // TODO: High-level methods for attachments and embedded files
-
-    /// Create message from body
-    fn build(self, body: MessageBody) -> Result<Message, EmailError> {
-        // Check for missing required headers
-        // https://tools.ietf.org/html/rfc5322#section-3.6
-
-        // Insert Date if missing
-        let mut res = if self.headers.get::<header::Date>().is_none() {
-            self.date_now()
-        } else {
-            self
-        };
-
-        // Fail is missing correct originator (Sender or From)
-        match res.headers.get::<header::From>() {
-            Some(header::From(f)) => {
-                let from: Vec<Mailbox> = f.into();
-                if from.len() > 1 && res.headers.get::<header::Sender>().is_none() {
-                    return Err(EmailError::TooManyFrom);
-                }
-            }
-            None => {
-                return Err(EmailError::MissingFrom);
-            }
-        }
-
-        let envelope = match res.envelope {
-            Some(e) => e,
-            None => Envelope::try_from(&res.headers)?,
-        };
-
-        // Remove `Bcc` headers now the envelope is set
-        res.headers.remove::<header::Bcc>();
-
-        Ok(Message {
-            headers: res.headers,
-            body,
-            envelope,
-        })
-    }
-
-    /// Create [`Message`] using a [`Vec<u8>`], [`String`], or [`Body`] body
-    ///
-    /// Automatically gets encoded with `7bit`, `quoted-printable` or `base64`
-    /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
-    /// for `body`.
-    pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
-        let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
-        let body = body.into_body(maybe_encoding);
-
-        self.headers.set(body.encoding());
-        self.build(MessageBody::Raw(body.into_vec()))
-    }
-
-    /// Create message using mime body ([`MultiPart`][self::MultiPart])
-    pub fn multipart(self, part: MultiPart) -> Result<Message, EmailError> {
-        self.mime_1_0().build(MessageBody::Mime(Part::Multi(part)))
-    }
-
-    /// Create message using mime body ([`SinglePart`][self::SinglePart])
-    pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
-        self.mime_1_0().build(MessageBody::Mime(Part::Single(part)))
-    }
 }
 
 /// Email message which can be formatted
@@ -469,8 +240,10 @@ enum MessageBody {
 
 impl Message {
     /// Create a new message builder without headers
-    pub fn builder() -> MessageBuilder {
-        MessageBuilder::new()
+    pub fn builder() -> MessageBuilder<WantsFrom> {
+        MessageBuilder {
+            state: WantsFrom(()),
+        }
     }
 
     /// Get the headers from the Message
@@ -503,12 +276,6 @@ impl EmailFormat for Message {
                 out.extend_from_slice(r)
             }
         }
-    }
-}
-
-impl Default for MessageBuilder {
-    fn default() -> Self {
-        MessageBuilder::new()
     }
 }
 

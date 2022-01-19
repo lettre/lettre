@@ -33,6 +33,8 @@ fn main() {
     let email = Message::builder()
         .from("NoBody <nobody@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
+        .no_cc()
+        .no_bcc()
         .subject("Hello from Lettre!")
         .multipart(
             MultiPart::alternative() // This is composed of two parts.
