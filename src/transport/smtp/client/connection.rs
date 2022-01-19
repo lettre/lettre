@@ -294,4 +294,10 @@ impl SmtpConnection {
 
         Err(error::response("incomplete response"))
     }
+
+    /// The X509 certificate of the server (DER encoded)
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
+        self.stream.get_ref().peer_certificate()
+    }
 }
