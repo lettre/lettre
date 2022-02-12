@@ -188,10 +188,10 @@ impl DkimConfig {
 /// Create a Headers struct with a Dkim-Signature Header created from given parameters
 fn dkim_header_format(
     config: &DkimConfig,
-    timestamp: String,
-    headers_list: String,
-    body_hash: String,
-    signature: String,
+    timestamp: &str,
+    headers_list: &str,
+    body_hash: &str,
+    signature: &str,
 ) -> Headers {
     let mut headers = Headers::new();
     let header_name =
@@ -202,16 +202,25 @@ fn dkim_header_format(
 }
 
 /// Canonicalize the body of an email
-fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> Vec<u8> {
+fn dkim_canonicalize_body(
+    body: &[u8],
+    canonicalization: DkimCanonicalizationType,
+) -> Cow<'_, [u8]> {
     static RE: Lazy<BRegex> = Lazy::new(|| BRegex::new("(\r\n)+$").unwrap());
     static RE_DOUBLE_SPACE: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\\t ]+").unwrap());
     static RE_SPACE_EOL: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\t ]\r\n").unwrap());
     match canonicalization {
-        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]).into_owned(),
+        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]),
         DkimCanonicalizationType::Relaxed => {
-            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]).into_owned();
-            let body = RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]).into_owned();
-            RE.replace(&body, &b"\r\n"[..]).into_owned()
+            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]);
+            let body = match RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]) {
+                Cow::Borrowed(_body) => body,
+                Cow::Owned(body) => Cow::Owned(body),
+            };
+            match RE.replace(&body, &b"\r\n"[..]) {
+                Cow::Borrowed(_body) => body,
+                Cow::Owned(body) => Cow::Owned(body),
+            }
         }
     }
 }
@@ -319,13 +328,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     if let DkimCanonicalizationType::Relaxed = dkim_config.canonicalization.header {
         signed_headers_list.make_ascii_lowercase();
     }
-    let dkim_header = dkim_header_format(
-        dkim_config,
-        timestamp.clone(),
-        signed_headers_list.clone(),
-        bh.clone(),
-        "".to_string(),
-    );
+    let dkim_header = dkim_header_format(dkim_config, &timestamp, &signed_headers_list, &bh, "");
     let signed_headers = dkim_canonicalize_headers(
         dkim_config.headers.iter().map(|h| h.as_ref()),
         headers,
@@ -352,8 +355,13 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
             base64::encode(private_key.sign(&hashed_headers).to_bytes())
         }
     };
-    let dkim_header =
-        dkim_header_format(dkim_config, timestamp, signed_headers_list, bh, signature);
+    let dkim_header = dkim_header_format(
+        dkim_config,
+        &timestamp,
+        &signed_headers_list,
+        &bh,
+        &signature,
+    );
     message.headers.insert_raw(HeaderValue::new(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
         dkim_header.get_raw("DKIM-Signature").unwrap().to_string(),
@@ -413,7 +421,7 @@ mod test {
         let expected = "test\r\n\r\ntest   \ttest\r\n";
         assert_eq!(
             dkim_canonicalize_header_value(value, DkimCanonicalizationType::Simple),
-            expected.to_string()
+            expected
         )
     }
     #[test]
