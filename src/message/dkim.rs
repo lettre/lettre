@@ -1,4 +1,7 @@
-use crate::message::{header::HeaderName, Headers, Message};
+use crate::message::{
+    header::{HeaderName, HeaderValue},
+    Headers, Message,
+};
 use base64::{decode, encode};
 use ed25519_dalek::Signer;
 use once_cell::sync::Lazy;
@@ -194,7 +197,7 @@ fn dkim_header_format(
     let header_name =
         dkim_canonicalize_header_tag("DKIM-Signature".to_string(), config.canonicalization.header);
     let header_name = HeaderName::new_from_ascii(header_name).unwrap();
-    headers.append_raw(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.private_key.get_signing_algorithm()));
+    headers.insert_raw(HeaderValue::new(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.private_key.get_signing_algorithm())));
     headers
 }
 
@@ -255,10 +258,10 @@ fn dkim_canonicalize_headers(
         let h = dkim_canonicalize_header_tag(h, canonicalization);
         if let Some(value) = mail_headers.get_raw(&h) {
             match canonicalization {
-                DkimCanonicalizationType::Simple => signed_headers.append_raw(
+                DkimCanonicalizationType::Simple => signed_headers.insert_raw(HeaderValue::new(
                     HeaderName::new_from_ascii(h).unwrap(),
                     dkim_canonicalize_header_value(value, canonicalization),
-                ),
+                )),
                 DkimCanonicalizationType::Relaxed => write!(
                     &mut signed_headers_relaxed,
                     "{}:{}",
@@ -329,16 +332,16 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     };
     let dkim_header =
         dkim_header_format(dkim_config, timestamp, signed_headers_list, bh, signature);
-    message.headers.append_raw(
+    message.headers.insert_raw(HeaderValue::new(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
         dkim_header.get_raw("DKIM-Signature").unwrap().to_string(),
-    );
+    ));
 }
 
 #[cfg(test)]
 mod test {
     use super::{
-        super::header::HeaderName,
+        super::header::{HeaderName, HeaderValue},
         super::{Header, Message},
         dkim_canonicalize_body, dkim_canonicalize_header_value, dkim_canonicalize_headers,
         DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm, DkimSigningKey,
@@ -359,8 +362,8 @@ mod test {
             Ok(Self(s.into()))
         }
 
-        fn display(&self) -> String {
-            self.0.clone()
+        fn display(&self) -> HeaderValue {
+            HeaderValue::new(Self::name(), self.0.clone())
         }
     }
 

@@ -34,13 +34,13 @@ pub trait Header: Clone {
 
     fn parse(s: &str) -> Result<Self, BoxError>;
 
-    fn display(&self) -> String;
+    fn display(&self) -> HeaderValue;
 }
 
 /// A set of email headers
 #[derive(Debug, Clone, Default)]
 pub struct Headers {
-    headers: Vec<(HeaderName, String)>,
+    headers: Vec<HeaderValue>,
 }
 
 impl Headers {
@@ -68,13 +68,14 @@ impl Headers {
     ///
     /// Returns `None` if `Header` isn't present in `Headers`.
     pub fn get<H: Header>(&self) -> Option<H> {
-        self.get_raw(&H::name()).and_then(|raw| H::parse(raw).ok())
+        self.get_raw(&H::name())
+            .and_then(|raw_value| H::parse(raw_value).ok())
     }
 
     /// Sets `Header` into `Headers`, overriding `Header` if it
     /// was already present in `Headers`
     pub fn set<H: Header>(&mut self, header: H) {
-        self.insert_raw(H::name(), header.display());
+        self.insert_raw(header.display());
     }
 
     /// Remove `Header` from `Headers`, returning it
@@ -82,7 +83,7 @@ impl Headers {
     /// Returns `None` if `Header` isn't in `Headers`.
     pub fn remove<H: Header>(&mut self) -> Option<H> {
         self.remove_raw(&H::name())
-            .and_then(|(_name, raw)| H::parse(&raw).ok())
+            .and_then(|value| H::parse(&value.raw_value).ok())
     }
 
     /// Clears `Headers`, removing all headers from it
@@ -97,62 +98,46 @@ impl Headers {
     ///
     /// Returns `None` if `name` isn't present in `Headers`.
     pub fn get_raw(&self, name: &str) -> Option<&str> {
-        self.find_header(name).map(|(_name, value)| value)
+        self.find_header(name).map(|value| value.raw_value.as_str())
     }
 
     /// Inserts a raw header into `Headers`, overriding `value` if it
     /// was already present in `Headers`.
-    pub fn insert_raw(&mut self, name: HeaderName, value: String) {
-        match self.find_header_mut(&name) {
-            Some((_, current_value)) => {
+    pub fn insert_raw(&mut self, value: HeaderValue) {
+        match self.find_header_mut(&value.name) {
+            Some(current_value) => {
                 *current_value = value;
             }
             None => {
-                self.headers.push((name, value));
+                self.headers.push(value);
             }
-        }
-    }
-
-    /// Appends a raw header into `Headers`
-    ///
-    /// If a header with a name of `name` is already present,
-    /// appends `, ` + `value` to it's current value.
-    pub fn append_raw(&mut self, name: HeaderName, value: String) {
-        match self.find_header_mut(&name) {
-            Some((_name, prev_value)) => {
-                prev_value.push_str(", ");
-                prev_value.push_str(&value);
-            }
-            None => self.headers.push((name, value)),
         }
     }
 
     /// Remove a raw header from `Headers`, returning it
     ///
     /// Returns `None` if `name` isn't present in `Headers`.
-    pub fn remove_raw(&mut self, name: &str) -> Option<(HeaderName, String)> {
+    pub fn remove_raw(&mut self, name: &str) -> Option<HeaderValue> {
         self.find_header_index(name).map(|i| self.headers.remove(i))
     }
 
-    fn find_header(&self, name: &str) -> Option<(&HeaderName, &str)> {
+    fn find_header(&self, name: &str) -> Option<&HeaderValue> {
         self.headers
             .iter()
-            .find(|&(name_, _value)| name.eq_ignore_ascii_case(name_))
-            .map(|t| (&t.0, t.1.as_str()))
+            .find(|value| name.eq_ignore_ascii_case(&value.name))
     }
 
-    fn find_header_mut(&mut self, name: &str) -> Option<(&HeaderName, &mut String)> {
+    fn find_header_mut(&mut self, name: &str) -> Option<&mut HeaderValue> {
         self.headers
             .iter_mut()
-            .find(|(name_, _value)| name.eq_ignore_ascii_case(name_))
-            .map(|t| (&t.0, &mut t.1))
+            .find(|value| name.eq_ignore_ascii_case(&value.name))
     }
 
     fn find_header_index(&self, name: &str) -> Option<usize> {
         self.headers
             .iter()
             .enumerate()
-            .find(|&(_i, (name_, _value))| name.eq_ignore_ascii_case(name_))
+            .find(|(_i, value)| name.eq_ignore_ascii_case(&value.name))
             .map(|(i, _)| i)
     }
 }
@@ -160,10 +145,10 @@ impl Headers {
 impl Display for Headers {
     /// Formats `Headers`, ready to put them into an email
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (name, value) in &self.headers {
-            Display::fmt(name, f)?;
+        for value in &self.headers {
+            f.write_str(&value.name)?;
             f.write_str(": ")?;
-            HeaderValueEncoder::encode(name, value, f)?;
+            f.write_str(&value.encoded_value)?;
             f.write_str("\r\n")?;
         }
 
@@ -290,6 +275,26 @@ impl PartialEq<HeaderName> for &str {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct HeaderValue {
+    name: HeaderName,
+    raw_value: String,
+    encoded_value: String,
+}
+
+impl HeaderValue {
+    pub fn new(name: HeaderName, raw_value: String) -> Self {
+        let mut encoded_value = String::with_capacity(raw_value.len());
+        HeaderValueEncoder::encode(&name, &raw_value, &mut encoded_value).unwrap();
+
+        Self {
+            name,
+            raw_value,
+            encoded_value,
+        }
+    }
+}
+
 const ENCODING_START_PREFIX: &str = "=?utf-8?b?";
 const ENCODING_END_SUFFIX: &str = "?=";
 const MAX_LINE_LEN: usize = 76;
@@ -301,7 +306,7 @@ struct HeaderValueEncoder {
 }
 
 impl HeaderValueEncoder {
-    fn encode(name: &str, value: &str, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn encode(name: &str, value: &str, f: &mut impl fmt::Write) -> fmt::Result {
         let (words_iter, encoder) = Self::new(name, value);
         encoder.format(words_iter, f)
     }
@@ -319,7 +324,7 @@ impl HeaderValueEncoder {
     fn format(
         mut self,
         words_iter: WordsPlusFillIterator<'_>,
-        f: &mut fmt::Formatter<'_>,
+        f: &mut impl fmt::Write,
     ) -> fmt::Result {
         /// Estimate if an encoded string of `len` would fix in an empty line
         fn would_fit_new_line(len: usize) -> bool {
@@ -448,11 +453,9 @@ impl HeaderValueEncoder {
 
     fn flush_encode_buf(
         &mut self,
-        f: &mut fmt::Formatter<'_>,
+        f: &mut impl fmt::Write,
         switching_to_allowed: bool,
     ) -> fmt::Result {
-        use std::fmt::Write;
-
         if self.encode_buf.is_empty() {
             // nothing to encode
             return Ok(());
@@ -477,7 +480,7 @@ impl HeaderValueEncoder {
             self.encode_buf.as_bytes(),
             base64::STANDARD,
         );
-        Display::fmt(&encoded, f)?;
+        write!(f, "{}", encoded)?;
         f.write_str(ENCODING_END_SUFFIX)?;
 
         self.line_len += ENCODING_START_PREFIX.len();
@@ -493,7 +496,7 @@ impl HeaderValueEncoder {
         Ok(())
     }
 
-    fn new_line(&mut self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn new_line(&mut self, f: &mut impl fmt::Write) -> fmt::Result {
         f.write_str("\r\n ")?;
         self.line_len = 1;
 
@@ -546,7 +549,7 @@ const fn allowed_char(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{HeaderName, Headers};
+    use super::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn valid_headername() {
@@ -607,10 +610,10 @@ mod tests {
     #[test]
     fn format_ascii() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "John Doe <example@example.com>, Jean Dupont <jean@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -621,10 +624,10 @@ mod tests {
     #[test]
     fn format_ascii_with_folding() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand <jemand@example.com>, Jean Dupont <jean@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -639,10 +642,10 @@ mod tests {
     #[test]
     fn format_ascii_with_folding_long_line() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -658,9 +661,10 @@ mod tests {
     fn format_ascii_with_folding_very_long_line() {
         let mut headers = Headers::new();
         headers.insert_raw(
+            HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoYouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know".to_string()
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -674,10 +678,10 @@ mod tests {
     #[test]
     fn format_ascii_with_folding_giant_word() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijklmnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdefghijklmnopqrstuvwxyz".to_string()
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -692,10 +696,10 @@ mod tests {
     #[test]
     fn format_special() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "Seán <sean@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -706,10 +710,10 @@ mod tests {
     #[test]
     fn format_special_emoji() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "🌎 <world@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -720,10 +724,10 @@ mod tests {
     #[test]
     fn format_special_with_folding() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
-        );
+         ) );
 
         assert_eq!(
             headers.to_string(),
@@ -741,8 +745,9 @@ mod tests {
     fn format_slice_on_char_boundary_bug() {
         let mut headers = Headers::new();
         headers.insert_raw(
+            HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳".to_string(),
+            "🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳".to_string(),)
         );
 
         assert_eq!(
@@ -754,10 +759,10 @@ mod tests {
     #[test]
     fn format_bad_stuff() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "Hello! \r\n This is \" bad \0. 👋".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -769,21 +774,25 @@ mod tests {
     fn format_everything() {
         let mut headers = Headers::new();
         headers.insert_raw(
+            HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
+            )
         );
         headers.insert_raw(
+            HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+            )
         );
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "Someone <somewhere@example.com>".to_string(),
-        );
-        headers.insert_raw(
+        ));
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "quoted-printable".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),
@@ -805,10 +814,10 @@ mod tests {
     #[test]
     fn issue_653() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "＋仮名 :a;go; ;;;;;s;;;;;;;;;;;;;;;;fffeinmjgggggggggｆっ".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.to_string(),

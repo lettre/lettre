@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// `Content-Transfer-Encoding` of the body
@@ -35,8 +35,8 @@ impl Header for ContentTransferEncoding {
         Ok(s.parse()?)
     }
 
-    fn display(&self) -> String {
-        self.to_string()
+    fn display(&self) -> HeaderValue {
+        HeaderValue::new(Self::name(), self.to_string())
     }
 }
 
@@ -75,7 +75,7 @@ impl Default for ContentTransferEncoding {
 #[cfg(test)]
 mod test {
     use super::ContentTransferEncoding;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_content_transfer_encoding() {
@@ -94,20 +94,20 @@ mod test {
     fn parse_content_transfer_encoding() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "7bit".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),
             Some(ContentTransferEncoding::SevenBit)
         );
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "base64".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),
