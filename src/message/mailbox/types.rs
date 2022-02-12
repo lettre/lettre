@@ -1,9 +1,12 @@
 use std::{
     convert::TryFrom,
     fmt::{Display, Formatter, Result as FmtResult, Write},
+    mem,
     slice::Iter,
     str::FromStr,
 };
+
+use email_encoding::headers::EmailWriter;
 
 use crate::address::{Address, AddressError};
 
@@ -63,6 +66,22 @@ impl Mailbox {
     /// ```
     pub fn new(name: Option<String>, email: Address) -> Self {
         Mailbox { name, email }
+    }
+
+    pub(crate) fn encode(&self, w: &mut EmailWriter<'_>) -> FmtResult {
+        if let Some(name) = &self.name {
+            email_encoding::headers::quoted_string::encode(name, w)?;
+            w.space();
+            w.write_char('<')?;
+        }
+
+        w.write_str(self.email.as_ref())?;
+
+        if self.name.is_some() {
+            w.write_char('>')?;
+        }
+
+        Ok(())
     }
 }
 
@@ -250,6 +269,20 @@ impl Mailboxes {
     /// ```
     pub fn iter(&self) -> Iter<'_, Mailbox> {
         self.0.iter()
+    }
+
+    pub(crate) fn encode(&self, w: &mut EmailWriter<'_>) -> FmtResult {
+        let mut first = true;
+        for mailbox in self.iter() {
+            if !mem::take(&mut first) {
+                w.write_char(',')?;
+                w.space();
+            }
+
+            mailbox.encode(w)?;
+        }
+
+        Ok(())
     }
 }
 

@@ -1,3 +1,5 @@
+use email_encoding::headers::EmailWriter;
+
 use super::{Header, HeaderName, HeaderValue};
 use crate::{
     message::mailbox::{Mailbox, Mailboxes},
@@ -26,7 +28,12 @@ macro_rules! mailbox_header {
             }
 
             fn display(&self) -> HeaderValue {
-                HeaderValue::new(Self::name(),self.0.to_string())
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailbox` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
             }
         }
 
@@ -69,8 +76,13 @@ macro_rules! mailboxes_header {
             }
 
             fn display(&self) -> HeaderValue {
-               HeaderValue::new(Self::name(),self.0.to_string())
-                          }
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailboxes` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
+            }
         }
 
         impl std::convert::From<Mailboxes> for $type_name {
