@@ -33,7 +33,7 @@
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{Message, Transport, SmtpTransport};
+//! use lettre::{Message, SmtpTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -43,8 +43,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Create TLS transport on port 465
-//! let sender = SmtpTransport::relay("smtp.example.com")?
-//!     .build();
+//! let sender = SmtpTransport::relay("smtp.example.com")?.build();
 //! // Send the email via remote relay
 //! let result = sender.send(&email);
 //! assert!(result.is_ok());
@@ -59,7 +58,13 @@
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{Message, Transport, SmtpTransport, transport::smtp::{PoolConfig, authentication::{Credentials, Mechanism}}};
+//! use lettre::{
+//!     transport::smtp::{
+//!         authentication::{Credentials, Mechanism},
+//!         PoolConfig,
+//!     },
+//!     Message, SmtpTransport, Transport,
+//! };
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -71,11 +76,14 @@
 //! // Create TLS transport on port 587 with STARTTLS
 //! let sender = SmtpTransport::starttls_relay("smtp.example.com")?
 //!     // Add credentials for authentication
-//!     .credentials(Credentials::new("username".to_string(), "password".to_string()))
+//!     .credentials(Credentials::new(
+//!         "username".to_string(),
+//!         "password".to_string(),
+//!     ))
 //!     // Configure expected authentication mechanism
 //!     .authentication(vec![Mechanism::Plain])
 //!     // Connection pool settings
-//!     .pool_config( PoolConfig::new().max_size(20))
+//!     .pool_config(PoolConfig::new().max_size(20))
 //!     .build();
 //!
 //! // Send the email via remote relay
@@ -90,7 +98,10 @@
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{Message, Transport, SmtpTransport, transport::smtp::client::{TlsParameters, Tls}};
+//! use lettre::{
+//!     transport::smtp::client::{Tls, TlsParameters},
+//!     Message, SmtpTransport, Transport,
+//! };
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -101,7 +112,8 @@
 //!
 //! // Custom TLS configuration
 //! let tls = TlsParameters::builder("smtp.example.com".to_string())
-//!           .dangerous_accept_invalid_certs(true).build()?;
+//!     .dangerous_accept_invalid_certs(true)
+//!     .build()?;
 //!
 //! // Create TLS transport on port 465
 //! let sender = SmtpTransport::relay("smtp.example.com")?

@@ -33,7 +33,9 @@
 //! #
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncTransport, Tokio1Executor, AsyncSendmailTransport, SendmailTransport};
+//! use lettre::{
+//!     AsyncSendmailTransport, AsyncTransport, Message, SendmailTransport, Tokio1Executor,
+//! };
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)

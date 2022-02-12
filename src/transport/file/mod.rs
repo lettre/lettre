@@ -69,8 +69,8 @@
 //! #
 //! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
+//! use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
 //! use std::env::temp_dir;
-//! use lettre::{AsyncTransport, Tokio1Executor, Message, AsyncFileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
@@ -94,8 +94,8 @@
 //! #
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
+//! use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
 //! use std::env::temp_dir;
-//! use lettre::{AsyncTransport, AsyncStd1Executor, Message, AsyncFileTransport};
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
