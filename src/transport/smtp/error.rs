@@ -1,10 +1,11 @@
 //! Error and result type for SMTP clients
 
+use std::{error::Error as StdError, fmt};
+
 use crate::{
     transport::smtp::response::{Code, Severity},
     BoxError,
 };
-use std::{error::Error as StdError, fmt};
 
 // Inspired by https://github.com/seanmonstar/reqwest/blob/a8566383168c0ef06c21f38cbc9213af6ff6db31/src/error.rs
 

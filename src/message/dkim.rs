@@ -1,17 +1,21 @@
-use crate::message::{
-    header::{HeaderName, HeaderValue},
-    Headers, Message,
+use std::{
+    borrow::Cow,
+    error::Error as StdError,
+    fmt::{self, Display, Write},
+    iter::IntoIterator,
+    time::SystemTime,
 };
+
 use ed25519_dalek::Signer;
 use once_cell::sync::Lazy;
 use regex::{bytes::Regex as BRegex, Regex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
-use std::borrow::Cow;
-use std::error::Error as StdError;
-use std::fmt::{self, Display, Write};
-use std::iter::IntoIterator;
-use std::time::SystemTime;
+
+use crate::message::{
+    header::{HeaderName, HeaderValue},
+    Headers, Message,
+};
 
 /// Describe Dkim Canonicalization to apply to either body or headers
 #[derive(Copy, Clone, Debug)]
@@ -381,15 +385,20 @@ pub(super) fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
 
 #[cfg(test)]
 mod test {
+    use std::{
+        io::Write,
+        process::{Command, Stdio},
+    };
+
     use super::{
-        super::header::{HeaderName, HeaderValue},
-        super::{Header, Message},
+        super::{
+            header::{HeaderName, HeaderValue},
+            Header, Message,
+        },
         dkim_canonicalize_body, dkim_canonicalize_header_value, dkim_canonicalize_headers,
         DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm, DkimSigningKey,
     };
     use crate::StdError;
-    use std::io::Write;
-    use std::process::{Command, Stdio};
 
     #[derive(Clone)]
     struct TestHeader(String);

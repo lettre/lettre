@@ -1,12 +1,11 @@
 // This line is only to make it compile from lettre's examples folder,
 // since it uses Rust 2018 crate renaming to import tokio.
 // Won't be needed in user's code.
-use tokio1_crate as tokio;
-
 use lettre::{
     transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message,
     Tokio1Executor,
 };
+use tokio1_crate as tokio;
 
 #[tokio::main]
 async fn main() {

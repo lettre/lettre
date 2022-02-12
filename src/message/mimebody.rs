@@ -1,11 +1,11 @@
-use std::io::Write;
+use std::{io::Write, iter::repeat_with};
+
+use mime::Mime;
 
 use crate::message::{
     header::{self, ContentTransferEncoding, ContentType, Header, Headers},
     EmailFormat, IntoBody,
 };
-use mime::Mime;
-use std::iter::repeat_with;
 
 /// MIME part variants
 #[derive(Debug, Clone)]

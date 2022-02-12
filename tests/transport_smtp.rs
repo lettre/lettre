@@ -24,7 +24,6 @@ mod sync {
 #[cfg(all(feature = "smtp-transport", feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
     use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
-
     use tokio1_crate as tokio;
 
     #[tokio::test]

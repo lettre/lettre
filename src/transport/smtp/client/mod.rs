@@ -7,16 +7,14 @@
 //!
 //! # #[cfg(feature = "smtp-transport")]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::transport::smtp::{SMTP_PORT, extension::ClientId, commands::*, client::SmtpConnection};
+//! use lettre::transport::smtp::{
+//!     client::SmtpConnection, commands::*, extension::ClientId, SMTP_PORT,
+//! };
 //!
 //! let hello = ClientId::Domain("my_hostname".to_string());
 //! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None)?;
-//! client.command(
-//!         Mail::new(Some("user@example.com".parse()?), vec![])
-//!     )?;
-//! client.command(
-//!         Rcpt::new("user@example.org".parse()?, vec![])
-//!       )?;
+//! client.command(Mail::new(Some("user@example.com".parse()?), vec![]))?;
+//! client.command(Rcpt::new("user@example.org".parse()?, vec![]))?;
 //! client.command(Data)?;
 //! client.message("Test email".as_bytes())?;
 //! client.command(Quit)?;

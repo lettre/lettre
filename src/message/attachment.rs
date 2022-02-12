@@ -29,7 +29,7 @@ impl Attachment {
     /// # use std::error::Error;
     /// use std::fs;
     ///
-    /// use lettre::message::{Attachment, header::ContentType};
+    /// use lettre::message::{header::ContentType, Attachment};
     ///
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let filename = String::from("invoice.pdf");
@@ -64,7 +64,7 @@ impl Attachment {
     /// # use std::error::Error;
     /// use std::fs;
     ///
-    /// use lettre::message::{Attachment, header::ContentType};
+    /// use lettre::message::{header::ContentType, Attachment};
     ///
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let content_id = String::from("123");

@@ -24,7 +24,6 @@ mod sync {
 #[cfg(all(feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
     use lettre::{transport::stub::StubTransport, AsyncTransport, Message};
-
     use tokio1_crate as tokio;
 
     #[tokio::test]

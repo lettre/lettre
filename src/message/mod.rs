@@ -106,8 +106,9 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //! use std::fs;
+//!
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let image = fs::read("docs/lettre.png")?;
@@ -510,16 +511,18 @@ impl Message {
     ///
     /// Example:
     /// ```rust
-    /// use lettre::Message;
-    /// use lettre::message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey};
+    /// use lettre::{
+    ///     message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///     Message,
+    /// };
     ///
     /// let mut message = Message::builder()
-    /// .from("Alice <alice@example.org>".parse().unwrap())
-    /// .reply_to("Bob <bob@example.org>".parse().unwrap())
-    /// .to("Carla <carla@example.net>".parse().unwrap())
-    /// .subject("Hello")
-    /// .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
-    /// .unwrap();
+    ///     .from("Alice <alice@example.org>".parse().unwrap())
+    ///     .reply_to("Bob <bob@example.org>".parse().unwrap())
+    ///     .to("Carla <carla@example.net>".parse().unwrap())
+    ///     .subject("Hello")
+    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
+    ///     .unwrap();
     /// let key = "-----BEGIN RSA PRIVATE KEY-----
     /// MIIEowIBAAKCAQEAt2gawjoybf0mAz0mSX0cq1ah5F9cPazZdCwLnFBhRufxaZB8
     /// NLTdc9xfPIOK8l/xGrN7Nd63J4cTATqZukumczkA46O8YKHwa53pNT6NYwCNtDUL
@@ -548,8 +551,15 @@ impl Message {
     /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
     /// -----END RSA PRIVATE KEY-----";
     /// let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
-    /// message.sign(&DkimConfig::default_config("dkimtest".to_string(),"example.org".to_string(),signing_key));
-    /// println!("message: {}", std::str::from_utf8(&message.formatted()).unwrap());
+    /// message.sign(&DkimConfig::default_config(
+    ///     "dkimtest".to_string(),
+    ///     "example.org".to_string(),
+    ///     signing_key,
+    /// ));
+    /// println!(
+    ///     "message: {}",
+    ///     std::str::from_utf8(&message.formatted()).unwrap()
+    /// );
     /// ```
     #[cfg(feature = "dkim")]
     pub fn sign(&mut self, dkim_config: &DkimConfig) {

@@ -1,16 +1,17 @@
 //! ESMTP features
 
-use crate::transport::smtp::{
-    authentication::Mechanism,
-    error::{self, Error},
-    response::Response,
-    util::XText,
-};
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
     net::{Ipv4Addr, Ipv6Addr},
     result::Result,
+};
+
+use crate::transport::smtp::{
+    authentication::Mechanism,
+    error::{self, Error},
+    response::Response,
+    util::XText,
 };
 
 /// Client identifier, the parameter to `EHLO`
@@ -292,12 +293,13 @@ impl Display for RcptParameter {
 #[cfg(test)]
 mod test {
 
+    use std::collections::HashSet;
+
     use super::*;
     use crate::transport::smtp::{
         authentication::Mechanism,
         response::{Category, Code, Detail, Response, Severity},
     };
-    use std::collections::HashSet;
 
     #[test]
     fn test_clientid_fmt() {

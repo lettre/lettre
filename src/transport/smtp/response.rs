@@ -1,7 +1,13 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use crate::transport::smtp::{error, Error};
+use std::{
+    fmt::{Display, Formatter, Result},
+    result,
+    str::FromStr,
+    string::ToString,
+};
+
 use nom::{
     branch::alt,
     bytes::streaming::{tag, take_until},
@@ -10,12 +16,8 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-use std::{
-    fmt::{Display, Formatter, Result},
-    result,
-    str::FromStr,
-    string::ToString,
-};
+
+use crate::transport::smtp::{error, Error};
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]

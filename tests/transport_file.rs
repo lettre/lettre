@@ -9,12 +9,14 @@ fn default_date() -> std::time::SystemTime {
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder"))]
 mod sync {
-    use crate::default_date;
-    use lettre::{FileTransport, Message, Transport};
     use std::{
         env::temp_dir,
         fs::{read_to_string, remove_file},
     };
+
+    use lettre::{FileTransport, Message, Transport};
+
+    use crate::default_date;
 
     #[test]
     fn file_transport() {
@@ -104,14 +106,15 @@ mod sync {
 #[cfg(test)]
 #[cfg(all(feature = "file-transport", feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
-    use crate::default_date;
-    use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
     use std::{
         env::temp_dir,
         fs::{read_to_string, remove_file},
     };
 
+    use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
     use tokio1_crate as tokio;
+
+    use crate::default_date;
 
     #[tokio::test]
     async fn file_transport_tokio1() {
@@ -155,12 +158,14 @@ mod tokio_1 {
     feature = "async-std1"
 ))]
 mod asyncstd_1 {
-    use crate::default_date;
-    use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
     use std::{
         env::temp_dir,
         fs::{read_to_string, remove_file},
     };
+
+    use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
+
+    use crate::default_date;
 
     #[async_std::test]
     async fn file_transport_asyncstd1() {

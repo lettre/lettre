@@ -9,7 +9,6 @@ use std::{
 
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
-
 #[cfg(feature = "rustls-tls")]
 use rustls::{ClientConnection, ServerName, StreamOwned};
 
