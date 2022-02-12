@@ -8,6 +8,7 @@ use regex::{bytes::Regex as BRegex, Regex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
+use std::error::Error as StdError;
 use std::fmt::{self, Display, Write};
 use std::iter::IntoIterator;
 use std::time::SystemTime;
@@ -59,7 +60,7 @@ pub enum DkimSigningAlgorithm {
 }
 
 impl Display for DkimSigningAlgorithm {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
             DkimSigningAlgorithm::Rsa => "rsa",
             DkimSigningAlgorithm::Ed25519 => "ed25519",
@@ -69,33 +70,41 @@ impl Display for DkimSigningAlgorithm {
 
 /// Describe DkimSigning key error
 #[derive(Debug)]
-pub enum DkimSigningKeyError {
-    DecodeError(base64::DecodeError),
-    RsaError(rsa::pkcs1::Error),
-    Ed25519Error(ed25519_dalek::ed25519::Error),
+pub struct DkimSigningKeyError(InnerDkimSigningKeyError);
+
+#[derive(Debug)]
+enum InnerDkimSigningKeyError {
+    Base64(base64::DecodeError),
+    Rsa(rsa::pkcs1::Error),
+    Ed25519(ed25519_dalek::ed25519::Error),
 }
 
-impl From<rsa::pkcs1::Error> for DkimSigningKeyError {
-    fn from(err: rsa::pkcs1::Error) -> DkimSigningKeyError {
-        DkimSigningKeyError::RsaError(err)
+impl Display for DkimSigningKeyError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match &self.0 {
+            InnerDkimSigningKeyError::Base64(_err) => "base64 decode error",
+            InnerDkimSigningKeyError::Rsa(_err) => "rsa decode error",
+            InnerDkimSigningKeyError::Ed25519(_err) => "ed25519 decode error",
+        })
     }
 }
 
-impl From<base64::DecodeError> for DkimSigningKeyError {
-    fn from(err: base64::DecodeError) -> DkimSigningKeyError {
-        DkimSigningKeyError::DecodeError(err)
-    }
-}
-
-impl From<ed25519_dalek::ed25519::Error> for DkimSigningKeyError {
-    fn from(err: ed25519_dalek::ed25519::Error) -> DkimSigningKeyError {
-        DkimSigningKeyError::Ed25519Error(err)
+impl StdError for DkimSigningKeyError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(match &self.0 {
+            InnerDkimSigningKeyError::Base64(err) => &*err,
+            InnerDkimSigningKeyError::Rsa(err) => &*err,
+            InnerDkimSigningKeyError::Ed25519(err) => &*err,
+        })
     }
 }
 
 /// Describe a signing key to be carried by DkimConfig struct
 #[derive(Debug)]
-pub enum DkimSigningKey {
+pub struct DkimSigningKey(InnerDkimSigningKey);
+
+#[derive(Debug)]
+enum InnerDkimSigningKey {
     Rsa(RsaPrivateKey),
     Ed25519(ed25519_dalek::Keypair),
 }
@@ -105,19 +114,25 @@ impl DkimSigningKey {
         private_key: String,
         algorithm: DkimSigningAlgorithm,
     ) -> Result<DkimSigningKey, DkimSigningKeyError> {
-        match algorithm {
-            DkimSigningAlgorithm::Rsa => Ok(DkimSigningKey::Rsa(RsaPrivateKey::from_pkcs1_pem(
-                &private_key,
-            )?)),
-            DkimSigningAlgorithm::Ed25519 => Ok(DkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(&base64::decode(private_key)?)?,
-            )),
-        }
+        Ok(Self(match algorithm {
+            DkimSigningAlgorithm::Rsa => InnerDkimSigningKey::Rsa(
+                RsaPrivateKey::from_pkcs1_pem(&private_key)
+                    .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
+            ),
+            DkimSigningAlgorithm::Ed25519 => {
+                InnerDkimSigningKey::Ed25519(
+                    ed25519_dalek::Keypair::from_bytes(&base64::decode(private_key).map_err(
+                        |err| DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err)),
+                    )?)
+                    .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(err)))?,
+                )
+            }
+        }))
     }
     fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
-        match self {
-            DkimSigningKey::Rsa(_) => DkimSigningAlgorithm::Rsa,
-            DkimSigningKey::Ed25519(_) => DkimSigningAlgorithm::Ed25519,
+        match self.0 {
+            InnerDkimSigningKey::Rsa(_) => DkimSigningAlgorithm::Rsa,
+            InnerDkimSigningKey::Ed25519(_) => DkimSigningAlgorithm::Ed25519,
         }
     }
 }
@@ -163,10 +178,7 @@ impl DkimConfig {
             },
         }
     }
-    /// Set the signing key with given signing algorithm for a DkimConfig
-    pub fn set_signing_key(&mut self, private_key: DkimSigningKey) {
-        self.private_key = private_key;
-    }
+
     /// Create a DkimConfig
     pub fn new(
         selector: String,
@@ -300,8 +312,7 @@ fn dkim_canonicalize_headers<'a>(
 
 /// Sign with Dkim a message by adding Dkim-Signture header created with configuration expressed by
 /// dkim_config
-
-pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
+pub(super) fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -341,8 +352,8 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let to_be_signed = signed_headers + &canonicalized_dkim_header;
     let to_be_signed = to_be_signed.trim_end();
     let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
-    let signature = match &dkim_config.private_key {
-        DkimSigningKey::Rsa(private_key) => base64::encode(
+    let signature = match &dkim_config.private_key.0 {
+        InnerDkimSigningKey::Rsa(private_key) => base64::encode(
             private_key
                 .sign(
                     PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
@@ -350,7 +361,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
                 )
                 .unwrap(),
         ),
-        DkimSigningKey::Ed25519(private_key) => {
+        InnerDkimSigningKey::Ed25519(private_key) => {
             base64::encode(private_key.sign(&hashed_headers).to_bytes())
         }
     };
