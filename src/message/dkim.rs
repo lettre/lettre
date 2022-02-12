@@ -349,9 +349,10 @@ pub(super) fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
         &dkim_header,
         dkim_config.canonicalization.header,
     );
-    let to_be_signed = signed_headers + &canonicalized_dkim_header;
-    let to_be_signed = to_be_signed.trim_end();
-    let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
+    let mut hashed_headers = Sha256::new();
+    hashed_headers.update(signed_headers.as_bytes());
+    hashed_headers.update(canonicalized_dkim_header.trim_end().as_bytes());
+    let hashed_headers = hashed_headers.finalize();
     let signature = match &dkim_config.private_key.0 {
         InnerDkimSigningKey::Rsa(private_key) => base64::encode(
             private_key

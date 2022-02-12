@@ -110,7 +110,9 @@
     trivial_numeric_casts,
     unstable_features,
     unused_import_braces,
-    rust_2018_idioms
+    rust_2018_idioms,
+    clippy::string_add,
+    clippy::string_add_assign
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
