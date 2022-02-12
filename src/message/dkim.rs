@@ -2,14 +2,14 @@ use crate::message::{
     header::{HeaderName, HeaderValue},
     Headers, Message,
 };
-use base64::{decode, encode};
 use ed25519_dalek::Signer;
 use once_cell::sync::Lazy;
 use regex::{bytes::Regex as BRegex, Regex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
-use std::fmt::Display;
-use std::fmt::Write;
+use std::borrow::Cow;
+use std::fmt::{self, Display, Write};
+use std::iter::IntoIterator;
 use std::time::SystemTime;
 
 /// Describe Dkim Canonicalization to apply to either body or headers
@@ -20,11 +20,11 @@ pub enum DkimCanonicalizationType {
 }
 
 impl Display for DkimCanonicalizationType {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match self {
-            DkimCanonicalizationType::Simple => write!(fmt, "simple"),
-            DkimCanonicalizationType::Relaxed => write!(fmt, "relaxed"),
-        }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            DkimCanonicalizationType::Simple => "simple",
+            DkimCanonicalizationType::Relaxed => "relaxed",
+        })
     }
 }
 
@@ -46,8 +46,8 @@ impl Default for DkimCanonicalization {
 
 /// Format canonicalization to be shown in Dkim header
 impl Display for DkimCanonicalization {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(fmt, "{}/{}", self.header, self.body)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.header, self.body)
     }
 }
 
@@ -59,11 +59,11 @@ pub enum DkimSigningAlgorithm {
 }
 
 impl Display for DkimSigningAlgorithm {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match self {
-            DkimSigningAlgorithm::Rsa => write!(fmt, "rsa"),
-            DkimSigningAlgorithm::Ed25519 => write!(fmt, "ed25519"),
-        }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            DkimSigningAlgorithm::Rsa => "rsa",
+            DkimSigningAlgorithm::Ed25519 => "ed25519",
+        })
     }
 }
 
@@ -110,7 +110,7 @@ impl DkimSigningKey {
                 &private_key,
             )?)),
             DkimSigningAlgorithm::Ed25519 => Ok(DkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(&decode(private_key)?)?,
+                ed25519_dalek::Keypair::from_bytes(&base64::decode(private_key)?)?,
             )),
         }
     }
@@ -135,7 +135,7 @@ pub struct DkimConfig {
     selector: String,
     domain: String,
     private_key: DkimSigningKey,
-    headers: Vec<String>,
+    headers: Vec<HeaderName>,
     canonicalization: DkimCanonicalization,
 }
 
@@ -152,10 +152,10 @@ impl DkimConfig {
             domain,
             private_key,
             headers: vec![
-                "From".to_string(),
-                "Subject".to_string(),
-                "To".to_string(),
-                "Date".to_string(),
+                HeaderName::new_from_ascii_str("From"),
+                HeaderName::new_from_ascii_str("Subject"),
+                HeaderName::new_from_ascii_str("To"),
+                HeaderName::new_from_ascii_str("Date"),
             ],
             canonicalization: DkimCanonicalization {
                 header: DkimCanonicalizationType::Simple,
@@ -172,7 +172,7 @@ impl DkimConfig {
         selector: String,
         domain: String,
         private_key: DkimSigningKey,
-        headers: Vec<String>,
+        headers: Vec<HeaderName>,
         canonicalization: DkimCanonicalization,
     ) -> DkimConfig {
         DkimConfig {
@@ -188,30 +188,39 @@ impl DkimConfig {
 /// Create a Headers struct with a Dkim-Signature Header created from given parameters
 fn dkim_header_format(
     config: &DkimConfig,
-    timestamp: String,
-    headers_list: String,
-    body_hash: String,
-    signature: String,
+    timestamp: u64,
+    headers_list: &str,
+    body_hash: &str,
+    signature: &str,
 ) -> Headers {
     let mut headers = Headers::new();
     let header_name =
-        dkim_canonicalize_header_tag("DKIM-Signature".to_string(), config.canonicalization.header);
-    let header_name = HeaderName::new_from_ascii(header_name).unwrap();
+        dkim_canonicalize_header_tag("DKIM-Signature", config.canonicalization.header);
+    let header_name = HeaderName::new_from_ascii(header_name.into()).unwrap();
     headers.insert_raw(HeaderValue::new(header_name, format!("v=1; a={signing_algorithm}-sha256; d={domain}; s={selector}; c={canon}; q=dns/txt; t={timestamp}; h={headers_list}; bh={body_hash}; b={signature}",domain=config.domain, selector=config.selector,canon=config.canonicalization,timestamp=timestamp,headers_list=headers_list,body_hash=body_hash,signature=signature,signing_algorithm=config.private_key.get_signing_algorithm())));
     headers
 }
 
 /// Canonicalize the body of an email
-fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationType) -> Vec<u8> {
+fn dkim_canonicalize_body(
+    body: &[u8],
+    canonicalization: DkimCanonicalizationType,
+) -> Cow<'_, [u8]> {
     static RE: Lazy<BRegex> = Lazy::new(|| BRegex::new("(\r\n)+$").unwrap());
     static RE_DOUBLE_SPACE: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\\t ]+").unwrap());
     static RE_SPACE_EOL: Lazy<BRegex> = Lazy::new(|| BRegex::new("[\t ]\r\n").unwrap());
     match canonicalization {
-        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]).into_owned(),
+        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]),
         DkimCanonicalizationType::Relaxed => {
-            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]).into_owned();
-            let body = RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]).into_owned();
-            RE.replace(&body, &b"\r\n"[..]).into_owned()
+            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]);
+            let body = match RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]) {
+                Cow::Borrowed(_body) => body,
+                Cow::Owned(body) => Cow::Owned(body),
+            };
+            match RE.replace(&body, &b"\r\n"[..]) {
+                Cow::Borrowed(_body) => body,
+                Cow::Owned(body) => Cow::Owned(body),
+            }
         }
     }
 }
@@ -220,61 +229,72 @@ fn dkim_canonicalize_body(body: &[u8], canonicalization: DkimCanonicalizationTyp
 fn dkim_canonicalize_header_value(
     value: &str,
     canonicalization: DkimCanonicalizationType,
-) -> String {
+) -> Cow<'_, str> {
     match canonicalization {
-        DkimCanonicalizationType::Simple => value.to_string(),
+        DkimCanonicalizationType::Simple => Cow::Borrowed(value),
         DkimCanonicalizationType::Relaxed => {
             static RE_EOL: Lazy<Regex> = Lazy::new(|| Regex::new("\r\n").unwrap());
             static RE_SPACES: Lazy<Regex> = Lazy::new(|| Regex::new("[\\t ]+").unwrap());
-            let value = RE_EOL.replace_all(value, "").to_string();
-            format!(
+            let value = RE_EOL.replace_all(value, "");
+            Cow::Owned(format!(
                 "{}\r\n",
-                RE_SPACES.replace_all(&value, " ").to_string().trim_end()
-            )
+                RE_SPACES.replace_all(&value, " ").trim_end()
+            ))
         }
     }
 }
 
 /// Canonicalize header tag
 fn dkim_canonicalize_header_tag(
-    name: String,
+    name: &str,
     canonicalization: DkimCanonicalizationType,
-) -> String {
+) -> Cow<'_, str> {
     match canonicalization {
-        DkimCanonicalizationType::Simple => name,
-        DkimCanonicalizationType::Relaxed => name.to_lowercase(),
+        DkimCanonicalizationType::Simple => Cow::Borrowed(name),
+        DkimCanonicalizationType::Relaxed => Cow::Owned(name.to_lowercase()),
     }
 }
 
 /// Canonicalize signed headers passed as headers_list among mail_headers using canonicalization
-fn dkim_canonicalize_headers(
-    headers_list: Vec<String>,
+fn dkim_canonicalize_headers<'a>(
+    headers_list: impl IntoIterator<Item = &'a str>,
     mail_headers: &Headers,
     canonicalization: DkimCanonicalizationType,
 ) -> String {
-    let mut signed_headers = Headers::new();
-    let mut signed_headers_relaxed = String::new();
-    for h in headers_list {
-        let h = dkim_canonicalize_header_tag(h, canonicalization);
-        if let Some(value) = mail_headers.get_raw(&h) {
-            match canonicalization {
-                DkimCanonicalizationType::Simple => signed_headers.insert_raw(HeaderValue::new(
-                    HeaderName::new_from_ascii(h).unwrap(),
-                    dkim_canonicalize_header_value(value, canonicalization),
-                )),
-                DkimCanonicalizationType::Relaxed => write!(
-                    &mut signed_headers_relaxed,
-                    "{}:{}",
-                    h,
-                    dkim_canonicalize_header_value(value, canonicalization)
-                )
-                .unwrap(),
-            }
-        }
-    }
     match canonicalization {
-        DkimCanonicalizationType::Simple => signed_headers.to_string(),
-        DkimCanonicalizationType::Relaxed => signed_headers_relaxed,
+        DkimCanonicalizationType::Simple => {
+            let mut signed_headers = Headers::new();
+
+            for h in headers_list {
+                let h = dkim_canonicalize_header_tag(h, canonicalization);
+                if let Some(value) = mail_headers.get_raw(&h) {
+                    signed_headers.insert_raw(HeaderValue::new(
+                        HeaderName::new_from_ascii(h.into()).unwrap(),
+                        dkim_canonicalize_header_value(value, canonicalization).to_string(),
+                    ))
+                }
+            }
+
+            signed_headers.to_string()
+        }
+        DkimCanonicalizationType::Relaxed => {
+            let mut signed_headers = String::new();
+
+            for h in headers_list {
+                let h = dkim_canonicalize_header_tag(h, canonicalization);
+                if let Some(value) = mail_headers.get_raw(&h) {
+                    write!(
+                        signed_headers,
+                        "{}:{}",
+                        h,
+                        dkim_canonicalize_header_value(value, canonicalization)
+                    )
+                    .expect("write implementation returned an error")
+                }
+            }
+
+            signed_headers
+        }
     }
 }
 
@@ -285,32 +305,36 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
-        .to_string();
+        .as_secs();
     let headers = message.headers();
     let body_hash = Sha256::digest(&dkim_canonicalize_body(
         &message.body_raw(),
         dkim_config.canonicalization.body,
     ));
-    let bh = encode(body_hash);
-    let signed_headers_list = match dkim_config.canonicalization.header {
-        DkimCanonicalizationType::Simple => dkim_config.headers.join(":"),
-        DkimCanonicalizationType::Relaxed => dkim_config.headers.join(":").to_lowercase(),
-    };
-    let dkim_header = dkim_header_format(
-        dkim_config,
-        timestamp.clone(),
-        signed_headers_list.clone(),
-        bh.clone(),
-        "".to_string(),
-    );
+    let bh = base64::encode(body_hash);
+    let mut signed_headers_list =
+        dkim_config
+            .headers
+            .iter()
+            .fold(String::new(), |mut list, header| {
+                if !list.is_empty() {
+                    list.push(':');
+                }
+
+                list.push_str(header);
+                list
+            });
+    if let DkimCanonicalizationType::Relaxed = dkim_config.canonicalization.header {
+        signed_headers_list.make_ascii_lowercase();
+    }
+    let dkim_header = dkim_header_format(dkim_config, timestamp, &signed_headers_list, &bh, "");
     let signed_headers = dkim_canonicalize_headers(
-        dkim_config.headers.clone(),
+        dkim_config.headers.iter().map(|h| h.as_ref()),
         headers,
         dkim_config.canonicalization.header,
     );
     let canonicalized_dkim_header = dkim_canonicalize_headers(
-        vec!["DKIM-Signature".to_string()],
+        ["DKIM-Signature"],
         &dkim_header,
         dkim_config.canonicalization.header,
     );
@@ -318,7 +342,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let to_be_signed = to_be_signed.trim_end();
     let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
     let signature = match &dkim_config.private_key {
-        DkimSigningKey::Rsa(private_key) => encode(
+        DkimSigningKey::Rsa(private_key) => base64::encode(
             private_key
                 .sign(
                     PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
@@ -327,14 +351,19 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
                 .unwrap(),
         ),
         DkimSigningKey::Ed25519(private_key) => {
-            encode(private_key.sign(&hashed_headers).to_bytes())
+            base64::encode(private_key.sign(&hashed_headers).to_bytes())
         }
     };
-    let dkim_header =
-        dkim_header_format(dkim_config, timestamp, signed_headers_list, bh, signature);
+    let dkim_header = dkim_header_format(
+        dkim_config,
+        timestamp,
+        &signed_headers_list,
+        &bh,
+        &signature,
+    );
     message.headers.insert_raw(HeaderValue::new(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
-        dkim_header.get_raw("DKIM-Signature").unwrap().to_string(),
+        dkim_header.get_raw("DKIM-Signature").unwrap().to_owned(),
     ));
 }
 
@@ -370,7 +399,7 @@ mod test {
     #[test]
     fn test_body_simple_canonicalize() {
         let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = b"test\r\n\r\ntest   \ttest\r\n";
+        let expected: &[u8] = b"test\r\n\r\ntest   \ttest\r\n";
         assert_eq!(
             dkim_canonicalize_body(body, DkimCanonicalizationType::Simple),
             expected
@@ -379,7 +408,7 @@ mod test {
     #[test]
     fn test_body_relaxed_canonicalize() {
         let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = b"test\r\n\r\ntest test\r\n";
+        let expected: &[u8] = b"test\r\n\r\ntest test\r\n";
         assert_eq!(
             dkim_canonicalize_body(body, DkimCanonicalizationType::Relaxed),
             expected
@@ -391,7 +420,7 @@ mod test {
         let expected = "test\r\n\r\ntest   \ttest\r\n";
         assert_eq!(
             dkim_canonicalize_header_value(value, DkimCanonicalizationType::Simple),
-            expected.to_string()
+            expected
         )
     }
     #[test]
@@ -400,7 +429,7 @@ mod test {
         let expected = "testtest test\r\n";
         assert_eq!(
             dkim_canonicalize_header_value(value, DkimCanonicalizationType::Relaxed),
-            expected.to_string()
+            expected
         )
     }
 
@@ -416,12 +445,12 @@ mod test {
     #[test]
     fn test_headers_simple_canonicalize() {
         let message = test_message();
-        assert_eq!(dkim_canonicalize_headers(vec!["From".to_string(), "Test".to_string()], &message.headers, DkimCanonicalizationType::Simple),"From: Test <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be \r\n folded to several lines \r\n")
+        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Simple),"From: Test <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be \r\n folded to several lines \r\n")
     }
     #[test]
     fn test_headers_relaxed_canonicalize() {
         let message = test_message();
-        assert_eq!(dkim_canonicalize_headers(vec!["From".to_string(), "Test".to_string()], &message.headers, DkimCanonicalizationType::Relaxed),"from:Test <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n")
+        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Relaxed),"from:Test <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n")
     }
     #[test]
     fn test_signature_rsa() {

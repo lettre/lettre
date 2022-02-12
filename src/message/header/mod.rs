@@ -538,7 +538,7 @@ impl<'a> Iterator for WordsPlusFillIterator<'a> {
             .find(|&(_i, c)| !is_space_like(c))
             .map(|(i, _)| i);
 
-        let word = &self.s[..next_word.unwrap_or_else(|| self.s.len())];
+        let word = &self.s[..next_word.unwrap_or(self.s.len())];
         self.s = &self.s[word.len()..];
         Some(word)
     }
