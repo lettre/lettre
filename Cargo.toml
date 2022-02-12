@@ -29,6 +29,7 @@ fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
 regex = { version = "1", default-features = false, features = ["std", "unicode-case"] }
+email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "9b55bae0ed02ca52f6fb86a82b4814baa712e45a", optional = true }
 
 # file transport
 uuid = { version = "0.8", features = ["v4"], optional = true }
@@ -81,7 +82,7 @@ name = "transport_smtp"
 
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
-builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
+builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable", "email-encoding"]
 mime03 = ["mime"]
 
 # transports
