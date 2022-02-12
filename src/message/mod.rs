@@ -106,8 +106,9 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //! use std::fs;
+//!
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let image = fs::read("docs/lettre.png")?;

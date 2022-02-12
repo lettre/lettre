@@ -1,7 +1,8 @@
 //! Provides limited SASL authentication mechanisms
 
-use crate::transport::smtp::error::{self, Error};
 use std::fmt::{self, Debug, Display, Formatter};
+
+use crate::transport::smtp::error::{self, Error};
 
 /// Accepted authentication mechanisms
 ///

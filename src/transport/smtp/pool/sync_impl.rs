@@ -7,12 +7,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use crate::transport::smtp::transport::SmtpClient;
-
 use super::{
     super::{client::SmtpConnection, Error},
     PoolConfig,
 };
+use crate::transport::smtp::transport::SmtpClient;
 
 pub struct Pool {
     config: PoolConfig,

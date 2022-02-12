@@ -1,7 +1,8 @@
 #[cfg(all(test, feature = "smtp-transport", feature = "pool"))]
 mod sync {
-    use lettre::{address::Envelope, SmtpTransport, Transport};
     use std::{sync::mpsc, thread};
+
+    use lettre::{address::Envelope, SmtpTransport, Transport};
 
     fn envelope() -> Envelope {
         Envelope::new(

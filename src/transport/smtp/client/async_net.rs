@@ -6,25 +6,22 @@ use std::{
     time::Duration,
 };
 
+#[cfg(feature = "async-std1-native-tls")]
+use async_native_tls::TlsStream as AsyncStd1TlsStream;
+#[cfg(feature = "async-std1")]
+use async_std::net::{TcpStream as AsyncStd1TcpStream, ToSocketAddrs as AsyncStd1ToSocketAddrs};
 use futures_io::{
     AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Error as IoError, ErrorKind,
     Result as IoResult,
 };
-#[cfg(feature = "tokio1")]
-use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
-
-#[cfg(feature = "async-std1")]
-use async_std::net::{TcpStream as AsyncStd1TcpStream, ToSocketAddrs as AsyncStd1ToSocketAddrs};
-#[cfg(feature = "tokio1")]
-use tokio1_crate::net::{TcpStream as Tokio1TcpStream, ToSocketAddrs as Tokio1ToSocketAddrs};
-
-#[cfg(feature = "async-std1-native-tls")]
-use async_native_tls::TlsStream as AsyncStd1TlsStream;
-#[cfg(feature = "tokio1-native-tls")]
-use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
-
 #[cfg(feature = "async-std1-rustls-tls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+#[cfg(feature = "tokio1")]
+use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
+#[cfg(feature = "tokio1")]
+use tokio1_crate::net::{TcpStream as Tokio1TcpStream, ToSocketAddrs as Tokio1ToSocketAddrs};
+#[cfg(feature = "tokio1-native-tls")]
+use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
 use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 

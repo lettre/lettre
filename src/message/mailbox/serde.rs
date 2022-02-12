@@ -1,10 +1,12 @@
-use crate::message::{Mailbox, Mailboxes};
+use std::fmt::{Formatter, Result as FmtResult};
+
 use serde::{
     de::{Deserializer, Error as DeError, MapAccess, SeqAccess, Visitor},
     ser::Serializer,
     Deserialize, Serialize,
 };
-use std::fmt::{Formatter, Result as FmtResult};
+
+use crate::message::{Mailbox, Mailboxes};
 
 impl Serialize for Mailbox {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -152,9 +154,10 @@ impl<'de> Deserialize<'de> for Mailboxes {
 
 #[cfg(test)]
 mod test {
+    use serde_json::from_str;
+
     use super::*;
     use crate::address::Address;
-    use serde_json::from_str;
 
     #[test]
     fn parse_address_string() {

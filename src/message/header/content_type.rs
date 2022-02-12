@@ -94,12 +94,12 @@ impl Display for ContentTypeErr {
 // -- Serialization and Deserialization --
 #[cfg(feature = "serde")]
 mod serde {
+    use std::fmt;
+
     use serde::{
         de::{self, Deserialize, Deserializer, Visitor},
         ser::{Serialize, Serializer},
     };
-
-    use std::fmt;
 
     use super::ContentType;
 

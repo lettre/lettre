@@ -1,10 +1,11 @@
-use crate::address::{Address, AddressError};
 use std::{
     convert::TryFrom,
     fmt::{Display, Formatter, Result as FmtResult, Write},
     slice::Iter,
     str::FromStr,
 };
+
+use crate::address::{Address, AddressError};
 
 /// Represents an email address with an optional name for the sender/recipient.
 ///
@@ -410,8 +411,9 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: u8) -> FmtResult {
 
 #[cfg(test)]
 mod test {
-    use super::Mailbox;
     use std::convert::TryInto;
+
+    use super::Mailbox;
 
     #[test]
     fn mailbox_format_address_only() {

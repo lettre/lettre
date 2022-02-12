@@ -28,12 +28,14 @@
 //! # }
 //! ```
 
+use std::{error::Error as StdError, fmt};
+
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+use async_trait::async_trait;
+
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use crate::AsyncTransport;
 use crate::{address::Envelope, Transport};
-#[cfg(any(feature = "tokio1", feature = "async-std1"))]
-use async_trait::async_trait;
-use std::{error::Error as StdError, fmt};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Error;

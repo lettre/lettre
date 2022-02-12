@@ -12,12 +12,11 @@ use futures_util::{
 };
 use once_cell::sync::OnceCell;
 
-use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
-
 use super::{
     super::{client::AsyncSmtpConnection, Error},
     PoolConfig,
 };
+use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
 
 pub struct Pool<E: Executor> {
     config: PoolConfig,

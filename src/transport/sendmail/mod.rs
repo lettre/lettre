@@ -74,6 +74,17 @@
 //! # }
 //! ```
 
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+use std::marker::PhantomData;
+use std::{
+    ffi::OsString,
+    io::Write,
+    process::{Command, Stdio},
+};
+
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+use async_trait::async_trait;
+
 pub use self::error::Error;
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Executor;
@@ -82,15 +93,6 @@ use crate::Tokio1Executor;
 use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use crate::{AsyncTransport, Executor};
-#[cfg(any(feature = "async-std1", feature = "tokio1"))]
-use async_trait::async_trait;
-#[cfg(any(feature = "async-std1", feature = "tokio1"))]
-use std::marker::PhantomData;
-use std::{
-    ffi::OsString,
-    io::Write,
-    process::{Command, Stdio},
-};
 
 mod error;
 

@@ -1,7 +1,8 @@
 //! Error and result type for sendmail transport
 
-use crate::BoxError;
 use std::{error::Error as StdError, fmt};
+
+use crate::BoxError;
 
 /// The Errors that may occur when sending an email over sendmail
 pub struct Error {

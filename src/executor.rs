@@ -1,7 +1,3 @@
-use async_trait::async_trait;
-#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
-use futures_util::future::BoxFuture;
-
 use std::fmt::Debug;
 #[cfg(feature = "smtp-transport")]
 use std::future::Future;
@@ -11,6 +7,10 @@ use std::io::Result as IoResult;
 use std::path::Path;
 #[cfg(feature = "smtp-transport")]
 use std::time::Duration;
+
+use async_trait::async_trait;
+#[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
+use futures_util::future::BoxFuture;
 
 #[cfg(all(
     feature = "smtp-transport",

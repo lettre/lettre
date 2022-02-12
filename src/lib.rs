@@ -173,6 +173,8 @@ mod executor;
 pub mod message;
 pub mod transport;
 
+use std::error::Error as StdError;
+
 #[cfg(feature = "async-std1")]
 pub use self::executor::AsyncStd1Executor;
 #[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
@@ -209,13 +211,11 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio1", feature = "async-std1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[cfg(feature = "smtp-transport")]
+pub use crate::transport::smtp::SmtpTransport;
 #[doc(inline)]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
-
-#[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::SmtpTransport;
-use std::error::Error as StdError;
 
 pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 

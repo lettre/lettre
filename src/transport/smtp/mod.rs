@@ -128,6 +128,10 @@
 //! # }
 //! ```
 
+use std::time::Duration;
+
+use client::Tls;
+
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
 #[cfg(feature = "pool")]
@@ -144,8 +148,6 @@ use crate::transport::smtp::{
     extension::ClientId,
     response::Response,
 };
-use client::Tls;
-use std::time::Duration;
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_transport;

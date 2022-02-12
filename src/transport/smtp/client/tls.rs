@@ -1,5 +1,7 @@
-#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use crate::transport::smtp::{error, Error};
+use std::fmt::{self, Debug};
+#[cfg(feature = "rustls-tls")]
+use std::{sync::Arc, time::SystemTime};
+
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
@@ -7,9 +9,9 @@ use rustls::{
     client::{ServerCertVerified, ServerCertVerifier, WebPkiVerifier},
     ClientConfig, Error as TlsError, OwnedTrustAnchor, RootCertStore, ServerName,
 };
-use std::fmt::{self, Debug};
-#[cfg(feature = "rustls-tls")]
-use std::{sync::Arc, time::SystemTime};
+
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+use crate::transport::smtp::{error, Error};
 
 /// Accepted protocols by default.
 /// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
