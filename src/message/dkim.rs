@@ -188,7 +188,7 @@ impl DkimConfig {
 /// Create a Headers struct with a Dkim-Signature Header created from given parameters
 fn dkim_header_format(
     config: &DkimConfig,
-    timestamp: &str,
+    timestamp: u64,
     headers_list: &str,
     body_hash: &str,
     signature: &str,
@@ -305,8 +305,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let timestamp = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
-        .as_secs()
-        .to_string();
+        .as_secs();
     let headers = message.headers();
     let body_hash = Sha256::digest(&dkim_canonicalize_body(
         &message.body_raw(),
@@ -328,7 +327,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     if let DkimCanonicalizationType::Relaxed = dkim_config.canonicalization.header {
         signed_headers_list.make_ascii_lowercase();
     }
-    let dkim_header = dkim_header_format(dkim_config, &timestamp, &signed_headers_list, &bh, "");
+    let dkim_header = dkim_header_format(dkim_config, timestamp, &signed_headers_list, &bh, "");
     let signed_headers = dkim_canonicalize_headers(
         dkim_config.headers.iter().map(|h| h.as_ref()),
         headers,
@@ -357,14 +356,14 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     };
     let dkim_header = dkim_header_format(
         dkim_config,
-        &timestamp,
+        timestamp,
         &signed_headers_list,
         &bh,
         &signature,
     );
     message.headers.insert_raw(HeaderValue::new(
         HeaderName::new_from_ascii_str("DKIM-Signature"),
-        dkim_header.get_raw("DKIM-Signature").unwrap().to_string(),
+        dkim_header.get_raw("DKIM-Signature").unwrap().to_owned(),
     ));
 }
 
@@ -430,7 +429,7 @@ mod test {
         let expected = "testtest test\r\n";
         assert_eq!(
             dkim_canonicalize_header_value(value, DkimCanonicalizationType::Relaxed),
-            expected.to_string()
+            expected
         )
     }
 
