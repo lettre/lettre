@@ -229,17 +229,17 @@ fn dkim_canonicalize_body(
 fn dkim_canonicalize_header_value(
     value: &str,
     canonicalization: DkimCanonicalizationType,
-) -> String {
+) -> Cow<'_, str> {
     match canonicalization {
-        DkimCanonicalizationType::Simple => value.to_string(),
+        DkimCanonicalizationType::Simple => Cow::Borrowed(value),
         DkimCanonicalizationType::Relaxed => {
             static RE_EOL: Lazy<Regex> = Lazy::new(|| Regex::new("\r\n").unwrap());
             static RE_SPACES: Lazy<Regex> = Lazy::new(|| Regex::new("[\\t ]+").unwrap());
-            let value = RE_EOL.replace_all(value, "").to_string();
-            format!(
+            let value = RE_EOL.replace_all(value, "");
+            Cow::Owned(format!(
                 "{}\r\n",
-                RE_SPACES.replace_all(&value, " ").to_string().trim_end()
-            )
+                RE_SPACES.replace_all(&value, " ").trim_end()
+            ))
         }
     }
 }
@@ -270,7 +270,7 @@ fn dkim_canonicalize_headers<'a>(
                 if let Some(value) = mail_headers.get_raw(&h) {
                     signed_headers.insert_raw(HeaderValue::new(
                         HeaderName::new_from_ascii(h.into()).unwrap(),
-                        dkim_canonicalize_header_value(value, canonicalization),
+                        dkim_canonicalize_header_value(value, canonicalization).to_string(),
                     ))
                 }
             }
