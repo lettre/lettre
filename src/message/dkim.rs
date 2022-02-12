@@ -2,7 +2,6 @@ use crate::message::{
     header::{HeaderName, HeaderValue},
     Headers, Message,
 };
-use base64::{decode, encode};
 use ed25519_dalek::Signer;
 use once_cell::sync::Lazy;
 use regex::{bytes::Regex as BRegex, Regex};
@@ -111,7 +110,7 @@ impl DkimSigningKey {
                 &private_key,
             )?)),
             DkimSigningAlgorithm::Ed25519 => Ok(DkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(&decode(private_key)?)?,
+                ed25519_dalek::Keypair::from_bytes(&base64::decode(private_key)?)?,
             )),
         }
     }
@@ -136,7 +135,7 @@ pub struct DkimConfig {
     selector: String,
     domain: String,
     private_key: DkimSigningKey,
-    headers: Vec<String>,
+    headers: Vec<HeaderName>,
     canonicalization: DkimCanonicalization,
 }
 
@@ -153,10 +152,10 @@ impl DkimConfig {
             domain,
             private_key,
             headers: vec![
-                "From".to_string(),
-                "Subject".to_string(),
-                "To".to_string(),
-                "Date".to_string(),
+                HeaderName::new_from_ascii_str("From"),
+                HeaderName::new_from_ascii_str("Subject"),
+                HeaderName::new_from_ascii_str("To"),
+                HeaderName::new_from_ascii_str("Date"),
             ],
             canonicalization: DkimCanonicalization {
                 header: DkimCanonicalizationType::Simple,
@@ -173,7 +172,7 @@ impl DkimConfig {
         selector: String,
         domain: String,
         private_key: DkimSigningKey,
-        headers: Vec<String>,
+        headers: Vec<HeaderName>,
         canonicalization: DkimCanonicalization,
     ) -> DkimConfig {
         DkimConfig {
@@ -304,11 +303,22 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
         &message.body_raw(),
         dkim_config.canonicalization.body,
     ));
-    let bh = encode(body_hash);
-    let signed_headers_list = match dkim_config.canonicalization.header {
-        DkimCanonicalizationType::Simple => dkim_config.headers.join(":"),
-        DkimCanonicalizationType::Relaxed => dkim_config.headers.join(":").to_lowercase(),
-    };
+    let bh = base64::encode(body_hash);
+    let mut signed_headers_list =
+        dkim_config
+            .headers
+            .iter()
+            .fold(String::new(), |mut list, header| {
+                if !list.is_empty() {
+                    list.push(':');
+                }
+
+                list.push_str(header);
+                list
+            });
+    if let DkimCanonicalizationType::Relaxed = dkim_config.canonicalization.header {
+        signed_headers_list.make_ascii_lowercase();
+    }
     let dkim_header = dkim_header_format(
         dkim_config,
         timestamp.clone(),
@@ -317,7 +327,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
         "".to_string(),
     );
     let signed_headers = dkim_canonicalize_headers(
-        dkim_config.headers.iter().map(|h| h.as_str()),
+        dkim_config.headers.iter().map(|h| h.as_ref()),
         headers,
         dkim_config.canonicalization.header,
     );
@@ -330,7 +340,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
     let to_be_signed = to_be_signed.trim_end();
     let hashed_headers = Sha256::digest(to_be_signed.as_bytes());
     let signature = match &dkim_config.private_key {
-        DkimSigningKey::Rsa(private_key) => encode(
+        DkimSigningKey::Rsa(private_key) => base64::encode(
             private_key
                 .sign(
                     PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
@@ -339,7 +349,7 @@ pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
                 .unwrap(),
         ),
         DkimSigningKey::Ed25519(private_key) => {
-            encode(private_key.sign(&hashed_headers).to_bytes())
+            base64::encode(private_key.sign(&hashed_headers).to_bytes())
         }
     };
     let dkim_header =
