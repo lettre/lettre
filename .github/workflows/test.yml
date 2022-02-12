@@ -110,6 +110,20 @@ jobs:
       - name: Run SMTP server
         run: smtp-sink 2525 1000&
 
+      - name: Install coredns
+        run: |
+          wget -q https://github.com/coredns/coredns/releases/download/v1.8.6/coredns_1.8.6_linux_amd64.tgz
+          tar xzf coredns_1.8.6_linux_amd64.tgz
+
+      - name: Start coredns
+        run: |
+          sudo ./coredns -conf testdata/coredns.conf &
+          sudo systemctl stop systemd-resolved
+          echo "nameserver 127.0.0.54" | sudo tee /etc/resolv.conf
+
+      - name: Install dkimverify
+        run: sudo apt -y install python3-dkim
+
       - name: Test with no default features
         run: cargo test --no-default-features
 
