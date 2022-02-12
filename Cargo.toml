@@ -67,13 +67,13 @@ ed25519-dalek = { version = "1.0.1", optional = true }
 
 [dev-dependencies]
 criterion = "0.3"
-tracing-subscriber = "0.2.10"
+tracing-subscriber = "0.3"
 glob = "0.3"
 walkdir = "2"
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
 async-std = { version = "1.8", features = ["attributes"] }
 serde_json = "1"
-maud = "0.22.1"
+maud = "0.23"
 
 [[bench]]
 harness = false
