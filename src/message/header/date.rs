@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use httpdate::HttpDate;
 
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// Message `Date` header
@@ -43,7 +43,7 @@ impl Header for Date {
         Ok(Self(s.parse::<HttpDate>()?))
     }
 
-    fn display(&self) -> String {
+    fn display(&self) -> HeaderValue {
         let mut s = self.0.to_string();
         if s.ends_with(" GMT") {
             // The httpdate crate always appends ` GMT` to the end of the string,
@@ -54,7 +54,7 @@ impl Header for Date {
             s.push_str("-0000");
         }
 
-        s
+        HeaderValue::new(Self::name(), s)
     }
 }
 
@@ -75,7 +75,7 @@ mod test {
     use std::time::{Duration, SystemTime};
 
     use super::Date;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_date() {
@@ -106,10 +106,10 @@ mod test {
     fn parse_date() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
             "Tue, 15 Nov 1994 08:12:31 -0000".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<Date>(),
@@ -118,10 +118,10 @@ mod test {
             ))
         );
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
             "Tue, 15 Nov 1994 08:12:32 -0000".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<Date>(),

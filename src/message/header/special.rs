@@ -1,5 +1,5 @@
 use crate::{
-    message::header::{Header, HeaderName},
+    message::header::{Header, HeaderName, HeaderValue},
     BoxError,
 };
 
@@ -50,8 +50,8 @@ impl Header for MimeVersion {
         Ok(MimeVersion::new(major, minor))
     }
 
-    fn display(&self) -> String {
-        format!("{}.{}", self.major, self.minor)
+    fn display(&self) -> HeaderValue {
+        HeaderValue::new(Self::name(), format!("{}.{}", self.major, self.minor))
     }
 }
 
@@ -64,7 +64,7 @@ impl Default for MimeVersion {
 #[cfg(test)]
 mod test {
     use super::{MimeVersion, MIME_VERSION_1_0};
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_mime_version() {
@@ -83,17 +83,17 @@ mod test {
     fn parse_mime_version() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "1.0".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MIME_VERSION_1_0));
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "0.1".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MimeVersion::new(0, 1)));
     }

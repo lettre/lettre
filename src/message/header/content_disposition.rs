@@ -1,4 +1,4 @@
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// `Content-Disposition` of an attachment
@@ -36,15 +36,15 @@ impl Header for ContentDisposition {
         Ok(Self(s.into()))
     }
 
-    fn display(&self) -> String {
-        self.0.clone()
+    fn display(&self) -> HeaderValue {
+        HeaderValue::new(Self::name(), self.0.clone())
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::ContentDisposition;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_content_disposition() {
@@ -66,20 +66,20 @@ mod test {
     fn parse_content_disposition() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Disposition"),
             "inline".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentDisposition>(),
             Some(ContentDisposition::inline())
         );
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Disposition"),
             "attachment; filename=\"something.txt\"".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentDisposition>(),

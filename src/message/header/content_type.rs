@@ -6,7 +6,7 @@ use std::{
 
 use mime::Mime;
 
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// `Content-Type` of the body
@@ -54,8 +54,8 @@ impl Header for ContentType {
         Ok(Self(s.parse()?))
     }
 
-    fn display(&self) -> String {
-        self.0.to_string()
+    fn display(&self) -> HeaderValue {
+        HeaderValue::new(Self::name(), self.0.to_string())
     }
 }
 
@@ -148,7 +148,7 @@ mod serde {
 #[cfg(test)]
 mod test {
     use super::ContentType;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_content_type() {
@@ -173,17 +173,17 @@ mod test {
     fn parse_content_type() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/plain; charset=utf-8".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_PLAIN));
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Type"),
             "text/html; charset=utf-8".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_HTML));
     }
