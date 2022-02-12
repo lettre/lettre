@@ -9,8 +9,7 @@ use regex::{bytes::Regex as BRegex, Regex};
 use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
-use std::fmt::Display;
-use std::fmt::Write;
+use std::fmt::{self, Display, Write};
 use std::iter::IntoIterator;
 use std::time::SystemTime;
 
@@ -22,11 +21,11 @@ pub enum DkimCanonicalizationType {
 }
 
 impl Display for DkimCanonicalizationType {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match self {
-            DkimCanonicalizationType::Simple => write!(fmt, "simple"),
-            DkimCanonicalizationType::Relaxed => write!(fmt, "relaxed"),
-        }
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            DkimCanonicalizationType::Simple => "simple",
+            DkimCanonicalizationType::Relaxed => "relaxed",
+        })
     }
 }
 
@@ -48,8 +47,8 @@ impl Default for DkimCanonicalization {
 
 /// Format canonicalization to be shown in Dkim header
 impl Display for DkimCanonicalization {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        write!(fmt, "{}/{}", self.header, self.body)
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}/{}", self.header, self.body)
     }
 }
 
@@ -61,11 +60,11 @@ pub enum DkimSigningAlgorithm {
 }
 
 impl Display for DkimSigningAlgorithm {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
-        match self {
-            DkimSigningAlgorithm::Rsa => write!(fmt, "rsa"),
-            DkimSigningAlgorithm::Ed25519 => write!(fmt, "ed25519"),
-        }
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            DkimSigningAlgorithm::Rsa => "rsa",
+            DkimSigningAlgorithm::Ed25519 => "ed25519",
+        })
     }
 }
 
