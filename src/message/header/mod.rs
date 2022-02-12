@@ -275,7 +275,7 @@ impl PartialEq<HeaderName> for &str {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct HeaderValue {
     name: HeaderName,
     raw_value: String,
@@ -287,6 +287,18 @@ impl HeaderValue {
         let mut encoded_value = String::with_capacity(raw_value.len());
         HeaderValueEncoder::encode(&name, &raw_value, &mut encoded_value).unwrap();
 
+        Self {
+            name,
+            raw_value,
+            encoded_value,
+        }
+    }
+
+    pub fn dangerous_new_pre_encoded(
+        name: HeaderName,
+        raw_value: String,
+        encoded_value: String,
+    ) -> Self {
         Self {
             name,
             raw_value,
