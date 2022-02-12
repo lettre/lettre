@@ -1,20 +1,23 @@
-use std::fmt::{self, Debug};
-use std::mem;
-use std::ops::{Deref, DerefMut};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+    fmt::{self, Debug},
+    mem,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
-use futures_util::lock::Mutex;
-use futures_util::stream::{self, StreamExt};
+use futures_util::{
+    lock::Mutex,
+    stream::{self, StreamExt},
+};
 use once_cell::sync::OnceCell;
 
-use crate::executor::SpawnHandle;
-use crate::transport::smtp::async_transport::AsyncSmtpClient;
-use crate::Executor;
+use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
 
-use super::super::client::AsyncSmtpConnection;
-use super::super::Error;
-use super::PoolConfig;
+use super::{
+    super::{client::AsyncSmtpConnection, Error},
+    PoolConfig,
+};
 
 pub struct Pool<E: Executor> {
     config: PoolConfig,

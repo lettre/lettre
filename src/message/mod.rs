@@ -510,8 +510,10 @@ impl Message {
     ///
     /// Example:
     /// ```rust
-    /// use lettre::message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey};
-    /// use lettre::Message;
+    /// use lettre::{
+    ///     message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///     Message,
+    /// };
     ///
     /// let mut message = Message::builder()
     ///     .from("Alice <alice@example.org>".parse().unwrap())
