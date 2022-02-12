@@ -399,7 +399,7 @@ mod test {
     #[test]
     fn test_body_simple_canonicalize() {
         let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = b"test\r\n\r\ntest   \ttest\r\n";
+        let expected: &[u8] = b"test\r\n\r\ntest   \ttest\r\n";
         assert_eq!(
             dkim_canonicalize_body(body, DkimCanonicalizationType::Simple),
             expected
@@ -408,7 +408,7 @@ mod test {
     #[test]
     fn test_body_relaxed_canonicalize() {
         let body = b"test\r\n\r\ntest   \ttest\r\n\r\n\r\n";
-        let expected = b"test\r\n\r\ntest test\r\n";
+        let expected: &[u8] = b"test\r\n\r\ntest test\r\n";
         assert_eq!(
             dkim_canonicalize_body(body, DkimCanonicalizationType::Relaxed),
             expected
