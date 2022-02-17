@@ -36,7 +36,8 @@ impl Header for ContentTransferEncoding {
     }
 
     fn display(&self) -> HeaderValue {
-        HeaderValue::new(Self::name(), self.to_string())
+        let val = self.to_string();
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 

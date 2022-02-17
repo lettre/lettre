@@ -51,7 +51,8 @@ impl Header for MimeVersion {
     }
 
     fn display(&self) -> HeaderValue {
-        HeaderValue::new(Self::name(), format!("{}.{}", self.major, self.minor))
+        let val = format!("{}.{}", self.major, self.minor);
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 

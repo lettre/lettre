@@ -44,17 +44,17 @@ impl Header for Date {
     }
 
     fn display(&self) -> HeaderValue {
-        let mut s = self.0.to_string();
-        if s.ends_with(" GMT") {
+        let mut val = self.0.to_string();
+        if val.ends_with(" GMT") {
             // The httpdate crate always appends ` GMT` to the end of the string,
             // but this is considered an obsolete date format for email
             // https://tools.ietf.org/html/rfc2822#appendix-A.6.2,
             // so we replace `GMT` with `-0000`
-            s.truncate(s.len() - "GMT".len());
-            s.push_str("-0000");
+            val.truncate(val.len() - "GMT".len());
+            val.push_str("-0000");
         }
 
-        HeaderValue::new(Self::name(), s)
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 
