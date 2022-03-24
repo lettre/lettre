@@ -106,8 +106,9 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //! use std::fs;
+//!
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let image = fs::read("docs/lettre.png")?;
@@ -195,15 +196,19 @@
 //! ```
 //! </details>
 
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+use std::{io::Write, iter, time::SystemTime};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
+#[cfg(feature = "dkim")]
+pub use dkim::*;
 pub use mailbox::*;
 pub use mimebody::*;
 
 mod attachment;
 mod body;
+#[cfg(feature = "dkim")]
+pub mod dkim;
 pub mod header;
 mod mailbox;
 mod mimebody;
@@ -488,6 +493,77 @@ impl Message {
         let mut out = Vec::new();
         self.format(&mut out);
         out
+    }
+
+    #[cfg(feature = "dkim")]
+    /// Format body for signing
+    pub(crate) fn body_raw(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        match &self.body {
+            MessageBody::Mime(p) => p.format(&mut out),
+            MessageBody::Raw(r) => out.extend_from_slice(r),
+        };
+        out.extend_from_slice(b"\r\n");
+        out
+    }
+
+    /// Sign the message using Dkim
+    ///
+    /// Example:
+    /// ```rust
+    /// use lettre::{
+    ///     message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///     Message,
+    /// };
+    ///
+    /// let mut message = Message::builder()
+    ///     .from("Alice <alice@example.org>".parse().unwrap())
+    ///     .reply_to("Bob <bob@example.org>".parse().unwrap())
+    ///     .to("Carla <carla@example.net>".parse().unwrap())
+    ///     .subject("Hello")
+    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
+    ///     .unwrap();
+    /// let key = "-----BEGIN RSA PRIVATE KEY-----
+    /// MIIEowIBAAKCAQEAt2gawjoybf0mAz0mSX0cq1ah5F9cPazZdCwLnFBhRufxaZB8
+    /// NLTdc9xfPIOK8l/xGrN7Nd63J4cTATqZukumczkA46O8YKHwa53pNT6NYwCNtDUL
+    /// eBu+7xUW18GmDzkIFkxGO2R5kkTeWPlKvKpEiicIMfl0OmyW/fI3AbtM7e/gmqQ4
+    /// kEYIO0mTjPT+jTgWE4JIi5KUTHudUBtfMKcSFyM2HkUOExl1c9+A4epjRFQwEXMA
+    /// hM5GrqZoOdUm4fIpvGpLIGIxFgHPpZYbyq6yJZzH3+5aKyCHrsHawPuPiCD45zsU
+    /// re31zCE6b6k1sDiiBR4CaRHnbL7hxFp0aNLOVQIDAQABAoIBAGMK3gBrKxaIcUGo
+    /// gQeIf7XrJ6vK72YC9L8uleqI4a9Hy++E7f4MedZ6eBeWta8jrnEL4Yp6xg+beuDc
+    /// A24+Mhng+6Dyp+TLLqj+8pQlPnbrMprRVms7GIXFrrs+wO1RkBNyhy7FmH0roaMM
+    /// pJZzoGW2pE9QdbqjL3rdlWTi/60xRX9eZ42nNxYnbc+RK03SBd46c3UBha6Y9iQX
+    /// 562yWilDnB5WCX2tBoSN39bEhJvuZDzMwOuGw68Q96Hdz82Iz1xVBnRhH+uNStjR
+    /// VnAssSHVxPSpwWrm3sHlhjBHWPnNIaOKIKl1lbL+qWfVQCj/6a5DquC+vYAeYR6L
+    /// 3mA0z0ECgYEA5YkNYcILSXyE0hZ8eA/t58h8eWvYI5iqt3nT4fznCoYJJ74Vukeg
+    /// 6BTlq/CsanwT1lDtvDKrOaJbA7DPTES/bqT0HoeIdOvAw9w/AZI5DAqYp61i6RMK
+    /// xfAQL/Ik5MDFN8gEMLLXRVMe/aR27f6JFZpShJOK/KCzHqikKfYVJ+UCgYEAzI2F
+    /// ZlTyittWSyUSl5UKyfSnFOx2+6vNy+lu5DeMJu8Wh9rqBk388Bxq98CfkCseWESN
+    /// pTCGdYltz9DvVNBdBLwSMdLuYJAI6U+Zd70MWyuNdHFPyWVHUNqMUBvbUtj2w74q
+    /// Hzu0GI0OrRjdX6C63S17PggmT/N2R9X7P4STxbECgYA+AZAD4I98Ao8+0aQ+Ks9x
+    /// 1c8KXf+9XfiAKAD9A3zGcv72JXtpHwBwsXR5xkJNYcdaFfKi7G0k3J8JmDHnwIqW
+    /// MSlhNeu+6hDg2BaNLhsLDbG/Wi9mFybJ4df9m8Qrp4efUgEPxsAwkgvFKTCXijMu
+    /// CspP1iutoxvAJH50d22voQKBgDIsSFtIXNGYaTs3Va8enK3at5zXP3wNsQXiNRP/
+    /// V/44yNL77EktmewfXFF2yuym1uOZtRCerWxpEClYO0wXa6l8pA3aiiPfUIBByQfo
+    /// s/4s2Z6FKKfikrKPWLlRi+NvWl+65kQQ9eTLvJzSq4IIP61+uWsGvrb/pbSLFPyI
+    /// fWKRAoGBALFCStBXvdMptjq4APUzAdJ0vytZzXkOZHxgmc+R0fQn22OiW0huW6iX
+    /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
+    /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
+    /// -----END RSA PRIVATE KEY-----";
+    /// let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
+    /// message.sign(&DkimConfig::default_config(
+    ///     "dkimtest".to_string(),
+    ///     "example.org".to_string(),
+    ///     signing_key,
+    /// ));
+    /// println!(
+    ///     "message: {}",
+    ///     std::str::from_utf8(&message.formatted()).unwrap()
+    /// );
+    /// ```
+    #[cfg(feature = "dkim")]
+    pub fn sign(&mut self, dkim_config: &DkimConfig) {
+        dkim_sign(self, dkim_config);
     }
 }
 

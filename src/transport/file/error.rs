@@ -1,7 +1,8 @@
 //! Error and result type for file transport
 
-use crate::BoxError;
 use std::{error::Error as StdError, fmt};
+
+use crate::BoxError;
 
 /// The Errors that may occur when sending an email over SMTP
 pub struct Error {

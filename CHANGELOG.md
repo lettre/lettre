@@ -5,7 +5,7 @@
 
 Several breaking changes were made between 0.9 and 0.10, but changes should be straightforward:
 
-* MSRV is now 1.52.1
+* MSRV is now 1.56.0
 * The `lettre_email` crate has been merged into `lettre`. To migrate, replace `lettre_email` with `lettre::message`
   and make sure to enable the `builder` feature (it's enabled by default).
 * `SendableEmail` has been renamed to `Email` and `EmailBuilder::build()` produces it directly. To migrate,

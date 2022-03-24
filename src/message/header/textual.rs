@@ -1,4 +1,4 @@
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 macro_rules! text_header {
@@ -16,8 +16,8 @@ macro_rules! text_header {
                 Ok(Self(s.into()))
             }
 
-            fn display(&self) -> String {
-                self.0.clone()
+            fn display(&self) -> HeaderValue {
+             HeaderValue::new(Self::name(),   self.0.clone())
             }
         }
 
@@ -86,7 +86,7 @@ text_header! {
 #[cfg(test)]
 mod test {
     use super::Subject;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_ascii() {
@@ -110,10 +110,10 @@ mod test {
     #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
             "Sample subject".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<Subject>(),

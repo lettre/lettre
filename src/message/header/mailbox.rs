@@ -1,4 +1,6 @@
-use super::{Header, HeaderName};
+use email_encoding::headers::EmailWriter;
+
+use super::{Header, HeaderName, HeaderValue};
 use crate::{
     message::mailbox::{Mailbox, Mailboxes},
     BoxError,
@@ -25,8 +27,13 @@ macro_rules! mailbox_header {
                 Ok(Self(mailbox))
             }
 
-            fn display(&self) -> String {
-                self.0.to_string()
+            fn display(&self) -> HeaderValue {
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailbox` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
             }
         }
 
@@ -68,8 +75,13 @@ macro_rules! mailboxes_header {
                 Ok(Self(mailbox))
             }
 
-            fn display(&self) -> String {
-                self.0.to_string()
+            fn display(&self) -> HeaderValue {
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailboxes` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
             }
         }
 
@@ -161,7 +173,7 @@ mailboxes_header! {
 #[cfg(test)]
 mod test {
     use super::{From, Mailbox, Mailboxes};
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_single_without_name() {
@@ -232,10 +244,10 @@ mod test {
         let from = vec!["kayo@example.com".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
     }
@@ -245,10 +257,10 @@ mod test {
         let from = vec!["K. <kayo@example.com>".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
     }
@@ -261,10 +273,10 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com, pony@domain.tld".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
@@ -277,10 +289,10 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }

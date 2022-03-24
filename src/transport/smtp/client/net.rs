@@ -1,5 +1,3 @@
-#[cfg(feature = "rustls-tls")]
-use std::convert::TryFrom;
 use std::{
     io::{self, Read, Write},
     mem,
@@ -9,7 +7,6 @@ use std::{
 
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
-
 #[cfg(feature = "rustls-tls")]
 use rustls::{ClientConnection, ServerName, StreamOwned};
 

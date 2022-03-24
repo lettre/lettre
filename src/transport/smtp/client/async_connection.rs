@@ -1,3 +1,9 @@
+use std::{fmt::Display, time::Duration};
+
+use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+#[cfg(feature = "tracing")]
+use super::escape_crlf;
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
@@ -10,11 +16,6 @@ use crate::{
     },
     Envelope,
 };
-use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use std::{fmt::Display, time::Duration};
-
-#[cfg(feature = "tracing")]
-use super::escape_crlf;
 
 macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({

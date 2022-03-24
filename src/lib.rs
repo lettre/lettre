@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.52.1 or newer.
+//! Lettre requires Rust 1.56.0 or newer.
 //!
 //! ## Features
 //!
@@ -85,6 +85,7 @@
 //! * **serde**: Serialization/Deserialization of entities
 //! * **tracing**: Logging using the `tracing` crate
 //! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
+//! * **dkim**: Add support for signing email with DKIM
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail
@@ -97,6 +98,7 @@
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
 //! [mime 0.3]: https://docs.rs/mime/0.3
+//! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-rc.4")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
@@ -108,7 +110,9 @@
     trivial_numeric_casts,
     unstable_features,
     unused_import_braces,
-    rust_2018_idioms
+    rust_2018_idioms,
+    clippy::string_add,
+    clippy::string_add_assign
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -171,6 +175,8 @@ mod executor;
 pub mod message;
 pub mod transport;
 
+use std::error::Error as StdError;
+
 #[cfg(feature = "async-std1")]
 pub use self::executor::AsyncStd1Executor;
 #[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
@@ -207,21 +213,17 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio1", feature = "async-std1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[cfg(feature = "smtp-transport")]
+pub use crate::transport::smtp::SmtpTransport;
 #[doc(inline)]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
-
-#[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::SmtpTransport;
-use std::error::Error as StdError;
 
 pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
     use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 

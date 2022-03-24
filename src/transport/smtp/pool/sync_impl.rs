@@ -1,14 +1,17 @@
-use std::fmt::{self, Debug};
-use std::ops::{Deref, DerefMut};
-use std::sync::{Arc, Mutex, TryLockError};
-use std::time::{Duration, Instant};
-use std::{mem, thread};
+use std::{
+    fmt::{self, Debug},
+    mem,
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex, TryLockError},
+    thread,
+    time::{Duration, Instant},
+};
 
+use super::{
+    super::{client::SmtpConnection, Error},
+    PoolConfig,
+};
 use crate::transport::smtp::transport::SmtpClient;
-
-use super::super::client::SmtpConnection;
-use super::super::Error;
-use super::PoolConfig;
 
 pub struct Pool {
     config: PoolConfig,

@@ -5,6 +5,8 @@ use std::{
     time::Duration,
 };
 
+#[cfg(feature = "tracing")]
+use super::escape_crlf;
 use super::{ClientCodec, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
@@ -17,9 +19,6 @@ use crate::{
         response::{parse_response, Response},
     },
 };
-
-#[cfg(feature = "tracing")]
-use super::escape_crlf;
 
 macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({

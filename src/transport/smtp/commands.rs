@@ -1,5 +1,7 @@
 //! SMTP commands
 
+use std::fmt::{self, Display, Formatter};
+
 use crate::{
     address::Address,
     transport::smtp::{
@@ -9,7 +11,6 @@ use crate::{
         response::Response,
     },
 };
-use std::fmt::{self, Display, Formatter};
 
 /// EHLO command
 #[derive(PartialEq, Clone, Debug)]
@@ -288,9 +289,10 @@ impl Auth {
 
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use super::*;
     use crate::transport::smtp::extension::MailBodyParameter;
-    use std::str::FromStr;
 
     #[test]
     fn test_display() {

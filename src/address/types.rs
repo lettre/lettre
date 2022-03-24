@@ -1,16 +1,16 @@
 //! Representation of an email address
 
-use idna::domain_to_ascii;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::{
-    convert::{TryFrom, TryInto},
     error::Error,
     ffi::OsStr,
     fmt::{Display, Formatter, Result as FmtResult},
     net::IpAddr,
     str::FromStr,
 };
+
+use idna::domain_to_ascii;
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 /// Represents an email address with a user and a domain name.
 ///

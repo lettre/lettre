@@ -56,8 +56,7 @@
 //! #
 //! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::transport::smtp::authentication::Credentials;
-//! use lettre::{Message, SmtpTransport, Transport};
+//! use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)

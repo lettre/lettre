@@ -10,7 +10,8 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo565.org>"]
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
@@ -29,6 +30,7 @@ fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
 regex = { version = "1", default-features = false, features = ["std", "unicode-case"] }
+email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "9703887cc41cb1c7a8ff820f963622dd212e97d8", optional = true }
 
 # file transport
 uuid = { version = "0.8", features = ["v4"], optional = true }
@@ -42,7 +44,7 @@ hostname = { version = "0.3", optional = true } # feature
 ## tls
 native-tls = { version = "0.2", optional = true } # feature
 rustls = { version = "0.20", features = ["dangerous_configuration"], optional = true }
-rustls-pemfile = { version = "0.2.1", optional = true }
+rustls-pemfile = { version = "0.3", optional = true }
 webpki-roots = { version = "0.22", optional = true }
 
 # async
@@ -56,13 +58,18 @@ async-std = { version = "1.8", optional = true, features = ["unstable"] }
 futures-rustls = { version = "0.22", optional = true }
 
 ## tokio
-tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
+tokio1_crate = { package = "tokio", version = "1", features = ["fs", "rt", "process", "time", "net", "io-util"], optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.23", optional = true }
 
+## dkim
+sha2 = { version = "0.9.8", optional = true }
+rsa = { version = "0.5.0", optional = true }
+ed25519-dalek = { version = "1.0.1", optional = true }
+
 [dev-dependencies]
 criterion = "0.3"
-tracing-subscriber = "0.2.10"
+tracing-subscriber = "0.3"
 glob = "0.3"
 walkdir = "2"
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
@@ -76,7 +83,7 @@ name = "transport_smtp"
 
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
-builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable"]
+builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable", "email-encoding"]
 mime03 = ["mime"]
 
 # transports
@@ -96,6 +103,8 @@ async-std1-rustls-tls = ["async-std1", "rustls-tls", "futures-rustls"]
 tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
+
+dkim = ["sha2", "rsa", "ed25519-dalek"]
 
 [package.metadata.docs.rs]
 all-features = true
