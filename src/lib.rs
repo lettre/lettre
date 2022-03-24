@@ -224,8 +224,6 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
     use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 

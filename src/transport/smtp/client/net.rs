@@ -1,5 +1,3 @@
-#[cfg(feature = "rustls-tls")]
-use std::convert::TryFrom;
 use std::{
     io::{self, Read, Write},
     mem,
