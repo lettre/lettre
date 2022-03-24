@@ -10,7 +10,8 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo565.org>"]
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
-edition = "2018"
+edition = "2021"
+rust-version = "1.56"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
@@ -57,7 +58,7 @@ async-std = { version = "1.8", optional = true, features = ["unstable"] }
 futures-rustls = { version = "0.22", optional = true }
 
 ## tokio
-tokio1_crate = { package = "tokio", version = "1", features = ["fs", "process", "time", "net", "io-util"], optional = true }
+tokio1_crate = { package = "tokio", version = "1", features = ["fs", "rt", "process", "time", "net", "io-util"], optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.23", optional = true }
 

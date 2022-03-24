@@ -196,7 +196,7 @@
 //! ```
 //! </details>
 
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+use std::{io::Write, iter, time::SystemTime};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};

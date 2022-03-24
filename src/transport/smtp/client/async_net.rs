@@ -287,8 +287,6 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "tokio1-rustls-tls")]
                 return {
-                    use std::convert::TryFrom;
-
                     use rustls::ServerName;
                     use tokio1_rustls::TlsConnector;
 
@@ -342,8 +340,6 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
-                    use std::convert::TryFrom;
-
                     use futures_rustls::TlsConnector;
                     use rustls::ServerName;
 

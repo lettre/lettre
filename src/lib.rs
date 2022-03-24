@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.52.1 or newer.
+//! Lettre requires Rust 1.56.0 or newer.
 //!
 //! ## Features
 //!
@@ -224,8 +224,6 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
     use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 

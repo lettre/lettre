@@ -1,7 +1,6 @@
 //! Representation of an email address
 
 use std::{
-    convert::{TryFrom, TryInto},
     error::Error,
     ffi::OsStr,
     fmt::{Display, Formatter, Result as FmtResult},
