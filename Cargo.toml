@@ -11,6 +11,7 @@ authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
 edition = "2018"
+rust-version = "1.56"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }

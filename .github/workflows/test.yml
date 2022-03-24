@@ -81,8 +81,8 @@ jobs:
             rust: stable
           - name: beta
             rust: beta
-          - name: 1.53.0
-            rust: 1.53.0
+          - name: 1.56.0
+            rust: 1.56.0
 
     steps:
       - name: Checkout
