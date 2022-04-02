@@ -9,7 +9,7 @@ use std::{
 use ed25519_dalek::Signer;
 use once_cell::sync::Lazy;
 use regex::{bytes::Regex as BRegex, Regex};
-use rsa::{pkcs1::FromRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
+use rsa::{pkcs1::DecodeRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 
 use crate::message::{
