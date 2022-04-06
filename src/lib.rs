@@ -153,7 +153,7 @@ mod compiletime_checks {
     ))]
     compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
 If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
-If you were trying to opt into `rust-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
 Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
