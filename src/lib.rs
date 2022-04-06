@@ -124,7 +124,7 @@ mod compiletime_checks {
         not(feature = "tokio1-native-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
-    If you were trying to opt into `rust-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+    If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
