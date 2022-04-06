@@ -133,7 +133,7 @@ mod compiletime_checks {
         not(feature = "tokio1-rustls-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
-    If you'd like to use `native-tls` make sure that the `rustls-tls` hasn't been enabled by mistake.
+    If you'd like to use `native-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     /*
