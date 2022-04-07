@@ -124,8 +124,8 @@ mod compiletime_checks {
         not(feature = "tokio1-native-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
-If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
-If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+    If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+    Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
         feature = "tokio1",
@@ -133,8 +133,8 @@ If you're building a library which depends on lettre import it without default f
         not(feature = "tokio1-rustls-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
-If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake.
-If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+    If you'd like to use `native-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
+    Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     /*
     #[cfg(all(
@@ -153,8 +153,8 @@ If you're building a library which depends on lettre import it without default f
     ))]
     compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
 If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
-If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
-If you're building a library which depends on lettre import lettre without default features and enable just the features you need.");
+If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
         feature = "async-std1",
@@ -162,8 +162,8 @@ If you're building a library which depends on lettre import lettre without defau
         not(feature = "async-std1-rustls-tls")
     ))]
     compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
-If you'd like to use native-tls make sure that the `rustls-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
-If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+If you'd like to use `native-tls` make sure that the `rustls-tls` hasn't been enabled by mistake.
+Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 }
 
 pub mod address;
