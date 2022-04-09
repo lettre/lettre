@@ -650,7 +650,7 @@ mod test {
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",

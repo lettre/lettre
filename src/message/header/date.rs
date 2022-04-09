@@ -32,11 +32,11 @@ impl Header for Date {
 
     fn parse(s: &str) -> Result<Self, BoxError> {
         let mut s = String::from(s);
-        if s.ends_with(" -0000") {
+        if s.ends_with("+0000") {
             // The httpdate crate expects the `Date` to end in ` GMT`, but email
-            // uses `-0000`, so we crudely fix this issue here.
+            // uses `+0000` to indicate UTC, so we crudely fix this issue here.
 
-            s.truncate(s.len() - "-0000".len());
+            s.truncate(s.len() - "+0000".len());
             s.push_str("GMT");
         }
 
@@ -49,9 +49,9 @@ impl Header for Date {
             // The httpdate crate always appends ` GMT` to the end of the string,
             // but this is considered an obsolete date format for email
             // https://tools.ietf.org/html/rfc2822#appendix-A.6.2,
-            // so we replace `GMT` with `-0000`
+            // so we replace `GMT` with `+0000`
             val.truncate(val.len() - "GMT".len());
-            val.push_str("-0000");
+            val.push_str("+0000");
         }
 
         HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
@@ -88,7 +88,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n".to_string()
+            "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n".to_string()
         );
 
         // Tue, 15 Nov 1994 08:12:32 GMT
@@ -98,7 +98,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Date: Tue, 15 Nov 1994 08:12:32 -0000\r\n"
+            "Date: Tue, 15 Nov 1994 08:12:32 +0000\r\n"
         );
     }
 
@@ -108,7 +108,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:31 -0000".to_string(),
+            "Tue, 15 Nov 1994 08:12:31 +0000".to_string(),
         ));
 
         assert_eq!(
@@ -120,7 +120,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:32 -0000".to_string(),
+            "Tue, 15 Nov 1994 08:12:32 +0000".to_string(),
         ));
 
         assert_eq!(

@@ -43,7 +43,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -81,7 +81,7 @@ mod sync {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -141,7 +141,7 @@ mod tokio_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
@@ -192,7 +192,7 @@ mod asyncstd_1 {
                 "Reply-To: Yuin <yuin@domain.tld>\r\n",
                 "To: Hei <hei@domain.tld>\r\n",
                 "Subject: Happy new year\r\n",
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Be happy!"
