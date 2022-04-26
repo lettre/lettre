@@ -352,11 +352,37 @@ impl Display for Mailboxes {
 impl FromStr for Mailboxes {
     type Err = AddressError;
 
-    fn from_str(src: &str) -> Result<Self, Self::Err> {
-        src.split(',')
-            .map(|m| m.trim().parse())
-            .collect::<Result<Vec<_>, _>>()
-            .map(Mailboxes)
+    fn from_str(mut src: &str) -> Result<Self, Self::Err> {
+        let mut mailboxes = Vec::new();
+
+        if !src.is_empty() {
+            // n-1 elements
+            let mut skip = 0;
+            while let Some(i) = src[skip..].find(',') {
+                let left = &src[..skip + i];
+
+                match left.trim().parse() {
+                    Ok(mailbox) => {
+                        mailboxes.push(mailbox);
+
+                        src = &src[left.len() + ",".len()..];
+                        skip = 0;
+                    }
+                    Err(AddressError::MissingParts) => {
+                        skip = left.len() + ",".len();
+                    }
+                    Err(err) => {
+                        return Err(err);
+                    }
+                }
+            }
+
+            // last element
+            let mailbox = src.trim().parse()?;
+            mailboxes.push(mailbox);
+        }
+
+        Ok(Mailboxes(mailboxes))
     }
 }
 
