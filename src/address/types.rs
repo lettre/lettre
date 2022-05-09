@@ -8,6 +8,7 @@ use std::{
     str::FromStr,
 };
 
+use email_address::EmailAddress;
 use idna::domain_to_ascii;
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -55,17 +56,6 @@ pub struct Address {
     at_start: usize,
 }
 
-// Regex from the specs
-// https://html.spec.whatwg.org/multipage/forms.html#valid-e-mail-address
-// It will mark esoteric email addresses like quoted string as invalid
-static USER_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^(?i)[a-z0-9.!#$%&'*+/=?^_`{|}~-]+\z").unwrap());
-static DOMAIN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        r"(?i)^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$",
-    )
-    .unwrap()
-});
 // literal form, ipv4 or ipv6 address (SMTP 4.1.3)
 static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\]\z").unwrap());
 
@@ -126,7 +116,7 @@ impl Address {
     }
 
     pub(super) fn check_user(user: &str) -> Result<(), AddressError> {
-        if USER_RE.is_match(user) {
+        if EmailAddress::is_valid_local_part(user) {
             Ok(())
         } else {
             Err(AddressError::InvalidUser)
@@ -142,7 +132,7 @@ impl Address {
     }
 
     fn check_domain_ascii(domain: &str) -> Result<(), AddressError> {
-        if DOMAIN_RE.is_match(domain) {
+        if EmailAddress::is_valid_domain(domain) {
             return Ok(());
         }
 
@@ -278,5 +268,10 @@ mod tests {
         assert_eq!(addr.domain(), "example.com");
         assert_eq!(addr2.user(), "something");
         assert_eq!(addr2.domain(), "example.com");
+
+        assert!(Address::check_user("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").is_err());
+        assert!(
+            Address::check_domain("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com").is_err()
+        );
     }
 }
