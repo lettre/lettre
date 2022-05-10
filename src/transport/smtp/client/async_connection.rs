@@ -1,4 +1,4 @@
-use std::{fmt::Display, time::Duration};
+use std::{fmt::Display, net::IpAddr, time::Duration};
 
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
@@ -54,8 +54,11 @@ impl AsyncSmtpConnection {
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
+        local_address: Option<IpAddr>,
     ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters).await?;
+        let stream =
+            AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters, local_address)
+                .await?;
         Self::connect_impl(stream, hello_name).await
     }
 

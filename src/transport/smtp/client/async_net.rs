@@ -1,6 +1,6 @@
 use std::{
     io, mem,
-    net::SocketAddr,
+    net::{IpAddr, SocketAddr},
     pin::Pin,
     task::{Context, Poll},
     time::Duration,
@@ -19,7 +19,10 @@ use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
 #[cfg(feature = "tokio1")]
 use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
 #[cfg(feature = "tokio1")]
-use tokio1_crate::net::{TcpStream as Tokio1TcpStream, ToSocketAddrs as Tokio1ToSocketAddrs};
+use tokio1_crate::net::{
+    TcpSocket as Tokio1TcpSocket, TcpStream as Tokio1TcpStream,
+    ToSocketAddrs as Tokio1ToSocketAddrs,
+};
 #[cfg(feature = "tokio1-native-tls")]
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
@@ -33,6 +36,8 @@ use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 ))]
 use super::InnerTlsParameters;
 use super::TlsParameters;
+#[cfg(feature = "tokio1")]
+use crate::transport::smtp::client::net::resolved_address_filter;
 use crate::transport::smtp::{error, Error};
 
 /// A network stream
@@ -109,44 +114,59 @@ impl AsyncNetworkStream {
         server: T,
         timeout: Option<Duration>,
         tls_parameters: Option<TlsParameters>,
+        local_addr: Option<IpAddr>,
     ) -> Result<AsyncNetworkStream, Error> {
-        async fn try_connect_timeout<T: Tokio1ToSocketAddrs>(
+        async fn try_connect<T: Tokio1ToSocketAddrs>(
             server: T,
-            timeout: Duration,
+            timeout: Option<Duration>,
+            local_addr: Option<IpAddr>,
         ) -> Result<Tokio1TcpStream, Error> {
             let addrs = tokio1_crate::net::lookup_host(server)
                 .await
-                .map_err(error::connection)?;
+                .map_err(error::connection)?
+                .filter(|resolved_addr| resolved_address_filter(resolved_addr, local_addr));
 
             let mut last_err = None;
 
             for addr in addrs {
-                let connect_future = Tokio1TcpStream::connect(&addr);
-                match tokio1_crate::time::timeout(timeout, connect_future).await {
-                    Ok(Ok(stream)) => return Ok(stream),
-                    Ok(Err(err)) => last_err = Some(err),
-                    Err(_) => {
-                        last_err = Some(io::Error::new(
-                            io::ErrorKind::TimedOut,
-                            "connection timed out",
-                        ))
+                let socket = match addr.ip() {
+                    IpAddr::V4(_) => Tokio1TcpSocket::new_v4(),
+                    IpAddr::V6(_) => Tokio1TcpSocket::new_v6(),
+                }
+                .map_err(error::connection)?;
+                if let Some(local_addr) = local_addr {
+                    socket
+                        .bind(SocketAddr::new(local_addr, 0))
+                        .map_err(error::connection)?;
+                }
+
+                let connect_future = socket.connect(addr);
+                if let Some(timeout) = timeout {
+                    match tokio1_crate::time::timeout(timeout, connect_future).await {
+                        Ok(Ok(stream)) => return Ok(stream),
+                        Ok(Err(err)) => last_err = Some(err),
+                        Err(_) => {
+                            last_err = Some(io::Error::new(
+                                io::ErrorKind::TimedOut,
+                                "connection timed out",
+                            ))
+                        }
+                    }
+                } else {
+                    match connect_future.await {
+                        Ok(stream) => return Ok(stream),
+                        Err(err) => last_err = Some(err),
                     }
                 }
             }
 
             Err(match last_err {
                 Some(last_err) => error::connection(last_err),
-                None => error::connection("could not resolve to any address"),
+                None => error::connection("could not resolve to any supported address"),
             })
         }
 
-        let tcp_stream = match timeout {
-            Some(t) => try_connect_timeout(server, t).await?,
-            None => Tokio1TcpStream::connect(server)
-                .await
-                .map_err(error::connection)?,
-        };
-
+        let tcp_stream = try_connect(server, timeout, local_addr).await?;
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters).await?;
@@ -160,6 +180,9 @@ impl AsyncNetworkStream {
         timeout: Option<Duration>,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncNetworkStream, Error> {
+        // Unfortunately there doesn't currently seem to be a way to set the local address
+        // Whilst we can create a AsyncStd1TcpStream from an existing socket, it needs to first have
+        // connected which is a blocking operation.
         async fn try_connect_timeout<T: AsyncStd1ToSocketAddrs>(
             server: T,
             timeout: Duration,

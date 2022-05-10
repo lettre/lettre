@@ -12,7 +12,7 @@
 //! };
 //!
 //! let hello = ClientId::Domain("my_hostname".to_string());
-//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None)?;
+//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None, None)?;
 //! client.command(Mail::new(Some("user@example.com".parse()?), vec![]))?;
 //! client.command(Rcpt::new("user@example.org".parse()?, vec![]))?;
 //! client.command(Data)?;
