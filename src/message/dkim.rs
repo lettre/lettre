@@ -115,12 +115,12 @@ enum InnerDkimSigningKey {
 
 impl DkimSigningKey {
     pub fn new(
-        private_key: String,
+        private_key: &str,
         algorithm: DkimSigningAlgorithm,
     ) -> Result<DkimSigningKey, DkimSigningKeyError> {
         Ok(Self(match algorithm {
             DkimSigningAlgorithm::Rsa => InnerDkimSigningKey::Rsa(
-                RsaPrivateKey::from_pkcs1_pem(&private_key)
+                RsaPrivateKey::from_pkcs1_pem(private_key)
                     .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
             ),
             DkimSigningAlgorithm::Ed25519 => {
@@ -503,7 +503,7 @@ NlioIQKBgQCXIZp5IBfG5WSXzFk8xvP4BUwHKEI5bttClBmm32K+vaSz8qO6ak6G
 4frg+WVopFg3HBHdK9aotzPEd0eHMXJv3C06Ynt2lvF+Rgi/kwGbkuq/mFVnmYYR
 Fz0TZ6sKrTAF3fdkN3bcQv6JG1CfnWENDGtekemwcCEA9v46/RsOfg==
 -----END RSA PRIVATE KEY-----";
-        let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
+        let signing_key = DkimSigningKey::new(key, DkimSigningAlgorithm::Rsa).unwrap();
         message.sign(&DkimConfig::default_config(
             "dkimtest".to_string(),
             "example.org".to_string(),

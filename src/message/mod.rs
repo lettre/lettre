@@ -550,7 +550,7 @@ impl Message {
     /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
     /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
     /// -----END RSA PRIVATE KEY-----";
-    /// let signing_key = DkimSigningKey::new(key.to_string(), DkimSigningAlgorithm::Rsa).unwrap();
+    /// let signing_key = DkimSigningKey::new(key, DkimSigningAlgorithm::Rsa).unwrap();
     /// message.sign(&DkimConfig::default_config(
     ///     "dkimtest".to_string(),
     ///     "example.org".to_string(),
