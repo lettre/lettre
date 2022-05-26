@@ -121,7 +121,7 @@ impl Headers {
         self.find_header_index(name).map(|i| self.headers.remove(i))
     }
 
-    fn find_header(&self, name: &str) -> Option<&HeaderValue> {
+    pub(crate) fn find_header(&self, name: &str) -> Option<&HeaderValue> {
         self.headers
             .iter()
             .find(|value| name.eq_ignore_ascii_case(&value.name))
@@ -304,6 +304,14 @@ impl HeaderValue {
             raw_value,
             encoded_value,
         }
+    }
+
+    pub(crate) fn get_raw(&self) -> &str {
+        &self.raw_value
+    }
+
+    pub(crate) fn get_encoded(&self) -> &str {
+        &self.encoded_value
     }
 }
 
