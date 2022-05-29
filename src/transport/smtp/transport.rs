@@ -221,6 +221,7 @@ impl SmtpClient {
             self.info.timeout,
             &self.info.hello_name,
             tls_parameters,
+            None,
         )?;
 
         #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]

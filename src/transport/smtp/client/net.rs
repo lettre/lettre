@@ -1,7 +1,7 @@
 use std::{
     io::{self, Read, Write},
     mem,
-    net::{Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
+    net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
     time::Duration,
 };
 
@@ -9,6 +9,7 @@ use std::{
 use native_tls::TlsStream;
 #[cfg(feature = "rustls-tls")]
 use rustls::{ClientConnection, ServerName, StreamOwned};
+use socket2::{Domain, Protocol, Type};
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 use super::InnerTlsParameters;
@@ -83,19 +84,39 @@ impl NetworkStream {
         server: T,
         timeout: Option<Duration>,
         tls_parameters: Option<&TlsParameters>,
+        local_addr: Option<IpAddr>,
     ) -> Result<NetworkStream, Error> {
-        fn try_connect_timeout<T: ToSocketAddrs>(
+        fn try_connect<T: ToSocketAddrs>(
             server: T,
-            timeout: Duration,
+            timeout: Option<Duration>,
+            local_addr: Option<IpAddr>,
         ) -> Result<TcpStream, Error> {
-            let addrs = server.to_socket_addrs().map_err(error::connection)?;
+            let addrs = server
+                .to_socket_addrs()
+                .map_err(error::connection)?
+                .filter(|resolved_addr| resolved_address_filter(resolved_addr, local_addr));
 
             let mut last_err = None;
 
             for addr in addrs {
-                match TcpStream::connect_timeout(&addr, timeout) {
-                    Ok(stream) => return Ok(stream),
-                    Err(err) => last_err = Some(err),
+                let socket = socket2::Socket::new(
+                    Domain::for_address(addr),
+                    Type::STREAM,
+                    Some(Protocol::TCP),
+                )
+                .map_err(error::connection)?;
+                bind_local_address(&socket, &addr, local_addr)?;
+
+                if let Some(timeout) = timeout {
+                    match socket.connect_timeout(&addr.into(), timeout) {
+                        Ok(_) => return Ok(socket.into()),
+                        Err(err) => last_err = Some(err),
+                    }
+                } else {
+                    match socket.connect(&addr.into()) {
+                        Ok(_) => return Ok(socket.into()),
+                        Err(err) => last_err = Some(err),
+                    }
                 }
             }
 
@@ -105,11 +126,7 @@ impl NetworkStream {
             })
         }
 
-        let tcp_stream = match timeout {
-            Some(t) => try_connect_timeout(server, t)?,
-            None => TcpStream::connect(server).map_err(error::connection)?,
-        };
-
+        let tcp_stream = try_connect(server, timeout, local_addr)?;
         let mut stream = NetworkStream::new(InnerNetworkStream::Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters)?;
@@ -287,5 +304,49 @@ impl Write for NetworkStream {
                 Ok(())
             }
         }
+    }
+}
+
+/// If the local address is set, binds the socket to this address.
+/// If local address is not set, then destination address is required to determine to the default
+/// local address on some platforms.
+/// See: https://github.com/hyperium/hyper/blob/faf24c6ad8eee1c3d5ccc9a4d4835717b8e2903f/src/client/connect/http.rs#L560
+fn bind_local_address(
+    socket: &socket2::Socket,
+    dst_addr: &SocketAddr,
+    local_addr: Option<IpAddr>,
+) -> Result<(), Error> {
+    match local_addr {
+        Some(local_addr) => {
+            socket
+                .bind(&SocketAddr::new(local_addr, 0).into())
+                .map_err(error::connection)?;
+        }
+        _ => {
+            if cfg!(windows) {
+                // Windows requires a socket be bound before calling connect
+                let any: SocketAddr = match dst_addr {
+                    SocketAddr::V4(_) => ([0, 0, 0, 0], 0).into(),
+                    SocketAddr::V6(_) => ([0, 0, 0, 0, 0, 0, 0, 0], 0).into(),
+                };
+                socket.bind(&any.into()).map_err(error::connection)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// When we have an iterator of resolved remote addresses, we must filter them to be the same
+/// protocol as the local address binding. If no local address is set, then all will be matched.
+pub(crate) fn resolved_address_filter(
+    resolved_addr: &SocketAddr,
+    local_addr: Option<IpAddr>,
+) -> bool {
+    match local_addr {
+        Some(local_addr) => match resolved_addr.ip() {
+            IpAddr::V4(_) => local_addr.is_ipv4(),
+            IpAddr::V6(_) => local_addr.is_ipv6(),
+        },
+        None => true,
     }
 }
