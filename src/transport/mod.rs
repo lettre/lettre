@@ -138,11 +138,11 @@ pub trait Transport {
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 #[async_trait]
-pub trait AsyncTransport {
+pub trait AsyncTransport: Send + Sync {
     /// Response produced by the Transport
-    type Ok;
+    type Ok: Send + Sync;
     /// Error produced by the Transport
-    type Error;
+    type Error: Send + Sync;
 
     /// Sends the email
     #[cfg(feature = "builder")]
