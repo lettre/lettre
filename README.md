@@ -104,7 +104,7 @@ match mailer.send(&email) {
 ## Testing
 
 The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed 
-such a server can be launched with `python -m smtpd -n -c DebuggingServer localhost:2525`
+such a server can be launched with `python -m smtpd -n -c DebuggingServer 127.0.0.1:2525`
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
 
