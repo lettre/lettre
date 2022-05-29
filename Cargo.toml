@@ -30,7 +30,7 @@ fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
 regex = { version = "1", default-features = false, features = ["std", "unicode-case"] }
-email-encoding = { version = "0.1", optional = true }
+email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "7b4fdf44a6e8715753d9012317c019271bcbc431", optional = true }
 
 # file transport
 uuid = { version = "1", features = ["v4"], optional = true }
