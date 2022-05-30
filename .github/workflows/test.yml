@@ -124,6 +124,9 @@ jobs:
       - name: Install dkimverify
         run: sudo apt -y install python3-dkim
 
+      - name: Work around early dependencies MSRV bump
+        run: cargo update -p async-global-executor --precise 2.0.4
+
       - name: Test with no default features
         run: cargo test --no-default-features
 
