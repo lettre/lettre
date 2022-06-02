@@ -28,8 +28,6 @@ mod mailbox;
 mod special;
 mod textual;
 
-const WHITESPACE_CHARS: &[u8] = b" \t";
-
 /// Represents an email header
 ///
 /// Email header as defined in [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322) and extensions.
@@ -431,7 +429,7 @@ impl<'a> Iterator for WordsPlusFillIterator<'a> {
             .bytes()
             .enumerate()
             .skip(1)
-            .find(|&(_i, c)| WHITESPACE_CHARS.contains(&c))
+            .find(|&(_i, c)| c == b' ')
             .map(|(i, _)| i)
             .unwrap_or(self.s.len());
 
