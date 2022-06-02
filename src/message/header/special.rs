@@ -64,6 +64,8 @@ impl Default for MimeVersion {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::{MimeVersion, MIME_VERSION_1_0};
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 

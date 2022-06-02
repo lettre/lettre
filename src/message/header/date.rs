@@ -74,6 +74,8 @@ impl From<Date> for SystemTime {
 mod test {
     use std::time::{Duration, SystemTime};
 
+    use pretty_assertions::assert_eq;
+
     use super::Date;
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 

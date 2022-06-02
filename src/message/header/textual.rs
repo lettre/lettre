@@ -85,6 +85,8 @@ text_header! {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::Subject;
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 
