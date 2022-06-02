@@ -364,7 +364,8 @@ impl HeaderValueEncoder {
                 self.flush_encode_buf(f)?;
 
                 if !self.fits_on_line(next_word.len())
-                    && WHITESPACE_CHARS.contains(&next_word.as_bytes()[0]) {
+                    && WHITESPACE_CHARS.contains(&next_word.as_bytes()[0])
+                {
                     // not enough space left on this line to encode word
                     self.new_line(f)?;
                 }
@@ -375,7 +376,7 @@ impl HeaderValueEncoder {
                 // This word contains unallowed characters
 
                 if !self.fits_on_line(base64_len(self.encode_buf.len() + next_word.len()))
-                     && WHITESPACE_CHARS.contains(&next_word.as_bytes()[0])
+                    && WHITESPACE_CHARS.contains(&next_word.as_bytes()[0])
                 {
                     self.flush_encode_buf(f)?;
                     self.new_line(f)?;
@@ -395,22 +396,23 @@ impl HeaderValueEncoder {
         self.line_len + bytes <= MAX_LINE_LEN
     }
 
-    fn flush_encode_buf(
-        &mut self,
-        f: &mut impl fmt::Write,
-    ) -> fmt::Result {
+    fn flush_encode_buf(&mut self, f: &mut impl fmt::Write) -> fmt::Result {
         if self.encode_buf.is_empty() {
             // nothing to encode
             return Ok(());
         }
 
         // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-        let first_not_allowed = self.encode_buf.bytes()
+        let first_not_allowed = self
+            .encode_buf
+            .bytes()
             .enumerate()
             .find(|(_i, c)| !allowed_char(*c))
             .map(|(i, _)| i);
         // May as well also write the tail in plain text.
-        let last_not_allowed = self.encode_buf.bytes()
+        let last_not_allowed = self
+            .encode_buf
+            .bytes()
             .enumerate()
             .rev()
             .find(|(_i, c)| !allowed_char(*c))
@@ -429,10 +431,8 @@ impl HeaderValueEncoder {
 
         f.write_str(prefix)?;
         f.write_str(ENCODING_START_PREFIX)?;
-        let encoded = base64::display::Base64Display::with_config(
-            to_encode.as_bytes(),
-            base64::STANDARD,
-        );
+        let encoded =
+            base64::display::Base64Display::with_config(to_encode.as_bytes(), base64::STANDARD);
         write!(f, "{}", encoded)?;
         f.write_str(ENCODING_END_SUFFIX)?;
         f.write_str(suffix)?;
@@ -488,10 +488,7 @@ fn allowed_str(s: &str) -> bool {
 }
 
 const fn allowed_char(c: u8) -> bool {
-    c >= 1 && c <= 9
-        || c == 11
-        || c == 12
-        || c >= 14 && c <= 127
+    c >= 1 && c <= 9 || c == 11 || c == 12 || c >= 14 && c <= 127
 }
 
 #[cfg(test)]
