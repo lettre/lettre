@@ -75,6 +75,8 @@ impl Default for ContentTransferEncoding {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::ContentTransferEncoding;
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 

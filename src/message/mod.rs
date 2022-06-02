@@ -598,6 +598,8 @@ fn make_message_id() -> String {
 mod test {
     use std::time::{Duration, SystemTime};
 
+    use pretty_assertions::assert_eq;
+
     use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
     #[test]

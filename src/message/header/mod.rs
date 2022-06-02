@@ -569,6 +569,8 @@ const fn allowed_char(c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use super::{HeaderName, HeaderValue, Headers};
 
     #[test]

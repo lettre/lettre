@@ -471,6 +471,8 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: u8) -> FmtResult {
 mod test {
     use std::convert::TryInto;
 
+    use pretty_assertions::assert_eq;
+
     use super::Mailbox;
 
     #[test]
