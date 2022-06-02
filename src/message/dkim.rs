@@ -480,7 +480,7 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
     fn test_headers_simple_canonicalize() {
         let message = test_message();
         dbg!(message.headers.to_string());
-        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Simple), "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be \r\n folded to several lines \r\n")
+        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Simple), "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be\r\n folded to several lines \r\n")
     }
 
     #[test]
@@ -521,18 +521,14 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
                 "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\n",
                 "To: Test2 <test2@example.org>\r\n",
                 "Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n",
-                "Test: test  test very very long with spaces and extra spaces   \twill be \r\n",
+                "Test: test  test very very long with spaces and extra spaces   \twill be\r\n",
                 " folded to several lines \r\n",
                 "Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
-                "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest; \r\n",
-                " c=simple/simple; q=dns/txt; t=0; h=Date:From:Subject:To; \r\n",
-                " bh=f3Zksdcjqa/xRBwdyFzIXWCcgP7XTgxjCgYsXOMKQl4=; b=UQWpUooKjVzgC7jtuEKdpCbz\r\n",
-                " sSDnOqZFg8+S7rZj89n/+AVsdcwxumeLCUYLeko2TZgVFJA7kGz+wLzH2wpzB4XnyUqrkF6PrFA\r\n",
-                " 9K11K365JDtzfMSc5eRVS8crO6F/A9QtXPndnzrXQ5HrtFgfxUlJ9cX6pTOor1NVCpfYUNBviIg\r\n",
-                " Am0LnUOKdlJ8z82kLFRpIqawMKNVfyqP8Es6H3NHM4Y1uwGgls9DM1+lZxNXxkMpoGV3rL/n/ai\r\n",
-                " s8+VifrRxPLB0mr9gbavSkCQ2QzUA/+iq8DgPCGpXDrdDrwTcrV3pL/iHyEjQZWwFSQkx+r/CGb\r\n",
-                " 8TQLqH6T3wfr69XWvg==\r\n",
+                "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest;\r\n",
+                " c=simple/simple; q=dns/txt; t=0; h=Date:From:Subject:To;\r\n",
+                " bh=f3Zksdcjqa/xRBwdyFzIXWCcgP7XTgxjCgYsXOMKQl4=;\r\n",
+                " b=NhoIMMAALoSgu5lKAR0+MUQunOWnU7wpF9ORUFtpxq9sGZDo9AX43AMhFemyM5W204jpFwMU6pm7AMR1nOYBdSYye4yUALtvT2nqbJBwSh7JeYu+z22t1RFKp7qQR1il8aSrkbZuNMFHYuSEwW76QtKwcNqP4bQOzS9CzgQp0ABu8qwYPBr/EypykPTfqjtyN+ywrfdqjjGOzTpRGolH0hc3CrAETNjjHbNBgKgucXmXTN7hMRdzqWjeFPxizXwouwNAavFClPG0l33gXVArFWn+CkgA84G/s4zuJiF7QPZR87Pu4pw/vIlSXxH4a42W3tT19v9iBTH7X7ldYegtmQ==\r\n",
                 "\r\n",
                 "test\r\n",
                 "\r\n",
@@ -575,18 +571,13 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
                 "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\n",
                 "To: Test2 <test2@example.org>\r\n",
                 "Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n",
-                "Test: test  test very very long with spaces and extra spaces   \twill be \r\n",
-                " folded to several lines \r\n",
-                "Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
+                "Test: test  test very very long with spaces and extra spaces   \twill be\r\n",
+                " folded to several lines \r\n","Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
-                "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest; \r\n",
-                " c=relaxed/relaxed; q=dns/txt; t=0; h=date:from:subject:to; \r\n",
-                " bh=qN8je6qJgWFGSnN2MycC/XKPbN6BOrMJyAX2h4m19Ss=; b=YaVfmH8dbGEywoLJ4uhbvYqD\r\n",
-                " yQG1UGKFH3PE7zXGgk+YFxUgkwWjoA3aQupDNQtfTjfUsNe0dnrjyZP+ylnESpZBpbCIf5/n3FE\r\n",
-                " h6j3RQthqNbQblcfH/U8mazTuRbVjYBbTZQDaQCMPTz+8D+ZQfXo2oq6dGzTuGvmuYft0CVsq/B\r\n",
-                " Ip/EkhZHqiphDeVJSHD4iKW8+L2XwEWThoY92xOYc1G0TtBwz2UJgtiHX2YulH/kRBHeK3dKn9R\r\n",
-                " TNVL3VZ+9ZrnFwIhET9TPGtU2I+q0EMSWF9H9bTrASMgW/U+E0VM2btqJlrTU6rQ7wlQeHdwecL\r\n",
-                " nzXcyhCUInF1+veMNw==\r\n",
+                "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest;\r\n",
+                " c=relaxed/relaxed; q=dns/txt; t=0; h=date:from:subject:to;\r\n",
+                " bh=qN8je6qJgWFGSnN2MycC/XKPbN6BOrMJyAX2h4m19Ss=;\r\n",
+                " b=YaVfmH8dbGEywoLJ4uhbvYqDyQG1UGKFH3PE7zXGgk+YFxUgkwWjoA3aQupDNQtfTjfUsNe0dnrjyZP+ylnESpZBpbCIf5/n3FEh6j3RQthqNbQblcfH/U8mazTuRbVjYBbTZQDaQCMPTz+8D+ZQfXo2oq6dGzTuGvmuYft0CVsq/BIp/EkhZHqiphDeVJSHD4iKW8+L2XwEWThoY92xOYc1G0TtBwz2UJgtiHX2YulH/kRBHeK3dKn9RTNVL3VZ+9ZrnFwIhET9TPGtU2I+q0EMSWF9H9bTrASMgW/U+E0VM2btqJlrTU6rQ7wlQeHdwecLnzXcyhCUInF1+veMNw==\r\n",
                 "\r\n",
                 "test\r\n",
                 "\r\n",
