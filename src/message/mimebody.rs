@@ -479,7 +479,7 @@ mod test {
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: multipart/mixed; \r\n",
+                "Content-Type: multipart/mixed;\r\n",
                 " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                 "\r\n",
                 "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
@@ -526,8 +526,8 @@ mod test {
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: multipart/encrypted; \r\n",
-                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                "Content-Type: multipart/encrypted;\r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\";\r\n",
                 " protocol=\"application/pgp-encrypted\"\r\n",
                 "\r\n",
                 "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
@@ -582,8 +582,8 @@ mod test {
         assert_eq!(
             String::from_utf8(part.formatted()).unwrap(),
             concat!(
-                "Content-Type: multipart/signed; \r\n",
-                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"; \r\n",
+                "Content-Type: multipart/signed;\r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\";\r\n",
                 " protocol=\"application/pgp-signature\";",
                 " micalg=\"pgp-sha256\"\r\n",
                 "\r\n",
@@ -624,7 +624,7 @@ mod test {
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/alternative; \r\n",
+                   concat!("Content-Type: multipart/alternative;\r\n",
                            " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
                            "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
@@ -662,11 +662,11 @@ mod test {
                              .body(String::from("int main() { return 0; }")));
 
         assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed; \r\n",
+                   concat!("Content-Type: multipart/mixed;\r\n",
                            " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
                            "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: multipart/related; \r\n",
+                           "Content-Type: multipart/related;\r\n",
                            " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
                            "\r\n",
                            "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",

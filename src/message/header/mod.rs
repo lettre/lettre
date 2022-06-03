@@ -3,9 +3,11 @@
 use std::{
     borrow::Cow,
     error::Error,
-    fmt::{self, Display, Formatter},
+    fmt::{self, Display, Formatter, Write},
     ops::Deref,
 };
+
+use email_encoding::headers::EmailWriter;
 
 pub use self::{
     content::*,
@@ -315,55 +317,36 @@ impl HeaderValue {
     }
 }
 
-const ENCODING_START_PREFIX: &str = "=?utf-8?b?";
-const ENCODING_END_SUFFIX: &str = "?=";
-const MAX_LINE_LEN: usize = 76;
-
 /// [RFC 1522](https://tools.ietf.org/html/rfc1522) header value encoder
-struct HeaderValueEncoder {
-    line_len: usize,
+struct HeaderValueEncoder<'a> {
+    writer: EmailWriter<'a>,
     encode_buf: String,
 }
 
-impl HeaderValueEncoder {
-    fn encode(name: &str, value: &str, f: &mut impl fmt::Write) -> fmt::Result {
-        let (words_iter, encoder) = Self::new(name, value);
-        encoder.format(words_iter, f)
+impl<'a> HeaderValueEncoder<'a> {
+    fn encode(name: &str, value: &'a str, f: &'a mut impl fmt::Write) -> fmt::Result {
+        let (words_iter, encoder) = Self::new(name, value, f);
+        encoder.format(words_iter)
     }
 
-    fn new<'a>(name: &str, value: &'a str) -> (WordsPlusFillIterator<'a>, Self) {
+    fn new(
+        name: &str,
+        value: &'a str,
+        writer: &'a mut dyn Write,
+    ) -> (WordsPlusFillIterator<'a>, Self) {
+        let line_len = name.len() + ": ".len();
+        let writer = EmailWriter::new(writer, line_len, false);
+
         (
             WordsPlusFillIterator { s: value },
             Self {
-                line_len: name.len() + ": ".len(),
+                writer,
                 encode_buf: String::new(),
             },
         )
     }
 
-    fn format(
-        mut self,
-        words_iter: WordsPlusFillIterator<'_>,
-        f: &mut impl fmt::Write,
-    ) -> fmt::Result {
-        /// Estimate if an encoded string of `len` would fix in an empty line
-        fn would_fit_new_line(len: usize) -> bool {
-            len < (MAX_LINE_LEN - " ".len())
-        }
-
-        /// Estimate how long a string of `len` would be after base64 encoding plus
-        /// adding the encoding prefix and suffix to it
-        fn base64_len(len: usize) -> usize {
-            ENCODING_START_PREFIX.len() + (len * 4 / 3 + 4) + ENCODING_END_SUFFIX.len()
-        }
-
-        /// Estimate how many more bytes we can fit in the current line
-        fn available_len_to_max_encode_len(len: usize) -> usize {
-            len.saturating_sub(
-                ENCODING_START_PREFIX.len() + (len * 3 / 4 + 4) + ENCODING_END_SUFFIX.len(),
-            )
-        }
-
+    fn format(mut self, words_iter: WordsPlusFillIterator<'_>) -> fmt::Result {
         for next_word in words_iter {
             let allowed = allowed_str(next_word);
 
@@ -371,161 +354,64 @@ impl HeaderValueEncoder {
                 // This word only contains allowed characters
 
                 // the next word is allowed, but we may have accumulated some words to encode
-                self.flush_encode_buf(f, true)?;
+                self.flush_encode_buf()?;
 
-                if next_word.len() > self.remaining_line_len() {
-                    // not enough space left on this line to encode word
-
-                    if self.something_written_to_this_line() && would_fit_new_line(next_word.len())
-                    {
-                        // word doesn't fit this line, but something had already been written to it,
-                        // and word would fit the next line, so go to a new line
-                        // so go to new line
-                        self.new_line(f)?;
-                    } else {
-                        // word neither fits this line and the next one, cut it
-                        // in the middle and make it fit
-
-                        let mut next_word = next_word;
-
-                        while !next_word.is_empty() {
-                            if self.remaining_line_len() == 0 {
-                                self.new_line(f)?;
-                            }
-
-                            let len = self.remaining_line_len().min(next_word.len());
-                            let first_part = &next_word[..len];
-                            next_word = &next_word[len..];
-
-                            f.write_str(first_part)?;
-                            self.line_len += first_part.len();
-                        }
-
-                        continue;
-                    }
-                }
-
-                // word fits, write it!
-                f.write_str(next_word)?;
-                self.line_len += next_word.len();
+                self.writer.folding().write_str(next_word)?;
             } else {
                 // This word contains unallowed characters
-
-                if self.remaining_line_len() >= base64_len(self.encode_buf.len() + next_word.len())
-                {
-                    // next_word fits
-                    self.encode_buf.push_str(next_word);
-                    continue;
-                }
-
-                // next_word doesn't fit this line
-
-                if would_fit_new_line(base64_len(next_word.len())) {
-                    // ...but it would fit the next one
-
-                    self.flush_encode_buf(f, false)?;
-                    self.new_line(f)?;
-
-                    self.encode_buf.push_str(next_word);
-                    continue;
-                }
-
-                // ...and also wouldn't fit the next one.
-                // chop it up into pieces
-
-                let mut next_word = next_word;
-
-                while !next_word.is_empty() {
-                    let mut len = available_len_to_max_encode_len(self.remaining_line_len())
-                        .min(next_word.len());
-
-                    if len == 0 {
-                        self.flush_encode_buf(f, false)?;
-                        self.new_line(f)?;
-                    }
-
-                    // avoid slicing on a char boundary
-                    while !next_word.is_char_boundary(len) {
-                        len += 1;
-                    }
-                    let first_part = &next_word[..len];
-                    next_word = &next_word[len..];
-
-                    self.encode_buf.push_str(first_part);
-                }
+                self.encode_buf.push_str(next_word);
             }
         }
 
-        self.flush_encode_buf(f, false)?;
+        self.flush_encode_buf()?;
 
         Ok(())
     }
 
-    /// Returns the number of bytes left for the current line
-    fn remaining_line_len(&self) -> usize {
-        MAX_LINE_LEN - self.line_len
-    }
-
-    /// Returns true if something has been written to the current line
-    fn something_written_to_this_line(&self) -> bool {
-        self.line_len > 1
-    }
-
-    fn flush_encode_buf(
-        &mut self,
-        f: &mut impl fmt::Write,
-        switching_to_allowed: bool,
-    ) -> fmt::Result {
+    fn flush_encode_buf(&mut self) -> fmt::Result {
         if self.encode_buf.is_empty() {
             // nothing to encode
             return Ok(());
         }
 
-        let mut write_after = None;
+        // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
+        let first_not_allowed = self
+            .encode_buf
+            .bytes()
+            .enumerate()
+            .find(|(_i, c)| !allowed_char(*c))
+            .map(|(i, _)| i);
+        // May as well also write the tail in plain text.
+        let last_not_allowed = self
+            .encode_buf
+            .bytes()
+            .enumerate()
+            .rev()
+            .find(|(_i, c)| !allowed_char(*c))
+            .map(|(i, _)| i + 1);
 
-        if switching_to_allowed {
-            // If the next word only contains allowed characters, and the string to encode
-            // ends with a space, take the space out of the part to encode
+        let (prefix, to_encode, suffix) = match first_not_allowed {
+            Some(first_not_allowed) => {
+                let last_not_allowed = last_not_allowed.unwrap();
 
-            let last_char = self.encode_buf.pop().expect("self.encode_buf isn't empty");
-            if is_space_like(last_char) {
-                write_after = Some(last_char);
-            } else {
-                self.encode_buf.push(last_char);
+                let (remaining, suffix) = self.encode_buf.split_at(last_not_allowed);
+                let (prefix, to_encode) = remaining.split_at(first_not_allowed);
+
+                (prefix, to_encode, suffix)
             }
-        }
+            None => ("", self.encode_buf.as_str(), ""),
+        };
 
-        f.write_str(ENCODING_START_PREFIX)?;
-        let encoded = base64::display::Base64Display::with_config(
-            self.encode_buf.as_bytes(),
-            base64::STANDARD,
-        );
-        write!(f, "{}", encoded)?;
-        f.write_str(ENCODING_END_SUFFIX)?;
-
-        self.line_len += ENCODING_START_PREFIX.len();
-        self.line_len += self.encode_buf.len() * 4 / 3 + 4;
-        self.line_len += ENCODING_END_SUFFIX.len();
-
-        if let Some(write_after) = write_after {
-            f.write_char(write_after)?;
-            self.line_len += 1;
-        }
+        self.writer.folding().write_str(prefix)?;
+        email_encoding::headers::rfc2047::encode(to_encode, &mut self.writer)?;
+        self.writer.folding().write_str(suffix)?;
 
         self.encode_buf.clear();
         Ok(())
     }
-
-    fn new_line(&mut self, f: &mut impl fmt::Write) -> fmt::Result {
-        f.write_str("\r\n ")?;
-        self.line_len = 1;
-
-        Ok(())
-    }
 }
 
-/// Iterator yielding a string split space by space, but including all space
-/// characters between it and the next word
+/// Iterator yielding a string split by space, but spaces are included before the next word.
 struct WordsPlusFillIterator<'a> {
     s: &'a str,
 }
@@ -540,31 +426,25 @@ impl<'a> Iterator for WordsPlusFillIterator<'a> {
 
         let next_word = self
             .s
-            .char_indices()
+            .bytes()
+            .enumerate()
             .skip(1)
-            .skip_while(|&(_i, c)| !is_space_like(c))
-            .find(|&(_i, c)| !is_space_like(c))
-            .map(|(i, _)| i);
+            .find(|&(_i, c)| c == b' ')
+            .map(|(i, _)| i)
+            .unwrap_or(self.s.len());
 
-        let word = &self.s[..next_word.unwrap_or(self.s.len())];
+        let word = &self.s[..next_word];
         self.s = &self.s[word.len()..];
         Some(word)
     }
 }
 
-const fn is_space_like(c: char) -> bool {
-    c == ',' || c == ' '
-}
-
 fn allowed_str(s: &str) -> bool {
-    s.chars().all(allowed_char)
+    s.bytes().all(allowed_char)
 }
 
-const fn allowed_char(c: char) -> bool {
-    c >= 1 as char && c <= 9 as char
-        || c == 11 as char
-        || c == 12 as char
-        || c >= 14 as char && c <= 127 as char
+const fn allowed_char(c: u8) -> bool {
+    c >= 1 && c <= 9 || c == 11 || c == 12 || c >= 14 && c <= 127
 }
 
 #[cfg(test)]
@@ -654,8 +534,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "To: Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith \r\n",
-                " <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand \r\n",
+                "To: Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith\r\n",
+                " <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand\r\n",
                 " <jemand@example.com>, Jean Dupont <jean@example.com>\r\n"
             )
         );
@@ -672,8 +552,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: Hello! This is lettre, and this \r\n ",
-                "IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I \r\n",
+                "Subject: Hello! This is lettre, and this\r\n",
+                " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I\r\n",
                 " guess that's it!\r\n"
             )
         );
@@ -691,8 +571,9 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoY\r\n",
-                " ouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know\r\n",
+                "Subject: Hello!\r\n",
+                " IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoYouThinkItsGoingToHappenIGuessWereAboutToFindOut!\r\n",
+                " I don't know\r\n",
             )
         );
     }
@@ -707,11 +588,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            concat!(
-                "Subject: 1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijkl\r\n",
-                " mnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdef\r\n",
-                " ghijklmnopqrstuvwxyz\r\n",
-            )
+            "Subject: 1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijklmnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdefghijklmnopqrstuvwxyz\r\n",
         );
     }
 
@@ -725,7 +602,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "To: =?utf-8?b?U2XDoW4=?= <sean@example.com>\r\n"
+            "To: Se=?utf-8?b?w6E=?=n <sean@example.com>\r\n"
         );
     }
 
@@ -754,11 +631,11 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= \r\n",
-                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyIA==?=\r\n",
-                " =?utf-8?b?0JjQstCw0L0g0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
-                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, \r\n",
-                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n"
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
+                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
+                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
+                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
             )
         );
     }
@@ -774,7 +651,14 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "Subject: =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz?=\r\n"
+            concat!(
+                "Subject: =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz?=\r\n",
+                " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbM=?=\r\n",
+                " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbM=?=\r\n",
+                " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbM=?=\r\n",
+                " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbM=?=\r\n",
+                " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+lsw==?=\r\n"
+            )
         );
     }
 
@@ -819,14 +703,14 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: Hello! This is lettre, and this \r\n",
-                " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I \r\n",
+                "Subject: Hello! This is lettre, and this\r\n",
+                " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I\r\n",
                 " guess that's it!\r\n",
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= \r\n",
-                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyIA==?=\r\n",
-                " =?utf-8?b?0JjQstCw0L0g0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
-                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, \r\n",
-                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
+                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
+                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
+                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )
@@ -844,8 +728,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go; \r\n",
-                " =?utf-8?b?Ozs7OztzOzs7Ozs7Ozs7Ozs7Ozs7O2ZmZmVpbm1qZ2dnZ2dnZ2dn772G44Gj?=\r\n"
+                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go;\r\n",
+                " ;;;;;s;;;;;;;;;;;;;;;;fffeinmjggggggggg=?utf-8?b?772G44Gj?=\r\n"
             )
         );
     }
