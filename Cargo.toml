@@ -30,7 +30,7 @@ fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
 regex = { version = "1", default-features = false, features = ["std", "unicode-case"] }
-email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "7b4fdf44a6e8715753d9012317c019271bcbc431", optional = true }
+email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "ac7ab8630b8d012ade63869c89b2855e27b3ce7a", optional = true }
 
 # file transport
 uuid = { version = "1", features = ["v4"], optional = true }
@@ -88,7 +88,7 @@ name = "transport_smtp"
 
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
-builder = ["httpdate", "mime", "base64", "fastrand", "quoted_printable", "email-encoding"]
+builder = ["httpdate", "mime", "fastrand", "quoted_printable", "email-encoding"]
 mime03 = ["mime"]
 
 # transports
@@ -109,7 +109,7 @@ tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 
-dkim = ["sha2", "rsa", "ed25519-dalek"]
+dkim = ["base64", "sha2", "rsa", "ed25519-dalek"]
 
 [package.metadata.docs.rs]
 all-features = true
