@@ -10,8 +10,6 @@ use std::{
 
 use email_address::EmailAddress;
 use idna::domain_to_ascii;
-use once_cell::sync::Lazy;
-use regex::Regex;
 
 /// Represents an email address with a user and a domain name.
 ///
@@ -55,9 +53,6 @@ pub struct Address {
     /// Index into `serialized` before the '@'
     at_start: usize,
 }
-
-// literal form, ipv4 or ipv6 address (SMTP 4.1.3)
-static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\]\z").unwrap());
 
 impl Address {
     /// Creates a new email address from a user and domain.
@@ -132,16 +127,19 @@ impl Address {
     }
 
     fn check_domain_ascii(domain: &str) -> Result<(), AddressError> {
+        // Domain
         if EmailAddress::is_valid_domain(domain) {
             return Ok(());
         }
 
-        if let Some(caps) = LITERAL_RE.captures(domain) {
-            if let Some(cap) = caps.get(1) {
-                if cap.as_str().parse::<IpAddr>().is_ok() {
-                    return Ok(());
-                }
-            }
+        // IP
+        let ip = domain
+            .strip_prefix('[')
+            .and_then(|ip| ip.strip_suffix(']'))
+            .unwrap_or(domain);
+
+        if ip.parse::<IpAddr>().is_ok() {
+            return Ok(());
         }
 
         Err(AddressError::InvalidDomain)
@@ -259,7 +257,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_address() {
+    fn ascii_address() {
         let addr_str = "something@example.com";
         let addr = Address::from_str(addr_str).unwrap();
         let addr2 = Address::new("something", "example.com").unwrap();
@@ -268,7 +266,34 @@ mod tests {
         assert_eq!(addr.domain(), "example.com");
         assert_eq!(addr2.user(), "something");
         assert_eq!(addr2.domain(), "example.com");
+    }
 
+    #[test]
+    fn ascii_address_ipv4() {
+        let addr_str = "something@1.1.1.1";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("something", "1.1.1.1").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "1.1.1.1");
+        assert_eq!(addr2.user(), "something");
+        assert_eq!(addr2.domain(), "1.1.1.1");
+    }
+
+    #[test]
+    fn ascii_address_ipv6() {
+        let addr_str = "something@[2606:4700:4700::1111]";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("something", "[2606:4700:4700::1111]").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "[2606:4700:4700::1111]");
+        assert_eq!(addr2.user(), "something");
+        assert_eq!(addr2.domain(), "[2606:4700:4700::1111]");
+    }
+
+    #[test]
+    fn check_parts() {
         assert!(Address::check_user("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").is_err());
         assert!(
             Address::check_domain("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com").is_err()
