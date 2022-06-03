@@ -29,7 +29,7 @@ mime = { version = "0.3.4", optional = true }
 fastrand = { version = "1.4", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
-email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "7b4fdf44a6e8715753d9012317c019271bcbc431", optional = true }
+email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "ac7ab8630b8d012ade63869c89b2855e27b3ce7a", optional = true }
 
 # file transport
 uuid = { version = "1", features = ["v4"], optional = true }
