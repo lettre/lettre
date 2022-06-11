@@ -226,7 +226,7 @@ fn check_address(val: &str) -> Result<usize, AddressError> {
     Ok(user.len())
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 /// Errors in email addresses parsing
 pub enum AddressError {
     /// Missing domain or user

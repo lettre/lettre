@@ -96,9 +96,9 @@ impl Display for DkimSigningKeyError {
 impl StdError for DkimSigningKeyError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         Some(match &self.0 {
-            InnerDkimSigningKeyError::Base64(err) => &*err,
-            InnerDkimSigningKeyError::Rsa(err) => &*err,
-            InnerDkimSigningKeyError::Ed25519(err) => &*err,
+            InnerDkimSigningKeyError::Base64(err) => err,
+            InnerDkimSigningKeyError::Rsa(err) => err,
+            InnerDkimSigningKeyError::Ed25519(err) => err,
         })
     }
 }
@@ -245,7 +245,7 @@ fn dkim_canonicalize_headers_relaxed(headers: &str) -> String {
     let mut r = String::with_capacity(headers.len());
 
     fn skip_whitespace(h: &str) -> &str {
-        match h.as_bytes().get(0) {
+        match h.as_bytes().first() {
             Some(b' ' | b'\t') => skip_whitespace(&h[1..]),
             _ => h,
         }

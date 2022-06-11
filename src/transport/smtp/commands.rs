@@ -13,7 +13,7 @@ use crate::{
 };
 
 /// EHLO command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Ehlo {
     client_id: ClientId,
@@ -33,7 +33,7 @@ impl Ehlo {
 }
 
 /// STARTTLS command
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Starttls;
 
@@ -44,7 +44,7 @@ impl Display for Starttls {
 }
 
 /// MAIL command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Mail {
     sender: Option<Address>,
@@ -73,7 +73,7 @@ impl Mail {
 }
 
 /// RCPT command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rcpt {
     recipient: Address,
@@ -101,7 +101,7 @@ impl Rcpt {
 }
 
 /// DATA command
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Data;
 
@@ -112,7 +112,7 @@ impl Display for Data {
 }
 
 /// QUIT command
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Quit;
 
@@ -123,7 +123,7 @@ impl Display for Quit {
 }
 
 /// NOOP command
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Noop;
 
@@ -134,7 +134,7 @@ impl Display for Noop {
 }
 
 /// HELP command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Help {
     argument: Option<String>,
@@ -158,7 +158,7 @@ impl Help {
 }
 
 /// VRFY command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Vrfy {
     argument: String,
@@ -178,7 +178,7 @@ impl Vrfy {
 }
 
 /// EXPN command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Expn {
     argument: String,
@@ -198,7 +198,7 @@ impl Expn {
 }
 
 /// RSET command
-#[derive(PartialEq, Clone, Debug, Copy)]
+#[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Rset;
 
@@ -209,7 +209,7 @@ impl Display for Rset {
 }
 
 /// AUTH command
-#[derive(PartialEq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Auth {
     mechanism: Mechanism,

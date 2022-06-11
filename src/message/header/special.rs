@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MimeVersion {
     major: u8,
     minor: u8,

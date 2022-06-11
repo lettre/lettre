@@ -109,7 +109,6 @@ impl Executor for Tokio1Executor {
     #[cfg(feature = "smtp-transport")]
     type Sleep = tokio1_crate::time::Sleep;
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     fn spawn<F>(fut: F) -> Self::Handle
     where
@@ -119,13 +118,11 @@ impl Executor for Tokio1Executor {
         tokio1_crate::spawn(fut)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     fn sleep(duration: Duration) -> Self::Sleep {
         tokio1_crate::time::sleep(duration)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     async fn connect(
         hostname: &str,
@@ -166,13 +163,11 @@ impl Executor for Tokio1Executor {
         Ok(conn)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "file-transport-envelope")]
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
         tokio1_crate::fs::read(path).await
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "file-transport")]
     async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()> {
         tokio1_crate::fs::write(path, contents).await
@@ -210,7 +205,6 @@ impl Executor for AsyncStd1Executor {
     #[cfg(feature = "smtp-transport")]
     type Sleep = BoxFuture<'static, ()>;
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     fn spawn<F>(fut: F) -> Self::Handle
     where
@@ -220,14 +214,12 @@ impl Executor for AsyncStd1Executor {
         async_std::task::spawn(fut)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     fn sleep(duration: Duration) -> Self::Sleep {
         let fut = async move { async_std::task::sleep(duration).await };
         Box::pin(fut)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
     async fn connect(
         hostname: &str,
@@ -267,13 +259,11 @@ impl Executor for AsyncStd1Executor {
         Ok(conn)
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "file-transport-envelope")]
     async fn fs_read(path: &Path) -> IoResult<Vec<u8>> {
         async_std::fs::read(path).await
     }
 
-    #[doc(hidden)]
     #[cfg(feature = "file-transport")]
     async fn fs_write(path: &Path, contents: &[u8]) -> IoResult<()> {
         async_std::fs::write(path, contents).await
