@@ -243,21 +243,22 @@ impl MessageBuilder {
         }
     }
 
-    /// Set custom header to message
-    pub fn header<H: Header>(mut self, header: H) -> Self {
-        self.headers.set(header);
-        self
+    /// Set or add mailbox to `From` header
+    ///
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
+    ///
+    /// Shortcut for `self.mailbox(header::From(mbox))`.
+    pub fn from(self, mbox: Mailbox) -> Self {
+        self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
 
-    /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
-        match self.headers.get::<H>() {
-            Some(mut header_) => {
-                header_.join_mailboxes(header);
-                self.header(header_)
-            }
-            None => self.header(header),
-        }
+    /// Set `Sender` header. Should be used when providing several `From` mailboxes.
+    ///
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
+    ///
+    /// Shortcut for `self.header(header::Sender(mbox))`.
+    pub fn sender(self, mbox: Mailbox) -> Self {
+        self.header(header::Sender::from(mbox))
     }
 
     /// Add `Date` header to message
@@ -273,41 +274,6 @@ impl MessageBuilder {
     /// if no date has been provided.
     pub fn date_now(self) -> Self {
         self.date(SystemTime::now())
-    }
-
-    /// Set `Subject` header to message
-    ///
-    /// Shortcut for `self.header(header::Subject(subject.into()))`.
-    pub fn subject<S: Into<String>>(self, subject: S) -> Self {
-        let s: String = subject.into();
-        self.header(header::Subject::from(s))
-    }
-
-    /// Set `MIME-Version` header to 1.0
-    ///
-    /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
-    ///
-    /// Not exposed as it is set by body methods
-    fn mime_1_0(self) -> Self {
-        self.header(header::MIME_VERSION_1_0)
-    }
-
-    /// Set `Sender` header. Should be used when providing several `From` mailboxes.
-    ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
-    ///
-    /// Shortcut for `self.header(header::Sender(mbox))`.
-    pub fn sender(self, mbox: Mailbox) -> Self {
-        self.header(header::Sender::from(mbox))
-    }
-
-    /// Set or add mailbox to `From` header
-    ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
-    ///
-    /// Shortcut for `self.mailbox(header::From(mbox))`.
-    pub fn from(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
 
     /// Set or add mailbox to `ReplyTo` header
@@ -352,6 +318,14 @@ impl MessageBuilder {
         self.header(header::References::from(id))
     }
 
+    /// Set `Subject` header to message
+    ///
+    /// Shortcut for `self.header(header::Subject(subject.into()))`.
+    pub fn subject<S: Into<String>>(self, subject: S) -> Self {
+        let s: String = subject.into();
+        self.header(header::Subject::from(s))
+    }
+
     /// Set [Message-ID
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     ///
@@ -383,6 +357,23 @@ impl MessageBuilder {
     /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
     pub fn user_agent(self, id: String) -> Self {
         self.header(header::UserAgent::from(id))
+    }
+
+    /// Set custom header to message
+    pub fn header<H: Header>(mut self, header: H) -> Self {
+        self.headers.set(header);
+        self
+    }
+
+    /// Add mailbox to header
+    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
+        match self.headers.get::<H>() {
+            Some(mut header_) => {
+                header_.join_mailboxes(header);
+                self.header(header_)
+            }
+            None => self.header(header),
+        }
     }
 
     /// Force specific envelope (by default it is derived from headers)
@@ -454,6 +445,15 @@ impl MessageBuilder {
     /// Create message using mime body ([`SinglePart`][self::SinglePart])
     pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
         self.mime_1_0().build(MessageBody::Mime(Part::Single(part)))
+    }
+
+    /// Set `MIME-Version` header to 1.0
+    ///
+    /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
+    ///
+    /// Not exposed as it is set by body methods
+    fn mime_1_0(self) -> Self {
+        self.header(header::MIME_VERSION_1_0)
     }
 }
 
