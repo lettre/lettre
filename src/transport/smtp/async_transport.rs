@@ -198,6 +198,9 @@ where
 {
     fn clone(&self) -> Self {
         Self {
+            #[cfg(feature = "pool")]
+            inner: Arc::clone(&self.inner),
+            #[cfg(not(feature = "pool"))]
             inner: self.inner.clone(),
         }
     }

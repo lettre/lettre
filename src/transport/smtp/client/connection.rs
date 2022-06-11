@@ -12,7 +12,7 @@ use crate::{
     address::Envelope,
     transport::smtp::{
         authentication::{Credentials, Mechanism},
-        commands::*,
+        commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},

@@ -158,14 +158,14 @@ impl<E: Executor> Pool<E> {
                     #[cfg(feature = "tracing")]
                     tracing::debug!("reusing a pooled connection");
 
-                    return Ok(PooledConnection::wrap(conn, self.clone()));
+                    return Ok(PooledConnection::wrap(conn, Arc::clone(self)));
                 }
                 None => {
                     #[cfg(feature = "tracing")]
                     tracing::debug!("creating a new connection");
 
                     let conn = self.client.connection().await?;
-                    return Ok(PooledConnection::wrap(conn, self.clone()));
+                    return Ok(PooledConnection::wrap(conn, Arc::clone(self)));
                 }
             }
         }
