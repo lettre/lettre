@@ -14,7 +14,7 @@ pub trait MailboxesHeader {
 macro_rules! mailbox_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $type_name(Mailbox);
 
         impl Header for $type_name {
@@ -56,7 +56,7 @@ macro_rules! mailbox_header {
 macro_rules! mailboxes_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $type_name(pub(crate) Mailboxes);
 
         impl MailboxesHeader for $type_name {

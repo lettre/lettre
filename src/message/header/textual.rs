@@ -4,7 +4,7 @@ use crate::BoxError;
 macro_rules! text_header {
     ($(#[$attr:meta])* Header($type_name: ident, $header_name: expr )) => {
         $(#[$attr])*
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $type_name(String);
 
         impl Header for $type_name {

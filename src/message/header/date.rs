@@ -8,7 +8,7 @@ use crate::BoxError;
 /// Message `Date` header
 ///
 /// Defined in [RFC2822](https://tools.ietf.org/html/rfc2822#section-3.3)
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Date(HttpDate);
 
 impl Date {
