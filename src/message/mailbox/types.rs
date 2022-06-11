@@ -315,20 +315,24 @@ impl From<Mailboxes> for Vec<Mailbox> {
     }
 }
 
+impl FromIterator<Mailbox> for Mailboxes {
+    fn from_iter<T: IntoIterator<Item = Mailbox>>(iter: T) -> Self {
+        Self(Vec::from_iter(iter))
+    }
+}
+
+impl Extend<Mailbox> for Mailboxes {
+    fn extend<T: IntoIterator<Item = Mailbox>>(&mut self, iter: T) {
+        self.0.extend(iter);
+    }
+}
+
 impl IntoIterator for Mailboxes {
     type Item = Mailbox;
     type IntoIter = ::std::vec::IntoIter<Mailbox>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
-    }
-}
-
-impl Extend<Mailbox> for Mailboxes {
-    fn extend<T: IntoIterator<Item = Mailbox>>(&mut self, iter: T) {
-        for elem in iter {
-            self.0.push(elem);
-        }
     }
 }
 
