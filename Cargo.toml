@@ -54,12 +54,12 @@ futures-util = { version = "0.3.7", default-features = false, features = ["io"],
 async-trait = { version = "0.1", optional = true }
 
 ## async-std
-async-std = { version = "1.8", optional = true, features = ["unstable"] }
+async-std = { version = "1.8", optional = true }
 #async-native-tls = { version = "0.3.3", optional = true }
 futures-rustls = { version = "0.22", optional = true }
 
 ## tokio
-tokio1_crate = { package = "tokio", version = "1", features = ["fs", "rt", "process", "time", "net", "io-util"], optional = true }
+tokio1_crate = { package = "tokio", version = "1", optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.23", optional = true }
 tokio1_boring = { package = "tokio-boring", version = "2.1.4", optional = true }
@@ -94,10 +94,10 @@ builder = ["httpdate", "mime", "fastrand", "quoted_printable", "email-encoding"]
 mime03 = ["mime"]
 
 # transports
-file-transport = ["uuid"]
+file-transport = ["uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
 file-transport-envelope = ["serde", "serde_json", "file-transport"]
-sendmail-transport = []
-smtp-transport = ["base64", "nom", "socket2", "once_cell"]
+sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
+smtp-transport = ["base64", "nom", "socket2", "once_cell", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
 pool = ["futures-util"]
 
