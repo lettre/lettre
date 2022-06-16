@@ -279,15 +279,13 @@ impl SpawnHandle for async_std::task::JoinHandle<()> {
 }
 
 mod private {
-    use super::*;
-
     pub trait Sealed {}
 
     #[cfg(feature = "tokio1")]
-    impl Sealed for Tokio1Executor {}
+    impl Sealed for super::Tokio1Executor {}
 
     #[cfg(feature = "async-std1")]
-    impl Sealed for AsyncStd1Executor {}
+    impl Sealed for super::AsyncStd1Executor {}
 
     #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
     impl Sealed for tokio1_crate::task::JoinHandle<()> {}

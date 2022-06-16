@@ -2,6 +2,7 @@ use std::{
     io::{self, Read, Write},
     mem,
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
+    sync::Arc,
     time::Duration,
 };
 
@@ -175,8 +176,8 @@ impl NetworkStream {
             InnerTlsParameters::RustlsTls(connector) => {
                 let domain = ServerName::try_from(tls_parameters.domain())
                     .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-                let connection =
-                    ClientConnection::new(connector.clone(), domain).map_err(error::connection)?;
+                let connection = ClientConnection::new(Arc::clone(connector), domain)
+                    .map_err(error::connection)?;
                 let stream = StreamOwned::new(connection, tcp_stream);
                 InnerNetworkStream::RustlsTls(stream)
             }
