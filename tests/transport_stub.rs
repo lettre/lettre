@@ -18,7 +18,7 @@ mod sync {
         sender_ok.send(&email).unwrap();
         sender_ko.send(&email).unwrap_err();
 
-        let expected_messages = vec![(
+        let expected_messages = [(
             email.envelope().clone(),
             String::from_utf8(email.formatted()).unwrap(),
         )];
@@ -47,7 +47,7 @@ mod tokio_1 {
         sender_ok.send(email.clone()).await.unwrap();
         sender_ko.send(email.clone()).await.unwrap_err();
 
-        let expected_messages = vec![(
+        let expected_messages = [(
             email.envelope().clone(),
             String::from_utf8(email.formatted()).unwrap(),
         )];
@@ -75,7 +75,7 @@ mod asyncstd_1 {
         sender_ok.send(email.clone()).await.unwrap();
         sender_ko.send(email.clone()).await.unwrap_err();
 
-        let expected_messages = vec![(
+        let expected_messages = [(
             email.envelope().clone(),
             String::from_utf8(email.formatted()).unwrap(),
         )];
