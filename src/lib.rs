@@ -112,7 +112,21 @@
     unused_import_braces,
     rust_2018_idioms,
     clippy::string_add,
-    clippy::string_add_assign
+    clippy::string_add_assign,
+    clippy::clone_on_ref_ptr,
+    clippy::verbose_file_reads,
+    clippy::unnecessary_self_imports,
+    clippy::string_to_string,
+    clippy::mem_forget,
+    clippy::cast_lossless,
+    clippy::inefficient_to_string,
+    clippy::inline_always,
+    clippy::linkedlist,
+    clippy::macro_use_imports,
+    clippy::manual_assert,
+    clippy::unnecessary_join,
+    clippy::wildcard_imports,
+    clippy::zero_sized_map_values
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

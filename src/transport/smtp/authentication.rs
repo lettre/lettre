@@ -99,11 +99,11 @@ impl Mechanism {
                     .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
                 if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
-                    return Ok(credentials.authentication_identity.to_string());
+                    return Ok(credentials.authentication_identity.clone());
                 }
 
                 if vec!["Password", "Password:"].contains(&decoded_challenge) {
-                    return Ok(credentials.secret.to_string());
+                    return Ok(credentials.secret.clone());
                 }
 
                 Err(error::client("Unrecognized challenge"))
