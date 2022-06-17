@@ -74,6 +74,7 @@ email_address = { version = "0.2.1", default-features = false }
 [dev-dependencies]
 pretty_assertions = "1"
 criterion = "0.3"
+tracing = { version = "0.1.16", default-features = false, features = ["std"] }
 tracing-subscriber = "0.3"
 glob = "0.3"
 walkdir = "2"
@@ -114,6 +115,10 @@ dkim = ["base64", "sha2", "rsa", "ed25519-dalek", "regex", "once_cell"]
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs", "--cfg", "lettre_ignore_tls_mismatch"]
+
+[[example]]
+name = "autoconfigure"
+required-features = ["smtp-transport", "native-tls"]
 
 [[example]]
 name = "basic_html"

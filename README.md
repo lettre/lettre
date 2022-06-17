@@ -101,6 +101,14 @@ match mailer.send(&email) {
 }
 ```
 
+## Not sure of which connect options to use?
+
+Clone the lettre git repository and run the following command (replacing `SMTP_HOST` with your SMTP server's hostname)
+
+```shell
+cargo run --example autoconfigure SMTP_HOST
+```
+
 ## Testing
 
 The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed 
