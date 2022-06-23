@@ -21,15 +21,15 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 idna = "0.2"
 once_cell = { version = "1", optional = true }
-tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
+tracing = { version = "0.1.35", default-features = false, features = ["std"], optional = true } # feature
 
 # builder
 httpdate = { version = "1", optional = true }
-mime = { version = "0.3.4", optional = true }
-fastrand = { version = "1.4", optional = true }
+mime = { version = "0.3.16", optional = true }
+fastrand = { version = "1.7", optional = true }
 quoted_printable = { version = "0.4", optional = true }
 base64 = { version = "0.13", optional = true }
-email-encoding = { version = "0.1.1", optional = true }
+email-encoding = { version = "0.1.2", optional = true }
 
 # file transport
 uuid = { version = "1", features = ["v4"], optional = true }
@@ -48,12 +48,12 @@ rustls-pemfile = { version = "1", optional = true }
 webpki-roots = { version = "0.22", optional = true }
 
 # async
-futures-io = { version = "0.3.7", optional = true }
-futures-util = { version = "0.3.7", default-features = false, features = ["io"], optional = true }
+futures-io = { version = "0.3.21", optional = true }
+futures-util = { version = "0.3.21", default-features = false, features = ["io"], optional = true }
 async-trait = { version = "0.1", optional = true }
 
 ## async-std
-async-std = { version = "1.8", optional = true, features = ["unstable"] }
+async-std = { version = "1.12", optional = true, features = ["unstable"] }
 #async-native-tls = { version = "0.3.3", optional = true }
 futures-rustls = { version = "0.22", optional = true }
 
@@ -64,7 +64,7 @@ tokio1_rustls = { package = "tokio-rustls", version = "0.23", optional = true }
 
 ## dkim
 sha2 = { version = "0.10", optional = true }
-rsa = { version = "0.6.0", optional = true }
+rsa = { version = "0.6.1", optional = true }
 ed25519-dalek = { version = "1.0.1", optional = true }
 regex = { version = "1", default-features = false, features = ["std"], optional = true }
 
@@ -74,12 +74,12 @@ email_address = { version = "0.2.1", default-features = false }
 [dev-dependencies]
 pretty_assertions = "1"
 criterion = "0.3"
-tracing = { version = "0.1.16", default-features = false, features = ["std"] }
+tracing = { version = "0.1.35", default-features = false, features = ["std"] }
 tracing-subscriber = "0.3"
 glob = "0.3"
 walkdir = "2"
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
-async-std = { version = "1.8", features = ["attributes"] }
+async-std = { version = "1.12", features = ["attributes"] }
 serde_json = "1"
 maud = "0.23"
 
