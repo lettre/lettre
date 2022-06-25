@@ -4,15 +4,8 @@
 //!
 //! This section demonstrates how to build messages.
 //!
-//! <!--
-//! style for <details><summary>Blablabla</summary> Lots of stuff</details>
-//! borrowed from https://docs.rs/time/0.2.23/src/time/lib.rs.html#49-54
-//! -->
 //! <style>
 //! summary, details:not([open]) { cursor: pointer; }
-//! summary { display: list-item; }
-//! summary::marker { content: '▶ '; }
-//! details[open] summary::marker { content: '▼ '; }
 //! </style>
 //!
 //!
@@ -63,7 +56,7 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Message, MultiPart, Part, SinglePart};
+//! use lettre::message::{header, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let m = Message::builder()
@@ -71,21 +64,10 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
-//!     .multipart(
-//!         MultiPart::alternative()
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_PLAIN)
-//!                     .body(String::from("Hello, world! :)")),
-//!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_HTML)
-//!                     .body(String::from(
-//!                         "<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>",
-//!                     )),
-//!             ),
-//!     )?;
+//!     .multipart(MultiPart::alternative_plain_html(
+//!         String::from("Hello, world! :)"),
+//!         String::from("<p><b>Hello</b>, <i>world</i>! <img src=\"cid:123\"></p>"),
+//!     ))?;
 //! # Ok(())
 //! # }
 //! ```
@@ -124,8 +106,9 @@
 //!
 //! ```rust
 //! # use std::error::Error;
-//! use lettre::message::{header, Body, Message, MultiPart, Part, SinglePart};
 //! use std::fs;
+//!
+//! use lettre::message::{header, Attachment, Body, Message, MultiPart, SinglePart};
 //!
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! let image = fs::read("docs/lettre.png")?;
@@ -144,35 +127,22 @@
 //!         MultiPart::mixed()
 //!             .multipart(
 //!                 MultiPart::alternative()
-//!                     .singlepart(
-//!                         SinglePart::builder()
-//!                             .header(header::ContentType::TEXT_PLAIN)
-//!                             .body(String::from("Hello, world! :)")),
-//!                     )
+//!                     .singlepart(SinglePart::plain(String::from("Hello, world! :)")))
 //!                     .multipart(
 //!                         MultiPart::related()
+//!                             .singlepart(SinglePart::html(String::from(
+//!                                 "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
+//!                             )))
 //!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType::TEXT_HTML)
-//!                                     .body(String::from(
-//!                                         "<p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>",
-//!                                     )),
-//!                             )
-//!                             .singlepart(
-//!                                 SinglePart::builder()
-//!                                     .header(header::ContentType::parse("image/png")?)
-//!                                     .header(header::ContentDisposition::inline())
-//!                                     .header(header::ContentId::from(String::from("<123>")))
-//!                                     .body(image_body),
+//!                                 Attachment::new_inline(String::from("123"))
+//!                                     .body(image_body, "image/png".parse().unwrap()),
 //!                             ),
 //!                     ),
 //!             )
-//!             .singlepart(
-//!                 SinglePart::builder()
-//!                     .header(header::ContentType::TEXT_PLAIN)
-//!                     .header(header::ContentDisposition::attachment("example.rs"))
-//!                     .body(String::from("fn main() { println!(\"Hello, World!\") }")),
-//!             ),
+//!             .singlepart(Attachment::new(String::from("example.rs")).body(
+//!                 String::from("fn main() { println!(\"Hello, World!\") }"),
+//!                 "text/plain".parse().unwrap(),
+//!             )),
 //!     )?;
 //! # Ok(())
 //! # }
@@ -226,13 +196,19 @@
 //! ```
 //! </details>
 
-use std::{convert::TryFrom, io::Write, iter, time::SystemTime};
+use std::{io::Write, iter, time::SystemTime};
 
+pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
+#[cfg(feature = "dkim")]
+pub use dkim::*;
 pub use mailbox::*;
 pub use mimebody::*;
 
+mod attachment;
 mod body;
+#[cfg(feature = "dkim")]
+pub mod dkim;
 pub mod header;
 mod mailbox;
 mod mimebody;
@@ -267,52 +243,13 @@ impl MessageBuilder {
         }
     }
 
-    /// Set custom header to message
-    pub fn header<H: Header>(mut self, header: H) -> Self {
-        self.headers.set(header);
-        self
-    }
-
-    /// Add mailbox to header
-    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
-        match self.headers.get::<H>() {
-            Some(mut header_) => {
-                header_.join_mailboxes(header);
-                self.header(header_)
-            }
-            None => self.header(header),
-        }
-    }
-
-    /// Add `Date` header to message
+    /// Set or add mailbox to `From` header
     ///
-    /// Shortcut for `self.header(header::Date::new(st))`.
-    pub fn date(self, st: SystemTime) -> Self {
-        self.header(header::Date::new(st))
-    }
-
-    /// Set `Date` header using current date/time
+    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.date(SystemTime::now())`.
-    pub fn date_now(self) -> Self {
-        self.date(SystemTime::now())
-    }
-
-    /// Set `Subject` header to message
-    ///
-    /// Shortcut for `self.header(header::Subject(subject.into()))`.
-    pub fn subject<S: Into<String>>(self, subject: S) -> Self {
-        let s: String = subject.into();
-        self.header(header::Subject::from(s))
-    }
-
-    /// Set `Mime-Version` header to 1.0
-    ///
-    /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
-    ///
-    /// Not exposed as it is set by body methods
-    fn mime_1_0(self) -> Self {
-        self.header(header::MIME_VERSION_1_0)
+    /// Shortcut for `self.mailbox(header::From(mbox))`.
+    pub fn from(self, mbox: Mailbox) -> Self {
+        self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
 
     /// Set `Sender` header. Should be used when providing several `From` mailboxes.
@@ -324,13 +261,19 @@ impl MessageBuilder {
         self.header(header::Sender::from(mbox))
     }
 
-    /// Set or add mailbox to `From` header
+    /// Add `Date` header to message
     ///
-    /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
+    /// Shortcut for `self.header(header::Date::new(st))`.
+    pub fn date(self, st: SystemTime) -> Self {
+        self.header(header::Date::new(st))
+    }
+
+    /// Set `Date` header using current date/time
     ///
-    /// Shortcut for `self.mailbox(header::From(mbox))`.
-    pub fn from(self, mbox: Mailbox) -> Self {
-        self.mailbox(header::From::from(Mailboxes::from(mbox)))
+    /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
+    /// if no date has been provided.
+    pub fn date_now(self) -> Self {
+        self.date(SystemTime::now())
     }
 
     /// Set or add mailbox to `ReplyTo` header
@@ -375,6 +318,14 @@ impl MessageBuilder {
         self.header(header::References::from(id))
     }
 
+    /// Set `Subject` header to message
+    ///
+    /// Shortcut for `self.header(header::Subject(subject.into()))`.
+    pub fn subject<S: Into<String>>(self, subject: S) -> Self {
+        let s: String = subject.into();
+        self.header(header::Subject::from(s))
+    }
+
     /// Set [Message-ID
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
     ///
@@ -408,6 +359,23 @@ impl MessageBuilder {
         self.header(header::UserAgent::from(id))
     }
 
+    /// Set custom header to message
+    pub fn header<H: Header>(mut self, header: H) -> Self {
+        self.headers.set(header);
+        self
+    }
+
+    /// Add mailbox to header
+    pub fn mailbox<H: Header + MailboxesHeader>(self, header: H) -> Self {
+        match self.headers.get::<H>() {
+            Some(mut header_) => {
+                header_.join_mailboxes(header);
+                self.header(header_)
+            }
+            None => self.header(header),
+        }
+    }
+
     /// Force specific envelope (by default it is derived from headers)
     pub fn envelope(mut self, envelope: Envelope) -> Self {
         self.envelope = Some(envelope);
@@ -422,7 +390,7 @@ impl MessageBuilder {
         // https://tools.ietf.org/html/rfc5322#section-3.6
 
         // Insert Date if missing
-        let res = if self.headers.get::<header::Date>().is_none() {
+        let mut res = if self.headers.get::<header::Date>().is_none() {
             self.date_now()
         } else {
             self
@@ -445,6 +413,10 @@ impl MessageBuilder {
             Some(e) => e,
             None => Envelope::try_from(&res.headers)?,
         };
+
+        // Remove `Bcc` headers now the envelope is set
+        res.headers.remove::<header::Bcc>();
+
         Ok(Message {
             headers: res.headers,
             body,
@@ -473,6 +445,15 @@ impl MessageBuilder {
     /// Create message using mime body ([`SinglePart`][self::SinglePart])
     pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
         self.mime_1_0().build(MessageBody::Mime(Part::Single(part)))
+    }
+
+    /// Set `MIME-Version` header to 1.0
+    ///
+    /// Shortcut for `self.header(header::MIME_VERSION_1_0)`.
+    ///
+    /// Not exposed as it is set by body methods
+    fn mime_1_0(self) -> Self {
+        self.header(header::MIME_VERSION_1_0)
     }
 }
 
@@ -513,6 +494,77 @@ impl Message {
         self.format(&mut out);
         out
     }
+
+    #[cfg(feature = "dkim")]
+    /// Format body for signing
+    pub(crate) fn body_raw(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        match &self.body {
+            MessageBody::Mime(p) => p.format(&mut out),
+            MessageBody::Raw(r) => out.extend_from_slice(r),
+        };
+        out.extend_from_slice(b"\r\n");
+        out
+    }
+
+    /// Sign the message using Dkim
+    ///
+    /// Example:
+    /// ```rust
+    /// use lettre::{
+    ///     message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///     Message,
+    /// };
+    ///
+    /// let mut message = Message::builder()
+    ///     .from("Alice <alice@example.org>".parse().unwrap())
+    ///     .reply_to("Bob <bob@example.org>".parse().unwrap())
+    ///     .to("Carla <carla@example.net>".parse().unwrap())
+    ///     .subject("Hello")
+    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
+    ///     .unwrap();
+    /// let key = "-----BEGIN RSA PRIVATE KEY-----
+    /// MIIEowIBAAKCAQEAt2gawjoybf0mAz0mSX0cq1ah5F9cPazZdCwLnFBhRufxaZB8
+    /// NLTdc9xfPIOK8l/xGrN7Nd63J4cTATqZukumczkA46O8YKHwa53pNT6NYwCNtDUL
+    /// eBu+7xUW18GmDzkIFkxGO2R5kkTeWPlKvKpEiicIMfl0OmyW/fI3AbtM7e/gmqQ4
+    /// kEYIO0mTjPT+jTgWE4JIi5KUTHudUBtfMKcSFyM2HkUOExl1c9+A4epjRFQwEXMA
+    /// hM5GrqZoOdUm4fIpvGpLIGIxFgHPpZYbyq6yJZzH3+5aKyCHrsHawPuPiCD45zsU
+    /// re31zCE6b6k1sDiiBR4CaRHnbL7hxFp0aNLOVQIDAQABAoIBAGMK3gBrKxaIcUGo
+    /// gQeIf7XrJ6vK72YC9L8uleqI4a9Hy++E7f4MedZ6eBeWta8jrnEL4Yp6xg+beuDc
+    /// A24+Mhng+6Dyp+TLLqj+8pQlPnbrMprRVms7GIXFrrs+wO1RkBNyhy7FmH0roaMM
+    /// pJZzoGW2pE9QdbqjL3rdlWTi/60xRX9eZ42nNxYnbc+RK03SBd46c3UBha6Y9iQX
+    /// 562yWilDnB5WCX2tBoSN39bEhJvuZDzMwOuGw68Q96Hdz82Iz1xVBnRhH+uNStjR
+    /// VnAssSHVxPSpwWrm3sHlhjBHWPnNIaOKIKl1lbL+qWfVQCj/6a5DquC+vYAeYR6L
+    /// 3mA0z0ECgYEA5YkNYcILSXyE0hZ8eA/t58h8eWvYI5iqt3nT4fznCoYJJ74Vukeg
+    /// 6BTlq/CsanwT1lDtvDKrOaJbA7DPTES/bqT0HoeIdOvAw9w/AZI5DAqYp61i6RMK
+    /// xfAQL/Ik5MDFN8gEMLLXRVMe/aR27f6JFZpShJOK/KCzHqikKfYVJ+UCgYEAzI2F
+    /// ZlTyittWSyUSl5UKyfSnFOx2+6vNy+lu5DeMJu8Wh9rqBk388Bxq98CfkCseWESN
+    /// pTCGdYltz9DvVNBdBLwSMdLuYJAI6U+Zd70MWyuNdHFPyWVHUNqMUBvbUtj2w74q
+    /// Hzu0GI0OrRjdX6C63S17PggmT/N2R9X7P4STxbECgYA+AZAD4I98Ao8+0aQ+Ks9x
+    /// 1c8KXf+9XfiAKAD9A3zGcv72JXtpHwBwsXR5xkJNYcdaFfKi7G0k3J8JmDHnwIqW
+    /// MSlhNeu+6hDg2BaNLhsLDbG/Wi9mFybJ4df9m8Qrp4efUgEPxsAwkgvFKTCXijMu
+    /// CspP1iutoxvAJH50d22voQKBgDIsSFtIXNGYaTs3Va8enK3at5zXP3wNsQXiNRP/
+    /// V/44yNL77EktmewfXFF2yuym1uOZtRCerWxpEClYO0wXa6l8pA3aiiPfUIBByQfo
+    /// s/4s2Z6FKKfikrKPWLlRi+NvWl+65kQQ9eTLvJzSq4IIP61+uWsGvrb/pbSLFPyI
+    /// fWKRAoGBALFCStBXvdMptjq4APUzAdJ0vytZzXkOZHxgmc+R0fQn22OiW0huW6iX
+    /// JcaBbL6ZSBIMA3AdaIjtvNRiomueHqh0GspTgOeCE2585TSFnw6vEOJ8RlR4A0Mw
+    /// I45fbR4l+3D/30WMfZlM6bzZbwPXEnr2s1mirmuQpjumY9wLhK25
+    /// -----END RSA PRIVATE KEY-----";
+    /// let signing_key = DkimSigningKey::new(key, DkimSigningAlgorithm::Rsa).unwrap();
+    /// message.sign(&DkimConfig::default_config(
+    ///     "dkimtest".to_string(),
+    ///     "example.org".to_string(),
+    ///     signing_key,
+    /// ));
+    /// println!(
+    ///     "message: {}",
+    ///     std::str::from_utf8(&message.formatted()).unwrap()
+    /// );
+    /// ```
+    #[cfg(feature = "dkim")]
+    pub fn sign(&mut self, dkim_config: &DkimConfig) {
+        dkim_sign(self, dkim_config);
+    }
 }
 
 impl EmailFormat for Message {
@@ -524,7 +576,7 @@ impl EmailFormat for Message {
             MessageBody::Mime(p) => p.format(out),
             MessageBody::Raw(r) => {
                 out.extend_from_slice(b"\r\n");
-                out.extend_from_slice(&r)
+                out.extend_from_slice(r)
             }
         }
     }
@@ -545,6 +597,8 @@ fn make_message_id() -> String {
 #[cfg(test)]
 mod test {
     use std::time::{Duration, SystemTime};
+
+    use pretty_assertions::assert_eq;
 
     use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
@@ -580,6 +634,7 @@ mod test {
 
         let email = Message::builder()
             .date(date)
+            .bcc("hidden@example.com".parse().unwrap())
             .header(header::From(
                 vec![Mailbox::new(
                     Some("Каи".into()),
@@ -597,10 +652,10 @@ mod test {
         assert_eq!(
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
-                "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n",
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
-                "To: Pony O.P. <pony@domain.tld>\r\n",
-                "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
+                "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
+                "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvQ==?=!\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "\r\n",
                 "Happy new year!"

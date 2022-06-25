@@ -1,16 +1,17 @@
 //! ESMTP features
 
-use crate::transport::smtp::{
-    authentication::Mechanism,
-    error::{self, Error},
-    response::Response,
-    util::XText,
-};
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
     net::{Ipv4Addr, Ipv6Addr},
     result::Result,
+};
+
+use crate::transport::smtp::{
+    authentication::Mechanism,
+    error::{self, Error},
+    response::Response,
+    util::XText,
 };
 
 /// Client identifier, the parameter to `EHLO`
@@ -72,6 +73,7 @@ impl ClientId {
 /// Supported ESMTP keywords
 #[derive(PartialEq, Eq, Hash, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum Extension {
     /// 8BITMIME keyword
     ///
@@ -107,11 +109,11 @@ pub struct ServerInfo {
     /// Server name
     ///
     /// The name given in the server banner
-    pub name: String,
+    name: String,
     /// ESMTP features supported by the server
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
-    pub features: HashSet<Extension>,
+    features: HashSet<Extension>,
 }
 
 impl Display for ServerInfo {
@@ -135,7 +137,7 @@ impl ServerInfo {
 
         let mut features: HashSet<Extension> = HashSet::new();
 
-        for line in response.message.as_slice() {
+        for line in response.message() {
             if line.is_empty() {
                 continue;
             }
@@ -196,6 +198,11 @@ impl ServerInfo {
             }
         }
         None
+    }
+
+    /// The name given in the server banner
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
     }
 }
 
@@ -286,12 +293,13 @@ impl Display for RcptParameter {
 #[cfg(test)]
 mod test {
 
+    use std::collections::HashSet;
+
     use super::*;
     use crate::transport::smtp::{
         authentication::Mechanism,
         response::{Category, Code, Detail, Response, Severity},
     };
-    use std::collections::HashSet;
 
     #[test]
     fn test_clientid_fmt() {

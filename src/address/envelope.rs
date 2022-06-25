@@ -1,6 +1,3 @@
-#[cfg(feature = "builder")]
-use std::convert::TryFrom;
-
 use super::Address;
 #[cfg(feature = "builder")]
 use crate::message::header::{self, Headers};

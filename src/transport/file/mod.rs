@@ -9,8 +9,9 @@
 //! #
 //! # #[cfg(all(feature = "file-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{FileTransport, Message, Transport};
 //! use std::env::temp_dir;
+//!
+//! use lettre::{FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -41,8 +42,9 @@
 //! #
 //! # #[cfg(all(feature = "file-transport-envelope", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{FileTransport, Message, Transport};
 //! use std::env::temp_dir;
+//!
+//! use lettre::{FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::with_envelope(temp_dir());
@@ -70,7 +72,8 @@
 //! # #[cfg(all(feature = "tokio1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
-//! use lettre::{AsyncTransport, Tokio1Executor, Message, AsyncFileTransport};
+//!
+//! use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
@@ -95,7 +98,8 @@
 //! # #[cfg(all(feature = "async-std1", feature = "file-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
-//! use lettre::{AsyncTransport, AsyncStd1Executor, Message, AsyncFileTransport};
+//!
+//! use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
@@ -132,19 +136,21 @@
 //! {"forward_path":["hei@domain.tld"],"reverse_path":"nobody@domain.tld"}
 //! ```
 
-pub use self::error::Error;
-use crate::{address::Envelope, Transport};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
-use crate::{AsyncTransport, Executor};
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
-use async_trait::async_trait;
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use std::marker::PhantomData;
 use std::{
     path::{Path, PathBuf},
     str,
 };
+
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+use async_trait::async_trait;
 use uuid::Uuid;
+
+pub use self::error::Error;
+use crate::{address::Envelope, Transport};
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+use crate::{AsyncTransport, Executor};
 
 mod error;
 
@@ -163,11 +169,8 @@ pub struct FileTransport {
 /// Asynchronously writes the content and the envelope information to a file
 #[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 pub struct AsyncFileTransport<E: Executor> {
     inner: FileTransport,
     marker_: PhantomData<E>,
@@ -220,7 +223,7 @@ impl FileTransport {
     }
 }
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 impl<E> AsyncFileTransport<E>
 where
     E: Executor,
@@ -290,7 +293,7 @@ impl Transport for FileTransport {
     }
 }
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 #[async_trait]
 impl<E> AsyncTransport for AsyncFileTransport<E>
 where

@@ -1,9 +1,11 @@
 //! Provides limited SASL authentication mechanisms
 
-use crate::transport::smtp::error::{self, Error};
 use std::fmt::{self, Debug, Display, Formatter};
 
+use crate::transport::smtp::error::{self, Error};
+
 /// Accepted authentication mechanisms
+///
 /// Trying LOGIN last as it is deprecated.
 pub const DEFAULT_MECHANISMS: &[Mechanism] = &[Mechanism::Plain, Mechanism::Login];
 
@@ -96,12 +98,12 @@ impl Mechanism {
                 let decoded_challenge = challenge
                     .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
-                if vec!["User Name", "Username:", "Username"].contains(&decoded_challenge) {
-                    return Ok(credentials.authentication_identity.to_string());
+                if ["User Name", "Username:", "Username"].contains(&decoded_challenge) {
+                    return Ok(credentials.authentication_identity.clone());
                 }
 
-                if vec!["Password", "Password:"].contains(&decoded_challenge) {
-                    return Ok(credentials.secret.to_string());
+                if ["Password", "Password:"].contains(&decoded_challenge) {
+                    return Ok(credentials.secret.clone());
                 }
 
                 Err(error::client("Unrecognized challenge"))

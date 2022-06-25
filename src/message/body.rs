@@ -1,8 +1,4 @@
-use std::{
-    io::{self, Write},
-    mem,
-    ops::Deref,
-};
+use std::{mem, ops::Deref};
 
 use crate::message::header::ContentTransferEncoding;
 
@@ -41,7 +37,7 @@ impl Body {
     pub fn new<B: Into<MaybeString>>(buf: B) -> Self {
         let mut buf: MaybeString = buf.into();
 
-        let encoding = buf.encoding();
+        let encoding = buf.encoding(false);
         buf.encode_crlf();
         Self::new_impl(buf.into(), encoding)
     }
@@ -61,7 +57,22 @@ impl Body {
     ) -> Result<Self, Vec<u8>> {
         let mut buf: MaybeString = buf.into();
 
-        if !buf.is_encoding_ok(encoding) {
+        let best_encoding = buf.encoding(true);
+        let ok = match (encoding, best_encoding) {
+            (ContentTransferEncoding::SevenBit, ContentTransferEncoding::SevenBit) => true,
+            (
+                ContentTransferEncoding::EightBit,
+                ContentTransferEncoding::SevenBit | ContentTransferEncoding::EightBit,
+            ) => true,
+            (ContentTransferEncoding::SevenBit | ContentTransferEncoding::EightBit, _) => false,
+            (
+                ContentTransferEncoding::QuotedPrintable
+                | ContentTransferEncoding::Base64
+                | ContentTransferEncoding::Binary,
+                _,
+            ) => true,
+        };
+        if !ok {
             return Err(buf.into());
         }
 
@@ -91,36 +102,13 @@ impl Body {
                 Self::dangerous_pre_encoded(encoded, ContentTransferEncoding::QuotedPrintable)
             }
             ContentTransferEncoding::Base64 => {
-                let base64_len = buf.len() * 4 / 3 + 4;
-                let base64_endings_len = base64_len + base64_len / LINE_MAX_LENGTH;
+                let len = email_encoding::body::base64::encoded_len(buf.len());
 
-                let mut out = Vec::with_capacity(base64_endings_len);
-                {
-                    let writer = LineWrappingWriter::new(&mut out, LINE_MAX_LENGTH);
-                    let mut writer = base64::write::EncoderWriter::new(writer, base64::STANDARD);
+                let mut out = String::with_capacity(len);
+                email_encoding::body::base64::encode(&buf, &mut out)
+                    .expect("encode body as base64");
 
-                    // TODO: use writer.write_all(self.as_ref()).expect("base64 encoding never fails");
-
-                    // modified Write::write_all to work around base64 crate bug
-                    // TODO: remove once https://github.com/marshallpierce/rust-base64/issues/148 is fixed
-                    {
-                        let mut buf: &[u8] = buf.as_ref();
-                        while !buf.is_empty() {
-                            match writer.write(buf) {
-                                Ok(0) => {
-                                    // ignore 0 writes
-                                }
-                                Ok(n) => {
-                                    buf = &buf[n..];
-                                }
-                                Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => {}
-                                Err(e) => panic!("base64 encoding never fails: {}", e),
-                            }
-                        }
-                    }
-                }
-
-                Self::dangerous_pre_encoded(out, ContentTransferEncoding::Base64)
+                Self::dangerous_pre_encoded(out.into_bytes(), ContentTransferEncoding::Base64)
             }
         }
     }
@@ -153,21 +141,20 @@ impl Body {
 impl MaybeString {
     /// Suggests the best `Content-Transfer-Encoding` to be used for this `MaybeString`
     ///
-    /// If the `MaybeString` was created from a `String` composed only of US-ASCII
-    /// characters, with no lines longer than 1000 characters, then 7bit
-    /// encoding will be used, else quoted-printable will be chosen.
-    ///
-    /// If the `MaybeString` was instead created from a `Vec<u8>`, base64 encoding is always
-    /// chosen.
-    ///
-    /// `8bit` and `binary` encodings are never returned, as they may not be
-    /// supported by all SMTP servers.
-    pub fn encoding(&self) -> ContentTransferEncoding {
-        match &self {
-            Self::String(s) if is_7bit_encoded(s.as_ref()) => ContentTransferEncoding::SevenBit,
-            // TODO: consider when base64 would be a better option because of output size
-            Self::String(_) => ContentTransferEncoding::QuotedPrintable,
-            Self::Binary(_) => ContentTransferEncoding::Base64,
+    /// The `binary` encoding is never returned
+    fn encoding(&self, supports_utf8: bool) -> ContentTransferEncoding {
+        use email_encoding::body::Encoding;
+
+        let output = match self {
+            Self::String(s) => Encoding::choose(s.as_str(), supports_utf8),
+            Self::Binary(b) => Encoding::choose(b.as_slice(), supports_utf8),
+        };
+
+        match output {
+            Encoding::SevenBit => ContentTransferEncoding::SevenBit,
+            Encoding::EightBit => ContentTransferEncoding::EightBit,
+            Encoding::QuotedPrintable => ContentTransferEncoding::QuotedPrintable,
+            Encoding::Base64 => ContentTransferEncoding::Base64,
         }
     }
 
@@ -176,18 +163,6 @@ impl MaybeString {
         match self {
             Self::String(string) => in_place_crlf_line_endings(string),
             Self::Binary(_) => {}
-        }
-    }
-
-    /// Returns `true` if using `encoding` to encode this `MaybeString`
-    /// would result into an invalid encoded body.
-    fn is_encoding_ok(&self, encoding: ContentTransferEncoding) -> bool {
-        match encoding {
-            ContentTransferEncoding::SevenBit => is_7bit_encoded(&self),
-            ContentTransferEncoding::EightBit => is_8bit_encoded(&self),
-            ContentTransferEncoding::Binary
-            | ContentTransferEncoding::QuotedPrintable
-            | ContentTransferEncoding::Base64 => true,
         }
     }
 }
@@ -273,76 +248,9 @@ impl Deref for MaybeString {
     }
 }
 
-/// Checks whether it contains only US-ASCII characters,
-/// and no lines are longer than 1000 characters including the `\n` character.
-///
-/// Most efficient content encoding available
-fn is_7bit_encoded(buf: &[u8]) -> bool {
-    buf.is_ascii() && !contains_too_long_lines(buf)
-}
-
-/// Checks that no lines are longer than 1000 characters,
-/// including the `\n` character.
-/// NOTE: 8bit isn't supported by all SMTP servers.
-fn is_8bit_encoded(buf: &[u8]) -> bool {
-    !contains_too_long_lines(buf)
-}
-
-/// Checks if there are lines that are longer than 1000 characters,
-/// including the `\n` character.
-fn contains_too_long_lines(buf: &[u8]) -> bool {
-    buf.len() > 1000 && buf.split(|&b| b == b'\n').any(|line| line.len() > 999)
-}
-
-const LINE_SEPARATOR: &[u8] = b"\r\n";
-const LINE_MAX_LENGTH: usize = 78 - LINE_SEPARATOR.len();
-
-/// A `Write`r that inserts a line separator `\r\n` every `max_line_length` bytes.
-struct LineWrappingWriter<'a, W> {
-    writer: &'a mut W,
-    current_line_length: usize,
-    max_line_length: usize,
-}
-
-impl<'a, W> LineWrappingWriter<'a, W> {
-    pub fn new(writer: &'a mut W, max_line_length: usize) -> Self {
-        Self {
-            writer,
-            current_line_length: 0,
-            max_line_length,
-        }
-    }
-}
-
-impl<'a, W> Write for LineWrappingWriter<'a, W>
-where
-    W: Write,
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        let remaining_line_len = self.max_line_length - self.current_line_length;
-        let write_len = std::cmp::min(buf.len(), remaining_line_len);
-
-        self.writer.write_all(&buf[..write_len])?;
-
-        if remaining_line_len == write_len {
-            self.writer.write_all(LINE_SEPARATOR)?;
-
-            self.current_line_length = 0;
-        } else {
-            self.current_line_length += write_len;
-        }
-
-        Ok(write_len)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.writer.flush()
-    }
-}
-
 /// In place conversion to CRLF line endings
 fn in_place_crlf_line_endings(string: &mut String) {
-    let indices = find_all_lf_char_indices(&string);
+    let indices = find_all_lf_char_indices(string);
 
     for i in indices {
         // this relies on `indices` being in reverse order
@@ -377,6 +285,8 @@ fn find_all_lf_char_indices(s: &str) -> Vec<usize> {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::{in_place_crlf_line_endings, Body, ContentTransferEncoding};
 
     #[test]
@@ -509,13 +419,10 @@ mod test {
 
     #[test]
     fn quoted_printable_detect() {
-        let encoded = Body::new(String::from("Привет, мир!"));
+        let encoded = Body::new(String::from("Questo messaggio è corto"));
 
         assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
-        assert_eq!(
-            encoded.as_ref(),
-            b"=D0=9F=D1=80=D0=B8=D0=B2=D0=B5=D1=82, =D0=BC=D0=B8=D1=80!".as_ref()
-        );
+        assert_eq!(encoded.as_ref(), b"Questo messaggio =C3=A8 corto");
     }
 
     #[test]
@@ -547,14 +454,17 @@ mod test {
 
     #[test]
     fn quoted_printable_encode_line_wrap() {
-        let encoded = Body::new(String::from("Текст письма в уникоде"));
+        let encoded = Body::new(String::from(
+            "Se lo standard 📬 fosse stato più semplice avremmo finito molto prima.",
+        ));
 
         assert_eq!(encoded.encoding(), ContentTransferEncoding::QuotedPrintable);
+        println!("{}", std::str::from_utf8(encoded.as_ref()).unwrap());
         assert_eq!(
             encoded.as_ref(),
             concat!(
-                "=D0=A2=D0=B5=D0=BA=D1=81=D1=82 =D0=BF=D0=B8=D1=81=D1=8C=D0=BC=D0=B0 =D0=B2 =\r\n",
-                "=D1=83=D0=BD=D0=B8=D0=BA=D0=BE=D0=B4=D0=B5"
+                "Se lo standard =F0=9F=93=AC fosse stato pi=C3=B9 semplice avremmo finito mo=\r\n",
+                "lto prima."
             )
             .as_bytes()
         );
@@ -562,21 +472,25 @@ mod test {
 
     #[test]
     fn base64_detect() {
-        let input = Body::new(vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+        let input = Body::new(vec![0; 80]);
         let encoding = input.encoding();
         assert_eq!(encoding, ContentTransferEncoding::Base64);
     }
 
     #[test]
     fn base64_encode_bytes() {
-        let encoded = Body::new_with_encoding(
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-            ContentTransferEncoding::Base64,
-        )
-        .unwrap();
+        let encoded =
+            Body::new_with_encoding(vec![0; 80], ContentTransferEncoding::Base64).unwrap();
 
         assert_eq!(encoded.encoding(), ContentTransferEncoding::Base64);
-        assert_eq!(encoded.as_ref(), b"AAECAwQFBgcICQ==");
+        assert_eq!(
+            encoded.as_ref(),
+            concat!(
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n",
+                "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+            )
+            .as_bytes()
+        );
     }
 
     #[test]

@@ -1,16 +1,15 @@
 //! Representation of an email address
 
-use idna::domain_to_ascii;
-use once_cell::sync::Lazy;
-use regex::Regex;
 use std::{
-    convert::{TryFrom, TryInto},
     error::Error,
     ffi::OsStr,
     fmt::{Display, Formatter, Result as FmtResult},
     net::IpAddr,
     str::FromStr,
 };
+
+use email_address::EmailAddress;
+use idna::domain_to_ascii;
 
 /// Represents an email address with a user and a domain name.
 ///
@@ -54,20 +53,6 @@ pub struct Address {
     /// Index into `serialized` before the '@'
     at_start: usize,
 }
-
-// Regex from the specs
-// https://html.spec.whatwg.org/multipage/forms.html#valid-e-mail-address
-// It will mark esoteric email addresses like quoted string as invalid
-static USER_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^(?i)[a-z0-9.!#$%&'*+/=?^_`{|}~-]+\z").unwrap());
-static DOMAIN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(
-        r"(?i)^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$",
-    )
-    .unwrap()
-});
-// literal form, ipv4 or ipv6 address (SMTP 4.1.3)
-static LITERAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)\[([A-f0-9:\.]+)\]\z").unwrap());
 
 impl Address {
     /// Creates a new email address from a user and domain.
@@ -126,7 +111,7 @@ impl Address {
     }
 
     pub(super) fn check_user(user: &str) -> Result<(), AddressError> {
-        if USER_RE.is_match(user) {
+        if EmailAddress::is_valid_local_part(user) {
             Ok(())
         } else {
             Err(AddressError::InvalidUser)
@@ -142,16 +127,19 @@ impl Address {
     }
 
     fn check_domain_ascii(domain: &str) -> Result<(), AddressError> {
-        if DOMAIN_RE.is_match(domain) {
+        // Domain
+        if EmailAddress::is_valid_domain(domain) {
             return Ok(());
         }
 
-        if let Some(caps) = LITERAL_RE.captures(domain) {
-            if let Some(cap) = caps.get(1) {
-                if cap.as_str().parse::<IpAddr>().is_ok() {
-                    return Ok(());
-                }
-            }
+        // IP
+        let ip = domain
+            .strip_prefix('[')
+            .and_then(|ip| ip.strip_suffix(']'))
+            .unwrap_or(domain);
+
+        if ip.parse::<IpAddr>().is_ok() {
+            return Ok(());
         }
 
         Err(AddressError::InvalidDomain)
@@ -174,15 +162,10 @@ impl FromStr for Address {
     type Err = AddressError;
 
     fn from_str(val: &str) -> Result<Self, AddressError> {
-        let mut parts = val.rsplitn(2, '@');
-        let domain = parts.next().ok_or(AddressError::MissingParts)?;
-        let user = parts.next().ok_or(AddressError::MissingParts)?;
-
-        Address::check_user(user)?;
-        Address::check_domain(domain)?;
+        let at_start = check_address(val)?;
         Ok(Address {
             serialized: val.into(),
-            at_start: user.len(),
+            at_start,
         })
     }
 }
@@ -209,6 +192,18 @@ where
     }
 }
 
+impl TryFrom<String> for Address {
+    type Error = AddressError;
+
+    fn try_from(serialized: String) -> Result<Self, AddressError> {
+        let at_start = check_address(&serialized)?;
+        Ok(Address {
+            serialized,
+            at_start,
+        })
+    }
+}
+
 impl AsRef<str> for Address {
     fn as_ref(&self) -> &str {
         &self.serialized
@@ -221,7 +216,17 @@ impl AsRef<OsStr> for Address {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+fn check_address(val: &str) -> Result<usize, AddressError> {
+    let mut parts = val.rsplitn(2, '@');
+    let domain = parts.next().ok_or(AddressError::MissingParts)?;
+    let user = parts.next().ok_or(AddressError::MissingParts)?;
+
+    Address::check_user(user)?;
+    Address::check_domain(domain)?;
+    Ok(user.len())
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 /// Errors in email addresses parsing
 pub enum AddressError {
     /// Missing domain or user
@@ -252,7 +257,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_address() {
+    fn ascii_address() {
         let addr_str = "something@example.com";
         let addr = Address::from_str(addr_str).unwrap();
         let addr2 = Address::new("something", "example.com").unwrap();
@@ -261,5 +266,37 @@ mod tests {
         assert_eq!(addr.domain(), "example.com");
         assert_eq!(addr2.user(), "something");
         assert_eq!(addr2.domain(), "example.com");
+    }
+
+    #[test]
+    fn ascii_address_ipv4() {
+        let addr_str = "something@1.1.1.1";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("something", "1.1.1.1").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "1.1.1.1");
+        assert_eq!(addr2.user(), "something");
+        assert_eq!(addr2.domain(), "1.1.1.1");
+    }
+
+    #[test]
+    fn ascii_address_ipv6() {
+        let addr_str = "something@[2606:4700:4700::1111]";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("something", "[2606:4700:4700::1111]").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "[2606:4700:4700::1111]");
+        assert_eq!(addr2.user(), "something");
+        assert_eq!(addr2.domain(), "[2606:4700:4700::1111]");
+    }
+
+    #[test]
+    fn check_parts() {
+        assert!(Address::check_user("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").is_err());
+        assert!(
+            Address::check_domain("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com").is_err()
+        );
     }
 }

@@ -1,4 +1,6 @@
-use super::{Header, HeaderName};
+use email_encoding::headers::EmailWriter;
+
+use super::{Header, HeaderName, HeaderValue};
 use crate::{
     message::mailbox::{Mailbox, Mailboxes},
     BoxError,
@@ -12,7 +14,7 @@ pub trait MailboxesHeader {
 macro_rules! mailbox_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $type_name(Mailbox);
 
         impl Header for $type_name {
@@ -25,8 +27,13 @@ macro_rules! mailbox_header {
                 Ok(Self(mailbox))
             }
 
-            fn display(&self) -> String {
-                self.0.to_string()
+            fn display(&self) -> HeaderValue {
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailbox` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
             }
         }
 
@@ -49,7 +56,7 @@ macro_rules! mailbox_header {
 macro_rules! mailboxes_header {
     ($(#[$doc:meta])*($type_name: ident, $header_name: expr)) => {
         $(#[$doc])*
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $type_name(pub(crate) Mailboxes);
 
         impl MailboxesHeader for $type_name {
@@ -68,8 +75,13 @@ macro_rules! mailboxes_header {
                 Ok(Self(mailbox))
             }
 
-            fn display(&self) -> String {
-                self.0.to_string()
+            fn display(&self) -> HeaderValue {
+                let mut encoded_value = String::new();
+                let line_len = $header_name.len() + ": ".len();
+                let mut w = EmailWriter::new(&mut encoded_value, line_len, false);
+                self.0.encode(&mut w).expect("writing `Mailboxes` returned an error");
+
+                HeaderValue::dangerous_new_pre_encoded(Self::name(), self.0.to_string(), encoded_value)
             }
         }
 
@@ -160,8 +172,10 @@ mailboxes_header! {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::{From, Mailbox, Mailboxes};
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_single_without_name() {
@@ -175,12 +189,12 @@ mod test {
 
     #[test]
     fn format_single_with_name() {
-        let from = Mailboxes::new().with("K. <kayo@example.com>".parse().unwrap());
+        let from = Mailboxes::new().with("Kayo <kayo@example.com>".parse().unwrap());
 
         let mut headers = Headers::new();
         headers.set(From(from));
 
-        assert_eq!(headers.to_string(), "From: K. <kayo@example.com>\r\n");
+        assert_eq!(headers.to_string(), "From: Kayo <kayo@example.com>\r\n");
     }
 
     #[test]
@@ -201,7 +215,7 @@ mod test {
     #[test]
     fn format_multi_with_name() {
         let from = vec![
-            "K. <kayo@example.com>".parse().unwrap(),
+            "Kayo <kayo@example.com>".parse().unwrap(),
             "Pony P. <pony@domain.tld>".parse().unwrap(),
         ];
 
@@ -210,7 +224,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "From: K. <kayo@example.com>, Pony P. <pony@domain.tld>\r\n"
+            "From: Kayo <kayo@example.com>, \"Pony P.\" <pony@domain.tld>\r\n"
         );
     }
 
@@ -232,10 +246,10 @@ mod test {
         let from = vec!["kayo@example.com".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
     }
@@ -245,10 +259,10 @@ mod test {
         let from = vec!["K. <kayo@example.com>".parse().unwrap()].into();
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
     }
@@ -261,10 +275,10 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "kayo@example.com, pony@domain.tld".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }
@@ -277,11 +291,38 @@ mod test {
         ];
 
         let mut headers = Headers::new();
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
             "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
+    }
+
+    #[test]
+    fn parse_multi_with_name_containing_comma() {
+        let from: Vec<Mailbox> = vec![
+            "Test, test <1@example.com>".parse().unwrap(),
+            "Test2, test2 <2@example.com>".parse().unwrap(),
+        ];
+
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("From"),
+            "Test, test <1@example.com>, Test2, test2 <2@example.com>".to_string(),
+        ));
+
+        assert_eq!(headers.get::<From>(), Some(From(from.into())));
+    }
+
+    #[test]
+    fn parse_multi_with_name_containing_comma_last_broken() {
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("From"),
+            "Test, test <1@example.com>, Test2, test2".to_string(),
+        ));
+
+        assert_eq!(headers.get::<From>(), None);
     }
 }

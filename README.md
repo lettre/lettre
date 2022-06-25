@@ -53,11 +53,12 @@ Lettre does not provide (for now):
 ## Supported Rust Versions
 
 Lettre supports all Rust versions released in the last 6 months. At the time of writing
-the minimum supported Rust version is 1.45, but this could change at any time either from
+the minimum supported Rust version is 1.56, but this could change at any time either from
 one of our dependencies bumping their MSRV or by a new patch release of lettre.
 
 ## Example
 
+This library requires Rust 1.56.0 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
@@ -92,11 +93,31 @@ match mailer.send(&email) {
 }
 ```
 
+## Not sure of which connect options to use?
+
+Clone the lettre git repository and run the following command (replacing `SMTP_HOST` with your SMTP server's hostname)
+
+```shell
+cargo run --example autoconfigure SMTP_HOST
+```
+
 ## Testing
 
-The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command.
+The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed 
+such a server can be launched with `python -m smtpd -n -c DebuggingServer 127.0.0.1:2525`
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
+
+## Troubleshooting
+
+These are general steps to be followed when troubleshooting SMTP related issues.
+
+- Ensure basic connectivity, ensure requisite ports are open and daemons are listening.
+- Confirm that your service provider allows traffic on the ports being used for mail transfer.
+- Check SMTP relay authentication and configuration.
+- Validate your DNS records. (DMARC, SPF, DKIM, MX)
+- Verify your SSL/TLS certificates are setup properly.
+- Investigate if filtering, formatting, or filesize limits are causing messages to be lost, delayed, or blocked by relays or remote hosts.
 
 ## Code of conduct
 

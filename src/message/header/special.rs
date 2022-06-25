@@ -1,15 +1,18 @@
 use crate::{
-    message::header::{Header, HeaderName},
+    message::header::{Header, HeaderName, HeaderValue},
     BoxError,
 };
 
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct MimeVersion {
     major: u8,
     minor: u8,
 }
 
+/// MIME version 1.0
+///
+/// Should be used in all MIME messages.
 pub const MIME_VERSION_1_0: MimeVersion = MimeVersion::new(1, 0);
 
 impl MimeVersion {
@@ -47,8 +50,9 @@ impl Header for MimeVersion {
         Ok(MimeVersion::new(major, minor))
     }
 
-    fn display(&self) -> String {
-        format!("{}.{}", self.major, self.minor)
+    fn display(&self) -> HeaderValue {
+        let val = format!("{}.{}", self.major, self.minor);
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 
@@ -60,8 +64,10 @@ impl Default for MimeVersion {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::{MimeVersion, MIME_VERSION_1_0};
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_mime_version() {
@@ -80,17 +86,17 @@ mod test {
     fn parse_mime_version() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "1.0".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MIME_VERSION_1_0));
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
             "0.1".to_string(),
-        );
+        ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MimeVersion::new(0, 1)));
     }

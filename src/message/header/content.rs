@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// `Content-Transfer-Encoding` of the body
@@ -11,7 +11,8 @@ use crate::BoxError;
 /// The `Message` builder takes care of choosing the most
 /// efficient encoding based on the chosen body, so in most
 /// use-caches this header shouldn't be set manually.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ContentTransferEncoding {
     /// ASCII
     SevenBit,
@@ -34,8 +35,9 @@ impl Header for ContentTransferEncoding {
         Ok(s.parse()?)
     }
 
-    fn display(&self) -> String {
-        self.to_string()
+    fn display(&self) -> HeaderValue {
+        let val = self.to_string();
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 
@@ -73,8 +75,10 @@ impl Default for ContentTransferEncoding {
 
 #[cfg(test)]
 mod test {
+    use pretty_assertions::assert_eq;
+
     use super::ContentTransferEncoding;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_content_transfer_encoding() {
@@ -93,20 +97,20 @@ mod test {
     fn parse_content_transfer_encoding() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "7bit".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),
             Some(ContentTransferEncoding::SevenBit)
         );
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "base64".to_string(),
-        );
+        ));
 
         assert_eq!(
             headers.get::<ContentTransferEncoding>(),

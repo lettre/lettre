@@ -2,13 +2,13 @@ use std::time::SystemTime;
 
 use httpdate::HttpDate;
 
-use super::{Header, HeaderName};
+use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
 
 /// Message `Date` header
 ///
 /// Defined in [RFC2822](https://tools.ietf.org/html/rfc2822#section-3.3)
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Date(HttpDate);
 
 impl Date {
@@ -32,29 +32,29 @@ impl Header for Date {
 
     fn parse(s: &str) -> Result<Self, BoxError> {
         let mut s = String::from(s);
-        if s.ends_with(" -0000") {
+        if s.ends_with("+0000") {
             // The httpdate crate expects the `Date` to end in ` GMT`, but email
-            // uses `-0000`, so we crudely fix this issue here.
+            // uses `+0000` to indicate UTC, so we crudely fix this issue here.
 
-            s.truncate(s.len() - "-0000".len());
+            s.truncate(s.len() - "+0000".len());
             s.push_str("GMT");
         }
 
         Ok(Self(s.parse::<HttpDate>()?))
     }
 
-    fn display(&self) -> String {
-        let mut s = self.0.to_string();
-        if s.ends_with(" GMT") {
+    fn display(&self) -> HeaderValue {
+        let mut val = self.0.to_string();
+        if val.ends_with(" GMT") {
             // The httpdate crate always appends ` GMT` to the end of the string,
             // but this is considered an obsolete date format for email
             // https://tools.ietf.org/html/rfc2822#appendix-A.6.2,
-            // so we replace `GMT` with `-0000`
-            s.truncate(s.len() - "GMT".len());
-            s.push_str("-0000");
+            // so we replace `GMT` with `+0000`
+            val.truncate(val.len() - "GMT".len());
+            val.push_str("+0000");
         }
 
-        s
+        HeaderValue::dangerous_new_pre_encoded(Self::name(), val.clone(), val)
     }
 }
 
@@ -74,8 +74,10 @@ impl From<Date> for SystemTime {
 mod test {
     use std::time::{Duration, SystemTime};
 
+    use pretty_assertions::assert_eq;
+
     use super::Date;
-    use crate::message::header::{HeaderName, Headers};
+    use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
     fn format_date() {
@@ -88,7 +90,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Date: Tue, 15 Nov 1994 08:12:31 -0000\r\n".to_string()
+            "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n".to_string()
         );
 
         // Tue, 15 Nov 1994 08:12:32 GMT
@@ -98,7 +100,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Date: Tue, 15 Nov 1994 08:12:32 -0000\r\n"
+            "Date: Tue, 15 Nov 1994 08:12:32 +0000\r\n"
         );
     }
 
@@ -106,10 +108,10 @@ mod test {
     fn parse_date() {
         let mut headers = Headers::new();
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:31 -0000".to_string(),
-        );
+            "Tue, 15 Nov 1994 08:12:31 +0000".to_string(),
+        ));
 
         assert_eq!(
             headers.get::<Date>(),
@@ -118,10 +120,10 @@ mod test {
             ))
         );
 
-        headers.insert_raw(
+        headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:32 -0000".to_string(),
-        );
+            "Tue, 15 Nov 1994 08:12:32 +0000".to_string(),
+        ));
 
         assert_eq!(
             headers.get::<Date>(),

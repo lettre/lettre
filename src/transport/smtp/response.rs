@@ -1,7 +1,13 @@
 //! SMTP response, containing a mandatory return code and an optional text
 //! message
 
-use crate::transport::smtp::{error, Error};
+use std::{
+    fmt::{Display, Formatter, Result},
+    result,
+    str::FromStr,
+    string::ToString,
+};
+
 use nom::{
     branch::alt,
     bytes::streaming::{tag, take_until},
@@ -10,12 +16,8 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
-use std::{
-    fmt::{Display, Formatter, Result},
-    result,
-    str::FromStr,
-    string::ToString,
-};
+
+use crate::transport::smtp::{error, Error};
 
 /// First digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
@@ -137,10 +139,10 @@ impl Code {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Response {
     /// Response code
-    pub code: Code,
+    code: Code,
     /// Server response string (optional)
     /// Handle multiline responses
-    pub message: Vec<String>,
+    message: Vec<String>,
 }
 
 impl FromStr for Response {
@@ -179,6 +181,16 @@ impl Response {
     /// Returns only the line of the message if possible
     pub fn first_line(&self) -> Option<&str> {
         self.message.first().map(String::as_str)
+    }
+
+    /// Response code
+    pub fn code(&self) -> Code {
+        self.code
+    }
+
+    /// Server response string (array of lines)
+    pub fn message(&self) -> impl Iterator<Item = &str> {
+        self.message.iter().map(String::as_str)
     }
 }
 

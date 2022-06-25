@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.46 or newer.
+//! Lettre requires Rust 1.56.0 or newer.
 //!
 //! ## Features
 //!
@@ -27,7 +27,7 @@
 //! _Send emails using [`SMTP`]_
 //!
 //! * **smtp-transport** 📫: Enable the SMTP transport
-//! * **r2d2** 📫: Connection pool for SMTP transport
+//! * **pool** 📫: Connection pool for SMTP transport
 //! * **hostname** 📫: Try to use the actual system hostname for the SMTP `CLIENTID`
 //!
 //! #### SMTP over TLS via the native-tls crate
@@ -37,7 +37,6 @@
 //! Uses schannel on Windows, Security-Framework on macOS, and OpenSSL on Linux.
 //!
 //! * **native-tls** 📫: TLS support for the synchronous version of the API
-//! * **tokio02-native-tls**: TLS support for the `tokio02` async version of the API
 //! * **tokio1-native-tls**: TLS support for the `tokio1` async version of the API
 //!
 //! NOTE: native-tls isn't supported with `async-std`
@@ -49,7 +48,6 @@
 //! Rustls uses [ring] as the cryptography implementation. As a result, [not all Rust's targets are supported][ring-support].
 //!
 //! * **rustls-tls**: TLS support for the synchronous version of the API
-//! * **tokio02-rustls-tls**: TLS support for the `tokio02` async version of the API
 //! * **tokio1-rustls-tls**: TLS support for the `tokio1` async version of the API
 //! * **async-std1-rustls-tls**: TLS support for the `async-std1` async version of the API
 //!
@@ -71,11 +69,10 @@
 //! _Use [tokio] or [async-std] as an async execution runtime for sending emails_
 //!
 //! The correct runtime version must be chosen in order for lettre to work correctly.
-//! For example, when sending emails from a Tokio 1.3.0 context, the Tokio 1.x executor
+//! For example, when sending emails from a Tokio 1.x context, the Tokio 1.x executor
 //! ([`Tokio1Executor`]) must be used. Using a different version (for example Tokio 0.2.x),
 //! or async-std, would result in a runtime panic.
 //!
-//! * **tokio02**: Allow to asynchronously send emails using [Tokio 0.2.x]
 //! * **tokio1**: Allow to asynchronously send emails using [Tokio 1.x]
 //! * **async-std1**: Allow to asynchronously send emails using [async-std 1.x]
 //!
@@ -87,17 +84,21 @@
 //!
 //! * **serde**: Serialization/Deserialization of entities
 //! * **tracing**: Logging using the `tracing` crate
+//! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
+//! * **dkim**: Add support for signing email with DKIM
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail
 //! [`file`]: crate::transport::file
+//! [`ContentType`]: crate::message::header::ContentType
 //! [tokio]: https://docs.rs/tokio/1
 //! [async-std]: https://docs.rs/async-std/1
 //! [ring]: https://github.com/briansmith/ring#ring
 //! [ring-support]: https://github.com/briansmith/ring#online-automated-testing
-//! [Tokio 0.2.x]: https://docs.rs/tokio/0.2
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
+//! [mime 0.3]: https://docs.rs/mime/0.3
+//! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
 #![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
@@ -109,28 +110,94 @@
     trivial_numeric_casts,
     unstable_features,
     unused_import_braces,
-    rust_2018_idioms
+    rust_2018_idioms,
+    clippy::string_add,
+    clippy::string_add_assign,
+    clippy::clone_on_ref_ptr,
+    clippy::verbose_file_reads,
+    clippy::unnecessary_self_imports,
+    clippy::string_to_string,
+    clippy::mem_forget,
+    clippy::cast_lossless,
+    clippy::inefficient_to_string,
+    clippy::inline_always,
+    clippy::linkedlist,
+    clippy::macro_use_imports,
+    clippy::manual_assert,
+    clippy::unnecessary_join,
+    clippy::wildcard_imports,
+    clippy::zero_sized_map_values
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+#[cfg(not(lettre_ignore_tls_mismatch))]
+mod compiletime_checks {
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "native-tls",
+        not(feature = "tokio1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
+    If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+    Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "rustls-tls",
+        not(feature = "tokio1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
+    If you'd like to use `native-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
+    Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+
+    /*
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the `async-std1-native-tls` feature hasn't been turned on.
+    If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
+    If you're building a library which depends on lettre import it without default features and enable just the features you need.");
+    */
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "native-tls",
+        not(feature = "async-std1-native-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
+If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
+If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+
+    #[cfg(all(
+        feature = "async-std1",
+        feature = "rustls-tls",
+        not(feature = "async-std1-rustls-tls")
+    ))]
+    compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
+If you'd like to use `native-tls` make sure that the `rustls-tls` hasn't been enabled by mistake.
+Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+}
+
 pub mod address;
 pub mod error;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
 pub mod transport;
 
+use std::error::Error as StdError;
+
 #[cfg(feature = "async-std1")]
 pub use self::executor::AsyncStd1Executor;
-#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
 pub use self::executor::Executor;
-#[cfg(feature = "tokio02")]
-pub use self::executor::Tokio02Executor;
 #[cfg(feature = "tokio1")]
 pub use self::executor::Tokio1Executor;
-#[cfg(all(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))]
+#[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
 #[doc(inline)]
 pub use self::transport::AsyncTransport;
 pub use crate::address::Address;
@@ -139,7 +206,7 @@ pub use crate::address::Address;
 pub use crate::message::Message;
 #[cfg(all(
     feature = "file-transport",
-    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+    any(feature = "tokio1", feature = "async-std1")
 ))]
 #[doc(inline)]
 pub use crate::transport::file::AsyncFileTransport;
@@ -148,7 +215,7 @@ pub use crate::transport::file::AsyncFileTransport;
 pub use crate::transport::file::FileTransport;
 #[cfg(all(
     feature = "sendmail-transport",
-    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+    any(feature = "tokio1", feature = "async-std1")
 ))]
 #[doc(inline)]
 pub use crate::transport::sendmail::AsyncSendmailTransport;
@@ -157,24 +224,20 @@ pub use crate::transport::sendmail::AsyncSendmailTransport;
 pub use crate::transport::sendmail::SendmailTransport;
 #[cfg(all(
     feature = "smtp-transport",
-    any(feature = "tokio02", feature = "tokio1", feature = "async-std1")
+    any(feature = "tokio1", feature = "async-std1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
+#[cfg(feature = "smtp-transport")]
+pub use crate::transport::smtp::SmtpTransport;
 #[doc(inline)]
 pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
-
-#[cfg(feature = "smtp-transport")]
-pub use crate::transport::smtp::SmtpTransport;
-use std::error::Error as StdError;
 
 pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod test {
-    use std::convert::TryFrom;
-
     use super::*;
     use crate::message::{header, header::Headers, Mailbox, Mailboxes};
 

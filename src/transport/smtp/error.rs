@@ -1,10 +1,11 @@
 //! Error and result type for SMTP clients
 
+use std::{error::Error as StdError, fmt};
+
 use crate::{
     transport::smtp::response::{Code, Severity},
     BoxError,
 };
-use std::{error::Error as StdError, fmt};
 
 // Inspired by https://github.com/seanmonstar/reqwest/blob/a8566383168c0ef06c21f38cbc9213af6ff6db31/src/error.rs
 
@@ -154,10 +155,10 @@ impl StdError for Error {
     }
 }
 
-pub(crate) fn code(c: Code) -> Error {
+pub(crate) fn code(c: Code, s: Option<String>) -> Error {
     match c.severity {
-        Severity::TransientNegativeCompletion => Error::new::<Error>(Kind::Transient(c), None),
-        Severity::PermanentNegativeCompletion => Error::new::<Error>(Kind::Permanent(c), None),
+        Severity::TransientNegativeCompletion => Error::new(Kind::Transient(c), s),
+        Severity::PermanentNegativeCompletion => Error::new(Kind::Permanent(c), s),
         _ => client("Unknown error code"),
     }
 }

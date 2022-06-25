@@ -7,16 +7,14 @@
 //!
 //! # #[cfg(feature = "smtp-transport")]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::transport::smtp::{SMTP_PORT, extension::ClientId, commands::*, client::SmtpConnection};
+//! use lettre::transport::smtp::{
+//!     client::SmtpConnection, commands::*, extension::ClientId, SMTP_PORT,
+//! };
 //!
 //! let hello = ClientId::Domain("my_hostname".to_string());
-//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None)?;
-//! client.command(
-//!         Mail::new(Some("user@example.com".parse()?), vec![])
-//!     )?;
-//! client.command(
-//!         Rcpt::new("user@example.org".parse()?, vec![])
-//!       )?;
+//! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None, None)?;
+//! client.command(Mail::new(Some("user@example.com".parse()?), vec![]))?;
+//! client.command(Rcpt::new("user@example.org".parse()?, vec![]))?;
 //! client.command(Data)?;
 //! client.message("Test email".as_bytes())?;
 //! client.command(Quit)?;
@@ -27,10 +25,10 @@
 #[cfg(feature = "serde")]
 use std::fmt::Debug;
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-pub(crate) use self::async_connection::AsyncSmtpConnection;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-pub(crate) use self::async_net::AsyncNetworkStream;
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+pub use self::async_connection::AsyncSmtpConnection;
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+pub use self::async_net::AsyncNetworkStream;
 use self::net::NetworkStream;
 #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
 pub(super) use self::tls::InnerTlsParameters;
@@ -39,9 +37,9 @@ pub use self::{
     tls::{Certificate, Tls, TlsParameters, TlsParametersBuilder},
 };
 
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_connection;
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_net;
 mod connection;
 mod net;
@@ -78,7 +76,15 @@ impl ClientCodec {
                     match self.escape_count {
                         0 => self.escape_count = if *byte == b'\r' { 1 } else { 0 },
                         1 => self.escape_count = if *byte == b'\n' { 2 } else { 0 },
-                        2 => self.escape_count = if *byte == b'.' { 3 } else { 0 },
+                        2 => {
+                            self.escape_count = if *byte == b'.' {
+                                3
+                            } else if *byte == b'\r' {
+                                1
+                            } else {
+                                0
+                            }
+                        }
                         _ => unreachable!(),
                     }
                     if self.escape_count == 3 {
@@ -111,6 +117,7 @@ mod test {
         let mut buf: Vec<u8> = vec![];
 
         codec.encode(b"test\r\n", &mut buf);
+        codec.encode(b"test\r\n\r\n", &mut buf);
         codec.encode(b".\r\n", &mut buf);
         codec.encode(b"\r\ntest", &mut buf);
         codec.encode(b"te\r\n.\r\nst", &mut buf);
@@ -121,7 +128,7 @@ mod test {
         codec.encode(b"test", &mut buf);
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            "test\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
+            "test\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
         );
     }
 

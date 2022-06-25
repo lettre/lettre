@@ -1,25 +1,24 @@
 use std::{
     fmt::Display,
     io::{self, BufRead, BufReader, Write},
-    net::ToSocketAddrs,
+    net::{IpAddr, ToSocketAddrs},
     time::Duration,
 };
 
+#[cfg(feature = "tracing")]
+use super::escape_crlf;
 use super::{ClientCodec, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
     transport::smtp::{
         authentication::{Credentials, Mechanism},
-        commands::*,
+        commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::{parse_response, Response},
     },
 };
-
-#[cfg(feature = "tracing")]
-use super::escape_crlf;
 
 macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({
@@ -59,8 +58,9 @@ impl SmtpConnection {
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<&TlsParameters>,
+        local_address: Option<IpAddr>,
     ) -> Result<SmtpConnection, Error> {
-        let stream = NetworkStream::connect(server, timeout, tls_parameters)?;
+        let stream = NetworkStream::connect(server, timeout, tls_parameters, local_address)?;
         let stream = BufReader::new(stream);
         let mut conn = SmtpConnection {
             stream,
@@ -145,7 +145,7 @@ impl SmtpConnection {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
-                try_smtp!(self.stream.get_mut().upgrade_tls(tls_parameters), self);
+                self.stream.get_mut().upgrade_tls(tls_parameters)?;
                 #[cfg(feature = "tracing")]
                 tracing::debug!("connection encrypted");
                 // Send EHLO again
@@ -276,7 +276,10 @@ impl SmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(response.code))
+                        Err(error::code(
+                            response.code(),
+                            response.first_line().map(|s| s.to_owned()),
+                        ))
                     };
                 }
                 Err(nom::Err::Failure(e)) => {
@@ -290,5 +293,11 @@ impl SmtpConnection {
         }
 
         Err(error::response("incomplete response"))
+    }
+
+    /// The X509 certificate of the server (DER encoded)
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
+        self.stream.get_ref().peer_certificate()
     }
 }

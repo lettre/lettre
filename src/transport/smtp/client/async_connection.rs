@@ -1,8 +1,14 @@
+use std::{fmt::Display, net::IpAddr, time::Duration};
+
+use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+
+#[cfg(feature = "tracing")]
+use super::escape_crlf;
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism},
-        commands::*,
+        commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
@@ -10,11 +16,6 @@ use crate::{
     },
     Envelope,
 };
-use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use std::fmt::Display;
-
-#[cfg(feature = "tracing")]
-use super::escape_crlf;
 
 macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({
@@ -47,28 +48,17 @@ impl AsyncSmtpConnection {
     /// Connects to the configured server
     ///
     /// Sends EHLO and parses server information
-    #[cfg(feature = "tokio02")]
-    pub async fn connect_tokio02(
-        hostname: &str,
-        port: u16,
-        hello_name: &ClientId,
-        tls_parameters: Option<TlsParameters>,
-    ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_tokio02(hostname, port, tls_parameters).await?;
-        Self::connect_impl(stream, hello_name).await
-    }
-
-    /// Connects to the configured server
-    ///
-    /// Sends EHLO and parses server information
     #[cfg(feature = "tokio1")]
-    pub async fn connect_tokio1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_tokio1<T: tokio1_crate::net::ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
+        local_address: Option<IpAddr>,
     ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_tokio1(hostname, port, tls_parameters).await?;
+        let stream =
+            AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters, local_address)
+                .await?;
         Self::connect_impl(stream, hello_name).await
     }
 
@@ -76,13 +66,13 @@ impl AsyncSmtpConnection {
     ///
     /// Sends EHLO and parses server information
     #[cfg(feature = "async-std1")]
-    pub async fn connect_asyncstd1(
-        hostname: &str,
-        port: u16,
+    pub async fn connect_asyncstd1<T: async_std::net::ToSocketAddrs>(
+        server: T,
+        timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncSmtpConnection, Error> {
-        let stream = AsyncNetworkStream::connect_asyncstd1(hostname, port, tls_parameters).await?;
+        let stream = AsyncNetworkStream::connect_asyncstd1(server, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
@@ -175,10 +165,7 @@ impl AsyncSmtpConnection {
     ) -> Result<(), Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             try_smtp!(self.command(Starttls).await, self);
-            try_smtp!(
-                self.stream.get_mut().upgrade_tls(tls_parameters).await,
-                self
-            );
+            self.stream.get_mut().upgrade_tls(tls_parameters).await?;
             #[cfg(feature = "tracing")]
             tracing::debug!("connection encrypted");
             // Send EHLO again
@@ -312,7 +299,10 @@ impl AsyncSmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(response.code))
+                        Err(error::code(
+                            response.code(),
+                            response.first_line().map(|s| s.to_owned()),
+                        ))
                     }
                 }
                 Err(nom::Err::Failure(e)) => {
@@ -326,5 +316,11 @@ impl AsyncSmtpConnection {
         }
 
         Err(error::response("incomplete response"))
+    }
+
+    /// The X509 certificate of the server (DER encoded)
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
+        self.stream.get_ref().peer_certificate()
     }
 }

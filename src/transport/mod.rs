@@ -56,8 +56,7 @@
 //! #
 //! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::transport::smtp::authentication::Credentials;
-//! use lettre::{Message, SmtpTransport, Transport};
+//! use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -99,7 +98,7 @@
 //! [`AsyncFileTransport`]: crate::AsyncFileTransport
 //! [`StubTransport`]: crate::transport::stub::StubTransport
 
-#[cfg(any(feature = "async-std1", feature = "tokio02", feature = "tokio1"))]
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use async_trait::async_trait;
 
 use crate::Envelope;
@@ -136,11 +135,8 @@ pub trait Transport {
 }
 
 /// Async Transport method for emails
-#[cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1"))]
-#[cfg_attr(
-    docsrs,
-    doc(cfg(any(feature = "tokio02", feature = "tokio1", feature = "async-std1")))
-)]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 #[async_trait]
 pub trait AsyncTransport {
     /// Response produced by the Transport
@@ -155,7 +151,7 @@ pub trait AsyncTransport {
     async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
         let raw = message.formatted();
         let envelope = message.envelope();
-        self.send_raw(&envelope, &raw).await
+        self.send_raw(envelope, &raw).await
     }
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;

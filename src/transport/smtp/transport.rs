@@ -1,22 +1,23 @@
+#[cfg(feature = "pool")]
+use std::sync::Arc;
 use std::time::Duration;
 
-#[cfg(feature = "r2d2")]
-use r2d2::Pool;
-
-#[cfg(feature = "r2d2")]
+#[cfg(feature = "pool")]
+use super::pool::sync_impl::Pool;
+#[cfg(feature = "pool")]
 use super::PoolConfig;
-#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-use super::{error, Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
+#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{address::Envelope, Transport};
 
 /// Sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
 #[derive(Clone)]
 pub struct SmtpTransport {
-    #[cfg(feature = "r2d2")]
-    inner: Pool<SmtpClient>,
-    #[cfg(not(feature = "r2d2"))]
+    #[cfg(feature = "pool")]
+    inner: Arc<Pool>,
+    #[cfg(not(feature = "pool"))]
     inner: SmtpClient,
 }
 
@@ -26,14 +27,11 @@ impl Transport for SmtpTransport {
 
     /// Sends an email
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
-        #[cfg(feature = "r2d2")]
-        let mut conn = self.inner.get().map_err(error::client)?;
-        #[cfg(not(feature = "r2d2"))]
         let mut conn = self.inner.connection()?;
 
         let result = conn.send(envelope, email)?;
 
-        #[cfg(not(feature = "r2d2"))]
+        #[cfg(not(feature = "pool"))]
         conn.quit()?;
 
         Ok(result)
@@ -105,9 +103,24 @@ impl SmtpTransport {
 
         SmtpTransportBuilder {
             info: new,
-            #[cfg(feature = "r2d2")]
+            #[cfg(feature = "pool")]
             pool_config: PoolConfig::default(),
         }
+    }
+
+    /// Tests the SMTP connection
+    ///
+    /// `test_connection()` tests the connection by using the SMTP NOOP command.
+    /// The connection is closed afterwards if a connection pool is not used.
+    pub fn test_connection(&self) -> Result<bool, Error> {
+        let mut conn = self.inner.connection()?;
+
+        let is_connected = conn.test_connected();
+
+        #[cfg(not(feature = "pool"))]
+        conn.quit()?;
+
+        Ok(is_connected)
     }
 }
 
@@ -116,7 +129,7 @@ impl SmtpTransport {
 #[derive(Debug, Clone)]
 pub struct SmtpTransportBuilder {
     info: SmtpInfo,
-    #[cfg(feature = "r2d2")]
+    #[cfg(feature = "pool")]
     pool_config: PoolConfig,
 }
 
@@ -163,8 +176,8 @@ impl SmtpTransportBuilder {
     /// Use a custom configuration for the connection pool
     ///
     /// Defaults can be found at [`PoolConfig`]
-    #[cfg(feature = "r2d2")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "r2d2")))]
+    #[cfg(feature = "pool")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "pool")))]
     pub fn pool_config(mut self, pool_config: PoolConfig) -> Self {
         self.pool_config = pool_config;
         self
@@ -172,16 +185,15 @@ impl SmtpTransportBuilder {
 
     /// Build the transport
     ///
-    /// If the `r2d2` feature is enabled an `Arc` wrapped pool is be created.
+    /// If the `pool` feature is enabled an `Arc` wrapped pool is be created.
     /// Defaults can be found at [`PoolConfig`]
     pub fn build(self) -> SmtpTransport {
         let client = SmtpClient { info: self.info };
-        SmtpTransport {
-            #[cfg(feature = "r2d2")]
-            inner: self.pool_config.build(client),
-            #[cfg(not(feature = "r2d2"))]
-            inner: client,
-        }
+
+        #[cfg(feature = "pool")]
+        let client = Pool::new(self.pool_config, client);
+
+        SmtpTransport { inner: client }
     }
 }
 
@@ -209,6 +221,7 @@ impl SmtpClient {
             self.info.timeout,
             &self.info.hello_name,
             tls_parameters,
+            None,
         )?;
 
         #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
@@ -225,7 +238,7 @@ impl SmtpClient {
         }
 
         if let Some(credentials) = &self.info.credentials {
-            conn.auth(&self.info.authentication, &credentials)?;
+            conn.auth(&self.info.authentication, credentials)?;
         }
         Ok(conn)
     }

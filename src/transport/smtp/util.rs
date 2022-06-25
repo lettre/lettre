@@ -4,7 +4,6 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Encode a string as xtext
 #[derive(Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct XText<'a>(pub &'a str);
 
 impl<'a> Display for XText<'a> {
@@ -42,7 +41,7 @@ mod tests {
         ]
         .iter()
         {
-            assert_eq!(format!("{}", XText(input)), expect.to_string());
+            assert_eq!(format!("{}", XText(input)), (*expect).to_string());
         }
     }
 }

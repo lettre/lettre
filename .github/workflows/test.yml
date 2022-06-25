@@ -7,11 +7,13 @@ on:
       - master
 
 env:
+  RUSTFLAGS: "--cfg lettre_ignore_tls_mismatch"
+  RUSTDOCFLAGS: "--cfg lettre_ignore_tls_mismatch"
   RUST_BACKTRACE: full
 
 jobs:
   rustfmt:
-    name: rustfmt / stable
+    name: rustfmt / nightly-2022-02-11
     runs-on: ubuntu-latest
 
     steps:
@@ -20,7 +22,7 @@ jobs:
 
       - name: Install rust
         run: |
-          rustup update --no-self-update stable
+          rustup default nightly-2022-02-11
           rustup component add rustfmt
 
       - name: cargo fmt
@@ -79,8 +81,8 @@ jobs:
             rust: stable
           - name: beta
             rust: beta
-          - name: 1.46.0
-            rust: 1.46.0
+          - name: 1.56.0
+            rust: 1.56.0
 
     steps:
       - name: Checkout
@@ -107,6 +109,23 @@ jobs:
 
       - name: Run SMTP server
         run: smtp-sink 2525 1000&
+
+      - name: Install coredns
+        run: |
+          wget -q https://github.com/coredns/coredns/releases/download/v1.8.6/coredns_1.8.6_linux_amd64.tgz
+          tar xzf coredns_1.8.6_linux_amd64.tgz
+
+      - name: Start coredns
+        run: |
+          sudo ./coredns -conf testdata/coredns.conf &
+          sudo systemctl stop systemd-resolved
+          echo "nameserver 127.0.0.54" | sudo tee /etc/resolv.conf
+
+      - name: Install dkimverify
+        run: sudo apt -y install python3-dkim
+
+      - name: Work around early dependencies MSRV bump
+        run: cargo update -p async-global-executor --precise 2.0.4
 
       - name: Test with no default features
         run: cargo test --no-default-features
