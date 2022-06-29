@@ -29,6 +29,7 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 * Refactor `TlsParameters` implementation to not expose the internal TLS library
 * `FileTransport` writes emails into `.eml` instead of `.json`
 * When the hostname feature is disabled or hostname cannot be fetched, `127.0.0.1` is used instead of `localhost` as EHLO parameter (for better RFC compliance and mail server compatibility)
+* The `sendmail` and `file` transports aren't enabled by default anymore.
 * The `new` method of `ClientId` is deprecated
 * Rename `serde-impls` feature to `serde`
 * The `SendmailTransport` now uses the `sendmail` command in current `PATH` by default instead of

@@ -100,7 +100,7 @@
 //! [mime 0.3]: https://docs.rs/mime/0.3
 //! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
-#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0-rc.7")]
+#![doc(html_root_url = "https://docs.rs/crate/lettre/0.10.0")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]
