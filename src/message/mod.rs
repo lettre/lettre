@@ -232,6 +232,7 @@ trait EmailFormat {
 pub struct MessageBuilder {
     headers: Headers,
     envelope: Option<Envelope>,
+    drop_bcc: bool,
 }
 
 impl MessageBuilder {
@@ -240,6 +241,7 @@ impl MessageBuilder {
         Self {
             headers: Headers::new(),
             envelope: None,
+            drop_bcc: true,
         }
     }
 
@@ -382,6 +384,20 @@ impl MessageBuilder {
         self
     }
 
+    /// Keep the `Bcc` header
+    ///
+    /// By default the `Bcc` header is removed from the email after
+    /// using it to generate the message envelope. In some cases though,
+    /// like when saving the email as an `.eml`, or sending through
+    /// some transports (like the Gmail API) that don't take a separate
+    /// envelope value, it becomes necessary to keep the `Bcc` header.
+    ///
+    /// Calling this method overrides the default behaviour.
+    pub fn keep_bcc(mut self) -> Self {
+        self.drop_bcc = false;
+        self
+    }
+
     // TODO: High-level methods for attachments and embedded files
 
     /// Create message from body
@@ -414,8 +430,10 @@ impl MessageBuilder {
             None => Envelope::try_from(&res.headers)?,
         };
 
-        // Remove `Bcc` headers now the envelope is set
-        res.headers.remove::<header::Bcc>();
+        if res.drop_bcc {
+            // Remove `Bcc` headers now the envelope is set
+            res.headers.remove::<header::Bcc>();
+        }
 
         Ok(Message {
             headers: res.headers,
@@ -628,7 +646,7 @@ mod test {
     }
 
     #[test]
-    fn email_message() {
+    fn email_message_no_bcc() {
         // Tue, 15 Nov 1994 08:12:31 GMT
         let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
 
@@ -653,6 +671,44 @@ mod test {
             String::from_utf8(email.formatted()).unwrap(),
             concat!(
                 "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
+                "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
+                "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
+                "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvQ==?=!\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n",
+                "\r\n",
+                "Happy new year!"
+            )
+        );
+    }
+
+    #[test]
+    fn email_message_keep_bcc() {
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let date = SystemTime::UNIX_EPOCH + Duration::from_secs(784887151);
+
+        let email = Message::builder()
+            .date(date)
+            .bcc("hidden@example.com".parse().unwrap())
+            .keep_bcc()
+            .header(header::From(
+                vec![Mailbox::new(
+                    Some("Каи".into()),
+                    "kayo@example.com".parse().unwrap(),
+                )]
+                .into(),
+            ))
+            .header(header::To(
+                vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
+            ))
+            .header(header::Subject::from(String::from("яңа ел белән!")))
+            .body(String::from("Happy new year!"))
+            .unwrap();
+
+        assert_eq!(
+            String::from_utf8(email.formatted()).unwrap(),
+            concat!(
+                "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
+                "Bcc: hidden@example.com\r\n",
                 "From: =?utf-8?b?0JrQsNC4?= <kayo@example.com>\r\n",
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvQ==?=!\r\n",
