@@ -277,6 +277,7 @@ impl PartialEq<HeaderName> for &str {
     }
 }
 
+/// A safe for use header value
 #[derive(Debug, Clone, PartialEq)]
 pub struct HeaderValue {
     name: HeaderName,
@@ -285,6 +286,12 @@ pub struct HeaderValue {
 }
 
 impl HeaderValue {
+    /// Construct a new `HeaderValue` and encode it
+    ///
+    /// Takes the header `name` and the `raw_value` and encodes
+    /// it via `RFC2047` and line folds it.
+    ///
+    /// [`RFC2047`]: https://datatracker.ietf.org/doc/html/rfc2047
     pub fn new(name: HeaderName, raw_value: String) -> Self {
         let mut encoded_value = String::with_capacity(raw_value.len());
         HeaderValueEncoder::encode(&name, &raw_value, &mut encoded_value).unwrap();
@@ -296,6 +303,14 @@ impl HeaderValue {
         }
     }
 
+    /// Construct a new `HeaderValue` using a pre-encoded header value
+    ///
+    /// This method is _extremely_ dangerous as it opens up
+    /// the encoder to header injection attacks, but is sometimes
+    /// acceptable for use if `encoded_value` contains only ascii
+    /// printable characters and is already line folded.
+    ///
+    /// When in doubt use [`HeaderValue::new`].
     pub fn dangerous_new_pre_encoded(
         name: HeaderName,
         raw_value: String,

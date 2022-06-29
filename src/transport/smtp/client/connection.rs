@@ -44,6 +44,7 @@ pub struct SmtpConnection {
 }
 
 impl SmtpConnection {
+    /// Get information about the server
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
     }

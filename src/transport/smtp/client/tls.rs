@@ -219,6 +219,7 @@ impl TlsParameters {
         TlsParametersBuilder::new(domain).build()
     }
 
+    /// Creates a new `TlsParameters` builder
     pub fn builder(domain: String) -> TlsParametersBuilder {
         TlsParametersBuilder::new(domain)
     }

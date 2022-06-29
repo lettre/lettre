@@ -16,15 +16,18 @@ pub struct MimeVersion {
 pub const MIME_VERSION_1_0: MimeVersion = MimeVersion::new(1, 0);
 
 impl MimeVersion {
+    /// Build a new `MimeVersion` header
     pub const fn new(major: u8, minor: u8) -> Self {
         MimeVersion { major, minor }
     }
 
+    /// Get the `major` value of this `MimeVersion` header.
     #[inline]
     pub const fn major(self) -> u8 {
         self.major
     }
 
+    /// Get the `minor` value of this `MimeVersion` header.
     #[inline]
     pub const fn minor(self) -> u8 {
         self.minor
