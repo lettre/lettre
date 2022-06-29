@@ -53,6 +53,8 @@ use futures_util::lock::Mutex as FuturesMutex;
 use crate::AsyncTransport;
 use crate::{address::Envelope, Transport};
 
+/// An error returned by the stub transport
+#[non_exhaustive]
 #[derive(Debug, Copy, Clone)]
 pub struct Error;
 
