@@ -320,7 +320,7 @@ impl AsyncSmtpConnection {
     }
 
     /// The X509 certificate of the server (DER encoded)
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
     }

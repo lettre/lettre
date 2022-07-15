@@ -132,6 +132,10 @@
 
 #[cfg(not(lettre_ignore_tls_mismatch))]
 mod compiletime_checks {
+    #[cfg(all(feature = "native-tls", feature = "boring-tls"))]
+    compile_error!("feature \"native-tls\" and feature \"boring-tls\" cannot be enabled at the same time, otherwise
+    the executable will fail to link.");
+
     #[cfg(all(
         feature = "tokio1",
         feature = "native-tls",
@@ -148,6 +152,15 @@ mod compiletime_checks {
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
     If you'd like to use `native-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
+    Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
+
+    #[cfg(all(
+        feature = "tokio1",
+        feature = "boring-tls",
+        not(feature = "tokio1-boring-tls")
+    ))]
+    compile_error!("Lettre is being built with the `tokio1` and the `boring-tls` features, but the `tokio1-boring-tls` feature hasn't been turned on.
+    If you'd like to use `boring-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     /*

@@ -140,7 +140,7 @@ pub use self::{
     error::Error,
     transport::{SmtpTransport, SmtpTransportBuilder},
 };
-#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{
     authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
