@@ -41,6 +41,15 @@
 //!
 //! NOTE: native-tls isn't supported with `async-std`
 //!
+//! #### SMTP over TLS via the boring crate (Boring TLS)
+//!
+//! _Secure SMTP connections using TLS from the `boring-tls` crate_
+//!
+//! * **boring-tls**: TLS support for the synchronous version of the API
+//! * **tokio1-boring-tls**: TLS support for the `tokio1` async version of the API
+//!
+//! NOTE: boring-tls isn't supported with `async-std`
+//!
 //! #### SMTP over TLS via the rustls crate
 //!
 //! _Secure SMTP connections using TLS from the `rustls-tls` crate_
