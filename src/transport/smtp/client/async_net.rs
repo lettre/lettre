@@ -16,6 +16,8 @@ use futures_io::{
 };
 #[cfg(feature = "async-std1-rustls-tls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+#[cfg(feature = "tokio1-boring-tls")]
+use tokio1_boring::SslStream as Tokio1SslStream;
 #[cfg(feature = "tokio1")]
 use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
 #[cfg(feature = "tokio1")]
@@ -31,6 +33,7 @@ use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
 #[cfg(any(
     feature = "tokio1-native-tls",
     feature = "tokio1-rustls-tls",
+    feature = "tokio1-boring-tls",
     feature = "async-std1-native-tls",
     feature = "async-std1-rustls-tls"
 ))]
@@ -60,6 +63,9 @@ enum InnerAsyncNetworkStream {
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "tokio1-rustls-tls")]
     Tokio1RustlsTls(Tokio1RustlsTlsStream<Tokio1TcpStream>),
+    /// Encrypted Tokio 1.x TCP stream
+    #[cfg(feature = "tokio1-boring-tls")]
+    Tokio1BoringTls(Tokio1SslStream<Tokio1TcpStream>),
     /// Plain Tokio 1.x TCP stream
     #[cfg(feature = "async-std1")]
     AsyncStd1Tcp(AsyncStd1TcpStream),
@@ -93,6 +99,8 @@ impl AsyncNetworkStream {
             }
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(ref s) => s.get_ref().0.peer_addr(),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(ref s) => s.get_ref().peer_addr(),
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(ref s) => s.peer_addr(),
             #[cfg(feature = "async-std1-native-tls")]
@@ -229,14 +237,22 @@ impl AsyncNetworkStream {
         match &self.inner {
             #[cfg(all(
                 feature = "tokio1",
-                not(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))
+                not(any(
+                    feature = "tokio1-native-tls",
+                    feature = "tokio1-rustls-tls",
+                    feature = "tokio1-boring-tls"
+                ))
             ))]
             InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 let _ = tls_parameters;
                 panic!("Trying to upgrade an AsyncNetworkStream without having enabled either the tokio1-native-tls or the tokio1-rustls-tls feature");
             }
 
-            #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
+            #[cfg(any(
+                feature = "tokio1-native-tls",
+                feature = "tokio1-rustls-tls",
+                feature = "tokio1-boring-tls"
+            ))]
             InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 // get owned TcpStream
                 let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
@@ -278,7 +294,11 @@ impl AsyncNetworkStream {
     }
 
     #[allow(unused_variables)]
-    #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
+    #[cfg(any(
+        feature = "tokio1-native-tls",
+        feature = "tokio1-rustls-tls",
+        feature = "tokio1-boring-tls"
+    ))]
     async fn upgrade_tokio1_tls(
         tcp_stream: Tokio1TcpStream,
         tls_parameters: TlsParameters,
@@ -324,11 +344,31 @@ impl AsyncNetworkStream {
                     Ok(InnerAsyncNetworkStream::Tokio1RustlsTls(stream))
                 };
             }
+            #[cfg(feature = "boring-tls")]
+            InnerTlsParameters::BoringTls(connector) => {
+                #[cfg(not(feature = "tokio1-boring-tls"))]
+                panic!("built without the tokio1-boring-tls feature");
+
+                #[cfg(feature = "tokio1-boring-tls")]
+                return {
+                    let mut config = connector.configure().map_err(error::connection)?;
+                    config.set_verify_hostname(tls_parameters.accept_invalid_hostnames);
+
+                    let stream = tokio1_boring::connect(config, &domain, tcp_stream)
+                        .await
+                        .map_err(error::connection)?;
+                    Ok(InnerAsyncNetworkStream::Tokio1BoringTls(stream))
+                };
+            }
         }
     }
 
     #[allow(unused_variables)]
-    #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
+    #[cfg(any(
+        feature = "async-std1-native-tls",
+        feature = "async-std1-rustls-tls",
+        feature = "async-std1-boring-tls"
+    ))]
     async fn upgrade_asyncstd1_tls(
         tcp_stream: AsyncStd1TcpStream,
         mut tls_parameters: TlsParameters,
@@ -377,6 +417,10 @@ impl AsyncNetworkStream {
                     Ok(InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream))
                 };
             }
+            #[cfg(feature = "boring-tls")]
+            InnerTlsParameters::BoringTls(connector) => {
+                panic!("boring-tls isn't supported with async-std yet.");
+            }
         }
     }
 
@@ -388,6 +432,8 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1NativeTls(_) => true,
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(_) => true,
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(_) => true,
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(_) => false,
             #[cfg(feature = "async-std1-native-tls")]
@@ -422,6 +468,13 @@ impl AsyncNetworkStream {
                 .unwrap()
                 .clone()
                 .0),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(stream) => Ok(stream
+                .ssl()
+                .peer_certificate()
+                .unwrap()
+                .to_der()
+                .map_err(error::tls)?),
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
                 Err(error::client("Connection is not encrypted"))
@@ -477,6 +530,15 @@ impl FuturesAsyncRead for AsyncNetworkStream {
                     Poll::Pending => Poll::Pending,
                 }
             }
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(ref mut s) => {
+                let mut b = Tokio1ReadBuf::new(buf);
+                match Pin::new(s).poll_read(cx, &mut b) {
+                    Poll::Ready(Ok(())) => Poll::Ready(Ok(b.filled().len())),
+                    Poll::Ready(Err(err)) => Poll::Ready(Err(err)),
+                    Poll::Pending => Poll::Pending,
+                }
+            }
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(ref mut s) => Pin::new(s).poll_read(cx, buf),
             #[cfg(feature = "async-std1-native-tls")]
@@ -508,6 +570,8 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(ref mut s) => Pin::new(s).poll_write(cx, buf),
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(ref mut s) => Pin::new(s).poll_write(cx, buf),
             #[cfg(feature = "async-std1-native-tls")]
@@ -533,6 +597,8 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_flush(cx),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(ref mut s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(ref mut s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "async-std1-native-tls")]
@@ -554,6 +620,8 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1NativeTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(ref mut s) => Pin::new(s).poll_shutdown(cx),
             #[cfg(feature = "async-std1")]
             InnerAsyncNetworkStream::AsyncStd1Tcp(ref mut s) => Pin::new(s).poll_close(cx),
             #[cfg(feature = "async-std1-native-tls")]

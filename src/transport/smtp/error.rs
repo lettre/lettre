@@ -68,8 +68,11 @@ impl Error {
     }
 
     /// Returns true if the error is from TLS
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+    )]
     pub fn is_tls(&self) -> bool {
         matches!(self.inner.kind, Kind::Tls)
     }
@@ -102,8 +105,11 @@ pub(crate) enum Kind {
     /// Underlying network i/o error
     Network,
     /// TLS error
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls"))))]
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+    )]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     Tls,
 }
 
@@ -128,7 +134,7 @@ impl fmt::Display for Error {
             Kind::Client => f.write_str("internal client error")?,
             Kind::Network => f.write_str("network error")?,
             Kind::Connection => f.write_str("Connection error")?,
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Kind::Tls => f.write_str("tls error")?,
             Kind::Transient(ref code) => {
                 write!(f, "transient error ({})", code)?;
@@ -179,7 +185,7 @@ pub(crate) fn connection<E: Into<BoxError>>(e: E) -> Error {
     Error::new(Kind::Connection, Some(e))
 }
 
-#[cfg(any(feature = "native-tls", feature = "rustls-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 pub(crate) fn tls<E: Into<BoxError>>(e: E) -> Error {
     Error::new(Kind::Tls, Some(e))
 }
