@@ -12,19 +12,19 @@ use rustls::{
     ClientConfig, Error as TlsError, OwnedTrustAnchor, RootCertStore, ServerName,
 };
 
+/// TLS protocol versions.
+#[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+pub enum TlsVersion {
+    Tlsv10,
+    Tlsv11,
+    Tlsv12,
+    Tlsv13,
+}
+
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use crate::transport::smtp::{error, Error};
-
-/// Accepted protocols by default.
-/// This removes TLS 1.0 and 1.1 compared to tls-native defaults.
-// This is also rustls' default behavior
-#[cfg(feature = "native-tls")]
-const DEFAULT_TLS_MIN_PROTOCOL: Protocol = Protocol::Tlsv12;
-
-/// This removes TLS 1.0 and 1.1 compared to tls-boring defaults.
-// This is also rustls' default behavior
-#[cfg(feature = "boring-tls")]
-const DEFAULT_BORING_TLS_MIN_PROTOCOL: SslVersion = SslVersion::TLS1_2;
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
@@ -85,6 +85,8 @@ pub struct TlsParametersBuilder {
     root_certs: Vec<Certificate>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    min_tls_version: TlsVersion,
 }
 
 impl TlsParametersBuilder {
@@ -95,6 +97,8 @@ impl TlsParametersBuilder {
             root_certs: Vec::new(),
             accept_invalid_hostnames: false,
             accept_invalid_certs: false,
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            min_tls_version: TlsVersion::Tlsv12,
         }
     }
 
@@ -119,10 +123,19 @@ impl TlsParametersBuilder {
     /// This method introduces significant vulnerabilities to man-in-the-middle attacks.
     ///
     /// Hostname verification can only be disabled with the `native-tls` TLS backend.
-    #[cfg(feature = "native-tls")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
+    #[cfg(any(feature = "native-tls", feature = "boring-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "boring-tls"))))]
     pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
+        self
+    }
+
+    /// Controls which minimum TLS version is allowed
+    ///
+    /// Defaults to `Tlsv12`.
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    pub fn set_min_tls_version(mut self, min_tls_version: TlsVersion) -> Self {
+        self.min_tls_version = min_tls_version;
         self
     }
 
@@ -175,7 +188,18 @@ impl TlsParametersBuilder {
         tls_builder.danger_accept_invalid_hostnames(self.accept_invalid_hostnames);
         tls_builder.danger_accept_invalid_certs(self.accept_invalid_certs);
 
-        tls_builder.min_protocol_version(Some(DEFAULT_TLS_MIN_PROTOCOL));
+        let min_tls_version = match self.min_tls_version {
+            TlsVersion::Tlsv10 => Protocol::Tlsv10,
+            TlsVersion::Tlsv11 => Protocol::Tlsv11,
+            TlsVersion::Tlsv12 => Protocol::Tlsv12,
+            TlsVersion::Tlsv13 => {
+                return Err(error::tls(
+                    "min tls version Tlsv13 not supported in native tls",
+                ))
+            }
+        };
+
+        tls_builder.min_protocol_version(Some(min_tls_version));
         let connector = tls_builder.build().map_err(error::tls)?;
         Ok(TlsParameters {
             connector: InnerTlsParameters::NativeTls(connector),
@@ -202,8 +226,15 @@ impl TlsParametersBuilder {
             }
         }
 
+        let min_tls_version = match self.min_tls_version {
+            TlsVersion::Tlsv10 => SslVersion::TLS1,
+            TlsVersion::Tlsv11 => SslVersion::TLS1_1,
+            TlsVersion::Tlsv12 => SslVersion::TLS1_2,
+            TlsVersion::Tlsv13 => SslVersion::TLS1_3,
+        };
+
         tls_builder
-            .set_min_proto_version(Some(DEFAULT_BORING_TLS_MIN_PROTOCOL))
+            .set_min_proto_version(Some(min_tls_version))
             .map_err(error::tls)?;
         let connector = tls_builder.build();
         Ok(TlsParameters {
@@ -218,7 +249,24 @@ impl TlsParametersBuilder {
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
         let tls = ClientConfig::builder();
-        let tls = tls.with_safe_defaults();
+
+        let just_version3 = &[&rustls::version::TLS13];
+        let supported_versions = match self.min_tls_version {
+            TlsVersion::Tlsv10 => {
+                return Err(error::tls("min tls version Tlsv10 not supported in rustls"))
+            }
+            TlsVersion::Tlsv11 => {
+                return Err(error::tls("min tls version Tlsv11 not supported in rustls"))
+            }
+            TlsVersion::Tlsv12 => rustls::ALL_VERSIONS,
+            TlsVersion::Tlsv13 => just_version3,
+        };
+
+        let tls = tls
+            .with_safe_default_cipher_suites()
+            .with_safe_default_kx_groups()
+            .with_protocol_versions(supported_versions)
+            .map_err(error::tls)?;
 
         let tls = if self.accept_invalid_certs {
             tls.with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
