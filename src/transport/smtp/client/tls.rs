@@ -12,19 +12,44 @@ use rustls::{
     ClientConfig, Error as TlsError, OwnedTrustAnchor, RootCertStore, ServerName,
 };
 
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+use crate::transport::smtp::{error, Error};
+
 /// TLS protocol versions.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 pub enum TlsVersion {
+    /// TLS 1.0
+    ///
+    /// Should only be used when trying to support legacy
+    /// SMTP servers that haven't updated to
+    /// at least TLS 1.2 yet.
+    ///
+    /// Supported by `native-tls` and `boring-tls`.
     Tlsv10,
+    /// TLS 1.1
+    ///
+    /// Should only be used when trying to support legacy
+    /// SMTP servers that haven't updated to
+    /// at least TLS 1.2 yet.
+    ///
+    /// Supported by `native-tls` and `boring-tls`.
     Tlsv11,
+    /// TLS 1.2
+    ///
+    /// A good option for most SMTP servers.
+    ///
+    /// Supported by all TLS backends.
     Tlsv12,
+    /// TLS 1.3
+    ///
+    /// The best option, altough not supported by all SMTP servers.
+    ///
+    /// Altough it is technically supported by all TLS backends
+    /// trying to set it for `native-tls` will give a runtime error.
     Tlsv13,
 }
-
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
-use crate::transport::smtp::{error, Error};
 
 /// How to apply TLS to a client connection
 #[derive(Clone)]
@@ -132,7 +157,7 @@ impl TlsParametersBuilder {
 
     /// Controls which minimum TLS version is allowed
     ///
-    /// Defaults to `Tlsv12`.
+    /// Defaults to [`Tlsv12`][TlsVersion::Tlsv12].
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     pub fn set_min_tls_version(mut self, min_tls_version: TlsVersion) -> Self {
         self.min_tls_version = min_tls_version;
