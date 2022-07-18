@@ -44,9 +44,9 @@ pub enum TlsVersion {
     Tlsv12,
     /// TLS 1.3
     ///
-    /// The best option, altough not supported by all SMTP servers.
+    /// The most secure option, altough not supported by all SMTP servers.
     ///
-    /// Altough it is technically supported by all TLS backends
+    /// Altough it is technically supported by all TLS backends,
     /// trying to set it for `native-tls` will give a runtime error.
     Tlsv13,
 }
