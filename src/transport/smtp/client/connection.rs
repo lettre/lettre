@@ -183,6 +183,7 @@ impl SmtpConnection {
             self.panic = true;
             let _ = self.command(Quit);
         }
+        let _ = self.stream.get_mut().shutdown(std::net::Shutdown::Both);
     }
 
     /// Sets the underlying stream

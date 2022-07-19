@@ -194,6 +194,7 @@ impl AsyncSmtpConnection {
             self.panic = true;
             let _ = self.command(Quit).await;
         }
+        let _ = self.stream.close().await;
     }
 
     /// Sets the underlying stream
