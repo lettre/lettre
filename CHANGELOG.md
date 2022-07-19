@@ -1,5 +1,25 @@
+<a name="v0.10.1"></a>
+### v0.10.1 (2022-07-20)
+
+#### Features
+
+* Add `boring-tls` support for `SmtpTransport` and `AsyncSmtpTransport`. The latter is only supported with the tokio runtime. ([#797]) ([#798])
+* Make the minimum TLS version configurable. ([#799]) ([#800])
+
+#### Bug Fixes
+
+* Ensure connections are closed on abort. ([#801])
+* Fix SMTP dot stuffing. ([#803])
+
+[#797]: https://github.com/lettre/lettre/pull/797
+[#798]: https://github.com/lettre/lettre/pull/798
+[#799]: https://github.com/lettre/lettre/pull/799
+[#800]: https://github.com/lettre/lettre/pull/800
+[#801]: https://github.com/lettre/lettre/pull/801
+[#803]: https://github.com/lettre/lettre/pull/803
+
 <a name="v0.10.0"></a>
-### v0.10.0 (unreleased)
+### v0.10.0 (2022-06-29)
 
 #### Upgrade notes
 
