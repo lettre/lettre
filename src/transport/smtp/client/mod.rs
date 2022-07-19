@@ -48,58 +48,55 @@ mod net;
 mod tls;
 
 /// The codec used for transparency
-#[derive(Default, Clone, Copy, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug)]
 struct ClientCodec {
-    escape_count: u8,
+    status: CodecStatus,
 }
 
 impl ClientCodec {
     /// Creates a new client codec
     pub fn new() -> Self {
-        ClientCodec::default()
+        Self {
+            status: CodecStatus::StartOfNewLine,
+        }
     }
 
     /// Adds transparency
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) {
-        match frame.len() {
-            0 => {
-                match self.escape_count {
-                    0 => buf.extend_from_slice(b"\r\n.\r\n"),
-                    1 => buf.extend_from_slice(b"\n.\r\n"),
-                    2 => buf.extend_from_slice(b".\r\n"),
-                    _ => unreachable!(),
+        for &b in frame {
+            buf.push(b);
+            match (b, self.status) {
+                (b'\r', _) => {
+                    self.status = CodecStatus::StartingNewLine;
                 }
-                self.escape_count = 0;
-            }
-            _ => {
-                let mut start = 0;
-                for (idx, byte) in frame.iter().enumerate() {
-                    match self.escape_count {
-                        0 => self.escape_count = if *byte == b'\r' { 1 } else { 0 },
-                        1 => self.escape_count = if *byte == b'\n' { 2 } else { 0 },
-                        2 => {
-                            self.escape_count = if *byte == b'.' {
-                                3
-                            } else if *byte == b'\r' {
-                                1
-                            } else {
-                                0
-                            }
-                        }
-                        _ => unreachable!(),
-                    }
-                    if self.escape_count == 3 {
-                        self.escape_count = 0;
-                        buf.extend_from_slice(&frame[start..idx]);
-                        buf.extend_from_slice(b".");
-                        start = idx;
-                    }
+                (b'\n', CodecStatus::StartingNewLine) => {
+                    self.status = CodecStatus::StartOfNewLine;
                 }
-                buf.extend_from_slice(&frame[start..]);
+                (_, CodecStatus::StartingNewLine) => {
+                    self.status = CodecStatus::MiddleOfLine;
+                }
+                (b'.', CodecStatus::StartOfNewLine) => {
+                    self.status = CodecStatus::MiddleOfLine;
+                    buf.push(b'.');
+                }
+                (_, CodecStatus::StartOfNewLine) => {
+                    self.status = CodecStatus::MiddleOfLine;
+                }
+                _ => {}
             }
         }
     }
+}
+
+#[derive(Debug, Copy, Clone)]
+#[allow(clippy::enum_variant_names)]
+enum CodecStatus {
+    /// We are past the first character of the current line
+    MiddleOfLine,
+    /// We just read a `\r` character
+    StartingNewLine,
+    /// We are at the start of a new line
+    StartOfNewLine,
 }
 
 /// Returns the string replacing all the CRLF with "\<CRLF\>"
@@ -115,9 +112,10 @@ mod test {
 
     #[test]
     fn test_codec() {
+        let mut buf = Vec::new();
         let mut codec = ClientCodec::new();
-        let mut buf: Vec<u8> = vec![];
 
+        codec.encode(b".\r\n", &mut buf);
         codec.encode(b"test\r\n", &mut buf);
         codec.encode(b"test\r\n\r\n", &mut buf);
         codec.encode(b".\r\n", &mut buf);
@@ -128,9 +126,13 @@ mod test {
         codec.encode(b"test\n", &mut buf);
         codec.encode(b".test\n", &mut buf);
         codec.encode(b"test", &mut buf);
+        codec.encode(b"test", &mut buf);
+        codec.encode(b"test\r\n", &mut buf);
+        codec.encode(b".test\r\n", &mut buf);
+        codec.encode(b"test.\r\n", &mut buf);
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            "test\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntest"
+            "..\r\ntest\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntesttesttest\r\n..test\r\ntest.\r\n"
         );
     }
 
