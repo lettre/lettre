@@ -243,11 +243,12 @@ impl SmtpConnection {
 
     /// Sends the message content
     pub fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
-        let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
+        let mut out_buf = Vec::with_capacity(message.len());
         codec.encode(message, &mut out_buf);
         self.write(out_buf.as_slice())?;
         self.write(b"\r\n.\r\n")?;
+
         self.read_response()
     }
 
