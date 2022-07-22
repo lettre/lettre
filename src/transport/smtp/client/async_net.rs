@@ -1,5 +1,5 @@
 use std::{
-    io, mem,
+    fmt, io, mem,
     net::{IpAddr, SocketAddr},
     pin::Pin,
     task::{Context, Poll},
@@ -19,7 +19,7 @@ use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
 #[cfg(feature = "tokio1-boring-tls")]
 use tokio1_boring::SslStream as Tokio1SslStream;
 #[cfg(feature = "tokio1")]
-use tokio1_crate::io::{AsyncRead as _, AsyncWrite as _, ReadBuf as Tokio1ReadBuf};
+use tokio1_crate::io::{AsyncRead, AsyncWrite, ReadBuf as Tokio1ReadBuf};
 #[cfg(feature = "tokio1")]
 use tokio1_crate::net::{
     TcpSocket as Tokio1TcpSocket, TcpStream as Tokio1TcpStream,
@@ -44,8 +44,21 @@ use crate::transport::smtp::client::net::resolved_address_filter;
 use crate::transport::smtp::{error, Error};
 
 /// A network stream
+#[derive(Debug)]
 pub struct AsyncNetworkStream {
     inner: InnerAsyncNetworkStream,
+}
+
+#[cfg(feature = "tokio1")]
+pub trait AsyncTokioStream: AsyncRead + AsyncWrite + Send + Sync + Unpin + fmt::Debug {
+    fn peer_addr(&self) -> io::Result<SocketAddr>;
+}
+
+#[cfg(feature = "tokio1")]
+impl AsyncTokioStream for Tokio1TcpStream {
+    fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.peer_addr()
+    }
 }
 
 /// Represents the different types of underlying network streams
@@ -53,19 +66,20 @@ pub struct AsyncNetworkStream {
 // so clippy::large_enum_variant doesn't make sense here
 #[allow(clippy::large_enum_variant)]
 #[allow(dead_code)]
+#[derive(Debug)]
 enum InnerAsyncNetworkStream {
     /// Plain Tokio 1.x TCP stream
     #[cfg(feature = "tokio1")]
-    Tokio1Tcp(Tokio1TcpStream),
+    Tokio1Tcp(Box<dyn AsyncTokioStream>),
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "tokio1-native-tls")]
-    Tokio1NativeTls(Tokio1TlsStream<Tokio1TcpStream>),
+    Tokio1NativeTls(Tokio1TlsStream<Box<dyn AsyncTokioStream>>),
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "tokio1-rustls-tls")]
-    Tokio1RustlsTls(Tokio1RustlsTlsStream<Tokio1TcpStream>),
+    Tokio1RustlsTls(Tokio1RustlsTlsStream<Box<dyn AsyncTokioStream>>),
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "tokio1-boring-tls")]
-    Tokio1BoringTls(Tokio1SslStream<Tokio1TcpStream>),
+    Tokio1BoringTls(Tokio1SslStream<Box<dyn AsyncTokioStream>>),
     /// Plain Tokio 1.x TCP stream
     #[cfg(feature = "async-std1")]
     AsyncStd1Tcp(AsyncStd1TcpStream),
@@ -115,6 +129,11 @@ impl AsyncNetworkStream {
                 ))
             }
         }
+    }
+
+    #[cfg(feature = "tokio1")]
+    pub fn use_existing_tokio1(stream: Box<dyn AsyncTokioStream>) -> AsyncNetworkStream {
+        AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(stream))
     }
 
     #[cfg(feature = "tokio1")]
@@ -175,7 +194,8 @@ impl AsyncNetworkStream {
         }
 
         let tcp_stream = try_connect(server, timeout, local_addr).await?;
-        let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream));
+        let mut stream =
+            AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(Box::new(tcp_stream)));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters).await?;
         }
@@ -300,7 +320,7 @@ impl AsyncNetworkStream {
         feature = "tokio1-boring-tls"
     ))]
     async fn upgrade_tokio1_tls(
-        tcp_stream: Tokio1TcpStream,
+        tcp_stream: Box<dyn AsyncTokioStream>,
         tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
         let domain = tls_parameters.domain().to_string();
