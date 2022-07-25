@@ -323,10 +323,12 @@ impl HeaderValue {
         }
     }
 
+    #[cfg(feature = "dkim")]
     pub(crate) fn get_raw(&self) -> &str {
         &self.raw_value
     }
 
+    #[cfg(feature = "dkim")]
     pub(crate) fn get_encoded(&self) -> &str {
         &self.encoded_value
     }

@@ -100,6 +100,7 @@ pub struct TlsParameters {
     pub(crate) connector: InnerTlsParameters,
     /// The domain name which is expected in the TLS certificate from the server
     pub(super) domain: String,
+    #[cfg(feature = "boring-tls")]
     pub(super) accept_invalid_hostnames: bool,
 }
 
@@ -229,6 +230,7 @@ impl TlsParametersBuilder {
         Ok(TlsParameters {
             connector: InnerTlsParameters::NativeTls(connector),
             domain: self.domain,
+            #[cfg(feature = "boring-tls")]
             accept_invalid_hostnames: self.accept_invalid_hostnames,
         })
     }
@@ -322,6 +324,7 @@ impl TlsParametersBuilder {
         Ok(TlsParameters {
             connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
             domain: self.domain,
+            #[cfg(feature = "boring-tls")]
             accept_invalid_hostnames: self.accept_invalid_hostnames,
         })
     }
