@@ -1,8 +1,9 @@
+#[cfg(feature = "rustls-tls")]
+use std::sync::Arc;
 use std::{
     io::{self, Read, Write},
     mem,
     net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
-    sync::Arc,
     time::Duration,
 };
 

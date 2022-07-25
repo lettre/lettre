@@ -1,7 +1,8 @@
+#[cfg(feature = "pool")]
+use std::sync::Arc;
 use std::{
     fmt::{self, Debug},
     marker::PhantomData,
-    sync::Arc,
     time::Duration,
 };
 
