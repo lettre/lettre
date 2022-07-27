@@ -2,6 +2,8 @@ use std::{fmt::Display, net::IpAddr, time::Duration};
 
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
+#[cfg(feature = "tokio1")]
+use super::async_net::AsyncTokioStream;
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
@@ -44,6 +46,18 @@ impl AsyncSmtpConnection {
     /// Get information about the server
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
+    }
+
+    /// Connects with existing async stream
+    ///
+    /// Sends EHLO and parses server information
+    #[cfg(feature = "tokio1")]
+    pub async fn connect_with_transport(
+        stream: Box<dyn AsyncTokioStream>,
+        hello_name: &ClientId,
+    ) -> Result<AsyncSmtpConnection, Error> {
+        let stream = AsyncNetworkStream::use_existing_tokio1(stream);
+        Self::connect_impl(stream, hello_name).await
     }
 
     /// Connects to the configured server
