@@ -2,7 +2,13 @@ use std::{
     fmt::Display,
     io::{self, BufRead, BufReader, Write},
     net::{IpAddr, ToSocketAddrs},
+    sync::Arc,
     time::Duration,
+};
+
+use rsasl::{
+    mechname::Mechname,
+    prelude::{SASLClient, SASLConfig},
 };
 
 #[cfg(feature = "tracing")]
@@ -11,7 +17,6 @@ use super::{ClientCodec, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
     transport::smtp::{
-        authentication::{Credentials, Mechanism},
         commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
@@ -208,28 +213,26 @@ impl SmtpConnection {
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
-    pub fn auth(
-        &mut self,
-        mechanisms: &[Mechanism],
-        credentials: &Credentials,
-    ) -> Result<Response, Error> {
-        let mechanism = self
+    pub fn auth(&mut self, config: Arc<SASLConfig>) -> Result<Response, Error> {
+        let client = SASLClient::new(config);
+        let offered: Vec<&Mechname> = self
             .server_info
-            .get_auth_mechanism(mechanisms)
-            .ok_or_else(|| error::client("No compatible authentication mechanism was found"))?;
+            .get_auth_mechanisms()
+            .iter()
+            .filter_map(|boxed| Mechname::parse(boxed.as_bytes()).ok())
+            .collect();
+        let mut session = client
+            .start_suggested(&offered[..])
+            .map_err(|_| error::client("No compatible authentication mechanism was found"))?;
 
         // Limit challenges to avoid blocking
         let mut challenges = 10;
-        let mut response = self.command(Auth::new(mechanism, credentials.clone(), None)?)?;
+        let mut response = self.command(Auth::initial(&mut session)?)?;
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
             response = try_smtp!(
-                self.command(Auth::new_from_response(
-                    mechanism,
-                    credentials.clone(),
-                    &response,
-                )?),
+                self.command(Auth::from_response(&mut session, &response,)?),
                 self
             );
         }

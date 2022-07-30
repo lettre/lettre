@@ -1,7 +1,5 @@
-use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Executor,
-    AsyncTransport, Message,
-};
+use lettre::{AsyncSmtpTransport, AsyncStd1Executor, AsyncTransport, Message};
+use rsasl::prelude::SASLConfig;
 
 #[async_std::main]
 async fn main() {
@@ -15,13 +13,18 @@ async fn main() {
         .body(String::from("Be happy with async!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let config = SASLConfig::with_credentials(
+        None,
+        "smtp_username".to_string(),
+        "smtp_password".to_string(),
+    )
+    .unwrap();
 
     // Open a remote connection to gmail using STARTTLS
     let mailer: AsyncSmtpTransport<AsyncStd1Executor> =
         AsyncSmtpTransport::<AsyncStd1Executor>::starttls_relay("smtp.gmail.com")
             .unwrap()
-            .credentials(creds)
+            .sasl_config(config)
             .build();
 
     // Send the email

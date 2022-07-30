@@ -1,10 +1,8 @@
 // This line is only to make it compile from lettre's examples folder,
 // since it uses Rust 2018 crate renaming to import tokio.
 // Won't be needed in user's code.
-use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message,
-    Tokio1Executor,
-};
+use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
+use rsasl::prelude::SASLConfig;
 use tokio1_crate as tokio;
 
 #[tokio::main]
@@ -19,13 +17,18 @@ async fn main() {
         .body(String::from("Be happy with async!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let config = SASLConfig::with_credentials(
+        None,
+        "smtp_username".to_string(),
+        "smtp_password".to_string(),
+    )
+    .unwrap();
 
     // Open a remote connection to gmail
     let mailer: AsyncSmtpTransport<Tokio1Executor> =
         AsyncSmtpTransport::<Tokio1Executor>::relay("smtp.gmail.com")
             .unwrap()
-            .credentials(creds)
+            .sasl_config(config)
             .build();
 
     // Send the email

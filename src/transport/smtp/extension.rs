@@ -7,8 +7,9 @@ use std::{
     result::Result,
 };
 
+use rsasl::prelude::Mechname;
+
 use crate::transport::smtp::{
-    authentication::Mechanism,
     error::{self, Error},
     response::Response,
     util::XText,
@@ -87,8 +88,6 @@ pub enum Extension {
     ///
     /// Defined in [RFC 2487](https://tools.ietf.org/html/rfc2487)
     StartTls,
-    /// AUTH mechanism
-    Authentication(Mechanism),
 }
 
 impl Display for Extension {
@@ -97,7 +96,6 @@ impl Display for Extension {
             Extension::EightBitMime => f.write_str("8BITMIME"),
             Extension::SmtpUtfEight => f.write_str("SMTPUTF8"),
             Extension::StartTls => f.write_str("STARTTLS"),
-            Extension::Authentication(ref mechanism) => write!(f, "AUTH {mechanism}"),
         }
     }
 }
@@ -114,14 +112,19 @@ pub struct ServerInfo {
     ///
     /// It contains the features supported by the server and known by the `Extension` module.
     features: HashSet<Extension>,
+
+    /// List of offered SASL mechanisms
+    mechanisms: Vec<String>,
 }
 
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let features = if self.features.is_empty() {
             "no supported features".to_string()
-        } else {
+        } else if self.mechanisms.is_empty() {
             format!("{:?}", self.features)
+        } else {
+            format!("{:?} AUTH {:?}", self.features, self.mechanisms)
         };
         write!(f, "{} with {}", self.name, features)
     }
@@ -136,6 +139,7 @@ impl ServerInfo {
         };
 
         let mut features: HashSet<Extension> = HashSet::new();
+        let mut mechanisms = Vec::new();
 
         for line in response.message() {
             if line.is_empty() {
@@ -155,18 +159,7 @@ impl ServerInfo {
                 }
                 "AUTH" => {
                     for mechanism in split {
-                        match mechanism {
-                            "PLAIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Plain));
-                            }
-                            "LOGIN" => {
-                                features.insert(Extension::Authentication(Mechanism::Login));
-                            }
-                            "XOAUTH2" => {
-                                features.insert(Extension::Authentication(Mechanism::Xoauth2));
-                            }
-                            _ => (),
-                        }
+                        mechanisms.push(mechanism.to_string());
                     }
                 }
                 _ => (),
@@ -176,6 +169,7 @@ impl ServerInfo {
         Ok(ServerInfo {
             name: name.to_string(),
             features,
+            mechanisms,
         })
     }
 
@@ -185,19 +179,15 @@ impl ServerInfo {
     }
 
     /// Checks if the server supports an ESMTP feature
-    pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
-        self.features
-            .contains(&Extension::Authentication(mechanism))
+    pub fn supports_auth_mechanism(&self, mechanism: &Mechname) -> bool {
+        self.mechanisms
+            .iter()
+            .any(|mech| mech.as_str() == mechanism.as_str())
     }
 
-    /// Gets a compatible mechanism from list
-    pub fn get_auth_mechanism(&self, mechanisms: &[Mechanism]) -> Option<Mechanism> {
-        for mechanism in mechanisms {
-            if self.supports_auth_mechanism(*mechanism) {
-                return Some(*mechanism);
-            }
-        }
-        None
+    /// Gets the list of offered SASL mechanisms
+    pub fn get_auth_mechanisms(&self) -> &[String] {
+        self.mechanisms.as_slice()
     }
 
     /// The name given in the server banner
@@ -296,10 +286,7 @@ mod test {
     use std::collections::HashSet;
 
     use super::*;
-    use crate::transport::smtp::{
-        authentication::Mechanism,
-        response::{Category, Code, Detail, Response, Severity},
-    };
+    use crate::transport::smtp::response::{Category, Code, Detail, Response, Severity};
 
     #[test]
     fn test_clientid_fmt() {
@@ -316,10 +303,6 @@ mod test {
             format!("{}", Extension::EightBitMime),
             "8BITMIME".to_string()
         );
-        assert_eq!(
-            format!("{}", Extension::Authentication(Mechanism::Plain)),
-            "AUTH PLAIN".to_string()
-        );
     }
 
     #[test]
@@ -333,6 +316,7 @@ mod test {
                 ServerInfo {
                     name: "name".to_string(),
                     features: eightbitmime,
+                    mechanisms: vec![]
                 }
             ),
             "name with {EightBitMime}".to_string()
@@ -346,23 +330,10 @@ mod test {
                 ServerInfo {
                     name: "name".to_string(),
                     features: empty,
+                    mechanisms: vec![]
                 }
             ),
             "name with no supported features".to_string()
-        );
-
-        let mut plain = HashSet::new();
-        assert!(plain.insert(Extension::Authentication(Mechanism::Plain)));
-
-        assert_eq!(
-            format!(
-                "{}",
-                ServerInfo {
-                    name: "name".to_string(),
-                    features: plain,
-                }
-            ),
-            "name with {Authentication(Plain)}".to_string()
         );
     }
 
@@ -387,6 +358,7 @@ mod test {
         let server_info = ServerInfo {
             name: "me".to_string(),
             features,
+            mechanisms: vec![],
         };
 
         assert_eq!(ServerInfo::from_response(&response).unwrap(), server_info);
@@ -410,18 +382,22 @@ mod test {
 
         let mut features2 = HashSet::new();
         assert!(features2.insert(Extension::EightBitMime));
-        assert!(features2.insert(Extension::Authentication(Mechanism::Plain),));
-        assert!(features2.insert(Extension::Authentication(Mechanism::Xoauth2),));
 
         let server_info2 = ServerInfo {
             name: "me".to_string(),
             features: features2,
+            mechanisms: vec![
+                "PLAIN".to_string(),
+                "CRAM-MD5".to_string(),
+                "XOAUTH2".to_string(),
+                "OTHER".to_string(),
+            ],
         };
 
         assert_eq!(ServerInfo::from_response(&response2).unwrap(), server_info2);
 
         assert!(server_info2.supports_feature(Extension::EightBitMime));
-        assert!(server_info2.supports_auth_mechanism(Mechanism::Plain));
+        assert!(server_info2.supports_auth_mechanism(Mechname::parse(b"PLAIN").unwrap()));
         assert!(!server_info2.supports_feature(Extension::StartTls));
     }
 }

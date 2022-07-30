@@ -1,12 +1,12 @@
-#[cfg(feature = "pool")]
-use std::sync::Arc;
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
+
+use rsasl::prelude::SASLConfig;
 
 #[cfg(feature = "pool")]
 use super::pool::sync_impl::Pool;
 #[cfg(feature = "pool")]
 use super::PoolConfig;
-use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
+use super::{ClientId, Error, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{address::Envelope, Transport};
@@ -147,15 +147,9 @@ impl SmtpTransportBuilder {
         self
     }
 
-    /// Set the authentication mechanism to use
-    pub fn credentials(mut self, credentials: Credentials) -> Self {
-        self.info.credentials = Some(credentials);
-        self
-    }
-
-    /// Set the authentication mechanism to use
-    pub fn authentication(mut self, mechanisms: Vec<Mechanism>) -> Self {
-        self.info.authentication = mechanisms;
+    /// Set the SASL configuration, which contains credentials and available mechanisms.
+    pub fn sasl_config(mut self, config: Arc<SASLConfig>) -> Self {
+        self.info.sasl = Some(config);
         self
     }
 
@@ -246,8 +240,8 @@ impl SmtpClient {
             _ => (),
         }
 
-        if let Some(credentials) = &self.info.credentials {
-            conn.auth(&self.info.authentication, credentials)?;
+        if let Some(ref config) = self.info.sasl {
+            conn.auth(Arc::clone(config))?;
         }
         Ok(conn)
     }

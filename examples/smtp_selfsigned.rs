@@ -1,12 +1,10 @@
 use std::fs;
 
 use lettre::{
-    transport::smtp::{
-        authentication::Credentials,
-        client::{Certificate, Tls, TlsParameters},
-    },
+    transport::smtp::client::{Certificate, Tls, TlsParameters},
     Message, SmtpTransport, Transport,
 };
+use rsasl::prelude::SASLConfig;
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -27,13 +25,18 @@ fn main() {
         .build()
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let config = SASLConfig::with_credentials(
+        None,
+        "smtp_username".to_string(),
+        "smtp_password".to_string(),
+    )
+    .unwrap();
 
     // Open a remote connection to the smtp server
     let mailer = SmtpTransport::builder_dangerous("smtp.server.com")
         .port(465)
         .tls(Tls::Wrapper(tls))
-        .credentials(creds)
+        .sasl_config(config)
         .build();
 
     // Send the email

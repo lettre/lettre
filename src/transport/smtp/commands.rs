@@ -2,11 +2,12 @@
 
 use std::fmt::{self, Display, Formatter};
 
+use rsasl::prelude::Session;
+
 use crate::{
     address::Address,
     transport::smtp::{
-        authentication::{Credentials, Mechanism},
-        error::{self, Error},
+        error::{self, Error, Kind},
         extension::{ClientId, MailParameter, RcptParameter},
         response::Response,
     },
@@ -212,22 +213,26 @@ impl Display for Rset {
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Auth {
-    mechanism: Mechanism,
-    credentials: Credentials,
-    challenge: Option<String>,
-    response: Option<String>,
+    msg: AuthMsg,
+}
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+enum AuthMsg {
+    Initial(String, Option<String>),
+    Contd(String),
 }
 
 impl Display for Auth {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let encoded_response = self.response.as_ref().map(crate::base64::encode);
-
-        if self.mechanism.supports_initial_response() {
-            write!(f, "AUTH {} {}", self.mechanism, encoded_response.unwrap())?;
-        } else {
-            match encoded_response {
-                Some(response) => f.write_str(&response)?,
-                None => write!(f, "AUTH {}", self.mechanism)?,
+        match &self.msg {
+            AuthMsg::Initial(mechname, Some(response)) => {
+                write!(f, "AUTH {mechname} {}", response.as_str())?;
+            }
+            AuthMsg::Initial(mechname, None) => {
+                write!(f, "AUTH {mechname}")?;
+            }
+            AuthMsg::Contd(response) => {
+                write!(f, "AUTH {}", response.as_str())?;
             }
         }
         f.write_str("\r\n")
@@ -236,31 +241,23 @@ impl Display for Auth {
 
 impl Auth {
     /// Creates an AUTH command (from a challenge if provided)
-    pub fn new(
-        mechanism: Mechanism,
-        credentials: Credentials,
-        challenge: Option<String>,
-    ) -> Result<Auth, Error> {
-        let response = if mechanism.supports_initial_response() || challenge.is_some() {
-            Some(mechanism.response(&credentials, challenge.as_deref())?)
+    pub fn initial(session: &mut Session) -> Result<Self, Error> {
+        let name = session.get_mechname().as_str().to_string();
+        let response = if session.are_we_first() {
+            let mut out = Vec::new();
+            session
+                .step64(None, &mut out)
+                .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
+            Some(String::from_utf8(out).expect("base64 encoded output is not UTF-8"))
         } else {
             None
         };
-        Ok(Auth {
-            mechanism,
-            credentials,
-            challenge,
-            response,
+        Ok(Self {
+            msg: AuthMsg::Initial(name, response),
         })
     }
 
-    /// Creates an AUTH command from a response that needs to be a
-    /// valid challenge (with 334 response code)
-    pub fn new_from_response(
-        mechanism: Mechanism,
-        credentials: Credentials,
-        response: &Response,
-    ) -> Result<Auth, Error> {
+    pub fn from_response(session: &mut Session, response: &Response) -> Result<Self, Error> {
         if !response.has_code(334) {
             return Err(error::response("Expecting a challenge"));
         }
@@ -271,18 +268,14 @@ impl Auth {
         #[cfg(feature = "tracing")]
         tracing::debug!("auth encoded challenge: {}", encoded_challenge);
 
-        let decoded_base64 = crate::base64::decode(encoded_challenge).map_err(error::response)?;
-        let decoded_challenge = String::from_utf8(decoded_base64).map_err(error::response)?;
-        #[cfg(feature = "tracing")]
-        tracing::debug!("auth decoded challenge: {}", decoded_challenge);
+        let mut out = Vec::new();
+        session
+            .step64(Some(encoded_challenge.as_bytes()), &mut out)
+            .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
+        let output = String::from_utf8(out).expect("base64 encoded output is not UTF-8");
 
-        let response = Some(mechanism.response(&credentials, Some(decoded_challenge.as_ref()))?);
-
-        Ok(Auth {
-            mechanism,
-            credentials,
-            challenge: Some(decoded_challenge),
-            response,
+        Ok(Self {
+            msg: AuthMsg::Contd(output),
         })
     }
 }
