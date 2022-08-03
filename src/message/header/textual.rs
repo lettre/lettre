@@ -105,7 +105,18 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Subject: =?utf-8?b?0KLQtdC80LAg0YHQvtC+0LHRidC10L3QuNGP?=\r\n"
+            "Subject: =?utf-8?b?0KLQtdC80LA=?= =?utf-8?b?0YHQvtC+0LHRidC10L3QuNGP?=\r\n"
+        );
+    }
+
+    #[test]
+    fn format_utf8_word() {
+        let mut headers = Headers::new();
+        headers.set(Subject("Administratör".into()));
+
+        assert_eq!(
+            headers.to_string(),
+            "Subject: =?utf-8?b?QWRtaW5pc3RyYXTDtnI=?=\r\n"
         );
     }
 

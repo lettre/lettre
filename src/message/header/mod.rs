@@ -337,7 +337,6 @@ impl HeaderValue {
 /// [RFC 1522](https://tools.ietf.org/html/rfc1522) header value encoder
 struct HeaderValueEncoder<'a> {
     writer: EmailWriter<'a>,
-    encode_buf: String,
 }
 
 impl<'a> HeaderValueEncoder<'a> {
@@ -358,7 +357,6 @@ impl<'a> HeaderValueEncoder<'a> {
             WordsPlusFillIterator { s: value },
             Self {
                 writer,
-                encode_buf: String::new(),
             },
         )
     }
@@ -370,60 +368,20 @@ impl<'a> HeaderValueEncoder<'a> {
             if allowed {
                 // This word only contains allowed characters
 
-                // the next word is allowed, but we may have accumulated some words to encode
-                self.flush_encode_buf()?;
-
                 self.writer.folding().write_str(next_word)?;
             } else {
                 // This word contains unallowed characters
-                self.encode_buf.push_str(next_word);
+                // self.encode_buf.push_str(next_word);
+                // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
+                if next_word.chars().next() == Some(' ') {
+                    self.writer.folding().write_str(" ")?;
+                    email_encoding::headers::rfc2047::encode(&next_word.chars().skip(1).collect::<String>(), &mut self.writer)?;
+                } else {
+                    email_encoding::headers::rfc2047::encode(next_word, &mut self.writer)?;
+                }
             }
         }
 
-        self.flush_encode_buf()?;
-
-        Ok(())
-    }
-
-    fn flush_encode_buf(&mut self) -> fmt::Result {
-        if self.encode_buf.is_empty() {
-            // nothing to encode
-            return Ok(());
-        }
-
-        // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-        let first_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i);
-        // May as well also write the tail in plain text.
-        let last_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .rev()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i + 1);
-
-        let (prefix, to_encode, suffix) = match first_not_allowed {
-            Some(first_not_allowed) => {
-                let last_not_allowed = last_not_allowed.unwrap();
-
-                let (remaining, suffix) = self.encode_buf.split_at(last_not_allowed);
-                let (prefix, to_encode) = remaining.split_at(first_not_allowed);
-
-                (prefix, to_encode, suffix)
-            }
-            None => ("", self.encode_buf.as_str(), ""),
-        };
-
-        self.writer.folding().write_str(prefix)?;
-        email_encoding::headers::rfc2047::encode(to_encode, &mut self.writer)?;
-        self.writer.folding().write_str(suffix)?;
-
-        self.encode_buf.clear();
         Ok(())
     }
 }
@@ -619,7 +577,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "To: Se=?utf-8?b?w6E=?=n <sean@example.com>\r\n"
+            "To: =?utf-8?b?U2XDoW4=?= <sean@example.com>\r\n"
         );
     }
 
@@ -649,10 +607,11 @@ mod tests {
             headers.to_string(),
             concat!(
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCy?= =?utf-8?b?0JjQstCw?=\r\n",
+                " =?utf-8?b?0L0=?= =?utf-8?b?0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
+                " =?utf-8?b?SsSBbmlz?= =?utf-8?b?QsSTcnppxYbFoQ==?= <janis@example.com>, \r\n",
+                " =?utf-8?b?U2XDoW4=?= =?utf-8?b?w5M=?= =?utf-8?b?UnVkYcOt?=\r\n",
+                " <sean@example.com>\r\n",
             )
         );
     }
@@ -689,7 +648,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "Subject: Hello! =?utf-8?b?DQo=?= This is \" bad =?utf-8?b?AC4g8J+Riw==?=\r\n"
+            "Subject: Hello! =?utf-8?b?DQo=?= This is \" bad =?utf-8?b?AC4=?= \r\n =?utf-8?b?8J+Riw==?=\r\n"
         );
     }
 
@@ -724,10 +683,11 @@ mod tests {
                 " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I\r\n",
                 " guess that's it!\r\n",
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCy?= =?utf-8?b?0JjQstCw?=\r\n",
+                " =?utf-8?b?0L0=?= =?utf-8?b?0JjQstCw0L3QvtCy0LjRhw==?= <ivanov@example.com>, \r\n",
+                " =?utf-8?b?SsSBbmlz?= =?utf-8?b?QsSTcnppxYbFoQ==?= <janis@example.com>, \r\n",
+                " =?utf-8?b?U2XDoW4=?= =?utf-8?b?w5M=?= =?utf-8?b?UnVkYcOt?=\r\n",
+                " <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )
@@ -745,8 +705,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go;\r\n",
-                " ;;;;;s;;;;;;;;;;;;;;;;fffeinmjggggggggg=?utf-8?b?772G44Gj?=\r\n"
+                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go; =?utf-8?b?Ozs7OztzOzs7Ozs7Ozs7?=\r\n",
+                " =?utf-8?b?Ozs7Ozs7O2ZmZmVpbm1qZ2dnZ2dnZ2dn772G44Gj?=\r\n"
             )
         );
     }
