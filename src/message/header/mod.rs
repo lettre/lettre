@@ -368,7 +368,7 @@ impl<'a> HeaderValueEncoder<'a> {
                 // This word contains unallowed characters
                 // self.encode_buf.push_str(next_word);
                 // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-                if let Some(suffix) = next_word.strip_prefix(" ") {
+                if let Some(suffix) = next_word.strip_prefix(' ') {
                     self.writer.folding().write_str(" ")?;
                     email_encoding::headers::rfc2047::encode(suffix, &mut self.writer)?;
                 } else {
