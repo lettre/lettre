@@ -373,9 +373,9 @@ impl<'a> HeaderValueEncoder<'a> {
                 // This word contains unallowed characters
                 // self.encode_buf.push_str(next_word);
                 // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-                if next_word.chars().next() == Some(' ') {
+                if next_word.starts_with(' ') {
                     self.writer.folding().write_str(" ")?;
-                    email_encoding::headers::rfc2047::encode(&next_word.chars().skip(1).collect::<String>(), &mut self.writer)?;
+                    email_encoding::headers::rfc2047::encode(&next_word[1..], &mut self.writer)?;
                 } else {
                     email_encoding::headers::rfc2047::encode(next_word, &mut self.writer)?;
                 }
