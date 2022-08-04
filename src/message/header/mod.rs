@@ -353,12 +353,7 @@ impl<'a> HeaderValueEncoder<'a> {
         let line_len = name.len() + ": ".len();
         let writer = EmailWriter::new(writer, line_len, false);
 
-        (
-            WordsPlusFillIterator { s: value },
-            Self {
-                writer,
-            },
-        )
+        (WordsPlusFillIterator { s: value }, Self { writer })
     }
 
     fn format(mut self, words_iter: WordsPlusFillIterator<'_>) -> fmt::Result {
