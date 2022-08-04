@@ -342,28 +342,21 @@ struct HeaderValueEncoder<'a> {
 
 impl<'a> HeaderValueEncoder<'a> {
     fn encode(name: &str, value: &'a str, f: &'a mut impl fmt::Write) -> fmt::Result {
-        let (words_iter, encoder) = Self::new(name, value, f);
-        encoder.format(words_iter)
+        let encoder = Self::new(name, f);
+        encoder.format(value.split_inclusive(' '))
     }
 
-    fn new(
-        name: &str,
-        value: &'a str,
-        writer: &'a mut dyn Write,
-    ) -> (WordsPlusFillIterator<'a>, Self) {
+    fn new(name: &str, writer: &'a mut dyn Write) -> Self {
         let line_len = name.len() + ": ".len();
         let writer = EmailWriter::new(writer, line_len, false);
 
-        (
-            WordsPlusFillIterator { s: value },
-            Self {
-                writer,
-                encode_buf: String::new(),
-            },
-        )
+        Self {
+            writer,
+            encode_buf: String::new(),
+        }
     }
 
-    fn format(mut self, words_iter: WordsPlusFillIterator<'_>) -> fmt::Result {
+    fn format(mut self, words_iter: impl Iterator<Item = &'a str>) -> fmt::Result {
         for next_word in words_iter {
             let allowed = allowed_str(next_word);
 
@@ -373,7 +366,15 @@ impl<'a> HeaderValueEncoder<'a> {
                 // the next word is allowed, but we may have accumulated some words to encode
                 self.flush_encode_buf()?;
 
-                self.writer.folding().write_str(next_word)?;
+                match next_word.strip_suffix(' ') {
+                    Some(prefix) => {
+                        self.writer.folding().write_str(prefix)?;
+                        self.writer.space();
+                    }
+                    None => {
+                        self.writer.folding().write_str(next_word)?;
+                    }
+                }
             } else {
                 // This word contains unallowed characters
                 self.encode_buf.push_str(next_word);
@@ -391,68 +392,18 @@ impl<'a> HeaderValueEncoder<'a> {
             return Ok(());
         }
 
-        // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-        let first_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i);
-        // May as well also write the tail in plain text.
-        let last_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .rev()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i + 1);
-
-        let (prefix, to_encode, suffix) = match first_not_allowed {
-            Some(first_not_allowed) => {
-                let last_not_allowed = last_not_allowed.unwrap();
-
-                let (remaining, suffix) = self.encode_buf.split_at(last_not_allowed);
-                let (prefix, to_encode) = remaining.split_at(first_not_allowed);
-
-                (prefix, to_encode, suffix)
+        match self.encode_buf.strip_suffix(' ') {
+            Some(prefix) => {
+                email_encoding::headers::rfc2047::encode(prefix, &mut self.writer)?;
+                self.writer.space();
             }
-            None => ("", self.encode_buf.as_str(), ""),
-        };
-
-        self.writer.folding().write_str(prefix)?;
-        email_encoding::headers::rfc2047::encode(to_encode, &mut self.writer)?;
-        self.writer.folding().write_str(suffix)?;
+            None => {
+                email_encoding::headers::rfc2047::encode(&self.encode_buf, &mut self.writer)?;
+            }
+        }
 
         self.encode_buf.clear();
         Ok(())
-    }
-}
-
-/// Iterator yielding a string split by space, but spaces are included before the next word.
-struct WordsPlusFillIterator<'a> {
-    s: &'a str,
-}
-
-impl<'a> Iterator for WordsPlusFillIterator<'a> {
-    type Item = &'a str;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.s.is_empty() {
-            return None;
-        }
-
-        let next_word = self
-            .s
-            .bytes()
-            .enumerate()
-            .skip(1)
-            .find(|&(_i, c)| c == b' ')
-            .map(|(i, _)| i)
-            .unwrap_or(self.s.len());
-
-        let word = &self.s[..next_word];
-        self.s = &self.s[word.len()..];
-        Some(word)
     }
 }
 
@@ -619,7 +570,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "To: Se=?utf-8?b?w6E=?=n <sean@example.com>\r\n"
+            "To: =?utf-8?b?U2XDoW4=?= <sean@example.com>\r\n"
         );
     }
 
@@ -745,8 +696,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go;\r\n",
-                " ;;;;;s;;;;;;;;;;;;;;;;fffeinmjggggggggg=?utf-8?b?772G44Gj?=\r\n"
+                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go; =?utf-8?b?Ozs7OztzOzs7Ozs7Ozs7?=\r\n",
+                " =?utf-8?b?Ozs7Ozs7O2ZmZmVpbm1qZ2dnZ2dnZ2dn772G44Gj?=\r\n",
             )
         );
     }

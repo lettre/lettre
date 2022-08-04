@@ -110,6 +110,17 @@ mod test {
     }
 
     #[test]
+    fn format_utf8_word() {
+        let mut headers = Headers::new();
+        headers.set(Subject("Administratör".into()));
+
+        assert_eq!(
+            headers.to_string(),
+            "Subject: =?utf-8?b?QWRtaW5pc3RyYXTDtnI=?=\r\n"
+        );
+    }
+
+    #[test]
     fn parse_ascii() {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
