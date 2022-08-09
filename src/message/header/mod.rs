@@ -601,9 +601,9 @@ mod tests {
             concat!(
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
                 " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, =?utf-8?b?SsSBbmlzIEI=?=\r\n",
+                " =?utf-8?b?xJNyemnFhsWh?= <janis@example.com>, =?utf-8?b?U2XDoW4gw5MgUnVk?=\r\n",
+                " =?utf-8?b?YcOt?= <sean@example.com>\r\n",
             )
         );
     }
@@ -676,9 +676,9 @@ mod tests {
                 " guess that's it!\r\n",
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
                 " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, =?utf-8?b?SsSBbmlzIEI=?=\r\n",
+                " =?utf-8?b?xJNyemnFhsWh?= <janis@example.com>, =?utf-8?b?U2XDoW4gw5MgUnVk?=\r\n",
+                " =?utf-8?b?YcOt?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )
