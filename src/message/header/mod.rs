@@ -348,7 +348,7 @@ impl<'a> HeaderValueEncoder<'a> {
 
     fn new(name: &str, writer: &'a mut dyn Write) -> Self {
         let line_len = name.len() + ": ".len();
-        let writer = EmailWriter::new(writer, line_len, false);
+        let writer = EmailWriter::new(writer, line_len, 0, false, false);
 
         Self {
             writer,
@@ -594,16 +594,16 @@ mod tests {
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
-         ) );
+        ));
 
         assert_eq!(
             headers.to_string(),
             concat!(
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, =?utf-8?b?SsSBbmlzIEI=?=\r\n",
-                " =?utf-8?b?xJNyemnFhsWh?= <janis@example.com>, =?utf-8?b?U2XDoW4gw5MgUnVk?=\r\n",
-                " =?utf-8?b?YcOt?= <sean@example.com>\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
             )
         );
     }
@@ -674,11 +674,11 @@ mod tests {
                 "Subject: Hello! This is lettre, and this\r\n",
                 " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I\r\n",
                 " guess that's it!\r\n",
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, =?utf-8?b?SsSBbmlzIEI=?=\r\n",
-                " =?utf-8?b?xJNyemnFhsWh?= <janis@example.com>, =?utf-8?b?U2XDoW4gw5MgUnVk?=\r\n",
-                " =?utf-8?b?YcOt?= <sean@example.com>\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )

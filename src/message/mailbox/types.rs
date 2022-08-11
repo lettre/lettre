@@ -70,7 +70,7 @@ impl Mailbox {
     pub(crate) fn encode(&self, w: &mut EmailWriter<'_>) -> FmtResult {
         if let Some(name) = &self.name {
             email_encoding::headers::quoted_string::encode(name, w)?;
-            w.space();
+            w.decorative_space();
             w.write_char('<')?;
         }
 
@@ -275,7 +275,7 @@ impl Mailboxes {
         for mailbox in self.iter() {
             if !mem::take(&mut first) {
                 w.write_char(',')?;
-                w.space();
+                w.decorative_space();
             }
 
             mailbox.encode(w)?;
