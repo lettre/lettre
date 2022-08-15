@@ -366,14 +366,13 @@ impl<'a> HeaderValueEncoder<'a> {
                 // the next word is allowed, but we may have accumulated some words to encode
                 self.flush_encode_buf()?;
 
-                match next_word.strip_suffix(' ') {
-                    Some(prefix) => {
-                        self.writer.folding().write_str(prefix)?;
-                        self.writer.space();
-                    }
-                    None => {
-                        self.writer.folding().write_str(next_word)?;
-                    }
+                let prefix = next_word.trim_end_matches(' ');
+                self.writer.folding().write_str(prefix)?;
+        
+                // TODO: add a better API for doing this in email-encoding
+                let spaces = next_word.len() - prefix.len();
+                for _ in 0..spaces {
+                    self.writer.space();
                 }
             } else {
                 // This word contains unallowed characters
@@ -392,14 +391,13 @@ impl<'a> HeaderValueEncoder<'a> {
             return Ok(());
         }
 
-        match self.encode_buf.strip_suffix(' ') {
-            Some(prefix) => {
-                email_encoding::headers::rfc2047::encode(prefix, &mut self.writer)?;
-                self.writer.space();
-            }
-            None => {
-                email_encoding::headers::rfc2047::encode(&self.encode_buf, &mut self.writer)?;
-            }
+        let prefix = self.encode_buf.trim_end_matches(' ');
+        email_encoding::headers::rfc2047::encode(prefix, &mut self.writer)?;
+
+        // TODO: add a better API for doing this in email-encoding
+        let spaces = self.encode_buf.len() - prefix.len();
+        for _ in 0..spaces {
+            self.writer.space();
         }
 
         self.encode_buf.clear();
@@ -667,6 +665,7 @@ mod tests {
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "quoted-printable".to_string(),
         ));
+        println!("{:#?}", headers);
 
         assert_eq!(
             headers.to_string(),
