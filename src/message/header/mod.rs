@@ -368,7 +368,7 @@ impl<'a> HeaderValueEncoder<'a> {
 
                 let prefix = next_word.trim_end_matches(' ');
                 self.writer.folding().write_str(prefix)?;
-        
+
                 // TODO: add a better API for doing this in email-encoding
                 let spaces = next_word.len() - prefix.len();
                 for _ in 0..spaces {
@@ -417,7 +417,8 @@ const fn allowed_char(c: u8) -> bool {
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use super::{HeaderName, HeaderValue, Headers};
+    use super::{HeaderName, HeaderValue, Headers, To};
+    use crate::message::Mailboxes;
 
     #[test]
     fn valid_headername() {
@@ -589,19 +590,46 @@ mod tests {
     #[test]
     fn format_special_with_folding() {
         let mut headers = Headers::new();
+        let to = To::from(Mailboxes::from_iter([
+            "🌍 <world@example.com>".parse().unwrap(),
+            "🦆 Everywhere <ducks@example.com>".parse().unwrap(),
+            "Иванов Иван Иванович <ivanov@example.com>".parse().unwrap(),
+            "Jānis Bērziņš <janis@example.com>".parse().unwrap(),
+            "Seán Ó Rudaí <sean@example.com>".parse().unwrap(),
+        ]));
+        headers.set(to);
+
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhiBFdmVyeXdo?=\r\n",
+                " =?utf-8?b?ZXJl?= <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LI=?=\r\n",
+                " =?utf-8?b?0LDQvSDQmNCy0LDQvdC+0LLQuNGH?= <ivanov@example.com>,\r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, =?utf-8?b?U2U=?=\r\n",
+                " =?utf-8?b?w6FuIMOTIFJ1ZGHDrQ==?= <sean@example.com>\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn format_special_with_folding_raw() {
+        let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
             "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
         ));
 
+        // TODO: fix the fact that the encoder doesn't know that
+        // the space between the name and the address should be
+        // removed when wrapping.
         assert_eq!(
             headers.to_string(),
             concat!(
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
                 " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
                 " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
-                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
-                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
+                "  =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                "  =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
             )
         );
     }
@@ -665,8 +693,10 @@ mod tests {
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
             "quoted-printable".to_string(),
         ));
-        println!("{:#?}", headers);
 
+        // TODO: fix the fact that the encoder doesn't know that
+        // the space between the name and the address should be
+        // removed when wrapping.
         assert_eq!(
             headers.to_string(),
             concat!(
@@ -676,8 +706,8 @@ mod tests {
                 "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
                 " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
                 " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
-                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
-                " =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
+                "  =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                "  =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )
