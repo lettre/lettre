@@ -7,8 +7,6 @@ use std::{
 };
 
 use ed25519_dalek::Signer;
-use once_cell::sync::Lazy;
-use regex::bytes::Regex;
 use rsa::{pkcs1::DecodeRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 
@@ -219,24 +217,34 @@ fn dkim_header_format(
 
 /// Canonicalize the body of an email
 fn dkim_canonicalize_body(
-    body: &[u8],
+    mut body: &[u8],
     canonicalization: DkimCanonicalizationType,
 ) -> Cow<'_, [u8]> {
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new("(\r\n)+$").unwrap());
-    static RE_DOUBLE_SPACE: Lazy<Regex> = Lazy::new(|| Regex::new("[\\t ]+").unwrap());
-    static RE_SPACE_EOL: Lazy<Regex> = Lazy::new(|| Regex::new("[\t ]\r\n").unwrap());
     match canonicalization {
-        DkimCanonicalizationType::Simple => RE.replace(body, &b"\r\n"[..]),
-        DkimCanonicalizationType::Relaxed => {
-            let body = RE_DOUBLE_SPACE.replace_all(body, &b" "[..]);
-            let body = match RE_SPACE_EOL.replace_all(&body, &b"\r\n"[..]) {
-                Cow::Borrowed(_body) => body,
-                Cow::Owned(body) => Cow::Owned(body),
-            };
-            match RE.replace(&body, &b"\r\n"[..]) {
-                Cow::Borrowed(_body) => body,
-                Cow::Owned(body) => Cow::Owned(body),
+        DkimCanonicalizationType::Simple => {
+            // Remove empty lines at end
+            while body.ends_with(b"\r\n\r\n") {
+                body = &body[..body.len() - 2];
             }
+            Cow::Borrowed(body)
+        }
+        DkimCanonicalizationType::Relaxed => {
+            let mut out = Vec::with_capacity(body.len());
+            loop {
+                match body {
+                    [b' ' | b'\t', b'\r', b'\n', ..] => {}
+                    [b' ' | b'\t', b' ' | b'\t', ..] => {}
+                    [b' ' | b'\t', ..] => out.push(b' '),
+                    [c, ..] => out.push(*c),
+                    [] => break,
+                }
+                body = &body[1..];
+            }
+            // Remove empty lines at end
+            while out.ends_with(b"\r\n\r\n") {
+                out.truncate(out.len() - 2);
+            }
+            Cow::Owned(out)
         }
     }
 }
@@ -416,8 +424,9 @@ mod test {
             header::{HeaderName, HeaderValue},
             Header, Message,
         },
-        dkim_canonicalize_headers, dkim_sign_fixed_time, DkimCanonicalization,
-        DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm, DkimSigningKey,
+        dkim_canonicalize_body, dkim_canonicalize_headers, dkim_sign_fixed_time,
+        DkimCanonicalization, DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm,
+        DkimSigningKey,
     };
     use crate::StdError;
 
@@ -488,6 +497,24 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
         let message = test_message();
         dbg!(message.headers.to_string());
         assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Relaxed),"from:=?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n")
+    }
+
+    #[test]
+    fn test_body_simple_canonicalize() {
+        let body = b" C \r\nD \t E\r\n\r\n\r\n";
+        assert_eq!(
+            dkim_canonicalize_body(body, DkimCanonicalizationType::Simple).into_owned(),
+            b" C \r\nD \t E\r\n"
+        );
+    }
+
+    #[test]
+    fn test_body_relaxed_canonicalize() {
+        let body = b" C \r\nD \t E\r\n\tF\r\n\t\r\n\r\n\r\n";
+        assert_eq!(
+            dkim_canonicalize_body(body, DkimCanonicalizationType::Relaxed).into_owned(),
+            b" C\r\nD E\r\n F\r\n"
+        );
     }
 
     #[test]
