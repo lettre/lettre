@@ -19,7 +19,7 @@ is-it-maintained-open-issues = { repository = "lettre/lettre" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-idna = "0.2"
+idna = "0.3"
 once_cell = { version = "1", optional = true }
 tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
 
