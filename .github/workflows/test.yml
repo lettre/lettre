@@ -52,17 +52,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-check
-
       - name: Install rust
         run: rustup update --no-self-update stable
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
       
       - name: Install cargo hack
         run: cargo install cargo-hack --debug
@@ -88,19 +82,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Setup cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-test-${{ matrix.rust }}
-
       - name: Install rust
         run: |
           rustup default ${{ matrix.rust }}
           rustup update --no-self-update ${{ matrix.rust }}
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Install postfix  
         run: |
