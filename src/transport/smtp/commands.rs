@@ -271,7 +271,7 @@ impl Auth {
         #[cfg(feature = "tracing")]
         tracing::debug!("auth encoded challenge: {}", encoded_challenge);
 
-        let decoded_base64 = base64::decode(&encoded_challenge).map_err(error::response)?;
+        let decoded_base64 = base64::decode(encoded_challenge).map_err(error::response)?;
         let decoded_challenge = String::from_utf8(decoded_base64).map_err(error::response)?;
         #[cfg(feature = "tracing")]
         tracing::debug!("auth decoded challenge: {}", decoded_challenge);
