@@ -19,7 +19,7 @@ is-it-maintained-open-issues = { repository = "lettre/lettre" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
-idna = "0.2"
+idna = "0.3"
 once_cell = { version = "1", optional = true }
 tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
 
@@ -68,7 +68,6 @@ tokio1_boring = { package = "tokio-boring", version = "2.1.4", optional = true }
 sha2 = { version = "0.10", optional = true }
 rsa = { version = "0.6.0", optional = true }
 ed25519-dalek = { version = "1.0.1", optional = true }
-regex = { version = "1", default-features = false, features = ["std"], optional = true }
 
 # email formats
 email_address = { version = "0.2.1", default-features = false }
@@ -115,7 +114,7 @@ tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
 tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
 tokio1-boring-tls = ["tokio1", "boring-tls", "tokio1_boring"]
 
-dkim = ["base64", "sha2", "rsa", "ed25519-dalek", "regex", "once_cell"]
+dkim = ["base64", "sha2", "rsa", "ed25519-dalek"]
 
 [package.metadata.docs.rs]
 all-features = true
