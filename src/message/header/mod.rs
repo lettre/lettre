@@ -366,14 +366,7 @@ impl<'a> HeaderValueEncoder<'a> {
                 // the next word is allowed, but we may have accumulated some words to encode
                 self.flush_encode_buf()?;
 
-                let prefix = next_word.trim_end_matches(' ');
-                self.writer.folding().write_str(prefix)?;
-
-                // TODO: add a better API for doing this in email-encoding
-                let spaces = next_word.len() - prefix.len();
-                for _ in 0..spaces {
-                    self.writer.space();
-                }
+                self.writer.folding().write_str(next_word)?;
             } else {
                 // This word contains unallowed characters
                 self.encode_buf.push_str(next_word);
