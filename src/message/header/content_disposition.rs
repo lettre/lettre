@@ -41,7 +41,7 @@ impl ContentDisposition {
             let mut w = EmailWriter::new(&mut encoded_value, line_len, 0, false, false);
             w.write_str(kind).expect("writing `kind` returned an error");
             w.write_char(';').expect("writing `;` returned an error");
-            w.decorative_space();
+            w.optional_breakpoint();
 
             email_encoding::headers::rfc2231::encode("filename", file_name, &mut w)
                 .expect("some Write implementation returned an error");
