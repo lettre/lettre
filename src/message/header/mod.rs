@@ -342,28 +342,21 @@ struct HeaderValueEncoder<'a> {
 
 impl<'a> HeaderValueEncoder<'a> {
     fn encode(name: &str, value: &'a str, f: &'a mut impl fmt::Write) -> fmt::Result {
-        let (words_iter, encoder) = Self::new(name, value, f);
-        encoder.format(words_iter)
+        let encoder = Self::new(name, f);
+        encoder.format(value.split_inclusive(' '))
     }
 
-    fn new(
-        name: &str,
-        value: &'a str,
-        writer: &'a mut dyn Write,
-    ) -> (WordsPlusFillIterator<'a>, Self) {
+    fn new(name: &str, writer: &'a mut dyn Write) -> Self {
         let line_len = name.len() + ": ".len();
-        let writer = EmailWriter::new(writer, line_len, false);
+        let writer = EmailWriter::new(writer, line_len, 0, false, false);
 
-        (
-            WordsPlusFillIterator { s: value },
-            Self {
-                writer,
-                encode_buf: String::new(),
-            },
-        )
+        Self {
+            writer,
+            encode_buf: String::new(),
+        }
     }
 
-    fn format(mut self, words_iter: WordsPlusFillIterator<'_>) -> fmt::Result {
+    fn format(mut self, words_iter: impl Iterator<Item = &'a str>) -> fmt::Result {
         for next_word in words_iter {
             let allowed = allowed_str(next_word);
 
@@ -391,68 +384,17 @@ impl<'a> HeaderValueEncoder<'a> {
             return Ok(());
         }
 
-        // It is important that we don't encode leading whitespace otherwise it breaks wrapping.
-        let first_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i);
-        // May as well also write the tail in plain text.
-        let last_not_allowed = self
-            .encode_buf
-            .bytes()
-            .enumerate()
-            .rev()
-            .find(|(_i, c)| !allowed_char(*c))
-            .map(|(i, _)| i + 1);
+        let prefix = self.encode_buf.trim_end_matches(' ');
+        email_encoding::headers::rfc2047::encode(prefix, &mut self.writer)?;
 
-        let (prefix, to_encode, suffix) = match first_not_allowed {
-            Some(first_not_allowed) => {
-                let last_not_allowed = last_not_allowed.unwrap();
-
-                let (remaining, suffix) = self.encode_buf.split_at(last_not_allowed);
-                let (prefix, to_encode) = remaining.split_at(first_not_allowed);
-
-                (prefix, to_encode, suffix)
-            }
-            None => ("", self.encode_buf.as_str(), ""),
-        };
-
-        self.writer.folding().write_str(prefix)?;
-        email_encoding::headers::rfc2047::encode(to_encode, &mut self.writer)?;
-        self.writer.folding().write_str(suffix)?;
+        // TODO: add a better API for doing this in email-encoding
+        let spaces = self.encode_buf.len() - prefix.len();
+        for _ in 0..spaces {
+            self.writer.space();
+        }
 
         self.encode_buf.clear();
         Ok(())
-    }
-}
-
-/// Iterator yielding a string split by space, but spaces are included before the next word.
-struct WordsPlusFillIterator<'a> {
-    s: &'a str,
-}
-
-impl<'a> Iterator for WordsPlusFillIterator<'a> {
-    type Item = &'a str;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.s.is_empty() {
-            return None;
-        }
-
-        let next_word = self
-            .s
-            .bytes()
-            .enumerate()
-            .skip(1)
-            .find(|&(_i, c)| c == b' ')
-            .map(|(i, _)| i)
-            .unwrap_or(self.s.len());
-
-        let word = &self.s[..next_word];
-        self.s = &self.s[word.len()..];
-        Some(word)
     }
 }
 
@@ -468,7 +410,8 @@ const fn allowed_char(c: u8) -> bool {
 mod tests {
     use pretty_assertions::assert_eq;
 
-    use super::{HeaderName, HeaderValue, Headers};
+    use super::{HeaderName, HeaderValue, Headers, To};
+    use crate::message::Mailboxes;
 
     #[test]
     fn valid_headername() {
@@ -619,7 +562,7 @@ mod tests {
 
         assert_eq!(
             headers.to_string(),
-            "To: Se=?utf-8?b?w6E=?=n <sean@example.com>\r\n"
+            "To: =?utf-8?b?U2XDoW4=?= <sean@example.com>\r\n"
         );
     }
 
@@ -640,19 +583,46 @@ mod tests {
     #[test]
     fn format_special_with_folding() {
         let mut headers = Headers::new();
-        headers.insert_raw(HeaderValue::new(
-            HeaderName::new_from_ascii_str("To"),
-            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
-         ) );
+        let to = To::from(Mailboxes::from_iter([
+            "🌍 <world@example.com>".parse().unwrap(),
+            "🦆 Everywhere <ducks@example.com>".parse().unwrap(),
+            "Иванов Иван Иванович <ivanov@example.com>".parse().unwrap(),
+            "Jānis Bērziņš <janis@example.com>".parse().unwrap(),
+            "Seán Ó Rudaí <sean@example.com>".parse().unwrap(),
+        ]));
+        headers.set(to);
 
         assert_eq!(
             headers.to_string(),
             concat!(
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhiBFdmVyeXdo?=\r\n",
+                " =?utf-8?b?ZXJl?= <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LI=?=\r\n",
+                " =?utf-8?b?0LDQvSDQmNCy0LDQvdC+0LLQuNGH?= <ivanov@example.com>,\r\n",
+                " =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>, =?utf-8?b?U2U=?=\r\n",
+                " =?utf-8?b?w6FuIMOTIFJ1ZGHDrQ==?= <sean@example.com>\r\n",
+            )
+        );
+    }
+
+    #[test]
+    fn format_special_with_folding_raw() {
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("To"),
+            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+        ));
+
+        // TODO: fix the fact that the encoder doesn't know that
+        // the space between the name and the address should be
+        // removed when wrapping.
+        assert_eq!(
+            headers.to_string(),
+            concat!(
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
+                "  =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                "  =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
             )
         );
     }
@@ -717,17 +687,20 @@ mod tests {
             "quoted-printable".to_string(),
         ));
 
+        // TODO: fix the fact that the encoder doesn't know that
+        // the space between the name and the address should be
+        // removed when wrapping.
         assert_eq!(
             headers.to_string(),
             concat!(
                 "Subject: Hello! This is lettre, and this\r\n",
                 " IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I\r\n",
                 " guess that's it!\r\n",
-                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?= Everywhere\r\n",
-                " <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9INCY0LLQsNC9?=\r\n",
-                " =?utf-8?b?0L7QstC40Yc=?= <ivanov@example.com>, J=?utf-8?b?xIFuaXMgQsST?=\r\n",
-                " =?utf-8?b?cnppxYbFoQ==?= <janis@example.com>, Se=?utf-8?b?w6FuIMOTIFJ1?=\r\n",
-                " =?utf-8?b?ZGHDrQ==?= <sean@example.com>\r\n",
+                "To: =?utf-8?b?8J+MjQ==?= <world@example.com>, =?utf-8?b?8J+mhg==?=\r\n",
+                " Everywhere <ducks@example.com>, =?utf-8?b?0JjQstCw0L3QvtCyINCY0LLQsNC9?=\r\n",
+                " =?utf-8?b?INCY0LLQsNC90L7QstC40Yc=?= <ivanov@example.com>,\r\n",
+                "  =?utf-8?b?SsSBbmlzIELEk3J6acWGxaE=?= <janis@example.com>,\r\n",
+                "  =?utf-8?b?U2XDoW4gw5MgUnVkYcOt?= <sean@example.com>\r\n",
                 "From: Someone <somewhere@example.com>\r\n",
                 "Content-Transfer-Encoding: quoted-printable\r\n",
             )
@@ -745,8 +718,8 @@ mod tests {
         assert_eq!(
             headers.to_string(),
             concat!(
-                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go;\r\n",
-                " ;;;;;s;;;;;;;;;;;;;;;;fffeinmjggggggggg=?utf-8?b?772G44Gj?=\r\n"
+                "Subject: =?utf-8?b?77yL5Luu5ZCN?= :a;go; =?utf-8?b?Ozs7OztzOzs7Ozs7Ozs7?=\r\n",
+                " =?utf-8?b?Ozs7Ozs7O2ZmZmVpbm1qZ2dnZ2dnZ2dn772G44Gj?=\r\n",
             )
         );
     }
