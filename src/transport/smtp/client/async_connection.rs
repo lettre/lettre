@@ -317,7 +317,7 @@ impl AsyncSmtpConnection {
                     } else {
                         Err(error::code(
                             response.code(),
-                            response.first_line().map(|s| s.to_owned()),
+                            Some(response.message().collect()),
                         ))
                     }
                 }
