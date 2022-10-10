@@ -14,6 +14,7 @@ use rsasl::{
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
 use super::{ClientCodec, NetworkStream, TlsParameters};
+use crate::transport::smtp::error::Kind;
 use crate::{
     address::Envelope,
     transport::smtp::{
@@ -227,21 +228,35 @@ impl SmtpConnection {
 
         // Limit challenges to avoid blocking
         let mut challenges = 10;
-        let mut response = self.command(Auth::initial(&mut session)?)?;
+        let (cmd, mut state) = Auth::initial(&mut session)?;
+        let mut response = self.command(cmd)?;
 
-        while challenges > 0 && response.has_code(334) {
+        while response.has_code(334) {
+            // If we think that we're finished but the server doesn't, or the exchange has gone on
+            // for too long, return an error.
+            if challenges == 0 || state.is_finished() {
+                return Err(error::response("Unexpected number of challenges"));
+            }
+
             challenges -= 1;
             response = try_smtp!(
-                self.command(Auth::from_response(&mut session, &response,)?),
+                self.command(Auth::from_response(&mut session, &mut state, &response)?),
                 self
             );
         }
 
-        if challenges == 0 {
-            Err(error::response("Unexpected number of challenges"))
-        } else {
-            Ok(response)
+        // If the server claims authentication finished but the SASL mechanism doesn't, we must
+        // call the mechanism one last time to keep all security guarantees of mechanisms.
+        // This *may* be okay! However, if it is not, the below `step64` will return an
+        // appropriate error.
+        if state.is_running() {
+            let mut scratch = Vec::new();
+            session
+                .step64(None, &mut scratch)
+                .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
         }
+
+        Ok(response)
     }
 
     /// Sends the message content

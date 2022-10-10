@@ -57,7 +57,7 @@ futures-util = { version = "0.3.7", default-features = false, features = ["io"],
 async-trait = { version = "0.1", optional = true }
 
 ## async-std
-async-std = { version = "1.8", optional = true }
+async-std = { version = "1.8", optional = true, features = ["unstable"] }
 #async-native-tls = { version = "0.3.3", optional = true }
 futures-rustls = { version = "0.22", optional = true }
 

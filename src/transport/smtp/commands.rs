@@ -2,7 +2,7 @@
 
 use std::fmt::{self, Display, Formatter};
 
-use rsasl::prelude::Session;
+use rsasl::prelude::{Session, State};
 
 use crate::{
     address::Address,
@@ -215,6 +215,7 @@ impl Display for Rset {
 pub struct Auth {
     msg: AuthMsg,
 }
+
 #[derive(PartialEq, Eq, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 enum AuthMsg {
@@ -240,24 +241,34 @@ impl Display for Auth {
 }
 
 impl Auth {
-    /// Creates an AUTH command (from a challenge if provided)
-    pub fn initial(session: &mut Session) -> Result<Self, Error> {
+    /// Creates an AUTH command
+    pub fn initial(session: &mut Session) -> Result<(Self, State), Error> {
         let name = session.get_mechname().as_str().to_string();
+
+        let mut state = State::Running;
+
         let response = if session.are_we_first() {
             let mut out = Vec::new();
-            session
+            state = session
                 .step64(None, &mut out)
                 .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
             Some(String::from_utf8(out).expect("base64 encoded output is not UTF-8"))
         } else {
             None
         };
-        Ok(Self {
-            msg: AuthMsg::Initial(name, response),
-        })
+        Ok((
+            Self {
+                msg: AuthMsg::Initial(name, response),
+            },
+            state,
+        ))
     }
 
-    pub fn from_response(session: &mut Session, response: &Response) -> Result<Self, Error> {
+    pub fn from_response(
+        session: &mut Session,
+        state: &mut State,
+        response: &Response,
+    ) -> Result<Self, Error> {
         if !response.has_code(334) {
             return Err(error::response("Expecting a challenge"));
         }
@@ -269,7 +280,7 @@ impl Auth {
         tracing::debug!("auth encoded challenge: {}", encoded_challenge);
 
         let mut out = Vec::new();
-        session
+        *state = session
             .step64(Some(encoded_challenge.as_bytes()), &mut out)
             .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
         let output = String::from_utf8(out).expect("base64 encoded output is not UTF-8");
