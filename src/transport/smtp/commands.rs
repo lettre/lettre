@@ -362,20 +362,5 @@ mod test {
             "EXPN test\r\n"
         );
         assert_eq!(format!("{Rset}"), "RSET\r\n");
-        let credentials = Credentials::new("user".to_string(), "password".to_string());
-        assert_eq!(
-            format!(
-                "{}",
-                Auth::new(Mechanism::Plain, credentials.clone(), None).unwrap()
-            ),
-            "AUTH PLAIN AHVzZXIAcGFzc3dvcmQ=\r\n"
-        );
-        assert_eq!(
-            format!(
-                "{}",
-                Auth::new(Mechanism::Login, credentials, None).unwrap()
-            ),
-            "AUTH LOGIN\r\n"
-        );
     }
 }
