@@ -451,15 +451,15 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
 
         c if match c as u32 {
             // NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
-	    1..=8 | 11 | 12 | 14..=31 | 127 |
+            1..=8 | 11 | 12 | 14..=31 | 127 |
 
-	    // The rest of the US-ASCII except \ and "
-	    33 |
-	    35..=91 |
-	    93..=126 |
+            // The rest of the US-ASCII except \ and "
+            33 |
+            35..=91 |
+            93..=126 |
 
-	    // Non-ascii characters will be escaped separately later.
-	    128.. => true,
+            // Non-ascii characters will be escaped separately later.
+            128.. => true,
             _ => false,
         } =>
         {
