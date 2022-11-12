@@ -397,7 +397,7 @@ fn write_word(f: &mut Formatter<'_>, s: &str) -> FmtResult {
     } else {
         // Quoted string: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
         f.write_char('"')?;
-        for &c in s.as_bytes() {
+        for c in s.chars() {
             write_quoted_string_char(f, c)?;
         }
         f.write_char('"')?;
@@ -441,34 +441,37 @@ fn is_valid_atom_char(c: u8) -> bool {
 }
 
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
-fn write_quoted_string_char(f: &mut Formatter<'_>, c: u8) -> FmtResult {
+fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
     match c {
-		// NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
-		1..=8 | 11 | 12 | 14..=31 | 127 |
+        // Can not be encoded.
+        '\n' | '\r' => Err(std::fmt::Error),
 
-		// Note, not qcontent but can be put before or after any qcontent.
-		b'\t' |
-		b' ' |
+        // Note, not qcontent but can be put before or after any qcontent.
+        '\t' | ' ' => f.write_char(c),
 
-		// The rest of the US-ASCII except \ and "
-		33 |
-		35..=91 |
-		93..=126 |
+        c if match c as u32 {
+            // NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
+	    1..=8 | 11 | 12 | 14..=31 | 127 |
 
-		// Non-ascii characters will be escaped separately later.
-		128..=255
+	    // The rest of the US-ASCII except \ and "
+	    33 |
+	    35..=91 |
+	    93..=126 |
 
-		=> f.write_char(c.into()),
+	    // Non-ascii characters will be escaped separately later.
+	    128.. => true,
+            _ => false,
+        } =>
+        {
+            f.write_char(c)
+        }
 
-		// Can not be encoded.
-		b'\n' | b'\r' => Err(std::fmt::Error),
-
-		c => {
-			// quoted-pair https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.2
-			f.write_char('\\')?;
-			f.write_char(c.into())
-		}
-	}
+        _ => {
+            // quoted-pair https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.2
+            f.write_char('\\')?;
+            f.write_char(c)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -512,6 +515,34 @@ mod test {
                 )
             ),
             r#""Last, First" <kayo@example.com>"#
+        );
+    }
+
+    #[test]
+    fn mailbox_format_address_with_comma_and_non_ascii() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(
+                    Some("Laşt, First".into()),
+                    "kayo@example.com".parse().unwrap()
+                )
+            ),
+            r#""Laşt, First" <kayo@example.com>"#
+        );
+    }
+
+    #[test]
+    fn mailbox_format_address_with_comma_and_quoted_non_ascii() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(
+                    Some(r#"Laşt, "First""#.into()),
+                    "kayo@example.com".parse().unwrap()
+                )
+            ),
+            r#""Laşt, \"First\"" <kayo@example.com>"#
         );
     }
 
