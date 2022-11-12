@@ -354,7 +354,7 @@ fn dkim_sign_fixed_time(message: &mut Message, dkim_config: &DkimConfig, timesta
         .unwrap()
         .as_secs();
     let headers = message.headers();
-    let body_hash = Sha256::digest(&dkim_canonicalize_body(
+    let body_hash = Sha256::digest(dkim_canonicalize_body(
         &message.body_raw(),
         dkim_config.canonicalization.body,
     ));
