@@ -212,7 +212,7 @@ impl FileTransport {
         let eml = fs::read(eml_file).map_err(error::io)?;
 
         let json_file = self.path.join(format!("{}.json", email_id));
-        let json = fs::read(&json_file).map_err(error::io)?;
+        let json = fs::read(json_file).map_err(error::io)?;
         let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 
         Ok((envelope, eml))
