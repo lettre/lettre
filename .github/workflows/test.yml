@@ -13,7 +13,7 @@ env:
 
 jobs:
   rustfmt:
-    name: rustfmt / nightly-2022-09-09
+    name: rustfmt / nightly-2022-11-12
     runs-on: ubuntu-latest
 
     steps:
@@ -22,7 +22,7 @@ jobs:
 
       - name: Install rust
         run: |
-          rustup default nightly-2022-09-09
+          rustup default nightly-2022-11-12
           rustup component add rustfmt
 
       - name: cargo fmt
