@@ -7,7 +7,7 @@ use std::{
 };
 
 use ed25519_dalek::Signer;
-use rsa::{pkcs1::DecodeRsaPrivateKey, Hash, PaddingScheme, RsaPrivateKey};
+use rsa::{pkcs1::DecodeRsaPrivateKey, PaddingScheme, RsaPrivateKey};
 use sha2::{Digest, Sha256};
 
 use crate::message::{
@@ -393,7 +393,7 @@ fn dkim_sign_fixed_time(message: &mut Message, dkim_config: &DkimConfig, timesta
         InnerDkimSigningKey::Rsa(private_key) => base64::encode(
             private_key
                 .sign(
-                    PaddingScheme::new_pkcs1v15_sign(Some(Hash::SHA2_256)),
+                    PaddingScheme::new_pkcs1v15_sign::<Sha256>(),
                     &hashed_headers,
                 )
                 .unwrap(),
