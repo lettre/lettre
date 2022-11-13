@@ -30,7 +30,7 @@ fn main() {
     let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
 
     // Open a remote connection to the smtp server
-    let mailer = SmtpTransport::builder_dangerous("smtp.server.com")
+    let mailer = <SmtpTransport<false>>::builder_dangerous("smtp.server.com")
         .port(465)
         .tls(Tls::Wrapper(tls))
         .credentials(creds)

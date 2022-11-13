@@ -25,7 +25,7 @@ use crate::{Envelope, Executor};
 
 /// Asynchronously sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
-pub struct AsyncSmtpTransport<E: Executor, const LMTP: bool> {
+pub struct AsyncSmtpTransport<E: Executor, const LMTP: bool = false> {
     #[cfg(feature = "pool")]
     inner: Arc<Pool<E, LMTP>>,
     #[cfg(not(feature = "pool"))]

@@ -326,7 +326,7 @@ mod test {
             keyword: "TEST".to_string(),
             value: Some("value".to_string()),
         };
-        assert_eq!(format!("{}", Ehlo::new(id)), "EHLO localhost\r\n");
+        assert_eq!(format!("{}", Ehlo::new(id.clone())), "EHLO localhost\r\n");
         assert_eq!(format!("{}", Lhlo::new(id)), "LHLO localhost\r\n");
         assert_eq!(
             format!("{}", Mail::new(Some(email.clone()), vec![])),

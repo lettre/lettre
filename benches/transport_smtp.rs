@@ -2,7 +2,7 @@ use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use lettre::{Message, SmtpTransport, Transport};
 
 fn bench_simple_send(c: &mut Criterion) {
-    let sender = SmtpTransport::builder_dangerous("127.0.0.1")
+    let sender = <SmtpTransport<false>>::builder_dangerous("127.0.0.1")
         .port(2525)
         .build();
 
@@ -22,7 +22,7 @@ fn bench_simple_send(c: &mut Criterion) {
 }
 
 fn bench_reuse_send(c: &mut Criterion) {
-    let sender = SmtpTransport::builder_dangerous("127.0.0.1")
+    let sender = <SmtpTransport<false>>::builder_dangerous("127.0.0.1")
         .port(2525)
         .build();
     c.bench_function("send email with connection reuse", move |b| {

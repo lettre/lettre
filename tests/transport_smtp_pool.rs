@@ -14,7 +14,7 @@ mod sync {
 
     #[test]
     fn send_one() {
-        let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
+        let mailer = <SmtpTransport<false>>::builder_dangerous("127.0.0.1")
             .port(2525)
             .build();
 
@@ -24,7 +24,7 @@ mod sync {
 
     #[test]
     fn send_from_thread() {
-        let mailer = SmtpTransport::builder_dangerous("127.0.0.1")
+        let mailer = <SmtpTransport<false>>::builder_dangerous("127.0.0.1")
             .port(2525)
             .build();
 
