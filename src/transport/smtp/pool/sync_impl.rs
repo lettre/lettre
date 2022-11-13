@@ -26,7 +26,7 @@ struct ParkedConnection<const LMTP: bool> {
 
 pub struct PooledConnection<const LMTP: bool> {
     conn: Option<SmtpConnection<LMTP>>,
-    pool: Arc<Pool>,
+    pool: Arc<Pool<LMTP>>,
 }
 
 impl<const LMTP: bool> Pool<LMTP> {
@@ -154,7 +154,7 @@ impl<const LMTP: bool> Pool<LMTP> {
         }
     }
 
-    fn recycle(&self, mut conn: SmtpConnection) {
+    fn recycle(&self, mut conn: SmtpConnection<LMTP>) {
         if conn.has_broken() {
             #[cfg(feature = "tracing")]
             tracing::debug!("dropping a broken connection instead of recycling it");
@@ -177,7 +177,7 @@ impl<const LMTP: bool> Pool<LMTP> {
     }
 }
 
-impl Debug for Pool {
+impl<const LMTP: bool> Debug for Pool<LMTP> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("config", &self.config)
@@ -195,7 +195,7 @@ impl Debug for Pool {
     }
 }
 
-impl Drop for Pool {
+impl<const LMTP: bool> Drop for Pool<LMTP> {
     fn drop(&mut self) {
         #[cfg(feature = "tracing")]
         tracing::debug!("dropping Pool");
@@ -208,8 +208,8 @@ impl Drop for Pool {
     }
 }
 
-impl ParkedConnection {
-    fn park(conn: SmtpConnection) -> Self {
+impl<const LMTP: bool> ParkedConnection<LMTP> {
+    fn park(conn: SmtpConnection<LMTP>) -> Self {
         Self {
             conn,
             since: Instant::now(),
@@ -220,13 +220,13 @@ impl ParkedConnection {
         self.since.elapsed()
     }
 
-    fn unpark(self) -> SmtpConnection {
+    fn unpark(self) -> SmtpConnection<LMTP> {
         self.conn
     }
 }
 
-impl PooledConnection {
-    fn wrap(conn: SmtpConnection, pool: Arc<Pool>) -> Self {
+impl<const LMTP: bool> PooledConnection<LMTP> {
+    fn wrap(conn: SmtpConnection<LMTP>, pool: Arc<Pool<LMTP>>) -> Self {
         Self {
             conn: Some(conn),
             pool,
@@ -234,21 +234,21 @@ impl PooledConnection {
     }
 }
 
-impl Deref for PooledConnection {
-    type Target = SmtpConnection;
+impl<const LMTP: bool> Deref for PooledConnection<LMTP> {
+    type Target = SmtpConnection<LMTP>;
 
     fn deref(&self) -> &Self::Target {
         self.conn.as_ref().expect("conn hasn't been dropped yet")
     }
 }
 
-impl DerefMut for PooledConnection {
+impl<const LMTP: bool> DerefMut for PooledConnection<LMTP> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.conn.as_mut().expect("conn hasn't been dropped yet")
     }
 }
 
-impl Drop for PooledConnection {
+impl<const LMTP: bool> Drop for PooledConnection<LMTP> {
     fn drop(&mut self) {
         let conn = self
             .conn
