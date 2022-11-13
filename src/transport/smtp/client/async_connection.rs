@@ -10,7 +10,7 @@ use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism},
-        commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
+        commands::{Auth, Data, Ehlo, Lhlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
@@ -32,7 +32,7 @@ macro_rules! try_smtp (
 );
 
 /// Structure that implements the SMTP client
-pub struct AsyncSmtpConnection {
+pub struct AsyncSmtpConnection<const LMTP: bool> {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: BufReader<AsyncNetworkStream>,
@@ -42,7 +42,7 @@ pub struct AsyncSmtpConnection {
     server_info: ServerInfo,
 }
 
-impl AsyncSmtpConnection {
+impl<const LMTP: bool> AsyncSmtpConnection<LMTP> {
     /// Get information about the server
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
@@ -55,7 +55,7 @@ impl AsyncSmtpConnection {
     pub async fn connect_with_transport(
         stream: Box<dyn AsyncTokioStream>,
         hello_name: &ClientId,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         let stream = AsyncNetworkStream::use_existing_tokio1(stream);
         Self::connect_impl(stream, hello_name).await
     }
@@ -70,7 +70,7 @@ impl AsyncSmtpConnection {
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
         local_address: Option<IpAddr>,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         let stream =
             AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters, local_address)
                 .await?;
@@ -86,7 +86,7 @@ impl AsyncSmtpConnection {
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         let stream = AsyncNetworkStream::connect_asyncstd1(server, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
@@ -94,7 +94,7 @@ impl AsyncSmtpConnection {
     async fn connect_impl(
         stream: AsyncNetworkStream,
         hello_name: &ClientId,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         let stream = BufReader::new(stream);
         let mut conn = AsyncSmtpConnection {
             stream,
@@ -110,58 +110,6 @@ impl AsyncSmtpConnection {
         #[cfg(feature = "tracing")]
         tracing::debug!("server {}", conn.server_info);
         Ok(conn)
-    }
-
-    pub async fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
-        // Mail
-        let mut mail_options = vec![];
-
-        // Internationalization handling
-        //
-        // * 8BITMIME: https://tools.ietf.org/html/rfc6152
-        // * SMTPUTF8: https://tools.ietf.org/html/rfc653
-
-        // Check for non-ascii addresses and use the SMTPUTF8 option if any.
-        if envelope.has_non_ascii_addresses() {
-            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
-                // don't try to send non-ascii addresses (per RFC)
-                return Err(error::client(
-                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
-                ));
-            }
-            mail_options.push(MailParameter::SmtpUtfEight);
-        }
-
-        // Check for non-ascii content in message
-        if !email.is_ascii() {
-            if !self.server_info().supports_feature(Extension::EightBitMime) {
-                return Err(error::client(
-                    "Message contains non-ascii chars but server does not support 8BITMIME",
-                ));
-            }
-            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
-        }
-
-        try_smtp!(
-            self.command(Mail::new(envelope.from().cloned(), mail_options))
-                .await,
-            self
-        );
-
-        // Recipient
-        for to_address in envelope.to() {
-            try_smtp!(
-                self.command(Rcpt::new(to_address.clone(), vec![])).await,
-                self
-            );
-        }
-
-        // Data
-        try_smtp!(self.command(Data).await, self);
-
-        // Message content
-        let result = try_smtp!(self.message(email).await, self);
-        Ok(result)
     }
 
     pub fn has_broken(&self) -> bool {
@@ -193,8 +141,12 @@ impl AsyncSmtpConnection {
 
     /// Send EHLO and update server info
     async fn ehlo(&mut self, hello_name: &ClientId) -> Result<(), Error> {
-        let ehlo_response = try_smtp!(self.command(Ehlo::new(hello_name.clone())).await, self);
-        self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
+        let response = if LMTP {
+            try_smtp!(self.command(Lhlo::new(hello_name.clone())).await, self)
+        } else {
+            try_smtp!(self.command(Ehlo::new(hello_name.clone())).await, self)
+        };
+        self.server_info = try_smtp!(ServerInfo::from_response(&response), self);
         Ok(())
     }
 
@@ -263,20 +215,19 @@ impl AsyncSmtpConnection {
         }
     }
 
-    /// Sends the message content
-    pub async fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
-        let mut out_buf: Vec<u8> = vec![];
-        let mut codec = ClientCodec::new();
-        codec.encode(message, &mut out_buf);
-        self.write(out_buf.as_slice()).await?;
-        self.write(b"\r\n.\r\n").await?;
-        self.read_response().await
-    }
-
     /// Sends an SMTP command
     pub async fn command<C: Display>(&mut self, command: C) -> Result<Response, Error> {
+        self.command_negative(command, false).await
+    }
+
+    /// Sends an SMTP command, but do not map negative response to error
+    pub async fn command_negative<C: Display>(
+        &mut self,
+        command: C,
+        allow_negative: bool,
+    ) -> Result<Response, Error> {
         self.write(command.to_string().as_bytes()).await?;
-        self.read_response().await
+        self.read_response_negative(allow_negative).await
     }
 
     /// Writes a string to the server
@@ -299,6 +250,14 @@ impl AsyncSmtpConnection {
 
     /// Gets the SMTP response
     pub async fn read_response(&mut self) -> Result<Response, Error> {
+        self.read_response_negative(false).await
+    }
+
+    /// Gets the SMTP response, but do not map negative response to error
+    pub async fn read_response_negative(
+        &mut self,
+        allow_negative: bool,
+    ) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
 
         while self
@@ -312,7 +271,7 @@ impl AsyncSmtpConnection {
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
-                    return if response.is_positive() {
+                    return if response.is_positive() || allow_negative {
                         Ok(response)
                     } else {
                         Err(error::code(
@@ -338,5 +297,169 @@ impl AsyncSmtpConnection {
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
+    }
+}
+
+impl AsyncSmtpConnection<false> {
+    /// Sends the message content
+    pub async fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
+        let mut out_buf: Vec<u8> = vec![];
+        let mut codec = ClientCodec::new();
+        codec.encode(message, &mut out_buf);
+        self.write(out_buf.as_slice()).await?;
+        self.write(b"\r\n.\r\n").await?;
+        self.read_response().await
+    }
+
+    pub async fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
+        // Mail
+        let mut mail_options = vec![];
+
+        // Internationalization handling
+        //
+        // * 8BITMIME: https://tools.ietf.org/html/rfc6152
+        // * SMTPUTF8: https://tools.ietf.org/html/rfc653
+
+        // Check for non-ascii addresses and use the SMTPUTF8 option if any.
+        if envelope.has_non_ascii_addresses() {
+            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
+                // don't try to send non-ascii addresses (per RFC)
+                return Err(error::client(
+                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
+                ));
+            }
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        // Check for non-ascii content in message
+        if !email.is_ascii() {
+            if !self.server_info().supports_feature(Extension::EightBitMime) {
+                return Err(error::client(
+                    "Message contains non-ascii chars but server does not support 8BITMIME",
+                ));
+            }
+            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
+        }
+
+        try_smtp!(
+            self.command(Mail::new(envelope.from().cloned(), mail_options))
+                .await,
+            self
+        );
+
+        // Recipient
+        for to_address in envelope.to() {
+            try_smtp!(
+                self.command(Rcpt::new(to_address.clone(), vec![])).await,
+                self
+            );
+        }
+
+        // Data
+        try_smtp!(self.command(Data).await, self);
+
+        // Message content
+        let result = try_smtp!(self.message(email).await, self);
+        Ok(result)
+    }
+}
+
+impl AsyncSmtpConnection<true> {
+    /// Sends the message content
+    pub async fn message(
+        &mut self,
+        message: &[u8],
+        recipients: usize,
+    ) -> Result<Vec<Response>, Error> {
+        let mut out_buf: Vec<u8> = vec![];
+        let mut codec = ClientCodec::new();
+        codec.encode(message, &mut out_buf);
+        self.write(out_buf.as_slice()).await?;
+        self.write(b"\r\n.\r\n").await?;
+
+        let mut responses = Vec::with_capacity(recipients);
+        for _ in 0..recipients {
+            responses.push(self.read_response_negative(true).await?)
+        }
+        Ok(responses)
+    }
+
+    pub async fn send(
+        &mut self,
+        envelope: &Envelope,
+        email: &[u8],
+    ) -> Result<Vec<Response>, Error> {
+        // Mail
+        let mut mail_options = vec![];
+
+        // Internationalization handling
+        //
+        // * 8BITMIME: https://tools.ietf.org/html/rfc6152
+        // * SMTPUTF8: https://tools.ietf.org/html/rfc653
+
+        // Check for non-ascii addresses and use the SMTPUTF8 option if any.
+        if envelope.has_non_ascii_addresses() {
+            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
+                // don't try to send non-ascii addresses (per RFC)
+                return Err(error::client(
+                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
+                ));
+            }
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        // Check for non-ascii content in message
+        if !email.is_ascii() {
+            if !self.server_info().supports_feature(Extension::EightBitMime) {
+                return Err(error::client(
+                    "Message contains non-ascii chars but server does not support 8BITMIME",
+                ));
+            }
+            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
+        }
+
+        try_smtp!(
+            self.command(Mail::new(envelope.from().cloned(), mail_options))
+                .await,
+            self
+        );
+
+        let mut results: Vec<Option<Response>> = vec![None; envelope.to().len()];
+        let mut found_recipients: Vec<usize> = Vec::new();
+
+        // Recipient
+        for (i, to_address) in envelope.to().iter().enumerate() {
+            let response = try_smtp!(
+                self.command_negative(Rcpt::new(to_address.clone(), vec![]), true)
+                    .await,
+                self
+            );
+            if response.is_positive() {
+                found_recipients.push(i)
+            } else {
+                results[i] = Some(response)
+            }
+        }
+
+        if found_recipients.is_empty() {
+            return Ok(results
+                .into_iter()
+                .map(|v| v.expect("no recipients found"))
+                .collect());
+        }
+
+        // Data
+        try_smtp!(self.command(Data).await, self);
+
+        // Message content
+        let responses = try_smtp!(self.message(email, found_recipients.len()).await, self);
+        for (recipient_id, response) in found_recipients.into_iter().zip(responses.into_iter()) {
+            results[recipient_id] = Some(response);
+        }
+
+        Ok(results
+            .into_iter()
+            .map(|v| v.expect("all messages sent"))
+            .collect())
     }
 }

@@ -67,7 +67,7 @@ impl<const LMTP: bool> SmtpTransport<LMTP> {
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
     )]
-    pub fn relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
+    pub fn relay(relay: &str) -> Result<SmtpTransportBuilder<LMTP>, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
 
         Ok(Self::builder_dangerous(relay)
@@ -91,7 +91,7 @@ impl<const LMTP: bool> SmtpTransport<LMTP> {
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
     )]
-    pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
+    pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder<LMTP>, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
 
         Ok(Self::builder_dangerous(relay)

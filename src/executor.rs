@@ -62,13 +62,13 @@ pub trait Executor: Debug + Send + Sync + 'static + private::Sealed {
 
     #[doc(hidden)]
     #[cfg(feature = "smtp-transport")]
-    async fn connect(
+    async fn connect<const LMTP: bool>(
         hostname: &str,
         port: u16,
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error>;
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error>;
 
     #[doc(hidden)]
     #[cfg(feature = "file-transport-envelope")]
@@ -124,13 +124,13 @@ impl Executor for Tokio1Executor {
     }
 
     #[cfg(feature = "smtp-transport")]
-    async fn connect(
+    async fn connect<const LMTP: bool>(
         hostname: &str,
         port: u16,
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
             #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
@@ -221,13 +221,13 @@ impl Executor for AsyncStd1Executor {
     }
 
     #[cfg(feature = "smtp-transport")]
-    async fn connect(
+    async fn connect<const LMTP: bool>(
         hostname: &str,
         port: u16,
         timeout: Option<Duration>,
         hello_name: &ClientId,
         tls: &Tls,
-    ) -> Result<AsyncSmtpConnection, Error> {
+    ) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
             #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]

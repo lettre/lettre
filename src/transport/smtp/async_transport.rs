@@ -25,17 +25,36 @@ use crate::{Envelope, Executor};
 
 /// Asynchronously sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
-pub struct AsyncSmtpTransport<E: Executor> {
+pub struct AsyncSmtpTransport<E: Executor, const LMTP: bool> {
     #[cfg(feature = "pool")]
-    inner: Arc<Pool<E>>,
+    inner: Arc<Pool<E, LMTP>>,
     #[cfg(not(feature = "pool"))]
-    inner: AsyncSmtpClient<E>,
+    inner: AsyncSmtpClient<E, LMTP>,
 }
 
 #[cfg(feature = "tokio1")]
 #[async_trait]
-impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
+impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor, false> {
     type Ok = Response;
+    type Error = Error;
+
+    /// Sends an email
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut conn = self.inner.connection().await?;
+
+        let result = conn.send(envelope, email).await?;
+
+        #[cfg(not(feature = "pool"))]
+        conn.quit().await?;
+
+        Ok(result)
+    }
+}
+
+#[cfg(feature = "tokio1")]
+#[async_trait]
+impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor, true> {
+    type Ok = Vec<Response>;
     type Error = Error;
 
     /// Sends an email
@@ -53,7 +72,7 @@ impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
 
 #[cfg(feature = "async-std1")]
 #[async_trait]
-impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
+impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor, false> {
     type Ok = Response;
     type Error = Error;
 
@@ -69,7 +88,25 @@ impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
     }
 }
 
-impl<E> AsyncSmtpTransport<E>
+#[cfg(feature = "async-std1")]
+#[async_trait]
+impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor, true> {
+    type Ok = Vec<Response>;
+    type Error = Error;
+
+    /// Sends an email
+    async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut conn = self.inner.connection().await?;
+
+        let result = conn.send(envelope, email).await?;
+
+        conn.quit().await?;
+
+        Ok(result)
+    }
+}
+
+impl<E, const LMTP: bool> AsyncSmtpTransport<E, LMTP>
 where
     E: Executor,
 {
@@ -93,7 +130,7 @@ where
             feature = "async-std1-rustls-tls"
         )))
     )]
-    pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
+    pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder<LMTP>, Error> {
         use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
@@ -128,7 +165,7 @@ where
             feature = "async-std1-rustls-tls"
         )))
     )]
-    pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
+    pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder<LMTP>, Error> {
         use super::{Tls, TlsParameters, SUBMISSION_PORT};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
@@ -141,7 +178,7 @@ where
     /// Creates a new local SMTP client to port 25
     ///
     /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
-    pub fn unencrypted_localhost() -> AsyncSmtpTransport<E> {
+    pub fn unencrypted_localhost() -> AsyncSmtpTransport<E, LMTP> {
         Self::builder_dangerous("localhost").build()
     }
 
@@ -157,7 +194,7 @@ where
     /// Consider using [`AsyncSmtpTransport::relay`](#method.relay) or
     /// [`AsyncSmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
-    pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder {
+    pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder<LMTP> {
         let info = SmtpInfo {
             server: server.into(),
             ..Default::default()
@@ -185,7 +222,7 @@ where
     }
 }
 
-impl<E: Executor> Debug for AsyncSmtpTransport<E> {
+impl<E: Executor, const LMTP: bool> Debug for AsyncSmtpTransport<E, LMTP> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut builder = f.debug_struct("AsyncSmtpTransport");
         builder.field("inner", &self.inner);
@@ -193,7 +230,7 @@ impl<E: Executor> Debug for AsyncSmtpTransport<E> {
     }
 }
 
-impl<E> Clone for AsyncSmtpTransport<E>
+impl<E, const LMTP: bool> Clone for AsyncSmtpTransport<E, LMTP>
 where
     E: Executor,
 {
@@ -211,14 +248,14 @@ where
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
 #[derive(Debug, Clone)]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
-pub struct AsyncSmtpTransportBuilder {
-    info: SmtpInfo,
+pub struct AsyncSmtpTransportBuilder<const LMTP: bool> {
+    info: SmtpInfo<LMTP>,
     #[cfg(feature = "pool")]
     pool_config: PoolConfig,
 }
 
 /// Builder for the SMTP `AsyncSmtpTransport`
-impl AsyncSmtpTransportBuilder {
+impl<const LMTP: bool> AsyncSmtpTransportBuilder<LMTP> {
     /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> Self {
         self.info.hello_name = name;
@@ -280,7 +317,7 @@ impl AsyncSmtpTransportBuilder {
     }
 
     /// Build the transport
-    pub fn build<E>(self) -> AsyncSmtpTransport<E>
+    pub fn build<E>(self) -> AsyncSmtpTransport<E, LMTP>
     where
         E: Executor,
     {
@@ -297,19 +334,19 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
-pub struct AsyncSmtpClient<E> {
-    info: SmtpInfo,
+pub struct AsyncSmtpClient<E, const LMTP: bool> {
+    info: SmtpInfo<LMTP>,
     marker_: PhantomData<E>,
 }
 
-impl<E> AsyncSmtpClient<E>
+impl<E, const LMTP: bool> AsyncSmtpClient<E, LMTP>
 where
     E: Executor,
 {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
-    pub async fn connection(&self) -> Result<AsyncSmtpConnection, Error> {
+    pub async fn connection(&self) -> Result<AsyncSmtpConnection<LMTP>, Error> {
         let mut conn = E::connect(
             &self.info.server,
             self.info.port,
@@ -326,9 +363,10 @@ where
     }
 }
 
-impl<E> Debug for AsyncSmtpClient<E> {
+impl<E, const LMTP: bool> Debug for AsyncSmtpClient<E, LMTP> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut builder = f.debug_struct("AsyncSmtpClient");
+        builder.field("lmtp", &LMTP);
         builder.field("info", &self.info);
         builder.finish()
     }
@@ -336,7 +374,7 @@ impl<E> Debug for AsyncSmtpClient<E> {
 
 // `clone` is unused when the `pool` feature is on
 #[allow(dead_code)]
-impl<E> AsyncSmtpClient<E>
+impl<E, const LMTP: bool> AsyncSmtpClient<E, LMTP>
 where
     E: Executor,
 {
