@@ -32,6 +32,26 @@ impl Ehlo {
     }
 }
 
+/// LHLO command
+#[derive(PartialEq, Eq, Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Lhlo {
+    client_id: ClientId,
+}
+
+impl Display for Lhlo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "LHLO {}\r\n", self.client_id)
+    }
+}
+
+impl Lhlo {
+    /// Creates a LHLO command
+    pub fn new(client_id: ClientId) -> Lhlo {
+        Lhlo { client_id }
+    }
+}
+
 /// STARTTLS command
 #[derive(PartialEq, Eq, Clone, Debug, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -307,6 +327,7 @@ mod test {
             value: Some("value".to_string()),
         };
         assert_eq!(format!("{}", Ehlo::new(id)), "EHLO localhost\r\n");
+        assert_eq!(format!("{}", Lhlo::new(id)), "LHLO localhost\r\n");
         assert_eq!(
             format!("{}", Mail::new(Some(email.clone()), vec![])),
             "MAIL FROM:<test@example.com>\r\n"

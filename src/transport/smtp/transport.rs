@@ -14,14 +14,14 @@ use crate::{address::Envelope, Transport};
 /// Sends emails using the SMTP protocol
 #[cfg_attr(docsrs, doc(cfg(feature = "smtp-transport")))]
 #[derive(Clone)]
-pub struct SmtpTransport {
+pub struct SmtpTransport<const LMTP: bool = false> {
     #[cfg(feature = "pool")]
-    inner: Arc<Pool>,
+    inner: Arc<Pool<LMTP>>,
     #[cfg(not(feature = "pool"))]
-    inner: SmtpClient,
+    inner: SmtpClient<LMTP>,
 }
 
-impl Transport for SmtpTransport {
+impl Transport for SmtpTransport<false> {
     type Ok = Response;
     type Error = Error;
 
@@ -38,7 +38,24 @@ impl Transport for SmtpTransport {
     }
 }
 
-impl SmtpTransport {
+impl Transport for SmtpTransport<true> {
+    type Ok = Vec<Response>;
+    type Error = Error;
+
+    /// Sends an email
+    fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        let mut conn = self.inner.connection()?;
+
+        let result = conn.send(envelope, email)?;
+
+        #[cfg(not(feature = "pool"))]
+        conn.quit()?;
+
+        Ok(result)
+    }
+}
+
+impl<const LMTP: bool> SmtpTransport<LMTP> {
     /// Simple and secure transport, using TLS connections to communicate with the SMTP server
     ///
     /// The right option for most SMTP servers.
@@ -85,7 +102,7 @@ impl SmtpTransport {
     /// Creates a new local SMTP client to port 25
     ///
     /// Shortcut for local unencrypted relay (typical local email daemon that will handle relaying)
-    pub fn unencrypted_localhost() -> SmtpTransport {
+    pub fn unencrypted_localhost() -> SmtpTransport<LMTP> {
         Self::builder_dangerous("localhost").build()
     }
 
@@ -101,8 +118,8 @@ impl SmtpTransport {
     /// Consider using [`SmtpTransport::relay`](#method.relay) or
     /// [`SmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
-    pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder {
-        let new = SmtpInfo {
+    pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder<LMTP> {
+        let new = SmtpInfo::<LMTP> {
             server: server.into(),
             ..Default::default()
         };
@@ -133,14 +150,14 @@ impl SmtpTransport {
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`SmtpTransport`].
 #[derive(Debug, Clone)]
-pub struct SmtpTransportBuilder {
-    info: SmtpInfo,
+pub struct SmtpTransportBuilder<const LMTP: bool> {
+    info: SmtpInfo<LMTP>,
     #[cfg(feature = "pool")]
     pool_config: PoolConfig,
 }
 
 /// Builder for the SMTP `SmtpTransport`
-impl SmtpTransportBuilder {
+impl<const LMTP: bool> SmtpTransportBuilder<LMTP> {
     /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> Self {
         self.info.hello_name = name;
@@ -196,7 +213,7 @@ impl SmtpTransportBuilder {
     ///
     /// If the `pool` feature is enabled an `Arc` wrapped pool is be created.
     /// Defaults can be found at [`PoolConfig`]
-    pub fn build(self) -> SmtpTransport {
+    pub fn build(self) -> SmtpTransport<LMTP> {
         let client = SmtpClient { info: self.info };
 
         #[cfg(feature = "pool")]
@@ -208,15 +225,15 @@ impl SmtpTransportBuilder {
 
 /// Build client
 #[derive(Debug, Clone)]
-pub struct SmtpClient {
-    info: SmtpInfo,
+pub struct SmtpClient<const LMTP: bool> {
+    info: SmtpInfo<LMTP>,
 }
 
-impl SmtpClient {
+impl<const LMTP: bool> SmtpClient<LMTP> {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
-    pub fn connection(&self) -> Result<SmtpConnection, Error> {
+    pub fn connection(&self) -> Result<SmtpConnection<LMTP>, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match self.info.tls {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
