@@ -27,7 +27,7 @@ tracing = { version = "0.1.16", default-features = false, features = ["std"], op
 httpdate = { version = "1", optional = true }
 mime = { version = "0.3.4", optional = true }
 fastrand = { version = "1.4", optional = true }
-quoted_printable = { version = "0.4", optional = true }
+quoted_printable = { version = "0.4.6", optional = true }
 base64 = { version = "0.13", optional = true }
 email-encoding = { git = "https://github.com/lettre/email-encoding.git", rev = "e255be51b1d7f957464cc9f135aef74e3c78bb64", optional = true }
 
