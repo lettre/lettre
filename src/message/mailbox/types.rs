@@ -1,3 +1,4 @@
+use chumsky::prelude::*;
 use std::{
     fmt::{Display, Formatter, Result as FmtResult, Write},
     mem,
@@ -8,6 +9,8 @@ use std::{
 use email_encoding::headers::EmailWriter;
 
 use crate::address::{Address, AddressError};
+
+use super::parsers;
 
 /// Represents an email address with an optional name for the sender/recipient.
 ///
@@ -122,26 +125,8 @@ impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        match (src.find('<'), src.find('>')) {
-            (Some(addr_open), Some(addr_close)) if addr_open < addr_close => {
-                let name = src.split_at(addr_open).0;
-                let addr_open = addr_open + 1;
-                let addr = src.split_at(addr_open).1.split_at(addr_close - addr_open).0;
-                let addr = addr.parse()?;
-                let name = name.trim();
-                let name = if name.is_empty() {
-                    None
-                } else {
-                    Some(name.into())
-                };
-                Ok(Mailbox::new(name, addr))
-            }
-            (Some(_), _) => Err(AddressError::Unbalanced),
-            _ => {
-                let addr = src.parse()?;
-                Ok(Mailbox::new(None, addr))
-            }
-        }
+        let (name, addr) = parsers::mailbox().parse(src).unwrap();
+        Ok(Mailbox::new(name, addr.parse()?))
     }
 }
 
@@ -356,34 +341,11 @@ impl Display for Mailboxes {
 impl FromStr for Mailboxes {
     type Err = AddressError;
 
-    fn from_str(mut src: &str) -> Result<Self, Self::Err> {
+    fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
 
-        if !src.is_empty() {
-            // n-1 elements
-            let mut skip = 0;
-            while let Some(i) = src[skip..].find(',') {
-                let left = &src[..skip + i];
-
-                match left.trim().parse() {
-                    Ok(mailbox) => {
-                        mailboxes.push(mailbox);
-
-                        src = &src[left.len() + ",".len()..];
-                        skip = 0;
-                    }
-                    Err(AddressError::MissingParts) => {
-                        skip = left.len() + ",".len();
-                    }
-                    Err(err) => {
-                        return Err(err);
-                    }
-                }
-            }
-
-            // last element
-            let mailbox = src.trim().parse()?;
-            mailboxes.push(mailbox);
+        for (name, addr) in parsers::mailbox_list().parse(src).unwrap() {
+            mailboxes.push(Mailbox::new(name, addr.parse()?))
         }
 
         Ok(Mailboxes(mailboxes))

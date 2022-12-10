@@ -22,6 +22,7 @@ maintenance = { status = "actively-developed" }
 idna = "0.3"
 once_cell = { version = "1", optional = true }
 tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
+chumsky = "0.8.0"
 
 # builder
 httpdate = { version = "1", optional = true }
