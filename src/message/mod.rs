@@ -14,8 +14,7 @@
 //! The easiest way of creating a message, which uses a plain text body.
 //!
 //! ```rust
-//! use lettre::message::header::ContentType;
-//! use lettre::message::Message;
+//! use lettre::message::{header::ContentType, Message};
 //!
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
