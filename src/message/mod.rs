@@ -39,6 +39,7 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! Date: Sat, 12 Dec 2020 16:33:19 GMT
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Be happy!
