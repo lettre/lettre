@@ -14,7 +14,7 @@
 //! The easiest way of creating a message, which uses a plain text body.
 //!
 //! ```rust
-//! use lettre::message::Message;
+//! use lettre::message::{header::ContentType, Message};
 //!
 //! # use std::error::Error;
 //! # fn main() -> Result<(), Box<dyn Error>> {
@@ -23,6 +23,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //! # Ok(())
 //! # }
@@ -38,6 +39,7 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! Date: Sat, 12 Dec 2020 16:33:19 GMT
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Be happy!
