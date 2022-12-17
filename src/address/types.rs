@@ -238,7 +238,7 @@ pub enum AddressError {
     /// Invalid email domain
     InvalidDomain,
     /// Fallback
-    Invalid(String),
+    Invalid(Vec<String>),
 }
 
 impl Error for AddressError {}
@@ -250,7 +250,10 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
-            AddressError::Invalid(reason) => f.write_str(reason),
+            AddressError::Invalid(reasons) => reasons
+                .iter()
+                .map(|reason| f.write_str(reason))
+                .collect::<Result<(), _>>(),
         }
     }
 }
