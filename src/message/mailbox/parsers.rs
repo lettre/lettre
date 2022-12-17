@@ -210,7 +210,7 @@ pub fn word() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 
 // mailbox         =       name-addr / addr-spec
 pub fn mailbox() -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
-    choice((name_addr(), addr_spec().map(|addr| (None, addr))))
+    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
 }
 
 // name-addr       =       [display-name] angle-addr

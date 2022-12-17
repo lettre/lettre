@@ -1,4 +1,3 @@
-use chumsky::prelude::*;
 use std::{
     fmt::{Display, Formatter, Result as FmtResult, Write},
     mem,
@@ -6,11 +5,11 @@ use std::{
     str::FromStr,
 };
 
+use chumsky::prelude::*;
 use email_encoding::headers::EmailWriter;
 
-use crate::address::{Address, AddressError};
-
 use super::parsers;
+use crate::address::{Address, AddressError};
 
 /// Represents an email address with an optional name for the sender/recipient.
 ///

@@ -198,7 +198,7 @@ mod test {
             from_str(r#""yin@dtb.com, Hei <hei@dtb.com>, Kai <kayo@example.com>""#).unwrap();
         assert_eq!(
             m,
-            "<yin@dtb.com>, Hei <hei@dtb.com>, Kai <kayo@example.com>"
+            "yin@dtb.com, Hei <hei@dtb.com>, Kai <kayo@example.com>"
                 .parse()
                 .unwrap()
         );
@@ -211,7 +211,7 @@ mod test {
                 .unwrap();
         assert_eq!(
             m,
-            "<yin@dtb.com>, Hei <hei@dtb.com>, Kai <kayo@example.com>"
+            "yin@dtb.com, Hei <hei@dtb.com>, Kai <kayo@example.com>"
                 .parse()
                 .unwrap()
         );
