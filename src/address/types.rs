@@ -250,10 +250,9 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
-            AddressError::Invalid(reasons) => reasons
-                .iter()
-                .map(|reason| f.write_str(reason))
-                .collect::<Result<(), _>>(),
+            AddressError::Invalid(reasons) => {
+                reasons.iter().try_for_each(|reason| f.write_str(reason))
+            }
         }
     }
 }
