@@ -111,22 +111,14 @@ impl<S: Into<String>, T: Into<String>> TryFrom<(S, T)> for Mailbox {
     }
 }
 
-/*
-impl<S: AsRef<&str>, T: AsRef<&str>> TryFrom<(S, T)> for Mailbox {
-    type Error = AddressError;
-
-    fn try_from(header: (S, T)) -> Result<Self, Self::Error> {
-        let (name, address) = header;
-        Ok(Mailbox::new(Some(name.as_ref()), address.as_ref().parse()?))
-    }
-}*/
-
 impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        let (name, addr) = parsers::mailbox().parse(src).unwrap();
-        Ok(Mailbox::new(name, addr.parse()?))
+        let (name, (user, domain)) = parsers::mailbox()
+            .parse(src)
+            .map_err(|errs| AddressError::Invalid(errs.first().unwrap().to_string()))?;
+        Ok(Mailbox::new(name, Address::new(user, domain).unwrap()))
     }
 }
 
@@ -343,9 +335,12 @@ impl FromStr for Mailboxes {
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
+        let parsed_mailboxes = parsers::mailbox_list()
+            .parse(src)
+            .map_err(|errs| AddressError::Invalid(errs.first().unwrap().to_string()))?;
 
-        for (name, addr) in parsers::mailbox_list().parse(src).unwrap() {
-            mailboxes.push(Mailbox::new(name, addr.parse()?))
+        for (name, (user, domain)) in parsed_mailboxes {
+            mailboxes.push(Mailbox::new(name, Address::new(user, domain).unwrap()))
         }
 
         Ok(Mailboxes(mailboxes))
