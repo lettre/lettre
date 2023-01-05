@@ -306,15 +306,15 @@ mod test {
     #[test]
     fn parse_multi_with_name_containing_comma() {
         let from: Vec<Mailbox> = vec![
-            "Test, test <1@example.com>".parse().unwrap(),
-            "Test2, test2 <2@example.com>".parse().unwrap(),
+            Mailbox::new(Some("Test, test".into()), "1@example.com".parse().unwrap()),
+            Mailbox::new(
+                Some("Test2, test2".into()),
+                "2@example.com".parse().unwrap(),
+            ),
         ];
 
         let mut headers = Headers::new();
-        headers.insert_raw(HeaderValue::new(
-            HeaderName::new_from_ascii_str("From"),
-            "Test, test <1@example.com>, Test2, test2 <2@example.com>".to_string(),
-        ));
+        headers.set(From(from.clone().into()));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
     }

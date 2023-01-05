@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     fmt::{Display, Formatter, Result as FmtResult, Write},
     mem,
     slice::Iter,
@@ -122,26 +123,33 @@ impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        match (src.find('<'), src.find('>')) {
-            (Some(addr_open), Some(addr_close)) if addr_open < addr_close => {
-                let name = src.split_at(addr_open).0;
-                let addr_open = addr_open + 1;
-                let addr = src.split_at(addr_open).1.split_at(addr_close - addr_open).0;
-                let addr = addr.parse()?;
-                let name = name.trim();
-                let name = if name.is_empty() {
-                    None
-                } else {
-                    Some(name.into())
-                };
-                Ok(Mailbox::new(name, addr))
-            }
-            (Some(_), _) => Err(AddressError::Unbalanced),
-            _ => {
-                let addr = src.parse()?;
-                Ok(Mailbox::new(None, addr))
-            }
+        if !src.contains('<') {
+            // Only an addr-spec.
+            let addr = src.parse()?;
+            return Ok(Mailbox::new(None, addr));
         }
+
+        // name-addr
+        // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4
+        let (name, angle_addr) = read_phrase(src).unwrap_or(("".into(), src));
+
+        // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4.1
+        let addr_spec = angle_addr
+            .trim_matches(&[' ', '\t'][..])
+            .strip_prefix('<')
+            .ok_or(AddressError::MissingParts)?
+            .strip_suffix('>')
+            .ok_or(AddressError::Unbalanced)?;
+
+        let addr = addr_spec.parse()?;
+
+        let name = if name.is_empty() {
+            None
+        } else {
+            Some(name.into())
+        };
+
+        Ok(Mailbox::new(name, addr))
     }
 }
 
@@ -390,9 +398,25 @@ impl FromStr for Mailboxes {
     }
 }
 
+// Note that phrase is a subset of obs-phrase so we effectively only read the latter.
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
+// https://datatracker.ietf.org/doc/html/rfc2822#section-4.1
+fn read_phrase(s: &str) -> Option<(Cow<'_, str>, &str)> {
+    let (mut phrase, mut remainder) = read_word(s)?;
+    while let Some((new_phrase, new_remainder)) = read_obs_word(remainder) {
+        let phrase = phrase.to_mut();
+        if is_fws_char(remainder.chars().next().unwrap()) {
+            phrase.push(' ')
+        }
+        phrase.push_str(&new_phrase);
+        remainder = new_remainder;
+    }
+    Some((phrase, remainder))
+}
+
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
 fn write_word(f: &mut Formatter<'_>, s: &str) -> FmtResult {
-    if s.as_bytes().iter().copied().all(is_valid_atom_char) {
+    if s.as_bytes().iter().copied().all(is_atom_char) {
         f.write_str(s)
     } else {
         // Quoted string: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
@@ -406,38 +430,85 @@ fn write_word(f: &mut Formatter<'_>, s: &str) -> FmtResult {
     }
 }
 
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
+fn read_word(s: &str) -> Option<(Cow<'_, str>, &str)> {
+    read_obs_word(s).filter(|(word, _)| word != ".")
+}
+
+// obs-word is our own invention.
+// It is simply `word / "."` which is useful for reading obs-phrase.
+fn read_obs_word(s: &str) -> Option<(Cow<'_, str>, &str)> {
+    match s.chars().next()? {
+        ' ' | '\t' => read_obs_word(&s[1..]),
+        '"' => read_quoted_string(&s[1..]),
+        '.' => Some((".".into(), &s[1..])),
+        _ => match read_atom(s) {
+            ("", _) => None,
+            (atom, rest) => Some((atom.into(), rest)),
+        },
+    }
+}
+
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.4
-fn is_valid_atom_char(c: u8) -> bool {
+fn read_atom(s: &str) -> (&str, &str) {
+    let end = s.bytes().take_while(|c| is_atom_char(*c)).count();
+    s.split_at(end)
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2234#section-6.1
+fn is_fws_char(c: char) -> bool {
+    c == ' ' || c == '\t'
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.4
+fn is_atom_char(c: u8) -> bool {
     matches!(c,
-		// Not really allowed but can be inserted between atoms.
-		b'\t' |
-		b' ' |
+        b'!' |
+        b'#' |
+        b'$' |
+        b'%' |
+        b'&' |
+        b'\'' |
+        b'*' |
+        b'+' |
+        b'-' |
+        b'/' |
+        b'0'..=b'8' |
+        b'=' |
+        b'?' |
+        b'A'..=b'Z' |
+        b'^' |
+        b'_' |
+        b'`' |
+        b'a'..=b'z' |
+        b'{' |
+        b'|' |
+        b'}' |
+        b'~' |
 
-		b'!' |
-		b'#' |
-		b'$' |
-		b'%' |
-		b'&' |
-		b'\'' |
-		b'*' |
-		b'+' |
-		b'-' |
-		b'/' |
-		b'0'..=b'8' |
-		b'=' |
-		b'?' |
-		b'A'..=b'Z' |
-		b'^' |
-		b'_' |
-		b'`' |
-		b'a'..=b'z' |
-		b'{' |
-		b'|' |
-		b'}' |
-		b'~' |
+        // Not technically allowed but will be escaped into allowed characters.
+        128..)
+}
 
-		// Not techically allowed but will be escaped into allowed characters.
-		128..=255)
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
+fn is_quoted_string_safe(c: char) -> bool {
+    is_qtext(c) || is_fws_char(c)
+}
+
+// Note: You probably want is_quoted_string_safe as it includes FWS which you rarely need to distinguish from qtext. Both can be included verbatim in a quoted string and lettre has already done unfolding.
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
+fn is_qtext(c: char) -> bool {
+    matches!(u32::from(c),
+        // NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
+        1..=8 | 11 | 12 | 14..=31 | 127 |
+
+        // The rest of the US-ASCII except \ and "
+        33 |
+        35..=91 |
+        93..=126 |
+
+        // Not technically allowed but will be escaped into allowed characters.
+        128..)
 }
 
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
@@ -446,25 +517,7 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
         // Can not be encoded.
         '\n' | '\r' => Err(std::fmt::Error),
 
-        // Note, not qcontent but can be put before or after any qcontent.
-        '\t' | ' ' => f.write_char(c),
-
-        c if match c as u32 {
-            // NO-WS-CTL: https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
-            1..=8 | 11 | 12 | 14..=31 | 127 |
-
-            // The rest of the US-ASCII except \ and "
-            33 |
-            35..=91 |
-            93..=126 |
-
-            // Non-ascii characters will be escaped separately later.
-            128.. => true,
-            _ => false,
-        } =>
-        {
-            f.write_char(c)
-        }
+        c if is_quoted_string_safe(c) => f.write_char(c),
 
         _ => {
             // quoted-pair https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.2
@@ -472,6 +525,31 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
             f.write_char(c)
         }
     }
+}
+
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.4
+fn read_quoted_string(full: &str) -> Option<(Cow<'_, str>, &str)> {
+    let end = full
+        .chars()
+        .take_while(|c| is_quoted_string_safe(*c))
+        .count();
+    let (prefix, remainder) = full.split_at(end);
+    if let Some(suffix) = remainder.strip_prefix('"') {
+        return Some((prefix.into(), suffix));
+    }
+
+    let mut buf = prefix.to_string();
+    let mut chars = remainder.chars().enumerate();
+    while let Some((i, c)) = chars.next() {
+        match c {
+            '"' => return Some((buf.into(), &remainder[i + 1..])),
+            '\\' => buf.push(chars.next()?.1),
+            _ if is_quoted_string_safe(c) => buf.push(c),
+            _ => return None,
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -547,6 +625,17 @@ mod test {
     }
 
     #[test]
+    fn mailbox_format_address_with_angle_bracket() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(Some("<3".into()), "i@love.example".parse().unwrap())
+            ),
+            r#""<3" <i@love.example>"#
+        );
+    }
+
+    #[test]
     fn mailbox_format_address_with_color() {
         assert_eq!(
             format!(
@@ -597,6 +686,17 @@ mod test {
             Ok(Mailbox::new(
                 Some("K.".into()),
                 "kayo@example.com".parse().unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_address_with_comma() {
+        assert_eq!(
+            r#""<3" <i@love.example>"#.parse(),
+            Ok(Mailbox::new(
+                Some("<3".into()),
+                "i@love.example".parse().unwrap()
             ))
         );
     }
