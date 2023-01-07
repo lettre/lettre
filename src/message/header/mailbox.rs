@@ -278,6 +278,8 @@ mod test {
             "pony@domain.tld".parse().unwrap(),
         ];
 
+        println!("from: {:?}", from);
+
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
