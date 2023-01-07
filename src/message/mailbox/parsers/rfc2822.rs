@@ -102,6 +102,9 @@ fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = 
     rfc2234::dquote()
         .or_not()
         .ignore_then(
+            // NOTE: take everything available between potential
+            // quotes in order to make the parsing of the display-name
+            // the most flexible possible
             take_until(rfc2234::dquote().or_not().ignore_then(angle_addr())).map(
                 |(display_name, address)| {
                     (
