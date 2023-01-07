@@ -1,19 +1,11 @@
+//! Partial parsers implementation of [RFC2822]: Internet Message
+//! Format.
+//!
+//! [RFC2822]: https://datatracker.ietf.org/doc/html/rfc2822
+
 use chumsky::prelude::*;
 
-// Core Rules
-// https://datatracker.ietf.org/doc/html/rfc2234#section-6.1
-
-// CRLF           =  CR LF
-//                        ; Internet standard newline
-pub fn crlf() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
-    just('\r').chain(just('\n'))
-}
-
-// WSP            =  SP / HTAB
-//                        ; white space
-pub fn wsp() -> impl Parser<char, char, Error = Simple<char>> {
-    one_of([' ', '\t'])
-}
+use super::{rfc2234, rfc5336};
 
 // Primitive Tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.1
@@ -62,12 +54,12 @@ pub fn quoted_pair() -> impl Parser<char, char, Error = Simple<char>> {
 //                         obs-FWS
 pub fn fws() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
     // NOTE: obs-FWS leads to recursion, skipping it
-    wsp()
+    rfc2234::wsp()
         .repeated()
-        .chain(crlf())
+        .chain(rfc2234::crlf())
         .or_not()
         .flatten()
-        .chain(wsp().repeated().at_least(1))
+        .chain(rfc2234::wsp().repeated().at_least(1))
 }
 
 // ctext           =       NO-WS-CTL /     ; Non white space controls
@@ -197,7 +189,7 @@ pub fn quoted_string() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
         .collect()
 }
 
-// Miscellaneous tokens
+// 3.2.6. Miscellaneous tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
 
 // word            =       atom / quoted-string
@@ -208,37 +200,6 @@ pub fn word() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // Address Specification
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4
 
-// mailbox         =       name-addr / addr-spec
-pub fn mailbox() -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
-    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
-}
-
-// name-addr       =       [display-name] angle-addr
-pub fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
-    // NOTE: display-name does not follow the RFC here in order to be
-    // more flexible.
-    cfws().or_not().ignore_then(just('"').or_not()).ignore_then(
-        take_until(just('"').or_not().ignore_then(angle_addr())).map(|(display_name, address)| {
-            (
-                if display_name.is_empty() {
-                    None
-                } else {
-                    Some(String::from_iter(display_name))
-                },
-                address,
-            )
-        }),
-    )
-}
-
-// angle-addr      =       [CFWS] "<" addr-spec ">" [CFWS] / obs-angle-addr
-pub fn angle_addr() -> impl Parser<char, (String, String), Error = Simple<char>> {
-    cfws()
-        .or_not()
-        .ignore_then(addr_spec().delimited_by(just('<').ignored(), just('>').ignored()))
-        .then_ignore(cfws().or_not())
-}
-
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
 pub fn mailbox_list(
 ) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Simple<char>> {
@@ -247,56 +208,6 @@ pub fn mailbox_list(
 
 // Addr-spec specification
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4.1
-
-// addr-spec       =       local-part "@" domain
-pub fn addr_spec() -> impl Parser<char, (String, String), Error = Simple<char>> {
-    local_part()
-        .collect()
-        .then_ignore(just('@'))
-        .then(domain().collect())
-}
-
-// local-part      =       dot-atom / quoted-string / obs-local-part
-pub fn local_part() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
-    choice((dot_atom(), quoted_string(), obs_local_part()))
-}
-
-// domain          =       dot-atom / domain-literal / obs-domain
-pub fn domain() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
-    choice((dot_atom(), domain_literal(), obs_domain()))
-}
-
-// domain-literal  =       [CFWS] "[" *([FWS] dcontent) [FWS] "]" [CFWS]
-pub fn domain_literal() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
-    cfws()
-        .or_not()
-        .ignore_then(
-            fws()
-                .or_not()
-                .ignore_then(dcontent())
-                .repeated()
-                .then_ignore(fws().or_not())
-                .delimited_by(just('[').ignored(), just(']').ignored()),
-        )
-        .then_ignore(cfws().or_not())
-}
-
-// dcontent        =       dtext / quoted-pair
-pub fn dcontent() -> impl Parser<char, char, Error = Simple<char>> {
-    choice((dtext(), quoted_pair()))
-}
-
-// dtext           =       NO-WS-CTL /     ; Non white space controls
-//
-//                         %d33-90 /       ; The rest of the US-ASCII
-//                         %d94-126        ;  characters not including "[",
-//                                         ;  "]", or "\"
-pub fn dtext() -> impl Parser<char, char, Error = Simple<char>> {
-    let mut range: Vec<char> = vec![];
-    range.extend((33 as char)..=(90 as char));
-    range.extend((94 as char)..=(126 as char));
-    choice((no_ws_ctl(), one_of(range)))
-}
 
 // Miscellaneous obsolete tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-4.1
@@ -319,4 +230,60 @@ pub fn obs_local_part() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // obs-domain      =       atom *("." atom)
 pub fn obs_domain() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
     atom().chain(just('.').chain(atom()).repeated().flatten())
+}
+
+// -----------------------------------------------------
+
+// Address Specification
+// https://datatracker.ietf.org/doc/html/rfc2822#section-3.4
+
+// mailbox         =       name-addr / addr-spec
+pub(crate) fn mailbox(
+) -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
+    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
+}
+
+// addr-spec       =       local-part "@" domain
+pub fn addr_spec() -> impl Parser<char, (String, String), Error = Simple<char>> {
+    // NOTE: we use the rfc5336 unicode mailbox spec instead of the
+    // rfc2822 address spec because in `lettre` context headers are
+    // already pre-parsed and decoded.
+    rfc5336::u_mailbox()
+}
+
+// name-addr       =       [display-name] angle-addr
+pub fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
+    display_name().or_not().then(angle_addr())
+    // .map(|(display_name, address)| {
+    //     (
+    //         if display_name.is_empty() {
+    //             None
+    //         } else {
+    //             Some(String::from_iter(display_name))
+    //         },
+    //         address,
+    //     )
+    // })
+}
+
+// angle-addr      =       [CFWS] "<" addr-spec ">" [CFWS] / obs-angle-addr
+pub fn angle_addr() -> impl Parser<char, (String, String), Error = Simple<char>> {
+    cfws()
+        .or_not()
+        .ignore_then(addr_spec().delimited_by(just('<').ignored(), just('>').ignored()))
+        .then_ignore(cfws().or_not())
+}
+
+// display-name    =       phrase
+// phrase          =       1*word / obs-phrase
+// word            =       atom / quoted-string
+pub fn display_name() -> impl Parser<char, String, Error = Simple<char>> {
+    // NOTE: we use the rfc5336 unicode atom and quoted string spec
+    // instead of the rfc2822 ones because in `lettre` context headers
+    // are already pre-parsed and decoded.
+    choice((rfc5336::u_atom(), rfc5336::u_quoted_string()))
+        .repeated()
+        .at_least(1)
+        .flatten()
+        .collect()
 }
