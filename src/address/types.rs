@@ -226,7 +226,8 @@ fn check_address(val: &str) -> Result<usize, AddressError> {
     Ok(user.len())
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 /// Errors in email addresses parsing
 pub enum AddressError {
     /// Missing domain or user
@@ -237,8 +238,12 @@ pub enum AddressError {
     InvalidUser,
     /// Invalid email domain
     InvalidDomain,
+    /// Unexpected input found
+    UnexpectedInput,
+    /// Unclosed delimiter found
+    UnclosedDelimiter,
     /// Fallback
-    Invalid(Vec<String>),
+    Unknown,
 }
 
 impl Error for AddressError {}
@@ -250,9 +255,9 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
-            AddressError::Invalid(reasons) => {
-                reasons.iter().try_for_each(|reason| f.write_str(reason))
-            }
+            AddressError::UnexpectedInput => f.write_str("Unexpected input found"),
+            AddressError::UnclosedDelimiter => f.write_str("Unclosed delimiter"),
+            AddressError::Unknown => f.write_str("Unknown parsing error"),
         }
     }
 }

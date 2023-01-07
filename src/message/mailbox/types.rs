@@ -5,7 +5,7 @@ use std::{
     str::FromStr,
 };
 
-use chumsky::prelude::*;
+use chumsky::{error::SimpleReason, prelude::*};
 use email_encoding::headers::EmailWriter;
 
 use super::parsers;
@@ -115,8 +115,11 @@ impl FromStr for Mailbox {
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
         let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|errs| {
-            let errs: Vec<String> = errs.iter().map(|err| err.to_string()).collect();
-            AddressError::Invalid(errs)
+            match errs.first().map(|err| err.reason()) {
+                Some(SimpleReason::Unexpected) => AddressError::UnexpectedInput,
+                Some(SimpleReason::Unclosed { .. }) => AddressError::UnclosedDelimiter,
+                Some(SimpleReason::Custom(_)) | None => AddressError::Unknown,
+            }
         })?;
         Ok(Mailbox::new(name, Address::new(user, domain).unwrap()))
     }
@@ -336,8 +339,11 @@ impl FromStr for Mailboxes {
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
         let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|errs| {
-            let errs: Vec<String> = errs.iter().map(|err| err.to_string()).collect();
-            AddressError::Invalid(errs)
+            match errs.first().map(|err| err.reason()) {
+                Some(SimpleReason::Unexpected) => AddressError::UnexpectedInput,
+                Some(SimpleReason::Unclosed { .. }) => AddressError::UnclosedDelimiter,
+                Some(SimpleReason::Custom(_)) | None => AddressError::Unknown,
+            }
         })?;
 
         for (name, (user, domain)) in parsed_mailboxes {
