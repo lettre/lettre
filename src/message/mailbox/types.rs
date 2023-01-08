@@ -122,7 +122,10 @@ impl FromStr for Mailbox {
                 Some(SimpleReason::Custom(_)) | None => AddressError::Unknown,
             }
         })?;
-        Ok(Mailbox::new(name, Address::new(user, domain).unwrap()))
+
+        let mailbox = Mailbox::new(name, Address::new(user, domain)?);
+
+        Ok(mailbox)
     }
 }
 
@@ -339,6 +342,7 @@ impl FromStr for Mailboxes {
 
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
+
         let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|errs| {
             match errs.first().map(|err| err.reason()) {
                 Some(SimpleReason::Unexpected) => AddressError::UnexpectedInput,
@@ -348,7 +352,7 @@ impl FromStr for Mailboxes {
         })?;
 
         for (name, (user, domain)) in parsed_mailboxes {
-            mailboxes.push(Mailbox::new(name, Address::new(user, domain).unwrap()))
+            mailboxes.push(Mailbox::new(name, Address::new(user, domain)?))
         }
 
         Ok(Mailboxes(mailboxes))
