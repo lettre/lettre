@@ -89,6 +89,10 @@ maud = "0.24"
 harness = false
 name = "transport_smtp"
 
+[[bench]]
+harness = false
+name = "mailbox_parsing"
+
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
 builder = ["httpdate", "mime", "fastrand", "quoted_printable", "email-encoding"]
