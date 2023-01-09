@@ -269,7 +269,7 @@ fn display_name() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
 pub(crate) fn mailbox_list(
 ) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Simple<char>> {
-    mailbox().chain(just(',').padded().ignore_then(mailbox()).repeated())
+    mailbox().separated_by(just(',').padded())
 }
 
 // 3.4.1. Addr-spec specification

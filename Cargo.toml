@@ -21,7 +21,7 @@ maintenance = { status = "actively-developed" }
 [dependencies]
 chumsky = "0.8.0"
 idna = "0.3"
-once_cell = "1"
+once_cell = { version = "1", optional = true }
 tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
 
 # builder
@@ -98,7 +98,7 @@ mime03 = ["mime"]
 file-transport = ["uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
 file-transport-envelope = ["serde", "serde_json", "file-transport"]
 sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
-smtp-transport = ["base64", "nom", "socket2", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
+smtp-transport = ["base64", "nom", "socket2", "once_cell", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
 pool = ["futures-util"]
 

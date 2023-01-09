@@ -122,10 +122,10 @@ jobs:
         run: cargo test
 
       - name: Test with all features (-native-tls)
-        run: cargo test --no-default-features --features async-std,async-std1,async-std1-rustls-tls,async-trait,base64,boring,boring-tls,builder,dkim,ed25519-dalek,email-encoding,fastrand,file-transport,file-transport-envelope,futures-io,futures-rustls,futures-util,hostname,httpdate,mime,mime03,nom,pool,quoted_printable,rsa,rustls,rustls-pemfile,rustls-tls,sendmail-transport,serde,serde_json,sha2,smtp-transport,socket2,tokio1,tokio1-boring-tls,tokio1-rustls-tls,tokio1_boring,tokio1_crate,tokio1_rustls,tracing,uuid,webpki-roots
+        run: cargo test --no-default-features --features async-std,async-std1,async-std1-rustls-tls,async-trait,base64,boring,boring-tls,builder,dkim,ed25519-dalek,email-encoding,fastrand,file-transport,file-transport-envelope,futures-io,futures-rustls,futures-util,hostname,httpdate,mime,mime03,nom,one_cell,pool,quoted_printable,rsa,rustls,rustls-pemfile,rustls-tls,sendmail-transport,serde,serde_json,sha2,smtp-transport,socket2,tokio1,tokio1-boring-tls,tokio1-rustls-tls,tokio1_boring,tokio1_crate,tokio1_rustls,tracing,uuid,webpki-roots
   
       - name: Test with all features (-boring-tls)
-        run: cargo test --no-default-features --features async-std,async-std1,async-std1-rustls-tls,async-trait,base64,builder,dkim,ed25519-dalek,email-encoding,fastrand,file-transport,file-transport-envelope,futures-io,futures-rustls,futures-util,hostname,httpdate,mime,mime03,native-tls,nom,pool,quoted_printable,rsa,rustls,rustls-pemfile,rustls-tls,sendmail-transport,serde,serde_json,sha2,smtp-transport,socket2,tokio1,tokio1-native-tls,tokio1-rustls-tls,tokio1_crate,tokio1_native_tls_crate,tokio1_rustls,tracing,uuid,webpki-roots
+        run: cargo test --no-default-features --features async-std,async-std1,async-std1-rustls-tls,async-trait,base64,builder,dkim,ed25519-dalek,email-encoding,fastrand,file-transport,file-transport-envelope,futures-io,futures-rustls,futures-util,hostname,httpdate,mime,mime03,native-tls,nom,one_cell,pool,quoted_printable,rsa,rustls,rustls-pemfile,rustls-tls,sendmail-transport,serde,serde_json,sha2,smtp-transport,socket2,tokio1,tokio1-native-tls,tokio1-rustls-tls,tokio1_crate,tokio1_native_tls_crate,tokio1_rustls,tracing,uuid,webpki-roots
 
 #  coverage:
 #    name: Coverage
