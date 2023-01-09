@@ -240,7 +240,7 @@ fn phrase() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // mailbox         =       name-addr / addr-spec
 pub(crate) fn mailbox(
 ) -> impl Parser<char, (Option<String>, (String, String)), Error = Simple<char>> {
-    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
+    choice((addr_spec().map(|addr| (None, addr)), name_addr())).then_ignore(end())
 }
 
 // name-addr       =       [display-name] angle-addr
@@ -269,7 +269,9 @@ fn display_name() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
 pub(crate) fn mailbox_list(
 ) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Simple<char>> {
-    mailbox().separated_by(just(',').padded())
+    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
+        .separated_by(just(',').padded())
+        .then_ignore(end())
 }
 
 // 3.4.1. Addr-spec specification
