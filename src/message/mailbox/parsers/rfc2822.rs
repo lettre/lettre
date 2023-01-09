@@ -112,23 +112,35 @@ pub fn cfws() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 //                         "|" / "}" /
 //                         "~"
 pub(super) fn atext() -> impl Parser<char, char, Error = Simple<char>> {
-    filter(|c| {
-        matches!(*c,
-             'A'..='Z' |
-             'a'..='z' |
-             '0'..='9' |
-             '!' | '#' |
-             '$' | '%' |
-             '&' | '\''|
-             '*' | '+' |
-             '-' | '/' |
-             '=' | '?' |
-             '^' | '_' |
-             '`' | '{' |
-             '|' | '}' |
-             '~'
-        )
-    })
+    choice((
+        rfc2234::alpha(),
+        rfc2234::digit(),
+        filter(|c| {
+            matches!(
+                *c,
+                '!' | '#'
+                    | '$'
+                    | '%'
+                    | '&'
+                    | '\''
+                    | '*'
+                    | '+'
+                    | '-'
+                    | '/'
+                    | '='
+                    | '?'
+                    | '^'
+                    | '_'
+                    | '`'
+                    | '{'
+                    | '|'
+                    | '}'
+                    | '~'
+            )
+        }),
+        // also allow non ASCII UTF8 chars
+        rfc5336::utf8_non_ascii(),
+    ))
 }
 
 // atom            =       [CFWS] 1*atext [CFWS]
@@ -140,13 +152,28 @@ pub(super) fn atom() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
     cfws()
         .or_not()
         .map(Option::unwrap_or_default)
-        .chain(
-            // also allow non ASCII UTF8 chars
-            choice((atext(), rfc5336::utf8_non_ascii()))
-                .repeated()
-                .at_least(1),
-        )
+        .chain(atext().repeated().at_least(1))
         .chain(cfws().or_not().map(Option::unwrap_or_default))
+}
+
+// dot-atom        =       [CFWS] dot-atom-text [CFWS]
+pub fn dot_atom() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    cfws()
+        .or_not()
+        .map(Option::unwrap_or_default)
+        .chain(dot_atom_text())
+        .chain(cfws().or_not().map(Option::unwrap_or_default))
+}
+
+// dot-atom-text   =       1*atext *("." 1*atext)
+pub fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    atext().repeated().at_least(1).chain(
+        just('.')
+            .chain(atext().repeated().at_least(1))
+            .repeated()
+            .at_least(1)
+            .flatten(),
+    )
 }
 
 // 3.2.5. Quoted strings
@@ -166,7 +193,7 @@ fn qtext() -> impl Parser<char, char, Error = Simple<char>> {
 
 // qcontent        =       qtext / quoted-pair
 pub(super) fn qcontent() -> impl Parser<char, char, Error = Simple<char>> {
-    choice((qtext(), quoted_pair()))
+    choice((qtext(), quoted_pair(), rfc5336::utf8_non_ascii()))
 }
 
 // quoted-string   =       [CFWS]
@@ -182,8 +209,7 @@ fn quoted_string() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
                     fws()
                         .or_not()
                         .map(Option::unwrap_or_default)
-                        // also allow non ASCII UTF8 chars
-                        .chain(choice((qcontent(), rfc5336::utf8_non_ascii())))
+                        .chain(qcontent())
                         .repeated()
                         .flatten(),
                 )
@@ -222,7 +248,7 @@ fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = 
     display_name()
         .collect::<String>()
         // trim trailing CFWS and FWS from atoms and quoted strings
-        .map(|name| name.trim().to_owned())
+        .map(|name| name.trim_end().to_owned())
         .or_not()
         .then(angle_addr())
 }
@@ -243,18 +269,60 @@ fn display_name() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
 pub(crate) fn mailbox_list(
 ) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Simple<char>> {
-    mailbox().chain(just(',').ignore_then(mailbox()).repeated())
+    mailbox().chain(just(',').padded().ignore_then(mailbox()).repeated())
 }
 
 // 3.4.1. Addr-spec specification
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4.1
 
 // addr-spec       =       local-part "@" domain
-fn addr_spec() -> impl Parser<char, (String, String), Error = Simple<char>> {
-    // NOTE: we use the rfc5336 unicode mailbox spec instead of the
-    // rfc2822 address spec because in `lettre` context headers are
-    // already pre-parsed and decoded.
-    rfc5336::u_mailbox()
+pub fn addr_spec() -> impl Parser<char, (String, String), Error = Simple<char>> {
+    local_part()
+        .collect()
+        .then_ignore(just('@'))
+        .then(domain().collect())
+}
+
+// local-part      =       dot-atom / quoted-string / obs-local-part
+pub fn local_part() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    choice((dot_atom(), quoted_string(), obs_local_part()))
+}
+
+// domain          =       dot-atom / domain-literal / obs-domain
+pub fn domain() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    choice((dot_atom(), domain_literal(), obs_domain()))
+}
+
+// domain-literal  =       [CFWS] "[" *([FWS] dcontent) [FWS] "]" [CFWS]
+pub fn domain_literal() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    cfws()
+        .or_not()
+        .ignore_then(
+            fws()
+                .or_not()
+                .ignore_then(dcontent())
+                .repeated()
+                .then_ignore(fws().or_not())
+                .delimited_by(just('[').ignored(), just(']').ignored()),
+        )
+        .then_ignore(cfws().or_not())
+}
+
+// dcontent        =       dtext / quoted-pair
+pub fn dcontent() -> impl Parser<char, char, Error = Simple<char>> {
+    choice((dtext(), quoted_pair()))
+}
+
+// dtext           =       NO-WS-CTL /     ; Non white space controls
+//
+//                         %d33-90 /       ; The rest of the US-ASCII
+//                         %d94-126        ;  characters not including "[",
+//                                         ;  "]", or "\"
+pub fn dtext() -> impl Parser<char, char, Error = Simple<char>> {
+    choice((
+        no_ws_ctl(),
+        filter(|c| matches!(u32::from(*c), 33..=90 | 94..=126)),
+    ))
 }
 
 // 4.1. Miscellaneous obsolete tokens
@@ -267,4 +335,17 @@ fn obs_phrase() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
             .repeated()
             .flatten(),
     )
+}
+
+// 4.4. Obsolete Addressing
+// https://datatracker.ietf.org/doc/html/rfc2822#section-4.4
+
+// obs-local-part  =       word *("." word)
+pub fn obs_local_part() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    word().chain(just('.').chain(word()).repeated().flatten())
+}
+
+// obs-domain      =       atom *("." atom)
+pub fn obs_domain() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
+    atom().chain(just('.').chain(atom()).repeated().flatten())
 }

@@ -281,7 +281,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "kayo@example.com, pony@domain.tld".to_string(),
+            "kayo@example.com,pony@domain.tld".to_string(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));

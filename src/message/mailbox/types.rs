@@ -115,7 +115,6 @@ impl FromStr for Mailbox {
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
         let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|errs| {
-            println!("errs: {:?}", errs);
             match errs.first().map(|err| err.reason()) {
                 Some(SimpleReason::Unexpected) => AddressError::UnexpectedInput,
                 Some(SimpleReason::Unclosed { .. }) => AddressError::UnclosedDelimiter,
