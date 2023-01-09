@@ -17,7 +17,6 @@ pub(super) fn u_mailbox() -> impl Parser<char, (String, String), Error = Simple<
         .collect()
         .then_ignore(just('@'))
         .then(u_domain().collect())
-        .padded()
 }
 
 // uLocal-part = uDot-string / uQuoted-string
@@ -36,7 +35,7 @@ pub(super) fn u_dot_string() -> impl Parser<char, Vec<char>, Error = Simple<char
 // uAtom = 1*ucharacter
 //       ; Replace Atom in RFC 2821, Section 4.1.2
 pub(super) fn u_atom() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
-    ucharacter().repeated().at_least(1)
+    ucharacter().padded().repeated().at_least(1)
 }
 
 // ucharacter = atext / UTF8-non-ascii
@@ -48,8 +47,9 @@ pub(super) fn ucharacter() -> impl Parser<char, char, Error = Simple<char>> {
 //   ; Replace Quoted-string in RFC 2821, Section 4.1.2
 pub(super) fn u_quoted_string() -> impl Parser<char, Vec<char>, Error = Simple<char>> {
     rfc2234::dquote()
-        .ignore_then(uqcontent().repeated())
+        .ignore_then(uqcontent().padded().repeated())
         .then_ignore(rfc2234::dquote())
+        .padded()
 }
 
 // uqcontent = qcontent / UTF8-non-ascii
