@@ -34,5 +34,5 @@ pub(super) fn dquote() -> impl Parser<char, char, Error = Cheap<char>> {
 // WSP            =  SP / HTAB
 //                        ; white space
 pub(super) fn wsp() -> impl Parser<char, char, Error = Cheap<char>> {
-    one_of([' ', '\t'])
+    choice((just(' '), just('\t')))
 }

@@ -89,11 +89,11 @@ pub fn cfws() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
         .repeated()
         .flatten()
         .chain(choice((
+            fws(),
             fws()
                 .or_not()
                 .map(Option::unwrap_or_default)
                 .chain(comment()),
-            fws(),
         )))
 }
 
@@ -186,8 +186,8 @@ pub fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 //                         %d93-126        ;  or the quote character
 fn qtext() -> impl Parser<char, char, Error = Cheap<char>> {
     choice((
-        no_ws_ctl(),
         filter(|c| matches!(u32::from(*c), 33 | 35..=91 | 93..=126)),
+        no_ws_ctl(),
     ))
 }
 
@@ -239,7 +239,7 @@ fn phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 // mailbox         =       name-addr / addr-spec
 pub(crate) fn mailbox() -> impl Parser<char, (Option<String>, (String, String)), Error = Cheap<char>>
 {
-    choice((addr_spec().map(|addr| (None, addr)), name_addr())).then_ignore(end())
+    choice((name_addr(), addr_spec().map(|addr| (None, addr)))).then_ignore(end())
 }
 
 // name-addr       =       [display-name] angle-addr
@@ -268,7 +268,7 @@ fn display_name() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
 pub(crate) fn mailbox_list(
 ) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Cheap<char>> {
-    choice((addr_spec().map(|addr| (None, addr)), name_addr()))
+    choice((name_addr(), addr_spec().map(|addr| (None, addr))))
         .separated_by(just(',').padded())
         .then_ignore(end())
 }
@@ -291,7 +291,7 @@ pub fn local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 
 // domain          =       dot-atom / domain-literal / obs-domain
 pub fn domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((dot_atom(), domain_literal(), obs_domain()))
+    choice((dot_atom(), obs_domain(), domain_literal()))
 }
 
 // domain-literal  =       [CFWS] "[" *([FWS] dcontent) [FWS] "]" [CFWS]
@@ -321,8 +321,8 @@ pub fn dcontent() -> impl Parser<char, char, Error = Cheap<char>> {
 //                                         ;  "]", or "\"
 pub fn dtext() -> impl Parser<char, char, Error = Cheap<char>> {
     choice((
-        no_ws_ctl(),
         filter(|c| matches!(u32::from(*c), 33..=90 | 94..=126)),
+        no_ws_ctl(),
     ))
 }
 
