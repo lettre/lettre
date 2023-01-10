@@ -238,12 +238,8 @@ pub enum AddressError {
     InvalidUser,
     /// Invalid email domain
     InvalidDomain,
-    /// Unexpected input found
-    UnexpectedInput,
-    /// Unclosed delimiter found
-    UnclosedDelimiter,
-    /// Fallback
-    Unknown,
+    /// Invalid input found
+    InvalidInput,
 }
 
 impl Error for AddressError {}
@@ -255,9 +251,7 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
-            AddressError::UnexpectedInput => f.write_str("Unexpected input"),
-            AddressError::UnclosedDelimiter => f.write_str("Unclosed delimiter"),
-            AddressError::Unknown => f.write_str("Unknown address parsing error"),
+            AddressError::InvalidInput => f.write_str("Invalid input"),
         }
     }
 }
