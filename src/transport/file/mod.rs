@@ -276,6 +276,8 @@ impl Transport for FileTransport {
         let email_id = Uuid::new_v4();
 
         let file = self.path(&email_id, "eml");
+        #[cfg(feature = "tracing")]
+        tracing::debug!(?file, "writing email to");
         fs::write(file, email).map_err(error::io)?;
 
         #[cfg(feature = "file-transport-envelope")]
@@ -306,6 +308,8 @@ where
         let email_id = Uuid::new_v4();
 
         let file = self.inner.path(&email_id, "eml");
+        #[cfg(feature = "tracing")]
+        tracing::debug!(?file, "writing email to");
         E::fs_write(&file, email).await.map_err(error::io)?;
 
         #[cfg(feature = "file-transport-envelope")]

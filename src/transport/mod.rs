@@ -127,6 +127,9 @@ pub trait Transport {
     #[cfg(feature = "builder")]
     #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
     fn send(&self, message: &Message) -> Result<Self::Ok, Self::Error> {
+        #[cfg(feature = "tracing")]
+        tracing::trace!("starting to send an email");
+
         let raw = message.formatted();
         self.send_raw(message.envelope(), &raw)
     }
@@ -149,6 +152,9 @@ pub trait AsyncTransport {
     #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
     // TODO take &Message
     async fn send(&self, message: Message) -> Result<Self::Ok, Self::Error> {
+        #[cfg(feature = "tracing")]
+        tracing::trace!("starting to send an email");
+
         let raw = message.formatted();
         let envelope = message.envelope();
         self.send_raw(envelope, &raw).await

@@ -232,6 +232,9 @@ impl Transport for SendmailTransport {
     type Error = Error;
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
+        #[cfg(feature = "tracing")]
+        tracing::debug!(command = ?self.command, "sending email with");
+
         // Spawn the sendmail command
         let mut process = self.command(envelope).spawn().map_err(error::client)?;
 
@@ -260,6 +263,9 @@ impl AsyncTransport for AsyncSendmailTransport<AsyncStd1Executor> {
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use async_std::io::prelude::WriteExt;
+
+        #[cfg(feature = "tracing")]
+        tracing::debug!(command = ?self.inner.command, "sending email with");
 
         let mut command = self.async_std_command(envelope);
 
@@ -292,6 +298,9 @@ impl AsyncTransport for AsyncSendmailTransport<Tokio1Executor> {
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error> {
         use tokio1_crate::io::AsyncWriteExt;
+
+        #[cfg(feature = "tracing")]
+        tracing::debug!(command = ?self.inner.command, "sending email with");
 
         let mut command = self.tokio1_command(envelope);
 
