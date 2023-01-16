@@ -358,7 +358,7 @@ impl MessageBuilder {
     }
 
     /// Set [User-Agent
-    /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-004)
+    /// header](https://tools.ietf.org/html/draft-melnikov-email-user-agent-00)
     pub fn user_agent(self, id: String) -> Self {
         self.header(header::UserAgent::from(id))
     }
