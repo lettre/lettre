@@ -1,3 +1,38 @@
+<a name="v0.10.2"></a>
+### v0.10.2 (TBD)
+
+#### Upgrade notes
+
+* MSRV is now 1.60 ([#828])
+
+#### Features
+
+* Allow providing a custom `tokio` stream for `AsyncSmtpTransport` ([#805])
+* Return whole SMTP error message ([#821])
+
+#### Bug fixes
+
+* Mailbox displays wrongly when containing a comma and a non-ascii char in its name ([#827])
+* Require `quoted_printable` ^0.4.6 in order to fix encoding of tabs and spaces at the end of line [(#837)]
+
+#### Misc
+
+* Increase tracing ([#848])
+* Bump `idna` to 0.3 ([#816])
+* Update `base64` to 0.21 ([#840] and #[#851])
+* Update `rsa` to 0.8 ([#829] and [#852])
+
+[#805]: https://github.com/lettre/lettre/pull/805
+[#816]: https://github.com/lettre/lettre/pull/816
+[#821]: https://github.com/lettre/lettre/pull/821
+[#827]: https://github.com/lettre/lettre/pull/827
+[#828]: https://github.com/lettre/lettre/pull/828
+[#829]: https://github.com/lettre/lettre/pull/829
+[#837]: https://github.com/lettre/lettre/pull/837
+[#840]: https://github.com/lettre/lettre/pull/840
+[#848]: https://github.com/lettre/lettre/pull/848
+[#852]: https://github.com/lettre/lettre/pull/852
+
 <a name="v0.10.1"></a>
 ### v0.10.1 (2022-07-20)
 
