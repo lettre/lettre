@@ -203,6 +203,8 @@ Make sure to apply the same to any of your crate dependencies that use the `lett
 }
 
 pub mod address;
+#[cfg(any(feature = "smtp-transport", feature = "dkim"))]
+mod base64;
 pub mod error;
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod executor;

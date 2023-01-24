@@ -220,7 +220,7 @@ pub struct Auth {
 
 impl Display for Auth {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let encoded_response = self.response.as_ref().map(base64::encode);
+        let encoded_response = self.response.as_ref().map(crate::base64::encode);
 
         if self.mechanism.supports_initial_response() {
             write!(f, "AUTH {} {}", self.mechanism, encoded_response.unwrap())?;
@@ -271,7 +271,7 @@ impl Auth {
         #[cfg(feature = "tracing")]
         tracing::debug!("auth encoded challenge: {}", encoded_challenge);
 
-        let decoded_base64 = base64::decode(encoded_challenge).map_err(error::response)?;
+        let decoded_base64 = crate::base64::decode(encoded_challenge).map_err(error::response)?;
         let decoded_challenge = String::from_utf8(decoded_base64).map_err(error::response)?;
         #[cfg(feature = "tracing")]
         tracing::debug!("auth decoded challenge: {}", decoded_challenge);
