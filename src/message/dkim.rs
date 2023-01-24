@@ -121,14 +121,14 @@ impl DkimSigningKey {
                 RsaPrivateKey::from_pkcs1_pem(private_key)
                     .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
             ),
-            DkimSigningAlgorithm::Ed25519 => {
-                InnerDkimSigningKey::Ed25519(
-                    ed25519_dalek::Keypair::from_bytes(&base64::decode(private_key).map_err(
-                        |err| DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err)),
-                    )?)
-                    .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(err)))?,
+            DkimSigningAlgorithm::Ed25519 => InnerDkimSigningKey::Ed25519(
+                ed25519_dalek::Keypair::from_bytes(
+                    &crate::base64::decode(private_key).map_err(|err| {
+                        DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err))
+                    })?,
                 )
-            }
+                .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(err)))?,
+            ),
         }))
     }
     fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
@@ -358,7 +358,7 @@ fn dkim_sign_fixed_time(message: &mut Message, dkim_config: &DkimConfig, timesta
         &message.body_raw(),
         dkim_config.canonicalization.body,
     ));
-    let bh = base64::encode(body_hash);
+    let bh = crate::base64::encode(body_hash);
     let mut signed_headers_list =
         dkim_config
             .headers
@@ -390,7 +390,7 @@ fn dkim_sign_fixed_time(message: &mut Message, dkim_config: &DkimConfig, timesta
     hashed_headers.update(canonicalized_dkim_header.trim_end().as_bytes());
     let hashed_headers = hashed_headers.finalize();
     let signature = match &dkim_config.private_key.0 {
-        InnerDkimSigningKey::Rsa(private_key) => base64::encode(
+        InnerDkimSigningKey::Rsa(private_key) => crate::base64::encode(
             private_key
                 .sign(
                     PaddingScheme::new_pkcs1v15_sign::<Sha256>(),
@@ -399,7 +399,7 @@ fn dkim_sign_fixed_time(message: &mut Message, dkim_config: &DkimConfig, timesta
                 .unwrap(),
         ),
         InnerDkimSigningKey::Ed25519(private_key) => {
-            base64::encode(private_key.sign(&hashed_headers).to_bytes())
+            crate::base64::encode(private_key.sign(&hashed_headers).to_bytes())
         }
     };
     let dkim_header = dkim_header_format(
