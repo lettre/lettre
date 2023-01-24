@@ -13,7 +13,7 @@
 #### Bug fixes
 
 * Mailbox displays wrongly when containing a comma and a non-ascii char in its name ([#827])
-* Require `quoted_printable` ^0.4.6 in order to fix encoding of tabs and spaces at the end of line [(#837)]
+* Require `quoted_printable` ^0.4.6 in order to fix encoding of tabs and spaces at the end of line ([#837])
 
 #### Misc
 
