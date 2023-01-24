@@ -19,7 +19,7 @@
 
 * Increase tracing ([#848])
 * Bump `idna` to 0.3 ([#816])
-* Update `base64` to 0.21 ([#840] and #[#851])
+* Update `base64` to 0.21 ([#840] and [#851])
 * Update `rsa` to 0.8 ([#829] and [#852])
 
 [#805]: https://github.com/lettre/lettre/pull/805
