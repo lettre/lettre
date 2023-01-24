@@ -31,6 +31,7 @@
 [#837]: https://github.com/lettre/lettre/pull/837
 [#840]: https://github.com/lettre/lettre/pull/840
 [#848]: https://github.com/lettre/lettre/pull/848
+[#851]: https://github.com/lettre/lettre/pull/851
 [#852]: https://github.com/lettre/lettre/pull/852
 
 <a name="v0.10.1"></a>
