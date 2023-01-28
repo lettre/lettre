@@ -219,7 +219,7 @@ impl FileTransport {
     }
 
     fn path(&self, email_id: &Uuid, extension: &str) -> PathBuf {
-        self.path.join(format!("{email_id}.{extensions}"))
+        self.path.join(format!("{email_id}.{extension}"))
     }
 }
 
