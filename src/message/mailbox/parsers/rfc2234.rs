@@ -10,13 +10,13 @@ use chumsky::{error::Cheap, prelude::*};
 
 // ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
 pub(super) fn alpha() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c: &char| matches!(*c, 'A'..='Z' | 'a'..='z'))
+    filter(|c: &char| c.is_ascii_alphabetic())
 }
 
 // DIGIT          =  %x30-39
 //                        ; 0-9
 pub(super) fn digit() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c: &char| matches!(*c, '0'..='9'))
+    filter(|c: &char| c.is_ascii_digit())
 }
 
 // DQUOTE         =  %x22

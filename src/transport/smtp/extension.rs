@@ -55,8 +55,8 @@ impl Display for ClientId {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             Self::Domain(ref value) => f.write_str(value),
-            Self::Ipv4(ref value) => write!(f, "[{}]", value),
-            Self::Ipv6(ref value) => write!(f, "[IPv6:{}]", value),
+            Self::Ipv4(ref value) => write!(f, "[{value}]"),
+            Self::Ipv6(ref value) => write!(f, "[IPv6:{value}]"),
         }
     }
 }
@@ -97,7 +97,7 @@ impl Display for Extension {
             Extension::EightBitMime => f.write_str("8BITMIME"),
             Extension::SmtpUtfEight => f.write_str("SMTPUTF8"),
             Extension::StartTls => f.write_str("STARTTLS"),
-            Extension::Authentication(ref mechanism) => write!(f, "AUTH {}", mechanism),
+            Extension::Authentication(ref mechanism) => write!(f, "AUTH {mechanism}"),
         }
     }
 }
@@ -228,8 +228,8 @@ pub enum MailParameter {
 impl Display for MailParameter {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
-            MailParameter::Body(ref value) => write!(f, "BODY={}", value),
-            MailParameter::Size(size) => write!(f, "SIZE={}", size),
+            MailParameter::Body(ref value) => write!(f, "BODY={value}"),
+            MailParameter::Size(size) => write!(f, "SIZE={size}"),
             MailParameter::SmtpUtfEight => f.write_str("SMTPUTF8"),
             MailParameter::Other {
                 ref keyword,
@@ -281,7 +281,7 @@ impl Display for RcptParameter {
             RcptParameter::Other {
                 ref keyword,
                 value: Some(ref value),
-            } => write!(f, "{}={}", keyword, XText(value)),
+            } => write!(f, "{keyword}={}", XText(value)),
             RcptParameter::Other {
                 ref keyword,
                 value: None,
@@ -307,7 +307,7 @@ mod test {
             format!("{}", ClientId::Domain("test".to_string())),
             "test".to_string()
         );
-        assert_eq!(format!("{}", LOCALHOST_CLIENT), "[127.0.0.1]".to_string());
+        assert_eq!(format!("{LOCALHOST_CLIENT}"), "[127.0.0.1]".to_string());
     }
 
     #[test]

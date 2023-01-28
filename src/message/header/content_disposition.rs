@@ -33,7 +33,7 @@ impl ContentDisposition {
     }
 
     fn with_name(kind: &str, file_name: &str) -> Self {
-        let raw_value = format!("{}; filename=\"{}\"", kind, file_name);
+        let raw_value = format!("{kind}; filename=\"{file_name}\"");
 
         let mut encoded_value = String::new();
         let line_len = "Content-Disposition: ".len();
