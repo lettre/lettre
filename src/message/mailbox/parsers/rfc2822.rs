@@ -42,59 +42,17 @@ fn quoted_pair() -> impl Parser<char, char, Error = Cheap<char>> {
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
 pub fn fws() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    // NOTE: obs-FWS leads to recursion, skipping it
     rfc2234::wsp()
+        .ignored()
         .repeated()
-        .chain(rfc2234::crlf())
-        .or_not()
-        .flatten()
-        .chain(rfc2234::wsp().repeated().at_least(1))
-}
-
-// ctext           =       NO-WS-CTL /     ; Non white space controls
-//
-//                         %d33-39 /       ; The rest of the US-ASCII
-//                         %d42-91 /       ;  characters not including "(",
-//                         %d93-126        ;  ")", or "\"
-pub fn ctext() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c| matches!(u32::from(*c), 33..=39 | 42..=91 | 93..=126))
-}
-
-// comment         =       "(" *([FWS] ccontent) [FWS] ")"
-pub fn comment() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    recursive(|comment| {
-        // ccontent = ctext / quoted-pair / comment
-        let ccontent = choice((
-            ctext().repeated().exactly(1),
-            quoted_pair().repeated().exactly(1),
-            comment,
-        ));
-
-        fws()
-            .or_not()
-            .ignore_then(ccontent)
-            .repeated()
-            .flatten()
-            .then_ignore(fws().or_not())
-            .delimited_by(just('(').ignored(), just(')').ignored())
-    })
+        .map(|wsp| if wsp.is_empty() { vec![] } else { vec![' '] })
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
 pub fn cfws() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+    // NOTE: comment should not be present, so cfws is the same as
+    // fws.
     fws()
-        .or_not()
-        .map(Option::unwrap_or_default)
-        .chain(comment())
-        .repeated()
-        .flatten()
-        .chain(choice((
-            fws(),
-            fws()
-                .or_not()
-                .map(Option::unwrap_or_default)
-                .chain(comment()),
-        )))
 }
 
 // 3.2.4. Atom
@@ -145,24 +103,12 @@ pub(super) fn atext() -> impl Parser<char, char, Error = Cheap<char>> {
 
 // atom            =       [CFWS] 1*atext [CFWS]
 pub(super) fn atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    // NOTE: the last CFWS can be skipped since atoms are only used in
-    // serie inside display names, so the last CFWS will always be
-    // captured together with the first CFWS. This prevents to capture
-    // trailing CFWS.
-    cfws()
-        .or_not()
-        .map(Option::unwrap_or_default)
-        .chain(atext().repeated().at_least(1))
-        .chain(cfws().or_not().map(Option::unwrap_or_default))
+    cfws().chain(atext().repeated().at_least(1))
 }
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
 pub fn dot_atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    cfws()
-        .or_not()
-        .map(Option::unwrap_or_default)
-        .chain(dot_atom_text())
-        .chain(cfws().or_not().map(Option::unwrap_or_default))
+    cfws().chain(dot_atom_text())
 }
 
 // dot-atom-text   =       1*atext *("." 1*atext)
@@ -200,22 +146,10 @@ pub(super) fn qcontent() -> impl Parser<char, char, Error = Cheap<char>> {
 //                         DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 //                         [CFWS]
 fn quoted_string() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    cfws()
-        .or_not()
-        .ignore_then(
-            rfc2234::dquote()
-                .ignore_then(
-                    fws()
-                        .or_not()
-                        .map(Option::unwrap_or_default)
-                        .chain(qcontent())
-                        .repeated()
-                        .flatten(),
-                )
-                .chain(fws().or_not().map(Option::unwrap_or_default))
-                .then_ignore(rfc2234::dquote()),
-        )
-        .then_ignore(cfws().or_not())
+    rfc2234::dquote()
+        .ignore_then(fws().chain(qcontent()).repeated().flatten())
+        .then_ignore(text::whitespace())
+        .then_ignore(rfc2234::dquote())
 }
 
 // 3.2.6. Miscellaneous tokens
@@ -223,13 +157,11 @@ fn quoted_string() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 
 // word            =       atom / quoted-string
 fn word() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((atom(), quoted_string()))
+    choice((quoted_string(), atom()))
 }
 
 // phrase          =       1*word / obs-phrase
 fn phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    // NOTE: obs_phrase also start by a word(), so it needs to be
-    // tested first.
     choice((obs_phrase(), word().repeated().at_least(1).flatten()))
 }
 
@@ -244,20 +176,14 @@ pub(crate) fn mailbox() -> impl Parser<char, (Option<String>, (String, String)),
 
 // name-addr       =       [display-name] angle-addr
 fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = Cheap<char>> {
-    display_name()
-        .collect::<String>()
-        // trim trailing CFWS and FWS from atoms and quoted strings
-        .map(|name| name.trim_end().to_owned())
-        .or_not()
-        .then(angle_addr())
+    display_name().collect().or_not().then(angle_addr())
 }
 
 // angle-addr      =       [CFWS] "<" addr-spec ">" [CFWS] / obs-angle-addr
 fn angle_addr() -> impl Parser<char, (String, String), Error = Cheap<char>> {
-    cfws()
-        .or_not()
-        .ignore_then(addr_spec().delimited_by(just('<').ignored(), just('>').ignored()))
-        .then_ignore(cfws().or_not())
+    addr_spec()
+        .delimited_by(just('<').ignored(), just('>').ignored())
+        .padded()
 }
 
 // display-name    =       phrase
@@ -291,39 +217,8 @@ pub fn local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 
 // domain          =       dot-atom / domain-literal / obs-domain
 pub fn domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((dot_atom(), obs_domain(), domain_literal()))
-}
-
-// domain-literal  =       [CFWS] "[" *([FWS] dcontent) [FWS] "]" [CFWS]
-pub fn domain_literal() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    cfws()
-        .or_not()
-        .ignore_then(
-            fws()
-                .or_not()
-                .ignore_then(dcontent())
-                .repeated()
-                .then_ignore(fws().or_not())
-                .delimited_by(just('[').ignored(), just(']').ignored()),
-        )
-        .then_ignore(cfws().or_not())
-}
-
-// dcontent        =       dtext / quoted-pair
-pub fn dcontent() -> impl Parser<char, char, Error = Cheap<char>> {
-    choice((dtext(), quoted_pair()))
-}
-
-// dtext           =       NO-WS-CTL /     ; Non white space controls
-//
-//                         %d33-90 /       ; The rest of the US-ASCII
-//                         %d94-126        ;  characters not including "[",
-//                                         ;  "]", or "\"
-pub fn dtext() -> impl Parser<char, char, Error = Cheap<char>> {
-    choice((
-        filter(|c| matches!(u32::from(*c), 33..=90 | 94..=126)),
-        no_ws_ctl(),
-    ))
+    // NOTE: omitting domain-literal since it may never be used
+    choice((dot_atom(), obs_domain()))
 }
 
 // 4.1. Miscellaneous obsolete tokens
@@ -331,8 +226,10 @@ pub fn dtext() -> impl Parser<char, char, Error = Cheap<char>> {
 
 // obs-phrase      =       word *(word / "." / CFWS)
 fn obs_phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+    // NOTE: the CFWS is already captured by the word, no need to add
+    // it there.
     word().chain(
-        choice((word(), just('.').repeated().exactly(1), cfws()))
+        choice((word(), just('.').repeated().exactly(1)))
             .repeated()
             .flatten(),
     )

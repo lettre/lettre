@@ -13,12 +13,6 @@ pub(super) fn alpha() -> impl Parser<char, char, Error = Cheap<char>> {
     filter(|c: &char| matches!(*c, 'A'..='Z' | 'a'..='z'))
 }
 
-// CRLF           =  CR LF
-//                        ; Internet standard newline
-pub(super) fn crlf() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    just('\r').chain(just('\n'))
-}
-
 // DIGIT          =  %x30-39
 //                        ; 0-9
 pub(super) fn digit() -> impl Parser<char, char, Error = Cheap<char>> {
