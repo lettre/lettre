@@ -90,12 +90,12 @@ mod test {
 
         headers.set(ContentDisposition::inline());
 
-        assert_eq!(format!("{}", headers), "Content-Disposition: inline\r\n");
+        assert_eq!(format!("{headers}"), "Content-Disposition: inline\r\n");
 
         headers.set(ContentDisposition::attachment("something.txt"));
 
         assert_eq!(
-            format!("{}", headers),
+            format!("{headers}"),
             "Content-Disposition: attachment; filename=\"something.txt\"\r\n"
         );
     }
