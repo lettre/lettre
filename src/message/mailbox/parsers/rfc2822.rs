@@ -41,15 +41,14 @@ fn quoted_pair() -> impl Parser<char, char, Error = Cheap<char>> {
 
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
-pub fn fws() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub fn fws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
     rfc2234::wsp()
-        .ignored()
-        .repeated()
-        .map(|wsp| if wsp.is_empty() { vec![] } else { vec![' '] })
+        .or_not()
+        .then_ignore(rfc2234::wsp().ignored().repeated())
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
-pub fn cfws() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
     // NOTE: comment should not be present, so cfws is the same as
     // fws.
     fws()
