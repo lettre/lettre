@@ -49,8 +49,8 @@ pub fn fws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
 pub fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
-    // NOTE: comment should not be present, so cfws is the same as
-    // fws.
+    // TODO: comment are not currently supported, so for now a cfws is
+    // the same as a fws.
     fws()
 }
 
