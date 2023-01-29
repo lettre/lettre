@@ -18,25 +18,25 @@ use super::{
 };
 use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
 
-pub struct Pool<E: Executor> {
+pub struct Pool<E: Executor, const LMTP: bool> {
     config: PoolConfig,
-    connections: Mutex<Vec<ParkedConnection>>,
-    client: AsyncSmtpClient<E>,
+    connections: Mutex<Vec<ParkedConnection<LMTP>>>,
+    client: AsyncSmtpClient<E, LMTP>,
     handle: OnceCell<E::Handle>,
 }
 
-struct ParkedConnection {
-    conn: AsyncSmtpConnection,
+struct ParkedConnection<const LMTP: bool> {
+    conn: AsyncSmtpConnection<LMTP>,
     since: Instant,
 }
 
-pub struct PooledConnection<E: Executor> {
-    conn: Option<AsyncSmtpConnection>,
-    pool: Arc<Pool<E>>,
+pub struct PooledConnection<E: Executor, const LMTP: bool> {
+    conn: Option<AsyncSmtpConnection<LMTP>>,
+    pool: Arc<Pool<E, LMTP>>,
 }
 
-impl<E: Executor> Pool<E> {
-    pub fn new(config: PoolConfig, client: AsyncSmtpClient<E>) -> Arc<Self> {
+impl<E: Executor, const LMTP: bool> Pool<E, LMTP> {
+    pub fn new(config: PoolConfig, client: AsyncSmtpClient<E, LMTP>) -> Arc<Self> {
         let pool = Arc::new(Self {
             config,
             connections: Mutex::new(Vec::new()),
@@ -135,7 +135,7 @@ impl<E: Executor> Pool<E> {
         pool
     }
 
-    pub async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {
+    pub async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E, LMTP>, Error> {
         loop {
             let conn = {
                 let mut connections = self.connections.lock().await;
@@ -171,7 +171,7 @@ impl<E: Executor> Pool<E> {
         }
     }
 
-    async fn recycle(&self, mut conn: AsyncSmtpConnection) {
+    async fn recycle(&self, mut conn: AsyncSmtpConnection<LMTP>) {
         if conn.has_broken() {
             #[cfg(feature = "tracing")]
             tracing::debug!("dropping a broken connection instead of recycling it");
@@ -194,7 +194,7 @@ impl<E: Executor> Pool<E> {
     }
 }
 
-impl<E: Executor> Debug for Pool<E> {
+impl<E: Executor, const LMTP: bool> Debug for Pool<E, LMTP> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Pool")
             .field("config", &self.config)
@@ -218,7 +218,7 @@ impl<E: Executor> Debug for Pool<E> {
     }
 }
 
-impl<E: Executor> Drop for Pool<E> {
+impl<E: Executor, const LMTP: bool> Drop for Pool<E, LMTP> {
     fn drop(&mut self) {
         #[cfg(feature = "tracing")]
         tracing::debug!("dropping Pool");
@@ -235,8 +235,8 @@ impl<E: Executor> Drop for Pool<E> {
     }
 }
 
-impl ParkedConnection {
-    fn park(conn: AsyncSmtpConnection) -> Self {
+impl<const LMTP: bool> ParkedConnection<LMTP> {
+    fn park(conn: AsyncSmtpConnection<LMTP>) -> Self {
         Self {
             conn,
             since: Instant::now(),
@@ -247,13 +247,13 @@ impl ParkedConnection {
         self.since.elapsed()
     }
 
-    fn unpark(self) -> AsyncSmtpConnection {
+    fn unpark(self) -> AsyncSmtpConnection<LMTP> {
         self.conn
     }
 }
 
-impl<E: Executor> PooledConnection<E> {
-    fn wrap(conn: AsyncSmtpConnection, pool: Arc<Pool<E>>) -> Self {
+impl<E: Executor, const LMTP: bool> PooledConnection<E, LMTP> {
+    fn wrap(conn: AsyncSmtpConnection<LMTP>, pool: Arc<Pool<E, LMTP>>) -> Self {
         Self {
             conn: Some(conn),
             pool,
@@ -261,21 +261,21 @@ impl<E: Executor> PooledConnection<E> {
     }
 }
 
-impl<E: Executor> Deref for PooledConnection<E> {
-    type Target = AsyncSmtpConnection;
+impl<E: Executor, const LMTP: bool> Deref for PooledConnection<E, LMTP> {
+    type Target = AsyncSmtpConnection<LMTP>;
 
     fn deref(&self) -> &Self::Target {
         self.conn.as_ref().expect("conn hasn't been dropped yet")
     }
 }
 
-impl<E: Executor> DerefMut for PooledConnection<E> {
+impl<E: Executor, const LMTP: bool> DerefMut for PooledConnection<E, LMTP> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.conn.as_mut().expect("conn hasn't been dropped yet")
     }
 }
 
-impl<E: Executor> Drop for PooledConnection<E> {
+impl<E: Executor, const LMTP: bool> Drop for PooledConnection<E, LMTP> {
     fn drop(&mut self) {
         let conn = self
             .conn
@@ -289,9 +289,9 @@ impl<E: Executor> Drop for PooledConnection<E> {
     }
 }
 
-async fn abort_concurrent<I>(iter: I)
+async fn abort_concurrent<I, const LMTP: bool>(iter: I)
 where
-    I: Iterator<Item = AsyncSmtpConnection>,
+    I: Iterator<Item = AsyncSmtpConnection<LMTP>>,
 {
     stream::iter(iter)
         .for_each_concurrent(8, |mut conn| async move {

@@ -20,7 +20,7 @@ fn main() {
             smtp_host
         );
 
-        let transport = SmtpTransport::relay(&smtp_host)
+        let transport = <SmtpTransport<false>>::relay(&smtp_host)
             .expect("build SmtpTransport::relay")
             .timeout(Some(Duration::from_secs(10)))
             .build();
@@ -43,7 +43,7 @@ fn main() {
     {
         tracing::info!("Trying to establish a plaintext connection to {} and then updating it via the SMTP STARTTLS extension", smtp_host);
 
-        let transport = SmtpTransport::starttls_relay(&smtp_host)
+        let transport = <SmtpTransport<false>>::starttls_relay(&smtp_host)
             .expect("build SmtpTransport::starttls_relay")
             .timeout(Some(Duration::from_secs(10)))
             .build();
@@ -72,7 +72,7 @@ fn main() {
             smtp_host
         );
 
-        let transport = SmtpTransport::builder_dangerous(&smtp_host)
+        let transport = <SmtpTransport<false>>::builder_dangerous(&smtp_host)
             .timeout(Some(Duration::from_secs(10)))
             .build();
         match transport.test_connection() {

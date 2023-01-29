@@ -137,6 +137,10 @@ name = "smtp"
 required-features = ["smtp-transport", "builder"]
 
 [[example]]
+name = "lmtp"
+required-features = ["smtp-transport", "builder"]
+
+[[example]]
 name = "smtp_tls"
 required-features = ["smtp-transport", "native-tls", "builder"]
 

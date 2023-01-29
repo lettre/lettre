@@ -168,6 +168,8 @@ pub(super) mod util;
 
 /// Default smtp port
 pub const SMTP_PORT: u16 = 25;
+/// Default lmtp port
+pub const LMTP_PORT: u16 = 11200;
 /// Default submission port
 pub const SUBMISSION_PORT: u16 = 587;
 /// Default submission over TLS port
@@ -179,7 +181,7 @@ pub const SUBMISSIONS_PORT: u16 = 465;
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Debug, Clone)]
-struct SmtpInfo {
+struct SmtpInfo<const LMTP: bool> {
     /// Name sent during EHLO
     hello_name: ClientId,
     /// Server we are connecting to
@@ -197,11 +199,11 @@ struct SmtpInfo {
     timeout: Option<Duration>,
 }
 
-impl Default for SmtpInfo {
+impl<const LMTP: bool> Default for SmtpInfo<LMTP> {
     fn default() -> Self {
         Self {
             server: "localhost".to_string(),
-            port: SMTP_PORT,
+            port: if LMTP { LMTP_PORT } else { SMTP_PORT },
             hello_name: ClientId::default(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),

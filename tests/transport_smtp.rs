@@ -13,7 +13,7 @@ mod sync {
             .body(String::from("Be happy!"))
             .unwrap();
 
-        let sender = SmtpTransport::builder_dangerous("127.0.0.1")
+        let sender = <SmtpTransport<false>>::builder_dangerous("127.0.0.1")
             .port(2525)
             .build();
         sender.send(&email).unwrap();
