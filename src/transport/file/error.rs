@@ -71,7 +71,7 @@ impl fmt::Display for Error {
         };
 
         if let Some(ref e) = self.inner.source {
-            write!(f, ": {}", e)?;
+            write!(f, ": {e}")?;
         }
 
         Ok(())

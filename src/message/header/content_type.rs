@@ -135,8 +135,7 @@ mod serde {
                     match ContentType::parse(mime) {
                         Ok(content_type) => Ok(content_type),
                         Err(_) => Err(E::custom(format!(
-                            "Couldn't parse the following MIME-Type: {}",
-                            mime
+                            "Couldn't parse the following MIME-Type: {mime}"
                         ))),
                     }
                 }

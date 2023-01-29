@@ -15,7 +15,7 @@ mod sync {
             .unwrap();
 
         let result = sender.send(&email);
-        println!("{:?}", result);
+        println!("{result:?}");
         assert!(result.is_ok());
     }
 }
@@ -42,7 +42,7 @@ mod tokio_1 {
             .unwrap();
 
         let result = sender.send(email).await;
-        println!("{:?}", result);
+        println!("{result:?}");
         assert!(result.is_ok());
     }
 }
@@ -68,7 +68,7 @@ mod asyncstd_1 {
             .unwrap();
 
         let result = sender.send(email).await;
-        println!("{:?}", result);
+        println!("{result:?}");
         assert!(result.is_ok());
     }
 }

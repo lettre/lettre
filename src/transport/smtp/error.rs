@@ -137,15 +137,15 @@ impl fmt::Display for Error {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Kind::Tls => f.write_str("tls error")?,
             Kind::Transient(ref code) => {
-                write!(f, "transient error ({})", code)?;
+                write!(f, "transient error ({code})")?;
             }
             Kind::Permanent(ref code) => {
-                write!(f, "permanent error ({})", code)?;
+                write!(f, "permanent error ({code})")?;
             }
         };
 
         if let Some(ref e) = self.inner.source {
-            write!(f, ": {}", e)?;
+            write!(f, ": {e}")?;
         }
 
         Ok(())

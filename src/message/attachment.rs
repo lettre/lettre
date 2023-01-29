@@ -96,7 +96,7 @@ impl Attachment {
                 builder.header(header::ContentDisposition::attachment(&filename))
             }
             Disposition::Inline(content_id) => builder
-                .header(header::ContentId::from(format!("<{}>", content_id)))
+                .header(header::ContentId::from(format!("<{content_id}>")))
                 .header(header::ContentDisposition::inline()),
         };
         builder = builder.header(content_type);

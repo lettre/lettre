@@ -208,10 +208,10 @@ impl FileTransport {
     pub fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
         use std::fs;
 
-        let eml_file = self.path.join(format!("{}.eml", email_id));
+        let eml_file = self.path.join(format!("{email_id}.eml"));
         let eml = fs::read(eml_file).map_err(error::io)?;
 
-        let json_file = self.path.join(format!("{}.json", email_id));
+        let json_file = self.path.join(format!("{email_id}.json"));
         let json = fs::read(json_file).map_err(error::io)?;
         let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 
@@ -219,7 +219,7 @@ impl FileTransport {
     }
 
     fn path(&self, email_id: &Uuid, extension: &str) -> PathBuf {
-        self.path.join(format!("{}.{}", email_id, extension))
+        self.path.join(format!("{email_id}.{extension}"))
     }
 }
 
@@ -255,10 +255,10 @@ where
     /// Reads the envelope and the raw message content.
     #[cfg(feature = "file-transport-envelope")]
     pub async fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
-        let eml_file = self.inner.path.join(format!("{}.eml", email_id));
+        let eml_file = self.inner.path.join(format!("{email_id}.eml"));
         let eml = E::fs_read(&eml_file).await.map_err(error::io)?;
 
-        let json_file = self.inner.path.join(format!("{}.json", email_id));
+        let json_file = self.inner.path.join(format!("{email_id}.json"));
         let json = E::fs_read(&json_file).await.map_err(error::io)?;
         let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 

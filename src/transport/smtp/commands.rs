@@ -59,7 +59,7 @@ impl Display for Mail {
             self.sender.as_ref().map_or("", |s| s.as_ref())
         )?;
         for parameter in &self.parameters {
-            write!(f, " {}", parameter)?;
+            write!(f, " {parameter}")?;
         }
         f.write_str("\r\n")
     }
@@ -84,7 +84,7 @@ impl Display for Rcpt {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "RCPT TO:<{}>", self.recipient)?;
         for parameter in &self.parameters {
-            write!(f, " {}", parameter)?;
+            write!(f, " {parameter}")?;
         }
         f.write_str("\r\n")
     }
@@ -144,7 +144,7 @@ impl Display for Help {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.write_str("HELP")?;
         if let Some(argument) = &self.argument {
-            write!(f, " {}", argument)?;
+            write!(f, " {argument}")?;
         }
         f.write_str("\r\n")
     }
@@ -341,9 +341,9 @@ mod test {
             format!("{}", Rcpt::new(email, vec![rcpt_parameter])),
             "RCPT TO:<test@example.com> TEST=value\r\n"
         );
-        assert_eq!(format!("{}", Quit), "QUIT\r\n");
-        assert_eq!(format!("{}", Data), "DATA\r\n");
-        assert_eq!(format!("{}", Noop), "NOOP\r\n");
+        assert_eq!(format!("{Quit}"), "QUIT\r\n");
+        assert_eq!(format!("{Data}"), "DATA\r\n");
+        assert_eq!(format!("{Noop}"), "NOOP\r\n");
         assert_eq!(format!("{}", Help::new(None)), "HELP\r\n");
         assert_eq!(
             format!("{}", Help::new(Some("test".to_string()))),
@@ -357,7 +357,7 @@ mod test {
             format!("{}", Expn::new("test".to_string())),
             "EXPN test\r\n"
         );
-        assert_eq!(format!("{}", Rset), "RSET\r\n");
+        assert_eq!(format!("{Rset}"), "RSET\r\n");
         let credentials = Credentials::new("user".to_string(), "password".to_string());
         assert_eq!(
             format!(
