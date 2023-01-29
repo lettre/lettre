@@ -184,7 +184,7 @@ where
         let domain = domain.as_ref();
         Address::check_domain(domain)?;
 
-        let serialized = format!("{}@{}", user, domain);
+        let serialized = format!("{user}@{domain}");
         Ok(Address {
             serialized,
             at_start: user.len(),

@@ -27,6 +27,6 @@ async fn main() {
     // Send the email
     match mailer.send(email).await {
         Ok(_) => println!("Email sent successfully!"),
-        Err(e) => panic!("Could not send email: {:?}", e),
+        Err(e) => panic!("Could not send email: {e:?}"),
     }
 }
