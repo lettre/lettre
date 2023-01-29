@@ -33,7 +33,7 @@ mod sync {
         let result = sender.send(&email);
         let id = result.unwrap();
 
-        let eml_file = temp_dir().join(format!("{}.eml", id));
+        let eml_file = temp_dir().join(format!("{id}.eml"));
         let eml = read_to_string(&eml_file).unwrap();
 
         assert_eq!(
@@ -68,10 +68,10 @@ mod sync {
         let result = sender.send(&email);
         let id = result.unwrap();
 
-        let eml_file = temp_dir().join(format!("{}.eml", id));
+        let eml_file = temp_dir().join(format!("{id}.eml"));
         let eml = read_to_string(&eml_file).unwrap();
 
-        let json_file = temp_dir().join(format!("{}.json", id));
+        let json_file = temp_dir().join(format!("{id}.json"));
         let json = read_to_string(&json_file).unwrap();
 
         assert_eq!(
@@ -131,7 +131,7 @@ mod tokio_1 {
         let result = sender.send(email).await;
         let id = result.unwrap();
 
-        let eml_file = temp_dir().join(format!("{}.eml", id));
+        let eml_file = temp_dir().join(format!("{id}.eml"));
         let eml = read_to_string(&eml_file).unwrap();
 
         assert_eq!(
@@ -182,7 +182,7 @@ mod asyncstd_1 {
         let result = sender.send(email).await;
         let id = result.unwrap();
 
-        let eml_file = temp_dir().join(format!("{}.eml", id));
+        let eml_file = temp_dir().join(format!("{id}.eml"));
         let eml = read_to_string(&eml_file).unwrap();
 
         assert_eq!(

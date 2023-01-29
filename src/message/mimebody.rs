@@ -190,9 +190,9 @@ impl MultiPartKind {
             },
             boundary,
             match self {
-                Self::Encrypted { protocol } => format!("; protocol=\"{}\"", protocol),
+                Self::Encrypted { protocol } => format!("; protocol=\"{protocol}\""),
                 Self::Signed { protocol, micalg } =>
-                    format!("; protocol=\"{}\"; micalg=\"{}\"", protocol, micalg),
+                    format!("; protocol=\"{protocol}\"; micalg=\"{micalg}\""),
                 _ => String::new(),
             }
         )

@@ -588,7 +588,7 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
         );
         let signed = message.formatted();
         let signed = std::str::from_utf8(&signed).unwrap();
-        println!("{}", signed);
+        println!("{signed}");
         assert_eq!(
             signed,
             std::concat!(

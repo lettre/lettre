@@ -33,7 +33,7 @@ impl ContentDisposition {
     }
 
     fn with_name(kind: &str, file_name: &str) -> Self {
-        let raw_value = format!("{}; filename=\"{}\"", kind, file_name);
+        let raw_value = format!("{kind}; filename=\"{file_name}\"");
 
         let mut encoded_value = String::new();
         let line_len = "Content-Disposition: ".len();
@@ -90,12 +90,12 @@ mod test {
 
         headers.set(ContentDisposition::inline());
 
-        assert_eq!(format!("{}", headers), "Content-Disposition: inline\r\n");
+        assert_eq!(format!("{headers}"), "Content-Disposition: inline\r\n");
 
         headers.set(ContentDisposition::attachment("something.txt"));
 
         assert_eq!(
-            format!("{}", headers),
+            format!("{headers}"),
             "Content-Disposition: attachment; filename=\"something.txt\"\r\n"
         );
     }
