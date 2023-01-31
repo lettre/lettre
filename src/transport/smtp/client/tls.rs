@@ -3,13 +3,16 @@ use std::fmt::{self, Debug};
 use std::{sync::Arc, time::SystemTime};
 
 #[cfg(feature = "boring-tls")]
-use boring::ssl::{SslConnector, SslVersion};
+use boring::{
+    ssl::{SslConnector, SslVersion},
+    x509::store::X509StoreBuilder,
+};
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
     client::{ServerCertVerified, ServerCertVerifier, WebPkiVerifier},
-    ClientConfig, Error as TlsError, OwnedTrustAnchor, RootCertStore, ServerName,
+    ClientConfig, Error as TlsError, RootCertStore, ServerName,
 };
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
@@ -84,13 +87,42 @@ impl Debug for Tls {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             Self::None => f.pad("None"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Opportunistic(_) => f.pad("Opportunistic"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Required(_) => f.pad("Required"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Wrapper(_) => f.pad("Wrapper"),
         }
+    }
+}
+
+/// Source for the base set of root certificates to trust.
+#[allow(missing_copy_implementations)]
+#[derive(Clone, Debug)]
+pub enum CertificateStore {
+    /// Use the default for the TLS backend.
+    ///
+    /// For native-tls, this will use the system certificate store on Windows, the keychain on
+    /// macOS, and OpenSSL directories on Linux (usually `/etc/ssl`).
+    ///
+    /// For rustls, this will also use the the system store if the `rustls-native-certs` feature is
+    /// enabled, or will fall back to `webpki-roots`.
+    ///
+    /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
+    Default,
+    /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
+    ///
+    /// This option is only available in the rustls backend.
+    #[cfg(feature = "webpki-roots")]
+    WebpkiRoots,
+    /// Don't use any system certificates.
+    None,
+}
+
+impl Default for CertificateStore {
+    fn default() -> Self {
+        CertificateStore::Default
     }
 }
 
@@ -108,6 +140,7 @@ pub struct TlsParameters {
 #[derive(Debug, Clone)]
 pub struct TlsParametersBuilder {
     domain: String,
+    cert_store: CertificateStore,
     root_certs: Vec<Certificate>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
@@ -120,12 +153,19 @@ impl TlsParametersBuilder {
     pub fn new(domain: String) -> Self {
         Self {
             domain,
+            cert_store: CertificateStore::Default,
             root_certs: Vec::new(),
             accept_invalid_hostnames: false,
             accept_invalid_certs: false,
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             min_tls_version: TlsVersion::Tlsv12,
         }
+    }
+
+    /// Set the source for the base set of root certificates to trust.
+    pub fn certificate_store(mut self, cert_store: CertificateStore) -> Self {
+        self.cert_store = cert_store;
+        self
     }
 
     /// Add a custom root certificate
@@ -208,6 +248,18 @@ impl TlsParametersBuilder {
     pub fn build_native(self) -> Result<TlsParameters, Error> {
         let mut tls_builder = TlsConnector::builder();
 
+        match self.cert_store {
+            CertificateStore::Default => {}
+            CertificateStore::None => {
+                tls_builder.disable_built_in_roots(true);
+            }
+            #[allow(unreachable_patterns)]
+            other => {
+                return Err(error::tls(format!(
+                    "{other:?} is not supported in native tls"
+                )))
+            }
+        }
         for cert in self.root_certs {
             tls_builder.add_root_certificate(cert.native_tls);
         }
@@ -246,6 +298,21 @@ impl TlsParametersBuilder {
         if self.accept_invalid_certs {
             tls_builder.set_verify(SslVerifyMode::NONE);
         } else {
+            match self.cert_store {
+                CertificateStore::Default => {}
+                CertificateStore::None => {
+                    // Replace the default store with an empty store.
+                    tls_builder
+                        .set_cert_store(X509StoreBuilder::new().map_err(error::tls)?.build());
+                }
+                #[allow(unreachable_patterns)]
+                other => {
+                    return Err(error::tls(format!(
+                        "{other:?} is not supported in boring tls"
+                    )))
+                }
+            }
+
             let cert_store = tls_builder.cert_store_mut();
 
             for cert in self.root_certs {
@@ -299,20 +366,58 @@ impl TlsParametersBuilder {
             tls.with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
         } else {
             let mut root_cert_store = RootCertStore::empty();
+
+            #[cfg(feature = "rustls-native-certs")]
+            fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
+                let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
+                let mut valid_count = 0;
+                let mut invalid_count = 0;
+                for cert in native_certs {
+                    match store.add(&rustls::Certificate(cert.0)) {
+                        Ok(_) => valid_count += 1,
+                        Err(err) => {
+                            #[cfg(feature = "tracing")]
+                            tracing::debug!("certificate parsing failed: {:?}", err);
+                            invalid_count += 1;
+                        }
+                    }
+                }
+                #[cfg(feature = "tracing")]
+                tracing::debug!(
+                    "loaded platform certs with {valid_count} valid and {invalid_count} invalid certs"
+                );
+                Ok(())
+            }
+
+            #[cfg(feature = "webpki-roots")]
+            fn load_webpki_roots(store: &mut RootCertStore) {
+                store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|ta| {
+                    rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
+                        ta.subject,
+                        ta.spki,
+                        ta.name_constraints,
+                    )
+                }));
+            }
+
+            match self.cert_store {
+                CertificateStore::Default => {
+                    #[cfg(feature = "rustls-native-certs")]
+                    load_native_roots(&mut root_cert_store)?;
+                    #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
+                    load_webpki_roots(&mut root_cert_store);
+                }
+                #[cfg(feature = "webpki-roots")]
+                CertificateStore::WebpkiRoots => {
+                    load_webpki_roots(&mut root_cert_store);
+                }
+                CertificateStore::None => {}
+            }
             for cert in self.root_certs {
                 for rustls_cert in cert.rustls {
                     root_cert_store.add(&rustls_cert).map_err(error::tls)?;
                 }
             }
-            root_cert_store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(
-                |ta| {
-                    OwnedTrustAnchor::from_subject_spki_name_constraints(
-                        ta.subject,
-                        ta.spki,
-                        ta.name_constraints,
-                    )
-                },
-            ));
 
             tls.with_custom_certificate_verifier(Arc::new(WebPkiVerifier::new(
                 root_cert_store,
