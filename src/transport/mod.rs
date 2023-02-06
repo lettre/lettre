@@ -56,7 +56,9 @@
 //! #
 //! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+//! # use std::sync::Arc;
+//! use lettre::{Message, SmtpTransport, Transport};
+//! use rsasl::prelude::SASLConfig;
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -65,11 +67,12 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+//! let config =
+//!     SASLConfig::with_credentials(None, "username".to_string(), "password".to_string()).unwrap();
 //!
 //! // Open a remote connection to the SMTP relay server
 //! let mailer = SmtpTransport::relay("smtp.gmail.com")?
-//!     .credentials(creds)
+//!     .sasl_config(config)
 //!     .build();
 //!
 //! // Send the email

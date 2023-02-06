@@ -58,13 +58,9 @@
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{
-//!     transport::smtp::{
-//!         authentication::{Credentials, Mechanism},
-//!         PoolConfig,
-//!     },
-//!     Message, SmtpTransport, Transport,
-//! };
+//! # use std::sync::Arc;
+//! use lettre::{transport::smtp::PoolConfig, Message, SmtpTransport, Transport};
+//! use rsasl::prelude::SASLConfig;
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -73,15 +69,13 @@
 //!     .subject("Happy new year")
 //!     .body(String::from("Be happy!"))?;
 //!
+//! let config =
+//!     SASLConfig::with_credentials(None, "username".to_string(), "password".to_string()).unwrap();
+//!
 //! // Create TLS transport on port 587 with STARTTLS
 //! let sender = SmtpTransport::starttls_relay("smtp.example.com")?
 //!     // Add credentials for authentication
-//!     .credentials(Credentials::new(
-//!         "username".to_string(),
-//!         "password".to_string(),
-//!     ))
-//!     // Configure expected authentication mechanism
-//!     .authentication(vec![Mechanism::Plain])
+//!     .sasl_config(config)
 //!     // Connection pool settings
 //!     .pool_config(PoolConfig::new().max_size(20))
 //!     .build();
@@ -128,9 +122,10 @@
 //! # }
 //! ```
 
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use client::Tls;
+use rsasl::prelude::SASLConfig;
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
@@ -142,16 +137,10 @@ pub use self::{
 };
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use crate::transport::smtp::client::TlsParameters;
-use crate::transport::smtp::{
-    authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
-    client::SmtpConnection,
-    extension::ClientId,
-    response::Response,
-};
+use crate::transport::smtp::{client::SmtpConnection, extension::ClientId, response::Response};
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_transport;
-pub mod authentication;
 pub mod client;
 pub mod commands;
 mod error;
@@ -188,10 +177,8 @@ struct SmtpInfo {
     port: u16,
     /// TLS security configuration
     tls: Tls,
-    /// Optional enforced authentication mechanism
-    authentication: Vec<Mechanism>,
-    /// Credentials
-    credentials: Option<Credentials>,
+    /// True if authentication should be performed
+    sasl: Option<Arc<SASLConfig>>,
     /// Define network timeout
     /// It can be changed later for specific needs (like a different timeout for each SMTP command)
     timeout: Option<Duration>,
@@ -203,10 +190,9 @@ impl Default for SmtpInfo {
             server: "localhost".to_string(),
             port: SMTP_PORT,
             hello_name: ClientId::default(),
-            credentials: None,
-            authentication: DEFAULT_MECHANISMS.into(),
             timeout: Some(DEFAULT_TIMEOUT),
             tls: Tls::None,
+            sasl: None,
         }
     }
 }

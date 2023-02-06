@@ -1,4 +1,5 @@
-use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use lettre::{Message, SmtpTransport, Transport};
+use rsasl::config::SASLConfig;
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -11,12 +12,17 @@ fn main() {
         .body(String::from("Be happy!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let config = SASLConfig::with_credentials(
+        None,
+        "smtp_username".to_string(),
+        "smtp_password".to_string(),
+    )
+    .unwrap();
 
     // Open a remote connection to gmail using STARTTLS
     let mailer = SmtpTransport::starttls_relay("smtp.gmail.com")
         .unwrap()
-        .credentials(creds)
+        .sasl_config(config)
         .build();
 
     // Send the email

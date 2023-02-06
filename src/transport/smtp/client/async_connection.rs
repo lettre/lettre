@@ -1,6 +1,7 @@
-use std::{fmt::Display, net::IpAddr, time::Duration};
+use std::{fmt::Display, net::IpAddr, sync::Arc, time::Duration};
 
 use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use rsasl::prelude::{Mechname, SASLClient, SASLConfig};
 
 #[cfg(feature = "tokio1")]
 use super::async_net::AsyncTokioStream;
@@ -9,7 +10,6 @@ use super::escape_crlf;
 use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
-        authentication::{Credentials, Mechanism},
         commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
@@ -18,6 +18,7 @@ use crate::{
     },
     Envelope,
 };
+use crate::transport::smtp::error::Kind;
 
 macro_rules! try_smtp (
     ($err: expr, $client: ident) => ({
@@ -227,40 +228,49 @@ impl AsyncSmtpConnection {
     }
 
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
-    pub async fn auth(
-        &mut self,
-        mechanisms: &[Mechanism],
-        credentials: &Credentials,
-    ) -> Result<Response, Error> {
-        let mechanism = self
+    pub async fn auth(&mut self, config: Arc<SASLConfig>) -> Result<Response, Error> {
+        let client = SASLClient::new(config);
+        let offered = self
             .server_info
-            .get_auth_mechanism(mechanisms)
-            .ok_or_else(|| error::client("No compatible authentication mechanism was found"))?;
+            .get_auth_mechanisms()
+            .iter()
+            .filter_map(|boxed| Mechname::parse(boxed.as_bytes()).ok());
+        let mut session = client
+            .start_suggested_iter(offered)
+            .map_err(|_| error::client("No compatible authentication mechanism was found"))?;
 
         // Limit challenges to avoid blocking
         let mut challenges: u8 = 10;
-        let mut response = self
-            .command(Auth::new(mechanism, credentials.clone(), None)?)
-            .await?;
+        let (cmd, mut state) = Auth::initial(&mut session)?;
+        let mut response = self.command(cmd).await?;
 
-        while challenges > 0 && response.has_code(334) {
+        while response.has_code(334) {
+            // If we think that we're finished but the server doesn't, or the exchange has gone on
+            // for too long, return an error.
+            if challenges == 0 || state.is_finished() {
+                return Err(error::response("Unexpected number of challenges"));
+            }
+
             challenges -= 1;
             response = try_smtp!(
-                self.command(Auth::new_from_response(
-                    mechanism,
-                    credentials.clone(),
-                    &response,
-                )?)
-                .await,
+                self.command(Auth::from_response(&mut session, &mut state, &response)?)
+                    .await,
                 self
             );
         }
 
-        if challenges == 0 {
-            Err(error::response("Unexpected number of challenges"))
-        } else {
-            Ok(response)
+        // If the server claims authentication finished but the SASL mechanism doesn't, we must
+        // call the mechanism one last time to keep all security guarantees of mechanisms.
+        // This *may* be okay! However, if it is not, the below `step64` will return an
+        // appropriate error.
+        if state.is_running() {
+            let mut scratch = Vec::new();
+            session
+                .step64(None, &mut scratch)
+                .map_err(|error| Error::new(Kind::Client, Some(Box::new(error))))?;
         }
+
+        Ok(response)
     }
 
     /// Sends the message content

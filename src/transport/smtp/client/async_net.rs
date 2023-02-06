@@ -500,7 +500,7 @@ impl AsyncNetworkStream {
                 Err(error::client("Connection is not encrypted"))
             }
             #[cfg(feature = "async-std1-native-tls")]
-            InnerAsyncNetworkStream::AsyncStd1NativeTls(t) => panic!("Unsupported"),
+            InnerAsyncNetworkStream::AsyncStd1NativeTls(_t) => panic!("Unsupported"),
             #[cfg(feature = "async-std1-rustls-tls")]
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream) => Ok(stream
                 .get_ref()

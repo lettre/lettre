@@ -1,20 +1,18 @@
-#[cfg(feature = "pool")]
-use std::sync::Arc;
 use std::{
     fmt::{self, Debug},
     marker::PhantomData,
+    sync::Arc,
     time::Duration,
 };
 
 use async_trait::async_trait;
+use rsasl::prelude::SASLConfig;
 
 #[cfg(feature = "pool")]
 use super::pool::async_impl::Pool;
 #[cfg(feature = "pool")]
 use super::PoolConfig;
-use super::{
-    client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
-};
+use super::{client::AsyncSmtpConnection, ClientId, Error, Response, SmtpInfo};
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Executor;
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
@@ -225,15 +223,9 @@ impl AsyncSmtpTransportBuilder {
         self
     }
 
-    /// Set the authentication mechanism to use
-    pub fn credentials(mut self, credentials: Credentials) -> Self {
-        self.info.credentials = Some(credentials);
-        self
-    }
-
-    /// Set the authentication mechanism to use
-    pub fn authentication(mut self, mechanisms: Vec<Mechanism>) -> Self {
-        self.info.authentication = mechanisms;
+    /// Set the SASL configuration, which contains credentials and available mechanisms.
+    pub fn sasl_config(mut self, config: Arc<SASLConfig>) -> Self {
+        self.info.sasl = Some(config);
         self
     }
 
@@ -319,8 +311,8 @@ where
         )
         .await?;
 
-        if let Some(credentials) = &self.info.credentials {
-            conn.auth(&self.info.authentication, credentials).await?;
+        if let Some(config) = &self.info.sasl {
+            conn.auth(Arc::clone(config)).await?;
         }
         Ok(conn)
     }
