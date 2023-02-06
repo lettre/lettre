@@ -216,14 +216,13 @@ impl SmtpConnection {
     /// Sends an AUTH command with the given mechanism, and handles challenge if needed
     pub fn auth(&mut self, config: Arc<SASLConfig>) -> Result<Response, Error> {
         let client = SASLClient::new(config);
-        let offered: Vec<&Mechname> = self
+        let offered = self
             .server_info
             .get_auth_mechanisms()
             .iter()
-            .filter_map(|boxed| Mechname::parse(boxed.as_bytes()).ok())
-            .collect();
+            .filter_map(|boxed| Mechname::parse(boxed.as_bytes()).ok());
         let mut session = client
-            .start_suggested(&offered[..])
+            .start_suggested_iter(offered)
             .map_err(|_| error::client("No compatible authentication mechanism was found"))?;
 
         // Limit challenges to avoid blocking
