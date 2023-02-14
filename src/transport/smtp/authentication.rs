@@ -127,7 +127,7 @@ mod test {
     fn test_plain() {
         let mechanism = Mechanism::Plain;
 
-        let credentials = Credentials::new("username".to_string(), "password".to_string());
+        let credentials = Credentials::new("username".to_owned(), "password".to_owned());
 
         assert_eq!(
             mechanism.response(&credentials, None).unwrap(),
@@ -140,7 +140,7 @@ mod test {
     fn test_login() {
         let mechanism = Mechanism::Login;
 
-        let credentials = Credentials::new("alice".to_string(), "wonderland".to_string());
+        let credentials = Credentials::new("alice".to_owned(), "wonderland".to_owned());
 
         assert_eq!(
             mechanism.response(&credentials, Some("Username")).unwrap(),
@@ -158,8 +158,8 @@ mod test {
         let mechanism = Mechanism::Xoauth2;
 
         let credentials = Credentials::new(
-            "username".to_string(),
-            "vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==".to_string(),
+            "username".to_owned(),
+            "vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==".to_owned(),
         );
 
         assert_eq!(
@@ -172,7 +172,7 @@ mod test {
     #[test]
     fn test_from_user_pass_for_credentials() {
         assert_eq!(
-            Credentials::new("alice".to_string(), "wonderland".to_string()),
+            Credentials::new("alice".to_owned(), "wonderland".to_owned()),
             Credentials::from(("alice", "wonderland"))
         );
     }

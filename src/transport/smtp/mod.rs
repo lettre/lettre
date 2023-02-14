@@ -77,8 +77,8 @@
 //! let sender = SmtpTransport::starttls_relay("smtp.example.com")?
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new(
-//!         "username".to_string(),
-//!         "password".to_string(),
+//!         "username".to_owned(),
+//!         "password".to_owned(),
 //!     ))
 //!     // Configure expected authentication mechanism
 //!     .authentication(vec![Mechanism::Plain])
@@ -111,7 +111,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Custom TLS configuration
-//! let tls = TlsParameters::builder("smtp.example.com".to_string())
+//! let tls = TlsParameters::builder("smtp.example.com".to_owned())
 //!     .dangerous_accept_invalid_certs(true)
 //!     .build()?;
 //!
@@ -200,7 +200,7 @@ struct SmtpInfo {
 impl Default for SmtpInfo {
     fn default() -> Self {
         Self {
-            server: "localhost".to_string(),
+            server: "localhost".to_owned(),
             port: SMTP_PORT,
             hello_name: ClientId::default(),
             credentials: None,

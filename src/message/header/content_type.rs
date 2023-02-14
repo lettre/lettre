@@ -178,14 +178,14 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Type"),
-            "text/plain; charset=utf-8".to_string(),
+            "text/plain; charset=utf-8".to_owned(),
         ));
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_PLAIN));
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Type"),
-            "text/html; charset=utf-8".to_string(),
+            "text/html; charset=utf-8".to_owned(),
         ));
 
         assert_eq!(headers.get::<ContentType>(), Some(ContentType::TEXT_HTML));

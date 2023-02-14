@@ -620,7 +620,7 @@ mod test {
     #[test]
     fn parse_address_from_tuple() {
         assert_eq!(
-            ("K.".to_string(), "kayo@example.com".to_string()).try_into(),
+            ("K.".to_owned(), "kayo@example.com".to_owned()).try_into(),
             Ok(Mailbox::new(
                 Some("K.".into()),
                 "kayo@example.com".parse().unwrap()

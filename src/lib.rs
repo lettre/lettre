@@ -135,6 +135,8 @@
     clippy::manual_assert,
     clippy::unnecessary_join,
     clippy::wildcard_imports,
+    clippy::str_to_string,
+    clippy::empty_structs_with_brackets,
     clippy::zero_sized_map_values
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]

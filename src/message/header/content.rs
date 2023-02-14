@@ -99,7 +99,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
-            "7bit".to_string(),
+            "7bit".to_owned(),
         ));
 
         assert_eq!(
@@ -109,7 +109,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
-            "base64".to_string(),
+            "base64".to_owned(),
         ));
 
         assert_eq!(

@@ -15,7 +15,7 @@ async fn main() {
         .body(String::from("Be happy with async!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
 
     // Open a remote connection to gmail using STARTTLS
     let mailer: AsyncSmtpTransport<AsyncStd1Executor> =

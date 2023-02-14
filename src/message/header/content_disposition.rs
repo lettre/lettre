@@ -16,8 +16,8 @@ impl ContentDisposition {
     pub fn inline() -> Self {
         Self(HeaderValue::dangerous_new_pre_encoded(
             Self::name(),
-            "inline".to_string(),
-            "inline".to_string(),
+            "inline".to_owned(),
+            "inline".to_owned(),
         ))
     }
 
@@ -106,7 +106,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Disposition"),
-            "inline".to_string(),
+            "inline".to_owned(),
         ));
 
         assert_eq!(
@@ -116,7 +116,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Disposition"),
-            "attachment; filename=\"something.txt\"".to_string(),
+            "attachment; filename=\"something.txt\"".to_owned(),
         ));
 
         assert_eq!(

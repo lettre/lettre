@@ -203,7 +203,7 @@ impl<E: Executor> Debug for Pool<E> {
                 &match self.connections.try_lock() {
                     Some(connections) => format!("{} connections", connections.len()),
 
-                    None => "LOCKED".to_string(),
+                    None => "LOCKED".to_owned(),
                 },
             )
             .field("client", &self.client)

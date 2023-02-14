@@ -252,7 +252,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "kayo@example.com".to_string(),
+            "kayo@example.com".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
@@ -265,7 +265,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "K. <kayo@example.com>".to_string(),
+            "K. <kayo@example.com>".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from)));
@@ -281,7 +281,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "kayo@example.com, pony@domain.tld".to_string(),
+            "kayo@example.com, pony@domain.tld".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
@@ -297,7 +297,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_string(),
+            "K. <kayo@example.com>, Pony P. <pony@domain.tld>".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
@@ -313,7 +313,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "Test, test <1@example.com>, Test2, test2 <2@example.com>".to_string(),
+            "Test, test <1@example.com>, Test2, test2 <2@example.com>".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
@@ -324,7 +324,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "Test, test <1@example.com>, Test2, test2".to_string(),
+            "Test, test <1@example.com>, Test2, test2".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), None);
