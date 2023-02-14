@@ -90,7 +90,7 @@ mod test {
 
         assert_eq!(
             headers.to_string(),
-            "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n".to_string()
+            "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n".to_owned()
         );
 
         // Tue, 15 Nov 1994 08:12:32 GMT
@@ -110,7 +110,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:31 +0000".to_string(),
+            "Tue, 15 Nov 1994 08:12:31 +0000".to_owned(),
         ));
 
         assert_eq!(
@@ -122,7 +122,7 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Date"),
-            "Tue, 15 Nov 1994 08:12:32 +0000".to_string(),
+            "Tue, 15 Nov 1994 08:12:32 +0000".to_owned(),
         ));
 
         assert_eq!(

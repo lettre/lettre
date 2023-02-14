@@ -345,9 +345,9 @@ impl MessageBuilder {
                 let hostname = hostname::get()
                     .map_err(|_| ())
                     .and_then(|s| s.into_string().map_err(|_| ()))
-                    .unwrap_or_else(|_| DEFAULT_MESSAGE_ID_DOMAIN.to_string());
+                    .unwrap_or_else(|_| DEFAULT_MESSAGE_ID_DOMAIN.to_owned());
                 #[cfg(not(feature = "hostname"))]
-                let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_string();
+                let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_owned();
 
                 self.header(header::MessageId::from(
                     // https://tools.ietf.org/html/rfc5322#section-3.6.4
@@ -541,7 +541,7 @@ impl Message {
     ///     .reply_to("Bob <bob@example.org>".parse().unwrap())
     ///     .to("Carla <carla@example.net>".parse().unwrap())
     ///     .subject("Hello")
-    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_string())
+    ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_owned())
     ///     .unwrap();
     /// let key = "-----BEGIN RSA PRIVATE KEY-----
     /// MIIEowIBAAKCAQEAt2gawjoybf0mAz0mSX0cq1ah5F9cPazZdCwLnFBhRufxaZB8
@@ -572,8 +572,8 @@ impl Message {
     /// -----END RSA PRIVATE KEY-----";
     /// let signing_key = DkimSigningKey::new(key, DkimSigningAlgorithm::Rsa).unwrap();
     /// message.sign(&DkimConfig::default_config(
-    ///     "dkimtest".to_string(),
-    ///     "example.org".to_string(),
+    ///     "dkimtest".to_owned(),
+    ///     "example.org".to_owned(),
     ///     signing_key,
     /// ));
     /// println!(

@@ -477,9 +477,9 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
             .from("Test O'Leary <test+ezrz@example.net>".parse().unwrap())
             .to("Test2 <test2@example.org>".parse().unwrap())
             .date(std::time::UNIX_EPOCH)
-            .header(TestHeader("test  test very very long with spaces and extra spaces   \twill be folded to several lines ".to_string()))
+            .header(TestHeader("test  test very very long with spaces and extra spaces   \twill be folded to several lines ".to_owned()))
             .subject("Test with utf-8 ë")
-            .body("test\r\n\r\ntest   \ttest\r\n\r\n\r\n".to_string()).unwrap()
+            .body("test\r\n\r\ntest   \ttest\r\n\r\n\r\n".to_owned()).unwrap()
     }
 
     #[test]
@@ -521,8 +521,8 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
         dkim_sign_fixed_time(
             &mut message,
             &DkimConfig::new(
-                "dkimtest".to_string(),
-                "example.org".to_string(),
+                "dkimtest".to_owned(),
+                "example.org".to_owned(),
                 signing_key,
                 vec![
                     HeaderName::new_from_ascii_str("Date"),
@@ -570,8 +570,8 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
         dkim_sign_fixed_time(
             &mut message,
             &DkimConfig::new(
-                "dkimtest".to_string(),
-                "example.org".to_string(),
+                "dkimtest".to_owned(),
+                "example.org".to_owned(),
                 signing_key,
                 vec![
                     HeaderName::new_from_ascii_str("Date"),

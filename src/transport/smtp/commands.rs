@@ -296,15 +296,15 @@ mod test {
 
     #[test]
     fn test_display() {
-        let id = ClientId::Domain("localhost".to_string());
+        let id = ClientId::Domain("localhost".to_owned());
         let email = Address::from_str("test@example.com").unwrap();
         let mail_parameter = MailParameter::Other {
-            keyword: "TEST".to_string(),
-            value: Some("value".to_string()),
+            keyword: "TEST".to_owned(),
+            value: Some("value".to_owned()),
         };
         let rcpt_parameter = RcptParameter::Other {
-            keyword: "TEST".to_string(),
-            value: Some("value".to_string()),
+            keyword: "TEST".to_owned(),
+            value: Some("value".to_owned()),
         };
         assert_eq!(format!("{}", Ehlo::new(id)), "EHLO localhost\r\n");
         assert_eq!(
@@ -346,19 +346,13 @@ mod test {
         assert_eq!(format!("{Noop}"), "NOOP\r\n");
         assert_eq!(format!("{}", Help::new(None)), "HELP\r\n");
         assert_eq!(
-            format!("{}", Help::new(Some("test".to_string()))),
+            format!("{}", Help::new(Some("test".to_owned()))),
             "HELP test\r\n"
         );
-        assert_eq!(
-            format!("{}", Vrfy::new("test".to_string())),
-            "VRFY test\r\n"
-        );
-        assert_eq!(
-            format!("{}", Expn::new("test".to_string())),
-            "EXPN test\r\n"
-        );
+        assert_eq!(format!("{}", Vrfy::new("test".to_owned())), "VRFY test\r\n");
+        assert_eq!(format!("{}", Expn::new("test".to_owned())), "EXPN test\r\n");
         assert_eq!(format!("{Rset}"), "RSET\r\n");
-        let credentials = Credentials::new("user".to_string(), "password".to_string());
+        let credentials = Credentials::new("user".to_owned(), "password".to_owned());
         assert_eq!(
             format!(
                 "{}",

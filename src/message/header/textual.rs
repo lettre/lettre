@@ -125,7 +125,7 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "Sample subject".to_string(),
+            "Sample subject".to_owned(),
         ));
 
         assert_eq!(
