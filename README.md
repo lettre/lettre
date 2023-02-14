@@ -67,6 +67,7 @@ lettre = "0.10"
 ```
 
 ```rust,no_run
+use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 
@@ -75,6 +76,7 @@ let email = Message::builder()
     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
     .to("Hei <hei@domain.tld>".parse().unwrap())
     .subject("Happy new year")
+    .header(ContentType::TEXT_PLAIN)
     .body(String::from("Be happy!"))
     .unwrap();
 

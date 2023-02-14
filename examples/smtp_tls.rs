@@ -1,4 +1,7 @@
-use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+use lettre::{
+    message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    SmtpTransport, Transport,
+};
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -8,6 +11,7 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy!"))
         .unwrap();
 
