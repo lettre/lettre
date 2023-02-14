@@ -1,6 +1,7 @@
 use std::fs;
 
 use lettre::{
+    message::header::ContentType,
     transport::smtp::{
         authentication::Credentials,
         client::{Certificate, Tls, TlsParameters},
@@ -16,6 +17,7 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy!"))
         .unwrap();
 

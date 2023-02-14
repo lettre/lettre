@@ -1,6 +1,6 @@
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Executor,
-    AsyncTransport, Message,
+    message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
+    AsyncStd1Executor, AsyncTransport, Message,
 };
 
 #[async_std::main]
@@ -12,6 +12,7 @@ async fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new async year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy with async!"))
         .unwrap();
 
