@@ -1,3 +1,36 @@
+<a name="v0.10.3"></a>
+### v0.10.3 (2023-02-19)
+
+#### Announcements
+
+It was found that what had been used until now as a basic lettre 0.10
+`MessageBuilder::body` example failed to mention that for maximum
+compatibility with various email clients a `Content-Type` header
+should always be present in the message.
+
+##### Before
+
+```rust
+Message::builder()
+  // [...] some headers skipped for brevity
+  .body(String::from("A plaintext or html body"))?
+```
+
+##### Patch
+
+```diff
+ Message::builder()
+   // [...] some headers skipped for brevity
++  .header(ContentType::TEXT_PLAIN) // or `TEXT_HTML` if the body is html
+   .body(String::from("A plaintext or html body"))?
+```
+
+#### Features
+
+* Add support for rustls-native-certs when using rustls ([#843])
+
+[#843]: https://github.com/lettre/lettre/pull/843
+
 <a name="v0.10.2"></a>
 ### v0.10.2 (2023-01-29)
 
