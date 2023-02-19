@@ -87,11 +87,11 @@ impl Debug for Tls {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             Self::None => f.pad("None"),
-            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Self::Opportunistic(_) => f.pad("Opportunistic"),
-            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Self::Required(_) => f.pad("Required"),
-            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Self::Wrapper(_) => f.pad("Wrapper"),
         }
     }
