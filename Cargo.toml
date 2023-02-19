@@ -91,31 +91,31 @@ name = "transport_smtp"
 
 [features]
 default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
-builder = ["httpdate", "mime", "fastrand", "quoted_printable", "email-encoding"]
-mime03 = ["mime"]
+builder = ["dep:httpdate", "dep:mime", "dep:fastrand", "dep:quoted_printable", "dep:email-encoding"]
+mime03 = ["dep:mime"]
 
 # transports
-file-transport = ["uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
-file-transport-envelope = ["serde", "serde_json", "file-transport"]
+file-transport = ["dep:uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
+file-transport-envelope = ["serde", "dep:serde_json", "file-transport"]
 sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
-smtp-transport = ["base64", "nom", "socket2", "once_cell", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
+smtp-transport = ["dep:base64", "dep:nom", "dep:socket2", "dep:once_cell", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
-pool = ["futures-util"]
+pool = ["dep:futures-util"]
 
-rustls-tls = ["webpki-roots", "rustls", "rustls-pemfile"]
+rustls-tls = ["dep:webpki-roots", "dep:rustls", "dep:rustls-pemfile"]
 
-boring-tls = ["boring"]
+boring-tls = ["dep:boring"]
 
 # async
-async-std1 = ["async-std", "async-trait", "futures-io", "futures-util"]
-#async-std1-native-tls = ["async-std1", "native-tls", "async-native-tls"]
-async-std1-rustls-tls = ["async-std1", "rustls-tls", "futures-rustls"]
-tokio1 = ["tokio1_crate", "async-trait", "futures-io", "futures-util"]
-tokio1-native-tls = ["tokio1", "native-tls", "tokio1_native_tls_crate"]
-tokio1-rustls-tls = ["tokio1", "rustls-tls", "tokio1_rustls"]
-tokio1-boring-tls = ["tokio1", "boring-tls", "tokio1_boring"]
+async-std1 = ["dep:async-std", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
+#async-std1-native-tls = ["dep:async-std1", "dep:native-tls", "dep:async-native-tls"]
+async-std1-rustls-tls = ["async-std1", "rustls-tls", "dep:futures-rustls"]
+tokio1 = ["dep:tokio1_crate", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
+tokio1-native-tls = ["tokio1", "native-tls", "dep:tokio1_native_tls_crate"]
+tokio1-rustls-tls = ["tokio1", "rustls-tls", "dep:tokio1_rustls"]
+tokio1-boring-tls = ["tokio1", "boring-tls", "dep:tokio1_boring"]
 
-dkim = ["base64", "sha2", "rsa", "ed25519-dalek"]
+dkim = ["dep:base64", "dep:sha2", "dep:rsa", "dep:ed25519-dalek"]
 
 [package.metadata.docs.rs]
 all-features = true
