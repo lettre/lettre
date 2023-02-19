@@ -108,7 +108,7 @@ boring-tls = ["dep:boring"]
 
 # async
 async-std1 = ["dep:async-std", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
-#async-std1-native-tls = ["dep:async-std1", "dep:native-tls", "dep:async-native-tls"]
+#async-std1-native-tls = ["async-std1", "native-tls", "dep:async-native-tls"]
 async-std1-rustls-tls = ["async-std1", "rustls-tls", "dep:futures-rustls"]
 tokio1 = ["dep:tokio1_crate", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "dep:tokio1_native_tls_crate"]
