@@ -1,6 +1,6 @@
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncStd1Executor,
-    AsyncTransport, Message,
+    message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
+    AsyncStd1Executor, AsyncTransport, Message,
 };
 
 #[async_std::main]
@@ -12,10 +12,11 @@ async fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new async year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy with async!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
 
     // Open a remote connection to gmail
     let mailer: AsyncSmtpTransport<AsyncStd1Executor> =

@@ -119,7 +119,7 @@ pub struct ServerInfo {
 impl Display for ServerInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let features = if self.features.is_empty() {
-            "no supported features".to_string()
+            "no supported features".to_owned()
         } else {
             format!("{:?}", self.features)
         };
@@ -174,7 +174,7 @@ impl ServerInfo {
         }
 
         Ok(ServerInfo {
-            name: name.to_string(),
+            name: name.to_owned(),
             features,
         })
     }
@@ -304,21 +304,21 @@ mod test {
     #[test]
     fn test_clientid_fmt() {
         assert_eq!(
-            format!("{}", ClientId::Domain("test".to_string())),
-            "test".to_string()
+            format!("{}", ClientId::Domain("test".to_owned())),
+            "test".to_owned()
         );
-        assert_eq!(format!("{LOCALHOST_CLIENT}"), "[127.0.0.1]".to_string());
+        assert_eq!(format!("{LOCALHOST_CLIENT}"), "[127.0.0.1]".to_owned());
     }
 
     #[test]
     fn test_extension_fmt() {
         assert_eq!(
             format!("{}", Extension::EightBitMime),
-            "8BITMIME".to_string()
+            "8BITMIME".to_owned()
         );
         assert_eq!(
             format!("{}", Extension::Authentication(Mechanism::Plain)),
-            "AUTH PLAIN".to_string()
+            "AUTH PLAIN".to_owned()
         );
     }
 
@@ -331,11 +331,11 @@ mod test {
             format!(
                 "{}",
                 ServerInfo {
-                    name: "name".to_string(),
+                    name: "name".to_owned(),
                     features: eightbitmime,
                 }
             ),
-            "name with {EightBitMime}".to_string()
+            "name with {EightBitMime}".to_owned()
         );
 
         let empty = HashSet::new();
@@ -344,11 +344,11 @@ mod test {
             format!(
                 "{}",
                 ServerInfo {
-                    name: "name".to_string(),
+                    name: "name".to_owned(),
                     features: empty,
                 }
             ),
-            "name with no supported features".to_string()
+            "name with no supported features".to_owned()
         );
 
         let mut plain = HashSet::new();
@@ -358,11 +358,11 @@ mod test {
             format!(
                 "{}",
                 ServerInfo {
-                    name: "name".to_string(),
+                    name: "name".to_owned(),
                     features: plain,
                 }
             ),
-            "name with {Authentication(Plain)}".to_string()
+            "name with {Authentication(Plain)}".to_owned()
         );
     }
 
@@ -374,18 +374,14 @@ mod test {
                 Category::Unspecified4,
                 Detail::One,
             ),
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ],
+            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned()],
         );
 
         let mut features = HashSet::new();
         assert!(features.insert(Extension::EightBitMime));
 
         let server_info = ServerInfo {
-            name: "me".to_string(),
+            name: "me".to_owned(),
             features,
         };
 
@@ -401,10 +397,10 @@ mod test {
                 Detail::One,
             ),
             vec![
-                "me".to_string(),
-                "AUTH PLAIN CRAM-MD5 XOAUTH2 OTHER".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
+                "me".to_owned(),
+                "AUTH PLAIN CRAM-MD5 XOAUTH2 OTHER".to_owned(),
+                "8BITMIME".to_owned(),
+                "SIZE 42".to_owned(),
             ],
         );
 
@@ -414,7 +410,7 @@ mod test {
         assert!(features2.insert(Extension::Authentication(Mechanism::Xoauth2),));
 
         let server_info2 = ServerInfo {
-            name: "me".to_string(),
+            name: "me".to_owned(),
             features: features2,
         };
 

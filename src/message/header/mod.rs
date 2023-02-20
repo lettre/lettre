@@ -474,7 +474,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "John Doe <example@example.com>, Jean Dupont <jean@example.com>".to_string(),
+            "John Doe <example@example.com>, Jean Dupont <jean@example.com>".to_owned(),
         ));
 
         assert_eq!(
@@ -488,7 +488,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand <jemand@example.com>, Jean Dupont <jean@example.com>".to_string(),
+            "Ascii <example@example.com>, John Doe <johndoe@example.com, John Smith <johnsmith@example.com>, Pinco Pallino <pincopallino@example.com>, Jemand <jemand@example.com>, Jean Dupont <jean@example.com>".to_owned(),
         ));
 
         assert_eq!(
@@ -506,7 +506,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
+            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_owned()
         ));
 
         assert_eq!(
@@ -525,7 +525,7 @@ mod tests {
         headers.insert_raw(
             HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoYouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know".to_string()
+            "Hello! IGuessTheLastLineWasntLongEnoughSoLetsTryAgainShallWeWhatDoYouThinkItsGoingToHappenIGuessWereAboutToFindOut! I don't know".to_owned()
         ));
 
         assert_eq!(
@@ -543,7 +543,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijklmnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdefghijklmnopqrstuvwxyz".to_string()
+            "1abcdefghijklmnopqrstuvwxyz2abcdefghijklmnopqrstuvwxyz3abcdefghijklmnopqrstuvwxyz4abcdefghijklmnopqrstuvwxyz5abcdefghijklmnopqrstuvwxyz6abcdefghijklmnopqrstuvwxyz".to_owned()
         ));
 
         assert_eq!(
@@ -557,7 +557,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "Seán <sean@example.com>".to_string(),
+            "Seán <sean@example.com>".to_owned(),
         ));
 
         assert_eq!(
@@ -571,7 +571,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "🌎 <world@example.com>".to_string(),
+            "🌎 <world@example.com>".to_owned(),
         ));
 
         assert_eq!(
@@ -609,7 +609,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_owned(),
         ));
 
         // TODO: fix the fact that the encoder doesn't know that
@@ -633,7 +633,7 @@ mod tests {
         headers.insert_raw(
             HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳".to_string(),)
+            "🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳🥳".to_owned(),)
         );
 
         assert_eq!(
@@ -654,7 +654,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "Hello! \r\n This is \" bad \0. 👋".to_string(),
+            "Hello! \r\n This is \" bad \0. 👋".to_owned(),
         ));
 
         assert_eq!(
@@ -669,22 +669,22 @@ mod tests {
         headers.insert_raw(
             HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_string()
+            "Hello! This is lettre, and this IsAVeryLongLineDoYouKnowWhatsGoingToHappenIGuessWeAreGoingToFindOut. Ok I guess that's it!".to_owned()
             )
         );
         headers.insert_raw(
             HeaderValue::new(
             HeaderName::new_from_ascii_str("To"),
-            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_string(),
+            "🌍 <world@example.com>, 🦆 Everywhere <ducks@example.com>, Иванов Иван Иванович <ivanov@example.com>, Jānis Bērziņš <janis@example.com>, Seán Ó Rudaí <sean@example.com>".to_owned(),
             )
         );
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "Someone <somewhere@example.com>".to_string(),
+            "Someone <somewhere@example.com>".to_owned(),
         ));
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Content-Transfer-Encoding"),
-            "quoted-printable".to_string(),
+            "quoted-printable".to_owned(),
         ));
 
         // TODO: fix the fact that the encoder doesn't know that
@@ -712,7 +712,7 @@ mod tests {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("Subject"),
-            "＋仮名 :a;go; ;;;;;s;;;;;;;;;;;;;;;;fffeinmjgggggggggｆっ".to_string(),
+            "＋仮名 :a;go; ;;;;;s;;;;;;;;;;;;;;;;fffeinmjgggggggggｆっ".to_owned(),
         ));
 
         assert_eq!(

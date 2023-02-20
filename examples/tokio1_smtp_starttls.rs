@@ -2,8 +2,8 @@
 // since it uses Rust 2018 crate renaming to import tokio.
 // Won't be needed in user's code.
 use lettre::{
-    transport::smtp::authentication::Credentials, AsyncSmtpTransport, AsyncTransport, Message,
-    Tokio1Executor,
+    message::header::ContentType, transport::smtp::authentication::Credentials, AsyncSmtpTransport,
+    AsyncTransport, Message, Tokio1Executor,
 };
 use tokio1_crate as tokio;
 
@@ -16,10 +16,11 @@ async fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new async year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy with async!"))
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
 
     // Open a remote connection to gmail using STARTTLS
     let mailer: AsyncSmtpTransport<Tokio1Executor> =

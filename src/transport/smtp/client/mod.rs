@@ -11,7 +11,7 @@
 //!     client::SmtpConnection, commands::*, extension::ClientId, SMTP_PORT,
 //! };
 //!
-//! let hello = ClientId::Domain("my_hostname".to_string());
+//! let hello = ClientId::Domain("my_hostname".to_owned());
 //! let mut client = SmtpConnection::connect(&("localhost", SMTP_PORT), None, &hello, None, None)?;
 //! client.command(Mail::new(Some("user@example.com".parse()?), vec![]))?;
 //! client.command(Rcpt::new("user@example.org".parse()?, vec![]))?;
@@ -38,7 +38,7 @@ pub(super) use self::tls::InnerTlsParameters;
 pub use self::tls::TlsVersion;
 pub use self::{
     connection::SmtpConnection,
-    tls::{Certificate, Tls, TlsParameters, TlsParametersBuilder},
+    tls::{Certificate, CertificateStore, Tls, TlsParameters, TlsParametersBuilder},
 };
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]

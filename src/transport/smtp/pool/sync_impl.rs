@@ -186,8 +186,8 @@ impl Debug for Pool {
                 &match self.connections.try_lock() {
                     Ok(connections) => format!("{} connections", connections.len()),
 
-                    Err(TryLockError::WouldBlock) => "LOCKED".to_string(),
-                    Err(TryLockError::Poisoned(_)) => "POISONED".to_string(),
+                    Err(TryLockError::WouldBlock) => "LOCKED".to_owned(),
+                    Err(TryLockError::Poisoned(_)) => "POISONED".to_owned(),
                 },
             )
             .field("client", &self.client)

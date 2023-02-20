@@ -13,7 +13,7 @@ impl Serialize for Mailbox {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        serializer.collect_str(self)
     }
 }
 
@@ -111,7 +111,7 @@ impl Serialize for Mailboxes {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.to_string())
+        serializer.collect_str(self)
     }
 }
 

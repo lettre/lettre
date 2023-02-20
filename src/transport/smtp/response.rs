@@ -151,7 +151,7 @@ impl FromStr for Response {
     fn from_str(s: &str) -> result::Result<Response, Error> {
         parse_response(s)
             .map(|(_, r)| r)
-            .map_err(|e| error::response(e.to_string()))
+            .map_err(|e| error::response(e.to_owned()))
     }
 }
 
@@ -329,10 +329,10 @@ mod test {
                     detail: Detail::Zero,
                 },
                 message: vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                    "AUTH PLAIN CRAM-MD5".to_string(),
+                    "me".to_owned(),
+                    "8BITMIME".to_owned(),
+                    "SIZE 42".to_owned(),
+                    "AUTH PLAIN CRAM-MD5".to_owned(),
                 ],
             }
         );
@@ -352,11 +352,7 @@ mod test {
                 category: Category::MailSystem,
                 detail: Detail::Zero,
             },
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ],
+            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
         )
         .is_positive());
         assert!(!Response::new(
@@ -365,11 +361,7 @@ mod test {
                 category: Category::MailSystem,
                 detail: Detail::Zero,
             },
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ],
+            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
         )
         .is_positive());
     }
@@ -382,11 +374,7 @@ mod test {
                 category: Category::MailSystem,
                 detail: Detail::One,
             },
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ],
+            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
         )
         .has_code(451));
         assert!(!Response::new(
@@ -395,11 +383,7 @@ mod test {
                 category: Category::MailSystem,
                 detail: Detail::One,
             },
-            vec![
-                "me".to_string(),
-                "8BITMIME".to_string(),
-                "SIZE 42".to_string(),
-            ],
+            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
         )
         .has_code(251));
     }
@@ -413,11 +397,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
             )
             .first_word(),
             Some("me")
@@ -430,9 +410,9 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![
-                    "me mo".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
+                    "me mo".to_owned(),
+                    "8BITMIME".to_owned(),
+                    "SIZE 42".to_owned(),
                 ],
             )
             .first_word(),
@@ -457,7 +437,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec![" ".to_string()],
+                vec![" ".to_owned()],
             )
             .first_word(),
             None
@@ -469,7 +449,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec!["  ".to_string()],
+                vec!["  ".to_owned()],
             )
             .first_word(),
             None
@@ -481,7 +461,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec!["".to_string()],
+                vec!["".to_owned()],
             )
             .first_word(),
             None
@@ -507,11 +487,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec![
-                    "me".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
-                ],
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
             )
             .first_line(),
             Some("me")
@@ -524,9 +500,9 @@ mod test {
                     detail: Detail::One,
                 },
                 vec![
-                    "me mo".to_string(),
-                    "8BITMIME".to_string(),
-                    "SIZE 42".to_string(),
+                    "me mo".to_owned(),
+                    "8BITMIME".to_owned(),
+                    "SIZE 42".to_owned(),
                 ],
             )
             .first_line(),
@@ -551,7 +527,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec![" ".to_string()],
+                vec![" ".to_owned()],
             )
             .first_line(),
             Some(" ")
@@ -563,7 +539,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec!["  ".to_string()],
+                vec!["  ".to_owned()],
             )
             .first_line(),
             Some("  ")
@@ -575,7 +551,7 @@ mod test {
                     category: Category::MailSystem,
                     detail: Detail::One,
                 },
-                vec!["".to_string()],
+                vec!["".to_owned()],
             )
             .first_line(),
             Some("")

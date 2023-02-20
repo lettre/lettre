@@ -41,7 +41,7 @@ mod tests {
         ]
         .iter()
         {
-            assert_eq!(format!("{}", XText(input)), (*expect).to_string());
+            assert_eq!(format!("{}", XText(input)), (*expect).to_owned());
         }
     }
 }

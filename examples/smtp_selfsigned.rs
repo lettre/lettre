@@ -1,6 +1,7 @@
 use std::fs;
 
 use lettre::{
+    message::header::ContentType,
     transport::smtp::{
         authentication::Credentials,
         client::{Certificate, Tls, TlsParameters},
@@ -16,18 +17,19 @@ fn main() {
         .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
         .to("Hei <hei@domain.tld>".parse().unwrap())
         .subject("Happy new year")
+        .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy!"))
         .unwrap();
 
     // Use a custom certificate stored on disk to securely verify the server's certificate
     let pem_cert = fs::read("certificate.pem").unwrap();
     let cert = Certificate::from_pem(&pem_cert).unwrap();
-    let tls = TlsParameters::builder("smtp.server.com".to_string())
+    let tls = TlsParameters::builder("smtp.server.com".to_owned())
         .add_root_certificate(cert)
         .build()
         .unwrap();
 
-    let creds = Credentials::new("smtp_username".to_string(), "smtp_password".to_string());
+    let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
 
     // Open a remote connection to the smtp server
     let mailer = SmtpTransport::builder_dangerous("smtp.server.com")

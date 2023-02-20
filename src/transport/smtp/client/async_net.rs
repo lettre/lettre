@@ -323,7 +323,7 @@ impl AsyncNetworkStream {
         tcp_stream: Box<dyn AsyncTokioStream>,
         tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = tls_parameters.domain().to_string();
+        let domain = tls_parameters.domain().to_owned();
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]

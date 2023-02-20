@@ -91,14 +91,14 @@ mod test {
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
-            "1.0".to_string(),
+            "1.0".to_owned(),
         ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MIME_VERSION_1_0));
 
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("MIME-Version"),
-            "0.1".to_string(),
+            "0.1".to_owned(),
         ));
 
         assert_eq!(headers.get::<MimeVersion>(), Some(MimeVersion::new(0, 1)));
