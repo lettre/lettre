@@ -227,6 +227,7 @@ fn check_address(val: &str) -> Result<usize, AddressError> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+#[non_exhaustive]
 /// Errors in email addresses parsing
 pub enum AddressError {
     /// Missing domain or user
@@ -237,6 +238,8 @@ pub enum AddressError {
     InvalidUser,
     /// Invalid email domain
     InvalidDomain,
+    /// Invalid input found
+    InvalidInput,
 }
 
 impl Error for AddressError {}
@@ -248,6 +251,7 @@ impl Display for AddressError {
             AddressError::Unbalanced => f.write_str("Unbalanced angle bracket"),
             AddressError::InvalidUser => f.write_str("Invalid email user"),
             AddressError::InvalidDomain => f.write_str("Invalid email domain"),
+            AddressError::InvalidInput => f.write_str("Invalid input"),
         }
     }
 }

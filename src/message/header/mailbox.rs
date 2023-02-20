@@ -306,14 +306,30 @@ mod test {
     #[test]
     fn parse_multi_with_name_containing_comma() {
         let from: Vec<Mailbox> = vec![
-            "Test, test <1@example.com>".parse().unwrap(),
-            "Test2, test2 <2@example.com>".parse().unwrap(),
+            "\"Test, test\" <1@example.com>".parse().unwrap(),
+            "\"Test2, test2\" <2@example.com>".parse().unwrap(),
         ];
 
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "Test, test <1@example.com>, Test2, test2 <2@example.com>".to_owned(),
+            "\"Test, test\" <1@example.com>, \"Test2, test2\" <2@example.com>".to_owned(),
+        ));
+
+        assert_eq!(headers.get::<From>(), Some(From(from.into())));
+    }
+
+    #[test]
+    fn parse_multi_with_name_containing_double_quotes() {
+        let from: Vec<Mailbox> = vec![
+            "\"Test, test\" <1@example.com>".parse().unwrap(),
+            "\"Test2, \"test2\"\" <2@example.com>".parse().unwrap(),
+        ];
+
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("From"),
+            "\"Test, test\" <1@example.com>, \"Test2, \"test2\"\" <2@example.com>".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), Some(From(from.into())));
@@ -324,9 +340,20 @@ mod test {
         let mut headers = Headers::new();
         headers.insert_raw(HeaderValue::new(
             HeaderName::new_from_ascii_str("From"),
-            "Test, test <1@example.com>, Test2, test2".to_owned(),
+            "\"Test, test\" <1@example.com>, \"Test2, test2\"".to_owned(),
         ));
 
         assert_eq!(headers.get::<From>(), None);
+    }
+
+    #[test]
+    fn mailbox_format_address_with_angle_bracket() {
+        assert_eq!(
+            format!(
+                "{}",
+                Mailbox::new(Some("<3".into()), "i@love.example".parse().unwrap())
+            ),
+            r#""<3" <i@love.example>"#
+        );
     }
 }

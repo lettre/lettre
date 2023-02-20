@@ -281,7 +281,7 @@ impl Display for RcptParameter {
             RcptParameter::Other {
                 ref keyword,
                 value: Some(ref value),
-            } => write!(f, "{}={}", keyword, XText(value)),
+            } => write!(f, "{keyword}={}", XText(value)),
             RcptParameter::Other {
                 ref keyword,
                 value: None,

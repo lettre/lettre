@@ -5,8 +5,10 @@ use std::{
     str::FromStr,
 };
 
+use chumsky::prelude::*;
 use email_encoding::headers::EmailWriter;
 
+use super::parsers;
 use crate::address::{Address, AddressError};
 
 /// Represents an email address with an optional name for the sender/recipient.
@@ -108,40 +110,18 @@ impl<S: Into<String>, T: Into<String>> TryFrom<(S, T)> for Mailbox {
     }
 }
 
-/*
-impl<S: AsRef<&str>, T: AsRef<&str>> TryFrom<(S, T)> for Mailbox {
-    type Error = AddressError;
-
-    fn try_from(header: (S, T)) -> Result<Self, Self::Error> {
-        let (name, address) = header;
-        Ok(Mailbox::new(Some(name.as_ref()), address.as_ref().parse()?))
-    }
-}*/
-
 impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        match (src.find('<'), src.find('>')) {
-            (Some(addr_open), Some(addr_close)) if addr_open < addr_close => {
-                let name = src.split_at(addr_open).0;
-                let addr_open = addr_open + 1;
-                let addr = src.split_at(addr_open).1.split_at(addr_close - addr_open).0;
-                let addr = addr.parse()?;
-                let name = name.trim();
-                let name = if name.is_empty() {
-                    None
-                } else {
-                    Some(name.into())
-                };
-                Ok(Mailbox::new(name, addr))
-            }
-            (Some(_), _) => Err(AddressError::Unbalanced),
-            _ => {
-                let addr = src.parse()?;
-                Ok(Mailbox::new(None, addr))
-            }
-        }
+        let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|_errs| {
+            // TODO: improve error management
+            AddressError::InvalidInput
+        })?;
+
+        let mailbox = Mailbox::new(name, Address::new(user, domain)?);
+
+        Ok(mailbox)
     }
 }
 
@@ -356,34 +336,16 @@ impl Display for Mailboxes {
 impl FromStr for Mailboxes {
     type Err = AddressError;
 
-    fn from_str(mut src: &str) -> Result<Self, Self::Err> {
+    fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
 
-        if !src.is_empty() {
-            // n-1 elements
-            let mut skip = 0;
-            while let Some(i) = src[skip..].find(',') {
-                let left = &src[..skip + i];
+        let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|_errs| {
+            // TODO: improve error management
+            AddressError::InvalidInput
+        })?;
 
-                match left.trim().parse() {
-                    Ok(mailbox) => {
-                        mailboxes.push(mailbox);
-
-                        src = &src[left.len() + ",".len()..];
-                        skip = 0;
-                    }
-                    Err(AddressError::MissingParts) => {
-                        skip = left.len() + ",".len();
-                    }
-                    Err(err) => {
-                        return Err(err);
-                    }
-                }
-            }
-
-            // last element
-            let mailbox = src.trim().parse()?;
-            mailboxes.push(mailbox);
+        for (name, (user, domain)) in parsed_mailboxes {
+            mailboxes.push(Mailbox::new(name, Address::new(user, domain)?))
         }
 
         Ok(Mailboxes(mailboxes))

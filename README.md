@@ -91,7 +91,7 @@ let mailer = SmtpTransport::relay("smtp.gmail.com")
 // Send the email
 match mailer.send(&email) {
     Ok(_) => println!("Email sent successfully!"),
-    Err(e) => panic!("Could not send email: {:?}", e),
+    Err(e) => panic!("Could not send email: {e:?}"),
 }
 ```
 
