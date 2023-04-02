@@ -6,7 +6,7 @@
 //! * Secure defaults
 //! * Async support
 //!
-//! Lettre requires Rust 1.60 or newer.
+//! Lettre requires Rust 1.63 or newer.
 //!
 //! ## Features
 //!
