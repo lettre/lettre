@@ -1,3 +1,12 @@
+<a name="v0.10.4"></a>
+### v0.10.4 (2023-04-02)
+
+#### Misc
+
+* Bumped rustls to 0.21 and all related dependencies ([#867])
+
+[#867]: https://github.com/lettre/lettre/pull/867
+
 <a name="v0.10.3"></a>
 ### v0.10.3 (2023-02-20)
 
