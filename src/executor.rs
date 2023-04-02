@@ -216,7 +216,7 @@ impl Executor for AsyncStd1Executor {
 
     #[cfg(feature = "smtp-transport")]
     fn sleep(duration: Duration) -> Self::Sleep {
-        let fut = async move { async_std::task::sleep(duration).await };
+        let fut = async_std::task::sleep(duration);
         Box::pin(fut)
     }
 
