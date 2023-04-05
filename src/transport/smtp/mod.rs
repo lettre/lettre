@@ -175,8 +175,8 @@ pub const SUBMISSION_PORT: u16 = 587;
 /// Defined in [RFC8314](https://tools.ietf.org/html/rfc8314)
 pub const SUBMISSIONS_PORT: u16 = 465;
 
-/// Default timeout
-const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
+/// Default connection timeout
+const DEFAULT_CONNECTION_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Clone)]
 struct SmtpInfo {
@@ -192,9 +192,8 @@ struct SmtpInfo {
     authentication: Vec<Mechanism>,
     /// Credentials
     credentials: Option<Credentials>,
-    /// Define network timeout
-    /// It can be changed later for specific needs (like a different timeout for each SMTP command)
-    timeout: Option<Duration>,
+    /// Define connection timeout
+    connection_timeout: Option<Duration>,
 }
 
 impl Default for SmtpInfo {
@@ -205,7 +204,7 @@ impl Default for SmtpInfo {
             hello_name: ClientId::default(),
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),
-            timeout: Some(DEFAULT_TIMEOUT),
+            connection_timeout: Some(DEFAULT_CONNECTION_TIMEOUT),
             tls: Tls::None,
         }
     }
