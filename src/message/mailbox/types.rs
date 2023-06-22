@@ -145,6 +145,12 @@ impl FromStr for Mailbox {
     }
 }
 
+impl From<Address> for Mailbox {
+    fn from(value: Address) -> Self {
+        Self::new(None, value)
+    }
+}
+
 /// Represents a sequence of [`Mailbox`] instances.
 ///
 /// This type contains a sequence of mailboxes (_Some Name \<user@domain.tld\>, Another Name \<other@domain.tld\>, withoutname@domain.tld, ..._).
