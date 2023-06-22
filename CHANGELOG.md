@@ -1,3 +1,13 @@
+<a name="v0.10.5"></a>
+### v0.10.5 (2023-06-22)
+
+#### Misc
+
+* Bumped rsa to 0.9 ([#880])
+* Bumped MSRV to 0.65 ([#880])
+
+[#867]: https://github.com/lettre/lettre/pull/880
+
 <a name="v0.10.4"></a>
 ### v0.10.4 (2023-04-02)
 

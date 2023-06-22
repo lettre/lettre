@@ -99,7 +99,7 @@ impl Debug for Tls {
 
 /// Source for the base set of root certificates to trust.
 #[allow(missing_copy_implementations)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub enum CertificateStore {
     /// Use the default for the TLS backend.
     ///
@@ -110,6 +110,7 @@ pub enum CertificateStore {
     /// enabled, or will fall back to `webpki-roots`.
     ///
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
+    #[default]
     Default,
     /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
     ///
@@ -118,12 +119,6 @@ pub enum CertificateStore {
     WebpkiRoots,
     /// Don't use any system certificates.
     None,
-}
-
-impl Default for CertificateStore {
-    fn default() -> Self {
-        CertificateStore::Default
-    }
 }
 
 /// Parameters to use for secure clients

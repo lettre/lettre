@@ -11,7 +11,7 @@ use crate::BoxError;
 /// The `Message` builder takes care of choosing the most
 /// efficient encoding based on the chosen body, so in most
 /// use-caches this header shouldn't be set manually.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ContentTransferEncoding {
     /// ASCII
@@ -19,6 +19,7 @@ pub enum ContentTransferEncoding {
     /// Quoted-Printable encoding
     QuotedPrintable,
     /// base64 encoding
+    #[default]
     Base64,
     /// Requires `8BITMIME`
     EightBit,
@@ -64,12 +65,6 @@ impl FromStr for ContentTransferEncoding {
             "binary" => Ok(Self::Binary),
             _ => Err(s.into()),
         }
-    }
-}
-
-impl Default for ContentTransferEncoding {
-    fn default() -> Self {
-        ContentTransferEncoding::Base64
     }
 }
 
