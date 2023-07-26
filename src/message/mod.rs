@@ -503,6 +503,11 @@ impl Message {
         &self.headers
     }
 
+    /// Get a mutable reference to the headers
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        &mut self.headers
+    }
+
     /// Get `Message` envelope
     pub fn envelope(&self) -> &Envelope {
         &self.envelope
