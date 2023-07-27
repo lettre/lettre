@@ -496,7 +496,7 @@ mod test {
     #[test]
     fn base64_encode_bytes_wrapping() {
         let encoded = Body::new_with_encoding(
-            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9].repeat(20),
+            [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].repeat(20),
             ContentTransferEncoding::Base64,
         )
         .unwrap();
