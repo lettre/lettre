@@ -100,14 +100,14 @@ impl SinglePart {
         SinglePartBuilder::new()
     }
 
-    /// Directly create a `SinglePart` from an plain UTF-8 content
+    /// Directly create a `SinglePart` from a plain UTF-8 content
     pub fn plain<T: IntoBody>(body: T) -> Self {
         Self::builder()
             .header(header::ContentType::TEXT_PLAIN)
             .body(body)
     }
 
-    /// Directly create a `SinglePart` from an UTF-8 HTML content
+    /// Directly create a `SinglePart` from a UTF-8 HTML content
     pub fn html<T: IntoBody>(body: T) -> Self {
         Self::builder()
             .header(header::ContentType::TEXT_HTML)
@@ -149,17 +149,17 @@ impl EmailFormat for SinglePart {
 pub enum MultiPartKind {
     /// Mixed kind to combine unrelated content parts
     ///
-    /// For example this kind can be used to mix email message and attachments.
+    /// For example, this kind can be used to mix an email message and attachments.
     Mixed,
 
     /// Alternative kind to join several variants of same email contents.
     ///
-    /// That kind is recommended to use for joining plain (text) and rich (HTML) messages into single email message.
+    /// That kind is recommended to use for joining plain (text) and rich (HTML) messages into a single email message.
     Alternative,
 
     /// Related kind to mix content and related resources.
     ///
-    /// For example, you can include images into HTML content using that.
+    /// For example, you can include images in HTML content using that.
     Related,
 
     /// Encrypted kind for encrypted messages

@@ -100,7 +100,7 @@ impl SmtpConnection {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 
-        // Check for non-ascii content in message
+        // Check for non-ascii content in the message
         if !email.is_ascii() {
             if !self.server_info().supports_feature(Extension::EightBitMime) {
                 return Err(error::client(
@@ -207,7 +207,7 @@ impl SmtpConnection {
         self.command(Noop).is_ok()
     }
 
-    /// Sends an AUTH command with the given mechanism, and handles challenge if needed
+    /// Sends an AUTH command with the given mechanism, and handles the challenge if needed
     pub fn auth(
         &mut self,
         mechanisms: &[Mechanism],

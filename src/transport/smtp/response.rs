@@ -19,7 +19,7 @@ use nom::{
 
 use crate::transport::smtp::{error, Error};
 
-/// First digit indicates severity
+/// The first digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Severity {
