@@ -108,7 +108,7 @@ pub struct DkimSigningKey(InnerDkimSigningKey);
 #[derive(Debug)]
 enum InnerDkimSigningKey {
     Rsa(RsaPrivateKey),
-    Ed25519(ed25519_dalek::Keypair),
+    Ed25519(ed25519_dalek::SigningKey),
 }
 
 impl DkimSigningKey {
@@ -121,14 +121,18 @@ impl DkimSigningKey {
                 RsaPrivateKey::from_pkcs1_pem(private_key)
                     .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
             ),
-            DkimSigningAlgorithm::Ed25519 => InnerDkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(
-                    &crate::base64::decode(private_key).map_err(|err| {
-                        DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err))
-                    })?,
-                )
-                .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(err)))?,
-            ),
+            DkimSigningAlgorithm::Ed25519 => {
+                InnerDkimSigningKey::Ed25519(ed25519_dalek::SigningKey::from_bytes(
+                    &crate::base64::decode(private_key)
+                        .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err)))?
+                        .try_into()
+                        .map_err(|_| {
+                            DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(
+                                ed25519_dalek::ed25519::Error::new(),
+                            ))
+                        })?,
+                ))
+            }
         }))
     }
     fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
