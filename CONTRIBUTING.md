@@ -1,6 +1,6 @@
 ## Contributing to Lettre
 
-The following guidelines are inspired from the [hyper project](https://github.com/hyperium/hyper/blob/master/CONTRIBUTING.md).
+The following guidelines are inspired by the [hyper project](https://github.com/hyperium/hyper/blob/master/CONTRIBUTING.md).
 
 ### Code formatting
 

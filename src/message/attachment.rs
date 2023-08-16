@@ -13,9 +13,9 @@ pub struct Attachment {
 
 #[derive(Clone)]
 enum Disposition {
-    /// file name
+    /// File name
     Attached(String),
-    /// content id
+    /// Content id
     Inline(String),
 }
 

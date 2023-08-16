@@ -179,7 +179,7 @@ mod test {
     }
 
     #[test]
-    fn parse_mailbox_object_address_stirng() {
+    fn parse_mailbox_object_address_string() {
         let m: Mailbox = from_str(r#"{ "name": "Kai", "email": "kayo@example.com" }"#).unwrap();
         assert_eq!(m, "Kai <kayo@example.com>".parse().unwrap());
     }
