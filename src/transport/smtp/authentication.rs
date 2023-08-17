@@ -51,7 +51,7 @@ pub enum Mechanism {
     /// [RFC 4616](https://tools.ietf.org/html/rfc4616)
     Plain,
     /// LOGIN authentication mechanism
-    /// Obsolete but needed for some providers (like office365)
+    /// Obsolete but needed for some providers (like Office 365)
     ///
     /// Defined in [draft-murchison-sasl-login-00](https://www.ietf.org/archive/id/draft-murchison-sasl-login-00.txt).
     Login,
@@ -71,7 +71,7 @@ impl Display for Mechanism {
 }
 
 impl Mechanism {
-    /// Does the mechanism supports initial response
+    /// Does the mechanism support initial response?
     pub fn supports_initial_response(self) -> bool {
         match self {
             Mechanism::Plain | Mechanism::Xoauth2 => true,

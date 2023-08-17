@@ -103,7 +103,7 @@ where
             .tls(Tls::Wrapper(tls_parameters)))
     }
 
-    /// Simple an secure transport, using STARTTLS to obtain encrypted connections
+    /// Simple and secure transport, using STARTTLS to obtain encrypted connections
     ///
     /// Alternative to [`AsyncSmtpTransport::relay`](#method.relay), for SMTP servers
     /// that don't take SMTPS connections.
@@ -151,7 +151,7 @@ where
     ///
     /// * No authentication
     /// * No TLS
-    /// * A 60 seconds timeout for smtp commands
+    /// * A 60-seconds timeout for smtp commands
     /// * Port 25
     ///
     /// Consider using [`AsyncSmtpTransport::relay`](#method.relay) or
@@ -172,7 +172,7 @@ where
     /// Tests the SMTP connection
     ///
     /// `test_connection()` tests the connection by using the SMTP NOOP command.
-    /// The connection is closed afterwards if a connection pool is not used.
+    /// The connection is closed afterward if a connection pool is not used.
     pub async fn test_connection(&self) -> Result<bool, Error> {
         let mut conn = self.inner.connection().await?;
 

@@ -388,13 +388,13 @@ impl MessageBuilder {
 
     /// Keep the `Bcc` header
     ///
-    /// By default the `Bcc` header is removed from the email after
+    /// By default, the `Bcc` header is removed from the email after
     /// using it to generate the message envelope. In some cases though,
     /// like when saving the email as an `.eml`, or sending through
     /// some transports (like the Gmail API) that don't take a separate
     /// envelope value, it becomes necessary to keep the `Bcc` header.
     ///
-    /// Calling this method overrides the default behaviour.
+    /// Calling this method overrides the default behavior.
     pub fn keep_bcc(mut self) -> Self {
         self.drop_bcc = false;
         self
@@ -635,7 +635,7 @@ mod test {
     }
 
     #[test]
-    fn email_miminal_message() {
+    fn email_minimal_message() {
         assert!(Message::builder()
             .from("NoBody <nobody@domain.tld>".parse().unwrap())
             .to("NoBody <nobody@domain.tld>".parse().unwrap())

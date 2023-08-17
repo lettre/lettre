@@ -15,7 +15,7 @@ use crate::address::{Address, AddressError};
 ///
 /// This type contains email address and the sender/recipient name (_Some Name \<user@domain.tld\>_ or _withoutname@domain.tld_).
 ///
-/// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
+/// **NOTE**: Enable feature "serde" to be able to serialize/deserialize it using [serde](https://serde.rs/).
 ///
 /// # Examples
 ///
@@ -135,7 +135,7 @@ impl From<Address> for Mailbox {
 ///
 /// This type contains a sequence of mailboxes (_Some Name \<user@domain.tld\>, Another Name \<other@domain.tld\>, withoutname@domain.tld, ..._).
 ///
-/// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
+/// **NOTE**: Enable feature "serde" to be able to serialize/deserialize it using [serde](https://serde.rs/).
 #[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct Mailboxes(Vec<Mailbox>);
 
@@ -404,7 +404,7 @@ fn is_valid_atom_char(c: u8) -> bool {
 		b'}' |
 		b'~' |
 
-		// Not techically allowed but will be escaped into allowed characters.
+		// Not technically allowed but will be escaped into allowed characters.
 		128..=255)
 }
 

@@ -66,7 +66,7 @@ impl Headers {
         }
     }
 
-    /// Returns a copy of an `Header` present in `Headers`
+    /// Returns a copy of a `Header` present in `Headers`
     ///
     /// Returns `None` if `Header` isn't present in `Headers`.
     pub fn get<H: Header>(&self) -> Option<H> {
@@ -310,7 +310,7 @@ impl HeaderValue {
     /// acceptable for use if `encoded_value` contains only ascii
     /// printable characters and is already line folded.
     ///
-    /// When in doubt use [`HeaderValue::new`].
+    /// When in doubt, use [`HeaderValue::new`].
     pub fn dangerous_new_pre_encoded(
         name: HeaderName,
         raw_value: String,

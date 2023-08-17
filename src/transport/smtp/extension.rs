@@ -190,7 +190,7 @@ impl ServerInfo {
             .contains(&Extension::Authentication(mechanism))
     }
 
-    /// Gets a compatible mechanism from list
+    /// Gets a compatible mechanism from a list
     pub fn get_auth_mechanism(&self, mechanisms: &[Mechanism]) -> Option<Mechanism> {
         for mechanism in mechanisms {
             if self.supports_auth_mechanism(*mechanism) {

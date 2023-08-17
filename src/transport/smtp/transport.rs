@@ -58,7 +58,7 @@ impl SmtpTransport {
             .tls(Tls::Wrapper(tls_parameters)))
     }
 
-    /// Simple an secure transport, using STARTTLS to obtain encrypted connections
+    /// Simple and secure transport, using STARTTLS to obtain encrypted connections
     ///
     /// Alternative to [`SmtpTransport::relay`](#method.relay), for SMTP servers
     /// that don't take SMTPS connections.
@@ -95,7 +95,7 @@ impl SmtpTransport {
     ///
     /// * No authentication
     /// * No TLS
-    /// * A 60 seconds timeout for smtp commands
+    /// * A 60-seconds timeout for smtp commands
     /// * Port 25
     ///
     /// Consider using [`SmtpTransport::relay`](#method.relay) or
@@ -117,7 +117,7 @@ impl SmtpTransport {
     /// Tests the SMTP connection
     ///
     /// `test_connection()` tests the connection by using the SMTP NOOP command.
-    /// The connection is closed afterwards if a connection pool is not used.
+    /// The connection is closed afterward if a connection pool is not used.
     pub fn test_connection(&self) -> Result<bool, Error> {
         let mut conn = self.inner.connection()?;
 
@@ -194,7 +194,7 @@ impl SmtpTransportBuilder {
 
     /// Build the transport
     ///
-    /// If the `pool` feature is enabled an `Arc` wrapped pool is be created.
+    /// If the `pool` feature is enabled, an `Arc` wrapped pool is created.
     /// Defaults can be found at [`PoolConfig`]
     pub fn build(self) -> SmtpTransport {
         let client = SmtpClient { info: self.info };
