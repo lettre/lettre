@@ -15,7 +15,7 @@ use idna::domain_to_ascii;
 ///
 /// This type contains email in canonical form (_user@domain.tld_).
 ///
-/// **NOTE**: Enable feature "serde" to be able serialize/deserialize it using [serde](https://serde.rs/).
+/// **NOTE**: Enable feature "serde" to be able to serialize/deserialize it using [serde](https://serde.rs/).
 ///
 /// # Examples
 ///

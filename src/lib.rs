@@ -219,11 +219,11 @@ use std::error::Error as StdError;
 
 #[cfg(feature = "async-std1")]
 pub use self::executor::AsyncStd1Executor;
-#[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::executor::Executor;
 #[cfg(feature = "tokio1")]
 pub use self::executor::Tokio1Executor;
-#[cfg(all(any(feature = "tokio1", feature = "async-std1")))]
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
 #[doc(inline)]
 pub use self::transport::AsyncTransport;
 pub use crate::address::Address;

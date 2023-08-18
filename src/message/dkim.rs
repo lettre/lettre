@@ -108,7 +108,7 @@ pub struct DkimSigningKey(InnerDkimSigningKey);
 #[derive(Debug)]
 enum InnerDkimSigningKey {
     Rsa(RsaPrivateKey),
-    Ed25519(ed25519_dalek::Keypair),
+    Ed25519(ed25519_dalek::SigningKey),
 }
 
 impl DkimSigningKey {
@@ -121,14 +121,18 @@ impl DkimSigningKey {
                 RsaPrivateKey::from_pkcs1_pem(private_key)
                     .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
             ),
-            DkimSigningAlgorithm::Ed25519 => InnerDkimSigningKey::Ed25519(
-                ed25519_dalek::Keypair::from_bytes(
-                    &crate::base64::decode(private_key).map_err(|err| {
-                        DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err))
-                    })?,
-                )
-                .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(err)))?,
-            ),
+            DkimSigningAlgorithm::Ed25519 => {
+                InnerDkimSigningKey::Ed25519(ed25519_dalek::SigningKey::from_bytes(
+                    &crate::base64::decode(private_key)
+                        .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Base64(err)))?
+                        .try_into()
+                        .map_err(|_| {
+                            DkimSigningKeyError(InnerDkimSigningKeyError::Ed25519(
+                                ed25519_dalek::ed25519::Error::new(),
+                            ))
+                        })?,
+                ))
+            }
         }))
     }
     fn get_signing_algorithm(&self) -> DkimSigningAlgorithm {
@@ -140,19 +144,18 @@ impl DkimSigningKey {
 }
 
 /// A struct to describe Dkim configuration applied when signing a message
-/// selector: the name of the key publied in DNS
-/// domain: the domain for which we sign the message
-/// private_key: private key in PKCS1 string format
-/// headers: a list of headers name to be included in the signature. Signing of more than one
-/// header with same name is not supported
-/// canonicalization: the canonicalization to be applied on the message
-/// pub signing_algorithm: the signing algorithm to be used when signing
 #[derive(Debug)]
 pub struct DkimConfig {
+    /// The name of the key published in DNS
     selector: String,
+    /// The domain for which we sign the message
     domain: String,
+    /// The private key in PKCS1 string format
     private_key: DkimSigningKey,
+    /// A list of header names to be included in the signature. Signing of more than one
+    /// header with the same name is not supported
     headers: Vec<HeaderName>,
+    /// The signing algorithm to be used when signing
     canonicalization: DkimCanonicalization,
 }
 
@@ -341,7 +344,7 @@ fn dkim_canonicalize_headers<'a>(
     }
 }
 
-/// Sign with Dkim a message by adding Dkim-Signture header created with configuration expressed by
+/// Sign with Dkim a message by adding Dkim-Signature header created with configuration expressed by
 /// dkim_config
 
 pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
