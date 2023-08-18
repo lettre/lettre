@@ -73,7 +73,18 @@ impl Address {
     pub fn new<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Result<Self, AddressError> {
         (user, domain).try_into()
     }
+    /// Creates a new email address from a string without checking it.
+    ///
+    /// # Panics
+    /// Will panic if @ is not present in the string
+    pub fn new_unchecked(serialized: String) -> Self {
+        let at_start = serialized.chars().position(|c| c == '@').unwrap();
 
+        Self {
+            serialized,
+            at_start,
+        }
+    }
     /// Gets the user portion of the `Address`.
     ///
     /// # Examples
@@ -302,5 +313,20 @@ mod tests {
         assert!(
             Address::check_domain("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com").is_err()
         );
+    }
+
+    #[test]
+    fn test_new_unchecked() {
+        let addr = Address::new_unchecked("something@example.com".to_owned());
+        assert_eq!(addr.user(), "something");
+        assert_eq!(addr.domain(), "example.com");
+
+        assert_eq!(addr, Address::new("something", "example.com").unwrap());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_new_unchecked_panic() {
+        Address::new_unchecked("somethingexample.com".to_owned());
     }
 }
