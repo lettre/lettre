@@ -78,7 +78,7 @@ impl Address {
     /// # Panics
     /// Will panic if @ is not present in the string
     pub fn new_unchecked(serialized: String) -> Self {
-        let at_start = serialized.chars().position(|c|c =='@').unwrap();
+        let at_start = serialized.chars().position(|c| c =='@').unwrap();
 
         Self {
             serialized,
