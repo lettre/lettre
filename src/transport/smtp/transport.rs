@@ -149,6 +149,11 @@ impl SmtpTransport {
     ///     Err(e) => panic!("Could not send email: {e:?}"),
     /// }
     /// ```
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+    )]
     pub fn from_url(connection_string: &str) -> Result<SmtpTransportBuilder, Error> {
         let connection_url = Url::parse(connection_string).map_err(error::connection)?;
 
@@ -164,7 +169,7 @@ impl SmtpTransport {
             }
             "smtp+tls" => {
                 builder = builder
-                    .port(connection_url.port().unwrap_or(SUBMISSION_PORT))
+                    .port(connection_url.port().unwrap_or(SUBMISSIONS_PORT))
                     .tls(Tls::Wrapper(TlsParameters::new(host.into())?))
             }
             "smtps" => {
