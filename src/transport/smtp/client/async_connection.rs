@@ -62,7 +62,27 @@ impl AsyncSmtpConnection {
 
     /// Connects to the configured server
     ///
+    /// If `tls_parameters` is `Some`, then the connection will use Implicit TLS (sometimes
+    /// referred to as `SMTPS`). See also [`AsyncSmtpConnection::starttls`].
+    ///
+    /// If `local_addres` is `Some`, then the address provided shall be used to bind the
+    /// connection to a specific local address using [`tokio1_crate::net::TcpSocket::bind`].
+    ///
     /// Sends EHLO and parses server information
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// let connection = AsyncSmtpConnection::connect_tokio1(
+    ///     ("example.com", 465),
+    ///     Some(Duration::from_secs(60)),
+    ///     &ClientId::default(),
+    ///     Some(TlsParameters::new("example.com")?),
+    ///     None,
+    /// )
+    /// .await
+    /// .unwrap()
+    /// ```
     #[cfg(feature = "tokio1")]
     pub async fn connect_tokio1<T: tokio1_crate::net::ToSocketAddrs>(
         server: T,
@@ -172,6 +192,12 @@ impl AsyncSmtpConnection {
         !self.is_encrypted() && self.server_info.supports_feature(Extension::StartTls)
     }
 
+    /// Upgrade the connection using `STARTTLS`.
+    ///
+    /// As described in [rfc3207]. Note that this mechanism has been deprecated in [rfc8314].
+    ///
+    /// [rfc3207]: https://www.rfc-editor.org/rfc/rfc3207
+    /// [rfc8314]: https://www.rfc-editor.org/rfc/rfc8314
     #[allow(unused_variables)]
     pub async fn starttls(
         &mut self,
