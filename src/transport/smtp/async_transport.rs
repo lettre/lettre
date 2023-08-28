@@ -158,15 +158,48 @@ where
     /// [`AsyncSmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> AsyncSmtpTransportBuilder {
-        let info = SmtpInfo {
-            server: server.into(),
-            ..Default::default()
-        };
-        AsyncSmtpTransportBuilder {
-            info,
-            #[cfg(feature = "pool")]
-            pool_config: PoolConfig::default(),
-        }
+        AsyncSmtpTransportBuilder::new(server)
+    }
+
+    /// Creates a `AsyncSmtpTransportBuilder` from a connection URL
+    ///
+    /// The protocol, credentials, host and port can be provided in a single URL.
+    /// Use the scheme `smtp` for an unencrypted relay, `smtps` for SMTP over TLS
+    /// and `smtp` with the query parameter tls=required or tls=opportunistic for STARTTLS
+    ///
+    /// ```rust,no_run
+    /// use lettre::{
+    ///     message::header::ContentType, transport::smtp::authentication::Credentials,
+    ///     AsyncSmtpTransport, Message, Transport,
+    /// };
+    ///
+    /// let email = Message::builder()
+    ///     .from("NoBody <nobody@domain.tld>".parse().unwrap())
+    ///     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
+    ///     .to("Hei <hei@domain.tld>".parse().unwrap())
+    ///     .subject("Happy new year")
+    ///     .header(ContentType::TEXT_PLAIN)
+    ///     .body(String::from("Be happy!"))
+    ///     .unwrap();
+    ///
+    /// // Open a remote connection to gmail
+    /// let mailer = AsyncSmtpTransport::from_url("smtps://username:password@smtp.example.com:465")
+    ///     .unwrap()
+    ///     .build();
+    ///
+    /// // Send the email
+    /// match mailer.send(&email).await {
+    ///     Ok(_) => println!("Email sent successfully!"),
+    ///     Err(e) => panic!("Could not send email: {e:?}"),
+    /// }
+    /// ```
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+    )]
+    pub fn from_url(connection_url: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
+        super::connection_url::from_connection_url(connection_url)
     }
 
     /// Tests the SMTP connection
@@ -219,6 +252,20 @@ pub struct AsyncSmtpTransportBuilder {
 
 /// Builder for the SMTP `AsyncSmtpTransport`
 impl AsyncSmtpTransportBuilder {
+    // Create new builder with default parameters
+    pub(crate) fn new<T: Into<String>>(server: T) -> Self {
+        let info = SmtpInfo {
+            server: server.into(),
+            ..Default::default()
+        };
+
+        AsyncSmtpTransportBuilder {
+            info,
+            #[cfg(feature = "pool")]
+            pool_config: PoolConfig::default(),
+        }
+    }
+
     /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> Self {
         self.info.hello_name = name;

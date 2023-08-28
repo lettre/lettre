@@ -2,15 +2,11 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use url::Url;
-
 #[cfg(feature = "pool")]
 use super::pool::sync_impl::Pool;
 #[cfg(feature = "pool")]
 use super::PoolConfig;
-use super::{
-    error, ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo, SMTP_PORT,
-};
+use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{address::Envelope, Transport};
@@ -106,29 +102,21 @@ impl SmtpTransport {
     /// [`SmtpTransport::starttls_relay`](#method.starttls_relay) instead,
     /// if possible.
     pub fn builder_dangerous<T: Into<String>>(server: T) -> SmtpTransportBuilder {
-        let new = SmtpInfo {
-            server: server.into(),
-            ..Default::default()
-        };
-
-        SmtpTransportBuilder {
-            info: new,
-            #[cfg(feature = "pool")]
-            pool_config: PoolConfig::default(),
-        }
+        SmtpTransportBuilder::new(server)
     }
 
     /// Creates a `SmtpTransportBuilder` from a connection URL
     ///
     /// The protocol, credentials, host and port can be provided in a single URL.
-    /// Use the scheme `smtp` for an unencrypted relay, `smtp+tls` for SMTP over TLS
-    /// and `smtps` for STARTTLS
+    /// Use the scheme `smtp` for an unencrypted relay, `smtps` for SMTP over TLS
+    /// and `smtp` with the query parameter tls=required or tls=opportunistic for STARTTLS
     ///
     /// ```rust,no_run
-    /// use lettre::message::header::ContentType;
-    /// use lettre::transport::smtp::authentication::Credentials;
-    /// use lettre::{Message, SmtpTransport, Transport};
-
+    /// use lettre::{
+    ///     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+    ///     SmtpTransport, Transport,
+    /// };
+    ///
     /// let email = Message::builder()
     ///     .from("NoBody <nobody@domain.tld>".parse().unwrap())
     ///     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
@@ -137,12 +125,12 @@ impl SmtpTransport {
     ///     .header(ContentType::TEXT_PLAIN)
     ///     .body(String::from("Be happy!"))
     ///     .unwrap();
-
-    /// // Open a remote connection to gmail
-    /// let mailer = SmtpTransport::from_url("smtp+tls://smtp_username:smtp_password@smtp.gmail.com:587")
+    ///
+    /// // Open a remote connection to example
+    /// let mailer = SmtpTransport::from_url("smtps://username:password@smtp.example.com:465")
     ///     .unwrap()
     ///     .build();
-
+    ///
     /// // Send the email
     /// match mailer.send(&email) {
     ///     Ok(_) => println!("Email sent successfully!"),
@@ -154,38 +142,8 @@ impl SmtpTransport {
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
     )]
-    pub fn from_url(connection_string: &str) -> Result<SmtpTransportBuilder, Error> {
-        let connection_url = Url::parse(connection_string).map_err(error::connection)?;
-
-        let host = connection_url
-            .host_str()
-            .ok_or_else(|| error::connection("unknown smtp host"))?;
-
-        let mut builder = Self::builder_dangerous(host);
-
-        match connection_url.scheme() {
-            "smtp" => {
-                builder = builder.port(connection_url.port().unwrap_or(SMTP_PORT));
-            }
-            "smtp+tls" => {
-                builder = builder
-                    .port(connection_url.port().unwrap_or(SUBMISSIONS_PORT))
-                    .tls(Tls::Wrapper(TlsParameters::new(host.into())?))
-            }
-            "smtps" => {
-                builder = builder
-                    .port(connection_url.port().unwrap_or(SUBMISSION_PORT))
-                    .tls(Tls::Required(TlsParameters::new(host.into())?))
-            }
-            scheme => return Err(error::connection(format!("unknown scheme '{scheme}'"))),
-        };
-
-        if let Some(password) = connection_url.password() {
-            let credentials = Credentials::new(connection_url.username().into(), password.into());
-            builder = builder.credentials(credentials);
-        }
-
-        Ok(builder)
+    pub fn from_url(connection_url: &str) -> Result<SmtpTransportBuilder, Error> {
+        super::connection_url::from_connection_url(connection_url)
     }
 
     /// Tests the SMTP connection
@@ -215,6 +173,20 @@ pub struct SmtpTransportBuilder {
 
 /// Builder for the SMTP `SmtpTransport`
 impl SmtpTransportBuilder {
+    // Create new builder with default parameters
+    pub(crate) fn new<T: Into<String>>(server: T) -> Self {
+        let new = SmtpInfo {
+            server: server.into(),
+            ..Default::default()
+        };
+
+        Self {
+            info: new,
+            #[cfg(feature = "pool")]
+            pool_config: PoolConfig::default(),
+        }
+    }
+
     /// Set the name used during EHLO
     pub fn hello_name(mut self, name: ClientId) -> Self {
         self.info.hello_name = name;
@@ -343,20 +315,6 @@ mod tests {
         assert_eq!(builder.info.server, "127.0.0.1");
 
         let builder =
-            SmtpTransport::from_url("smtp+tls://username:password@smtp.gmail.com:587").unwrap();
-
-        assert_eq!(builder.info.port, 587);
-        assert_eq!(
-            builder.info.credentials,
-            Some(Credentials::new(
-                "username".to_owned(),
-                "password".to_owned()
-            ))
-        );
-        assert!(matches!(builder.info.tls, Tls::Wrapper(_)));
-        assert_eq!(builder.info.server, "smtp.gmail.com");
-
-        let builder =
             SmtpTransport::from_url("smtps://username:password@smtp.example.com:465").unwrap();
 
         assert_eq!(builder.info.port, 465);
@@ -367,13 +325,35 @@ mod tests {
                 "password".to_owned()
             ))
         );
-        assert!(matches!(builder.info.tls, Tls::Required(_)));
+        assert!(matches!(builder.info.tls, Tls::Wrapper(_)));
         assert_eq!(builder.info.server, "smtp.example.com");
+
+        let builder =
+            SmtpTransport::from_url("smtp://username:password@smtp.example.com:587?tls=required")
+                .unwrap();
+
+        assert_eq!(builder.info.port, 587);
+        assert_eq!(
+            builder.info.credentials,
+            Some(Credentials::new(
+                "username".to_owned(),
+                "password".to_owned()
+            ))
+        );
+        assert!(matches!(builder.info.tls, Tls::Required(_)));
+
+        let builder = SmtpTransport::from_url(
+            "smtp://username:password@smtp.example.com:587?tls=opportunistic",
+        )
+        .unwrap();
+
+        assert_eq!(builder.info.port, 587);
+        assert!(matches!(builder.info.tls, Tls::Opportunistic(_)));
 
         let builder = SmtpTransport::from_url("smtps://smtp.example.com").unwrap();
 
+        assert_eq!(builder.info.port, 465);
         assert_eq!(builder.info.credentials, None);
-        assert!(matches!(builder.info.tls, Tls::Required(_)));
-        assert_eq!(builder.info.server, "smtp.example.com");
+        assert!(matches!(builder.info.tls, Tls::Wrapper(_)));
     }
 }
