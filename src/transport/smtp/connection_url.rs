@@ -1,13 +1,12 @@
 use url::Url;
 
+#[cfg(any(feature = "tokio1", feature = "async-std1"))]
+use super::AsyncSmtpTransportBuilder;
 use super::{
     authentication::Credentials,
     client::{Tls, TlsParameters},
-    error, Error, SmtpTransportBuilder, SMTP_PORT, SUBMISSIONS_PORT,
-    SUBMISSION_PORT,
+    error, Error, SmtpTransportBuilder, SMTP_PORT, SUBMISSIONS_PORT, SUBMISSION_PORT,
 };
-#[cfg(any(feature = "tokio1", feature = "async-std1"))]
-use super::AsyncSmtpTransportBuilder;
 
 pub(crate) trait TransportBuilder {
     fn new<T: Into<String>>(server: T) -> Self;
