@@ -154,7 +154,6 @@ mod async_transport;
 pub mod authentication;
 pub mod client;
 pub mod commands;
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 mod connection_url;
 mod error;
 pub mod extension;

@@ -164,8 +164,53 @@ where
     /// Creates a `AsyncSmtpTransportBuilder` from a connection URL
     ///
     /// The protocol, credentials, host and port can be provided in a single URL.
-    /// Use the scheme `smtp` for an unencrypted relay, `smtps` for SMTP over TLS
-    /// and `smtp` with the query parameter tls=required or tls=opportunistic for STARTTLS
+    /// Use the scheme `smtp` for an unencrypted relay (optionally in combination with the
+    /// `tls` parameter to allow/require STARTTLS) or `smtps` for SMTP over TLS.
+    /// The path section of the url can be used to set an alternative name for
+    /// the HELO / EHLO command.
+    /// For example `smtps://username:password@smtp.example.com/client.example.com:465`
+    /// will set the HELO / EHLO name `client.example.com`.
+    ///
+    /// <table>
+    ///   <thead>
+    ///     <tr>
+    ///       <th>scheme</th>
+    ///       <th>tls parameter</th>
+    ///       <th>example</th>
+    ///       <th>remarks</th>
+    ///     </tr>
+    ///   </thead>
+    ///   <tbody>
+    ///     <tr>
+    ///      <td>smtps</td>
+    ///      <td>-</td>
+    ///      <td>smtps://smtp.example.com</td>
+    ///      <td>SMTP over TLS, recommended method</td>
+    ///     </tr>
+    ///     <tr>
+    ///      <td>smtp</td>
+    ///      <td>required</td>
+    ///      <td>smtp://smtp.example.com?tls=required</td>
+    ///      <td>SMTP with STARTTLS required, when SMTP over TLS is not available</td>
+    ///     </tr>
+    ///     <tr>
+    ///      <td>smtp</td>
+    ///      <td>opportunistic</td>
+    ///      <td>smtp://smtp.example.com?tls=opportunistic</td>
+    ///      <td>
+    ///         SMTP with optionally STARTTLS when supported by the server.
+    ///         Caution: this method is vulnerable to a man-in-the-middle attack.
+    ///         Not recommended for production use.
+    ///       </td>
+    ///     </tr>
+    ///     <tr>
+    ///      <td>smtp</td>
+    ///      <td>-</td>
+    ///      <td>smtp://smtp.example.com</td>
+    ///      <td>Unencrypted SMTP, not recommended for production use.</td>
+    ///     </tr>
+    ///   </tbody>
+    /// </table>
     ///
     /// ```rust,no_run
     /// use lettre::{
