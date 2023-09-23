@@ -112,6 +112,12 @@ jobs:
       - name: Install dkimverify
         run: sudo apt -y install python3-dkim
 
+      - name: Work around early dependencies MSRV bump
+        run: |
+          cargo update -p anstyle --precise 1.0.2
+          cargo update -p clap --precise 4.3.24
+          cargo update -p clap_lex --precise 0.5.0
+
       - name: Test with no default features
         run: cargo test --no-default-features
 
