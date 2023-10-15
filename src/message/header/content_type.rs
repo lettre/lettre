@@ -11,12 +11,12 @@ use crate::BoxError;
 
 /// `Content-Type` of the body
 ///
-/// This struct can represent any valid [mime type], which can be parsed via
+/// This struct can represent any valid [MIME type], which can be parsed via
 /// [`ContentType::parse`]. Constants are provided for the most-used mime-types.
 ///
 /// Defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-5)
 ///
-/// [mime type]: https://www.iana.org/assignments/media-types/media-types.xhtml
+/// [MIME type]: https://www.iana.org/assignments/media-types/media-types.xhtml
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContentType(Mime);
 

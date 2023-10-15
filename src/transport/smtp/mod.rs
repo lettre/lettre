@@ -154,6 +154,7 @@ mod async_transport;
 pub mod authentication;
 pub mod client;
 pub mod commands;
+mod connection_url;
 mod error;
 pub mod extension;
 #[cfg(feature = "pool")]

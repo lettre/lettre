@@ -354,7 +354,7 @@ impl Write for NetworkStream {
 }
 
 /// If the local address is set, binds the socket to this address.
-/// If local address is not set, then destination address is required to determine to the default
+/// If local address is not set, then destination address is required to determine the default
 /// local address on some platforms.
 /// See: https://github.com/hyperium/hyper/blob/faf24c6ad8eee1c3d5ccc9a4d4835717b8e2903f/src/client/connect/http.rs#L560
 fn bind_local_address(

@@ -208,9 +208,9 @@ impl AsyncNetworkStream {
         timeout: Option<Duration>,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncNetworkStream, Error> {
-        // Unfortunately there doesn't currently seem to be a way to set the local address
+        // Unfortunately, there doesn't currently seem to be a way to set the local address.
         // Whilst we can create a AsyncStd1TcpStream from an existing socket, it needs to first have
-        // connected which is a blocking operation.
+        // been connected, which is a blocking operation.
         async fn try_connect_timeout<T: AsyncStd1ToSocketAddrs>(
             server: T,
             timeout: Duration,

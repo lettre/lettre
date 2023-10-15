@@ -62,7 +62,35 @@ impl AsyncSmtpConnection {
 
     /// Connects to the configured server
     ///
+    /// If `tls_parameters` is `Some`, then the connection will use Implicit TLS (sometimes
+    /// referred to as `SMTPS`). See also [`AsyncSmtpConnection::starttls`].
+    ///
+    /// If `local_addres` is `Some`, then the address provided shall be used to bind the
+    /// connection to a specific local address using [`tokio1_crate::net::TcpSocket::bind`].
+    ///
     /// Sends EHLO and parses server information
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use std::time::Duration;
+    /// # use lettre::transport::smtp::{client::{AsyncSmtpConnection, TlsParameters}, extension::ClientId};
+    /// # use tokio1_crate::{self as tokio, net::ToSocketAddrs as _};
+    /// #
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let connection = AsyncSmtpConnection::connect_tokio1(
+    ///     ("example.com", 465),
+    ///     Some(Duration::from_secs(60)),
+    ///     &ClientId::default(),
+    ///     Some(TlsParameters::new("example.com".to_owned())?),
+    ///     None,
+    /// )
+    /// .await
+    /// .unwrap();
+    /// # Ok(())
+    /// # }
+    /// ```
     #[cfg(feature = "tokio1")]
     pub async fn connect_tokio1<T: tokio1_crate::net::ToSocketAddrs>(
         server: T,
@@ -132,7 +160,7 @@ impl AsyncSmtpConnection {
             mail_options.push(MailParameter::SmtpUtfEight);
         }
 
-        // Check for non-ascii content in message
+        // Check for non-ascii content in the message
         if !email.is_ascii() {
             if !self.server_info().supports_feature(Extension::EightBitMime) {
                 return Err(error::client(
@@ -172,6 +200,12 @@ impl AsyncSmtpConnection {
         !self.is_encrypted() && self.server_info.supports_feature(Extension::StartTls)
     }
 
+    /// Upgrade the connection using `STARTTLS`.
+    ///
+    /// As described in [rfc3207]. Note that this mechanism has been deprecated in [rfc8314].
+    ///
+    /// [rfc3207]: https://www.rfc-editor.org/rfc/rfc3207
+    /// [rfc8314]: https://www.rfc-editor.org/rfc/rfc8314
     #[allow(unused_variables)]
     pub async fn starttls(
         &mut self,
@@ -226,7 +260,7 @@ impl AsyncSmtpConnection {
         self.command(Noop).await.is_ok()
     }
 
-    /// Sends an AUTH command with the given mechanism, and handles challenge if needed
+    /// Sends an AUTH command with the given mechanism, and handles the challenge if needed
     pub async fn auth(
         &mut self,
         mechanisms: &[Mechanism],
