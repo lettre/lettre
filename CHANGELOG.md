@@ -12,6 +12,7 @@ to be able to upgrade by only bumping the version in `Cargo.toml`.
 #### Features
 
 * Improve mailbox parsing ([#839])
+* Add construction of SMTP transport from URL ([#901])
 * Add `From<Address>` implementation for `Mailbox` ([#879])
 
 #### Misc
@@ -32,6 +33,7 @@ to be able to upgrade by only bumping the version in `Cargo.toml`.
 [#890]: https://github.com/lettre/lettre/pull/890
 [#896]: https://github.com/lettre/lettre/pull/896
 [#897]: https://github.com/lettre/lettre/pull/897
+[#901]: https://github.com/lettre/lettre/pull/901
 
 <a name="v0.10.4"></a>
 ### v0.10.4 (2023-04-02)
