@@ -1,5 +1,5 @@
 <a name="v0.11.0"></a>
-### v0.11.0 (2023-08-15)
+### v0.11.0 (2023-10-15)
 
 While this release technically contains breaking changes, we expect most projects
 to be able to upgrade by only bumping the version in `Cargo.toml`.
