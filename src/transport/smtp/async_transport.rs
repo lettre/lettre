@@ -215,9 +215,12 @@ where
     /// ```rust,no_run
     /// use lettre::{
     ///     message::header::ContentType, transport::smtp::authentication::Credentials,
-    ///     AsyncSmtpTransport, Message, Transport,
+    ///     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
     /// };
+    /// # use tokio1_crate as tokio;
     ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let email = Message::builder()
     ///     .from("NoBody <nobody@domain.tld>".parse().unwrap())
     ///     .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
@@ -228,15 +231,20 @@ where
     ///     .unwrap();
     ///
     /// // Open a remote connection to gmail
-    /// let mailer = AsyncSmtpTransport::from_url("smtps://username:password@smtp.example.com:465")
+    /// let mailer: AsyncSmtpTransport<Tokio1Executor> =
+    ///     AsyncSmtpTransport::<Tokio1Executor>::from_url(
+    ///         "smtps://username:password@smtp.example.com:465",
+    ///     )
     ///     .unwrap()
     ///     .build();
     ///
     /// // Send the email
-    /// match mailer.send(&email).await {
+    /// match mailer.send(email).await {
     ///     Ok(_) => println!("Email sent successfully!"),
     ///     Err(e) => panic!("Could not send email: {e:?}"),
     /// }
+    /// # Ok(())
+    /// # }
     /// ```
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
