@@ -1,3 +1,40 @@
+<a name="v0.11.0"></a>
+### v0.11.0 (2023-08-15)
+
+While this release technically contains breaking changes, we expect most projects
+to be able to upgrade by only bumping the version in `Cargo.toml`.
+
+#### Upgrade notes
+
+* MSRV is now 1.65 ([#869] and [#881])
+* `AddressError` is now marked as `#[non_exhaustive]` ([#839])
+
+#### Features
+
+* Improve mailbox parsing ([#839])
+* Add construction of SMTP transport from URL ([#901])
+* Add `From<Address>` implementation for `Mailbox` ([#879])
+
+#### Misc
+
+* Bump `socket2` to v0.5 ([#868])
+* Bump `idna` to v0.4, `fastrand` to v2, `quoted_printable` to v0.5, `rsa` to v0.9 ([#882])
+* Bump `webpki-roots` to v0.25 ([#884] and [#890])
+* Bump `ed25519-dalek` to v2 fixing RUSTSEC-2022-0093 ([#896])
+* Bump `boring`ssl crates to v3 ([#897])
+
+[#839]: https://github.com/lettre/lettre/pull/839
+[#868]: https://github.com/lettre/lettre/pull/868
+[#869]: https://github.com/lettre/lettre/pull/869
+[#879]: https://github.com/lettre/lettre/pull/879
+[#881]: https://github.com/lettre/lettre/pull/881
+[#882]: https://github.com/lettre/lettre/pull/882
+[#884]: https://github.com/lettre/lettre/pull/884
+[#890]: https://github.com/lettre/lettre/pull/890
+[#896]: https://github.com/lettre/lettre/pull/896
+[#897]: https://github.com/lettre/lettre/pull/897
+[#901]: https://github.com/lettre/lettre/pull/901
+
 <a name="v0.10.4"></a>
 ### v0.10.4 (2023-04-02)
 
