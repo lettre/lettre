@@ -75,9 +75,9 @@ impl AsyncSmtpConnection {
     /// ```no_run
     /// # use std::time::Duration;
     /// # use lettre::transport::smtp::{client::{AsyncSmtpConnection, TlsParameters}, extension::ClientId};
-    /// # use tokio1_crate::net::ToSocketAddrs as _;
+    /// # use tokio1_crate::{self as tokio, net::ToSocketAddrs as _};
     /// #
-    /// # #[tokio1_crate::main]
+    /// # #[tokio::main]
     /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let connection = AsyncSmtpConnection::connect_tokio1(
     ///     ("example.com", 465),
