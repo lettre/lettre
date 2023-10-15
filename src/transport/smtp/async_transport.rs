@@ -215,7 +215,7 @@ where
     /// ```rust,no_run
     /// use lettre::{
     ///     message::header::ContentType, transport::smtp::authentication::Credentials,
-    ///     AsyncSmtpTransport, Message, AsyncTransport, Tokio1Executor,
+    ///     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
     /// };
     ///
     /// # #[tokio1_crate::main]
@@ -230,9 +230,11 @@ where
     ///     .unwrap();
     ///
     /// // Open a remote connection to gmail
-    /// let mailer = AsyncSmtpTransport::<Tokio1Executor>::from_url("smtps://username:password@smtp.example.com:465")
-    ///     .unwrap()
-    ///     .build();
+    /// let mailer = AsyncSmtpTransport::<Tokio1Executor>::from_url(
+    ///     "smtps://username:password@smtp.example.com:465",
+    /// )
+    /// .unwrap()
+    /// .build();
     ///
     /// // Send the email
     /// match mailer.send(email).await {
