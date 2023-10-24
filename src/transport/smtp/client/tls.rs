@@ -115,7 +115,7 @@ pub enum CertificateStore {
     /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
     ///
     /// This option is only available in the rustls backend.
-    #[cfg(feature = "webpki-roots")]
+    #[cfg(feature = "rustls-tls")]
     WebpkiRoots,
     /// Don't use any system certificates.
     None,
@@ -384,9 +384,9 @@ impl TlsParametersBuilder {
                 Ok(())
             }
 
-            #[cfg(feature = "webpki-roots")]
+            #[cfg(feature = "rustls-tls")]
             fn load_webpki_roots(store: &mut RootCertStore) {
-                store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|ta| {
+                store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
                     rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
                         ta.subject,
                         ta.spki,
@@ -399,10 +399,10 @@ impl TlsParametersBuilder {
                 CertificateStore::Default => {
                     #[cfg(feature = "rustls-native-certs")]
                     load_native_roots(&mut root_cert_store)?;
-                    #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
+                    #[cfg(not(feature = "rustls-native-certs"))]
                     load_webpki_roots(&mut root_cert_store);
                 }
-                #[cfg(feature = "webpki-roots")]
+                #[cfg(feature = "rustls-tls")]
                 CertificateStore::WebpkiRoots => {
                     load_webpki_roots(&mut root_cert_store);
                 }
