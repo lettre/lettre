@@ -1,3 +1,12 @@
+<a name="v0.11.1"></a>
+### v0.11.1 (2023-10-24)
+
+#### Bug fixes
+
+* Fix `webpki-roots` certificate store setup ([#909])
+
+[#909]: https://github.com/lettre/lettre/pull/909
+
 <a name="v0.11.0"></a>
 ### v0.11.0 (2023-10-15)
 
