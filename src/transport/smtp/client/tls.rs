@@ -386,6 +386,8 @@ impl TlsParametersBuilder {
 
             #[cfg(feature = "rustls-tls")]
             fn load_webpki_roots(store: &mut RootCertStore) {
+                // TODO: handle this in the rustls 0.22 upgrade
+                #[allow(deprecated)]
                 store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
                     rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
                         ta.subject,
