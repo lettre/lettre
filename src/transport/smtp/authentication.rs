@@ -100,8 +100,8 @@ impl Mechanism {
 
                 let decode = |data: &str| -> Result<String, Error> {
                     crate::base64::decode(data)
-                        .map_err(error::response)
-                        .and_then(|bytes| String::from_utf8(bytes).map_err(error::response))
+                        .map_err(error::client)
+                        .and_then(|bytes| String::from_utf8(bytes).map_err(error::client))
                 };
 
                 let user_name_text = decode("VXNlciBOYW1lAA==")?;
