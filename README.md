@@ -53,12 +53,12 @@ Lettre does not provide (for now):
 ## Supported Rust Versions
 
 Lettre supports all Rust versions released in the last 6 months. At the time of writing
-the minimum supported Rust version is 1.65, but this could change at any time either from
+the minimum supported Rust version is 1.70, but this could change at any time either from
 one of our dependencies bumping their MSRV or by a new patch release of lettre.
 
 ## Example
 
-This library requires Rust 1.65 or newer.
+This library requires Rust 1.70 or newer.
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
