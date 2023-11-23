@@ -1,3 +1,19 @@
+<a name="v0.11.2"></a>
+### v0.11.2 (2023-11-23)
+
+#### Upgrade notes
+
+* MSRV is now 1.70 ([#916])
+
+#### Misc
+
+* Bump `idna` to v0.5 ([#918])
+* Bump `boring` and `tokio-boring` to v4 ([#915])
+
+[#915]: https://github.com/lettre/lettre/pull/915
+[#916]: https://github.com/lettre/lettre/pull/916
+[#918]: https://github.com/lettre/lettre/pull/918
+
 <a name="v0.11.1"></a>
 ### v0.11.1 (2023-10-24)
 
