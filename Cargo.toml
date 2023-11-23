@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 chumsky = "0.9"
-idna = "0.4"
+idna = "0.5"
 once_cell = { version = "1", optional = true }
 tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
 
