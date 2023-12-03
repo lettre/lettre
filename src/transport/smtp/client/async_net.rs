@@ -29,6 +29,8 @@ use tokio1_crate::net::{
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
 use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
+#[cfg(any(feature = "tokio1-rustls-tls", feature = "async-std1-rustls-tls"))]
+use webpki::types::ServerName;
 
 #[cfg(any(
     feature = "tokio1-native-tls",
@@ -350,7 +352,6 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "tokio1-rustls-tls")]
                 return {
-                    use rustls::ServerName;
                     use tokio1_rustls::TlsConnector;
 
                     let domain = ServerName::try_from(domain.as_str())
@@ -358,7 +359,7 @@ impl AsyncNetworkStream {
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
-                        .connect(domain, tcp_stream)
+                        .connect(domain.to_owned(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1RustlsTls(stream))
@@ -424,7 +425,6 @@ impl AsyncNetworkStream {
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
                     use futures_rustls::TlsConnector;
-                    use rustls::ServerName;
 
                     let domain = ServerName::try_from(domain.as_str())
                         .map_err(|_| error::connection("domain isn't a valid DNS name"))?;

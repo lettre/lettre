@@ -12,8 +12,10 @@ use boring::ssl::SslStream;
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
 #[cfg(feature = "rustls-tls")]
-use rustls::{ClientConnection, ServerName, StreamOwned};
+use rustls::{ClientConnection, StreamOwned};
 use socket2::{Domain, Protocol, Type};
+#[cfg(feature = "rustls-tls")]
+use webpki::types::ServerName;
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use super::InnerTlsParameters;
@@ -189,7 +191,7 @@ impl NetworkStream {
             InnerTlsParameters::RustlsTls(connector) => {
                 let domain = ServerName::try_from(tls_parameters.domain())
                     .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-                let connection = ClientConnection::new(Arc::clone(connector), domain)
+                let connection = ClientConnection::new(Arc::clone(connector), domain.to_owned())
                     .map_err(error::connection)?;
                 let stream = StreamOwned::new(connection, tcp_stream);
                 InnerNetworkStream::RustlsTls(stream)
