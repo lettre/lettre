@@ -17,6 +17,15 @@ pub(super) enum Part {
     Multi(MultiPart),
 }
 
+impl Part {
+    pub(super) fn body_raw(&self) -> Vec<u8> {
+        match self {
+            Part::Single(part) => part.body_raw(),
+            Part::Multi(part) => part.body_raw(),
+        }
+    }
+}
+
 impl EmailFormat for Part {
     fn format(&self, out: &mut Vec<u8>) {
         match self {
@@ -130,6 +139,13 @@ impl SinglePart {
     pub fn formatted(&self) -> Vec<u8> {
         let mut out = Vec::new();
         self.format(&mut out);
+        out
+    }
+
+    pub(super) fn body_raw(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&self.body);
+        out.extend_from_slice(b"\r\n");
         out
     }
 }
@@ -371,6 +387,24 @@ impl MultiPart {
     pub fn formatted(&self) -> Vec<u8> {
         let mut out = Vec::new();
         self.format(&mut out);
+        out
+    }
+
+    pub(super) fn body_raw(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+
+        let boundary = self.boundary();
+
+        for part in &self.parts {
+            out.extend_from_slice(b"--");
+            out.extend_from_slice(boundary.as_bytes());
+            out.extend_from_slice(b"\r\n");
+            part.format(&mut out);
+        }
+
+        out.extend_from_slice(b"--");
+        out.extend_from_slice(boundary.as_bytes());
+        out.extend_from_slice(b"--\r\n");
         out
     }
 }

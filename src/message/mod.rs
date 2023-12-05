@@ -525,7 +525,7 @@ impl Message {
     pub(crate) fn body_raw(&self) -> Vec<u8> {
         let mut out = Vec::new();
         match &self.body {
-            MessageBody::Mime(p) => p.format(&mut out),
+            MessageBody::Mime(p) => out = p.body_raw(),
             MessageBody::Raw(r) => out.extend_from_slice(r),
         };
         out.extend_from_slice(b"\r\n");
