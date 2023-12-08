@@ -11,10 +11,7 @@ use boring::{
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
-    client::{
-        danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-        WebPkiServerVerifier,
-    },
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
 #[cfg(feature = "rustls-tls")]
@@ -342,8 +339,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "rustls-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
-        let tls = ClientConfig::builder();
-
         let just_version3 = &[&rustls::version::TLS13];
         let supported_versions = match self.min_tls_version {
             TlsVersion::Tlsv10 => {
@@ -356,11 +351,7 @@ impl TlsParametersBuilder {
             TlsVersion::Tlsv13 => just_version3,
         };
 
-        let tls = tls
-            .with_safe_default_cipher_suites()
-            .with_safe_default_kx_groups()
-            .with_protocol_versions(supported_versions)
-            .map_err(error::tls)?;
+        let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
 
         let tls = if self.accept_invalid_certs {
             tls.dangerous()
@@ -371,28 +362,17 @@ impl TlsParametersBuilder {
             #[cfg(feature = "rustls-native-certs")]
             fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
                 let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
-                let mut valid_count = 0;
-                let mut invalid_count = 0;
-                for cert in native_certs {
-                    match store.add(&rustls::Certificate(cert.0)) {
-                        Ok(_) => valid_count += 1,
-                        Err(err) => {
-                            #[cfg(feature = "tracing")]
-                            tracing::debug!("certificate parsing failed: {:?}", err);
-                            invalid_count += 1;
-                        }
-                    }
-                }
+                let (added, ignored) = store.add_parsable_certificates(native_certs);
                 #[cfg(feature = "tracing")]
                 tracing::debug!(
-                    "loaded platform certs with {valid_count} valid and {invalid_count} invalid certs"
+                    "loaded platform certs with {added} valid and {ignored} ignored (invalid) certs"
                 );
                 Ok(())
             }
 
             #[cfg(feature = "rustls-tls")]
             fn load_webpki_roots(store: &mut RootCertStore) {
-                store.extend(webpki_roots::TLS_SERVER_ROOTS.iter());
+                store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
             }
 
             match self.cert_store {
@@ -507,7 +487,7 @@ impl Certificate {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
             #[cfg(feature = "rustls-tls")]
-            rustls: vec![rustls::Certificate(der)],
+            rustls: todo!(),
             #[cfg(feature = "boring-tls")]
             boring_tls: boring_tls_cert,
         })
@@ -556,29 +536,29 @@ struct InvalidCertsVerifier;
 impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
-        end_entity: &CertificateDer<'_>,
-        intermediates: &[CertificateDer<'_>],
-        server_name: &ServerName<'_>,
-        ocsp_response: &[u8],
-        now: UnixTime,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
+        _ocsp_response: &[u8],
+        _now: UnixTime,
     ) -> Result<ServerCertVerified, TlsError> {
         Ok(ServerCertVerified::assertion())
     }
 
     fn verify_tls12_signature(
         &self,
-        message: &[u8],
-        cert: &CertificateDer<'_>,
-        dss: &DigitallySignedStruct,
+        _message: &[u8],
+        _cert: &CertificateDer<'_>,
+        _dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, TlsError> {
         Ok(HandshakeSignatureValid::assertion())
     }
 
     fn verify_tls13_signature(
         &self,
-        message: &[u8],
-        cert: &CertificateDer<'_>,
-        dss: &DigitallySignedStruct,
+        _message: &[u8],
+        _cert: &CertificateDer<'_>,
+        _dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, TlsError> {
         Ok(HandshakeSignatureValid::assertion())
     }

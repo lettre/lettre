@@ -243,8 +243,7 @@ impl NetworkStream {
                 .unwrap()
                 .first()
                 .unwrap()
-                .clone()
-                .0),
+                .to_vec()),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => Ok(stream
                 .ssl()

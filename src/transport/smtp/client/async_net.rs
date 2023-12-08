@@ -475,9 +475,7 @@ impl AsyncNetworkStream {
                 .get_ref()
                 .peer_certificate()
                 .map_err(error::tls)?
-                .unwrap()
-                .to_der()
-                .map_err(error::tls)?),
+                .as_deref()),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(stream) => Ok(stream
                 .get_ref()
@@ -486,8 +484,7 @@ impl AsyncNetworkStream {
                 .unwrap()
                 .first()
                 .unwrap()
-                .clone()
-                .0),
+                .to_vec()),
             #[cfg(feature = "tokio1-boring-tls")]
             InnerAsyncNetworkStream::Tokio1BoringTls(stream) => Ok(stream
                 .ssl()
@@ -509,8 +506,7 @@ impl AsyncNetworkStream {
                 .unwrap()
                 .first()
                 .unwrap()
-                .clone()
-                .0),
+                .to_vec()),
             InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
         }
     }
