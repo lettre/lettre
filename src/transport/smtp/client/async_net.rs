@@ -16,6 +16,8 @@ use futures_io::{
 };
 #[cfg(feature = "async-std1-rustls-tls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+#[cfg(any(feature = "tokio1-rustls-tls", feature = "async-std1-rustls-tls"))]
+use rustls::pki_types::ServerName;
 #[cfg(feature = "tokio1-boring-tls")]
 use tokio1_boring::SslStream as Tokio1SslStream;
 #[cfg(feature = "tokio1")]
@@ -29,8 +31,6 @@ use tokio1_crate::net::{
 use tokio1_native_tls_crate::TlsStream as Tokio1TlsStream;
 #[cfg(feature = "tokio1-rustls-tls")]
 use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
-#[cfg(any(feature = "tokio1-rustls-tls", feature = "async-std1-rustls-tls"))]
-use webpki::types::ServerName;
 
 #[cfg(any(
     feature = "tokio1-native-tls",

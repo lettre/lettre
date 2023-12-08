@@ -12,11 +12,10 @@ use boring::ssl::SslStream;
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
 #[cfg(feature = "rustls-tls")]
-use rustls::{ClientConnection, StreamOwned};
+use rustls::{pki_types::ServerName, ClientConnection, StreamOwned};
 use socket2::{Domain, Protocol, Type};
-#[cfg(feature = "rustls-tls")]
-use webpki::types::ServerName;
 
+#[cfg(feature = "rustls-tls")]
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use super::InnerTlsParameters;
 use super::TlsParameters;

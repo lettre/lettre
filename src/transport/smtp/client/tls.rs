@@ -12,10 +12,9 @@ use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    pki_types::{CertificateDer, ServerName, UnixTime},
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
-#[cfg(feature = "rustls-tls")]
-use webpki::types::{CertificateDer, ServerName, UnixTime};
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use crate::transport::smtp::{error, Error};

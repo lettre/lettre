@@ -45,10 +45,9 @@ url = { version = "2.4", optional = true }
 
 ## tls
 native-tls = { version = "0.2.5", optional = true } # feature
-rustls = { version = "0.22", optional = true }
+rustls = { version = "0.22.1", optional = true }
 rustls-pemfile = { version = "2", optional = true }
 rustls-native-certs = { version = "0.7", optional = true }
-webpki = { package = "rustls-webpki", version = "0.102", optional = true }
 webpki-roots = { version = "0.26", optional = true }
 boring = { version = "4", optional = true }
 
@@ -109,7 +108,7 @@ smtp-transport = ["dep:base64", "dep:nom", "dep:socket2", "dep:once_cell", "dep:
 
 pool = ["dep:futures-util"]
 
-rustls-tls = ["dep:webpki", "dep:webpki-roots", "dep:rustls", "dep:rustls-pemfile"]
+rustls-tls = ["dep:webpki-roots", "dep:rustls", "dep:rustls-pemfile"]
 
 boring-tls = ["dep:boring"]
 
