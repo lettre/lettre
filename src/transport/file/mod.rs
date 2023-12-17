@@ -157,7 +157,7 @@ mod error;
 type Id = String;
 
 /// Writes the content and the envelope information to a file
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(docsrs, doc(cfg(feature = "file-transport")))]
 pub struct FileTransport {
@@ -167,7 +167,7 @@ pub struct FileTransport {
 }
 
 /// Asynchronously writes the content and the envelope information to a file
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]

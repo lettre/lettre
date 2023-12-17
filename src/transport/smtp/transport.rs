@@ -1,6 +1,6 @@
 #[cfg(feature = "pool")]
 use std::sync::Arc;
-use std::time::Duration;
+use std::{fmt::Debug, time::Duration};
 
 #[cfg(feature = "pool")]
 use super::pool::sync_impl::Pool;
@@ -35,6 +35,14 @@ impl Transport for SmtpTransport {
         conn.quit()?;
 
         Ok(result)
+    }
+}
+
+impl Debug for SmtpTransport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut builder = f.debug_struct("SmtpTransport");
+        builder.field("inner", &self.inner);
+        builder.finish()
     }
 }
 
