@@ -431,7 +431,7 @@ impl AsyncNetworkStream {
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
-                        .connect(domain, tcp_stream)
+                        .connect(domain.to_owned(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream))
@@ -475,7 +475,9 @@ impl AsyncNetworkStream {
                 .get_ref()
                 .peer_certificate()
                 .map_err(error::tls)?
-                .as_deref()),
+                .unwrap()
+                .to_der()
+                .map_err(error::tls)?),
             #[cfg(feature = "tokio1-rustls-tls")]
             InnerAsyncNetworkStream::Tokio1RustlsTls(stream) => Ok(stream
                 .get_ref()
