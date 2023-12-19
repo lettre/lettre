@@ -486,7 +486,7 @@ impl Certificate {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
             #[cfg(feature = "rustls-tls")]
-            rustls: todo!(),
+            rustls: vec![der.into()],
             #[cfg(feature = "boring-tls")]
             boring_tls: boring_tls_cert,
         })
