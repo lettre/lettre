@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 #[cfg(feature = "rustls-tls")]
-use std::{sync::Arc, time::SystemTime};
+use std::{io, sync::Arc};
 
 #[cfg(feature = "boring-tls")]
 use boring::{
@@ -11,8 +11,10 @@ use boring::{
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
-    client::{ServerCertVerified, ServerCertVerifier, WebPkiVerifier},
-    ClientConfig, Error as TlsError, RootCertStore, ServerName,
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    crypto::{verify_tls12_signature, verify_tls13_signature},
+    pki_types::{CertificateDer, ServerName, UnixTime},
+    ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
@@ -337,8 +339,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "rustls-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
-        let tls = ClientConfig::builder();
-
         let just_version3 = &[&rustls::version::TLS13];
         let supported_versions = match self.min_tls_version {
             TlsVersion::Tlsv10 => {
@@ -351,50 +351,28 @@ impl TlsParametersBuilder {
             TlsVersion::Tlsv13 => just_version3,
         };
 
-        let tls = tls
-            .with_safe_default_cipher_suites()
-            .with_safe_default_kx_groups()
-            .with_protocol_versions(supported_versions)
-            .map_err(error::tls)?;
+        let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
 
         let tls = if self.accept_invalid_certs {
-            tls.with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
+            tls.dangerous()
+                .with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
         } else {
             let mut root_cert_store = RootCertStore::empty();
 
             #[cfg(feature = "rustls-native-certs")]
             fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
                 let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
-                let mut valid_count = 0;
-                let mut invalid_count = 0;
-                for cert in native_certs {
-                    match store.add(&rustls::Certificate(cert.0)) {
-                        Ok(_) => valid_count += 1,
-                        Err(err) => {
-                            #[cfg(feature = "tracing")]
-                            tracing::debug!("certificate parsing failed: {:?}", err);
-                            invalid_count += 1;
-                        }
-                    }
-                }
+                let (added, ignored) = store.add_parsable_certificates(native_certs);
                 #[cfg(feature = "tracing")]
                 tracing::debug!(
-                    "loaded platform certs with {valid_count} valid and {invalid_count} invalid certs"
+                    "loaded platform certs with {added} valid and {ignored} ignored (invalid) certs"
                 );
                 Ok(())
             }
 
             #[cfg(feature = "rustls-tls")]
             fn load_webpki_roots(store: &mut RootCertStore) {
-                // TODO: handle this in the rustls 0.22 upgrade
-                #[allow(deprecated)]
-                store.add_server_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.iter().map(|ta| {
-                    rustls::OwnedTrustAnchor::from_subject_spki_name_constraints(
-                        ta.subject,
-                        ta.spki,
-                        ta.name_constraints,
-                    )
-                }));
+                store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
             }
 
             match self.cert_store {
@@ -412,14 +390,11 @@ impl TlsParametersBuilder {
             }
             for cert in self.root_certs {
                 for rustls_cert in cert.rustls {
-                    root_cert_store.add(&rustls_cert).map_err(error::tls)?;
+                    root_cert_store.add(rustls_cert).map_err(error::tls)?;
                 }
             }
 
-            tls.with_custom_certificate_verifier(Arc::new(WebPkiVerifier::new(
-                root_cert_store,
-                None,
-            )))
+            tls.with_root_certificates(root_cert_store)
         };
         let tls = tls.with_no_client_auth();
 
@@ -493,7 +468,7 @@ pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Certificate,
     #[cfg(feature = "rustls-tls")]
-    rustls: Vec<rustls::Certificate>,
+    rustls: Vec<CertificateDer<'static>>,
     #[cfg(feature = "boring-tls")]
     boring_tls: boring::x509::X509,
 }
@@ -512,7 +487,7 @@ impl Certificate {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
             #[cfg(feature = "rustls-tls")]
-            rustls: vec![rustls::Certificate(der)],
+            rustls: vec![der.into()],
             #[cfg(feature = "boring-tls")]
             boring_tls: boring_tls_cert,
         })
@@ -532,10 +507,8 @@ impl Certificate {
 
             let mut pem = Cursor::new(pem);
             rustls_pemfile::certs(&mut pem)
+                .collect::<io::Result<Vec<_>>>()
                 .map_err(|_| error::tls("invalid certificates"))?
-                .into_iter()
-                .map(rustls::Certificate)
-                .collect::<Vec<_>>()
         };
 
         Ok(Self {
@@ -556,19 +529,53 @@ impl Debug for Certificate {
 }
 
 #[cfg(feature = "rustls-tls")]
+#[derive(Debug)]
 struct InvalidCertsVerifier;
 
 #[cfg(feature = "rustls-tls")]
 impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
-        _end_entity: &rustls::Certificate,
-        _intermediates: &[rustls::Certificate],
-        _server_name: &ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &ServerName<'_>,
         _ocsp_response: &[u8],
-        _now: SystemTime,
+        _now: UnixTime,
     ) -> Result<ServerCertVerified, TlsError> {
         Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, TlsError> {
+        verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+        )
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, TlsError> {
+        verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+        )
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        rustls::crypto::ring::default_provider()
+            .signature_verification_algorithms
+            .supported_schemes()
     }
 }

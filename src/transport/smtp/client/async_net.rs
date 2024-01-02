@@ -16,6 +16,8 @@ use futures_io::{
 };
 #[cfg(feature = "async-std1-rustls-tls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
+#[cfg(any(feature = "tokio1-rustls-tls", feature = "async-std1-rustls-tls"))]
+use rustls::pki_types::ServerName;
 #[cfg(feature = "tokio1-boring-tls")]
 use tokio1_boring::SslStream as Tokio1SslStream;
 #[cfg(feature = "tokio1")]
@@ -350,7 +352,6 @@ impl AsyncNetworkStream {
 
                 #[cfg(feature = "tokio1-rustls-tls")]
                 return {
-                    use rustls::ServerName;
                     use tokio1_rustls::TlsConnector;
 
                     let domain = ServerName::try_from(domain.as_str())
@@ -358,7 +359,7 @@ impl AsyncNetworkStream {
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
-                        .connect(domain, tcp_stream)
+                        .connect(domain.to_owned(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1RustlsTls(stream))
@@ -424,14 +425,13 @@ impl AsyncNetworkStream {
                 #[cfg(feature = "async-std1-rustls-tls")]
                 return {
                     use futures_rustls::TlsConnector;
-                    use rustls::ServerName;
 
                     let domain = ServerName::try_from(domain.as_str())
                         .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
 
                     let connector = TlsConnector::from(config);
                     let stream = connector
-                        .connect(domain, tcp_stream)
+                        .connect(domain.to_owned(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream))
@@ -486,8 +486,7 @@ impl AsyncNetworkStream {
                 .unwrap()
                 .first()
                 .unwrap()
-                .clone()
-                .0),
+                .to_vec()),
             #[cfg(feature = "tokio1-boring-tls")]
             InnerAsyncNetworkStream::Tokio1BoringTls(stream) => Ok(stream
                 .ssl()
@@ -509,8 +508,7 @@ impl AsyncNetworkStream {
                 .unwrap()
                 .first()
                 .unwrap()
-                .clone()
-                .0),
+                .to_vec()),
             InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
         }
     }

@@ -45,10 +45,10 @@ url = { version = "2.4", optional = true }
 
 ## tls
 native-tls = { version = "0.2.5", optional = true } # feature
-rustls = { version = "0.21", features = ["dangerous_configuration"], optional = true }
-rustls-pemfile = { version = "1", optional = true }
-rustls-native-certs = { version = "0.6.2", optional = true }
-webpki-roots = { version = "0.25", optional = true }
+rustls = { version = "0.22.1", optional = true }
+rustls-pemfile = { version = "2", optional = true }
+rustls-native-certs = { version = "0.7", optional = true }
+webpki-roots = { version = "0.26", optional = true }
 boring = { version = "4", optional = true }
 
 # async
@@ -59,12 +59,12 @@ async-trait = { version = "0.1", optional = true }
 ## async-std
 async-std = { version = "1.8", optional = true }
 #async-native-tls = { version = "0.3.3", optional = true }
-futures-rustls = { version = "0.24", optional = true }
+futures-rustls = { version = "0.25", optional = true }
 
 ## tokio
 tokio1_crate = { package = "tokio", version = "1", optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
-tokio1_rustls = { package = "tokio-rustls", version = "0.24", optional = true }
+tokio1_rustls = { package = "tokio-rustls", version = "0.25", optional = true }
 tokio1_boring = { package = "tokio-boring", version = "4", optional = true }
 
 ## dkim
