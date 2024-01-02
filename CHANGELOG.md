@@ -1,3 +1,21 @@
+<a name="v0.11.3"></a>
+### v0.11.3 (2024-01-02)
+
+#### Features
+
+* Derive `Clone` for `FileTransport` and `AsyncFileTransport` ([#924])
+* Derive `Debug` for `SmtpTransport` ([#925])
+
+#### Misc
+
+* Upgrade `rustls` to v0.22 ([#921])
+* Drop once_cell dependency in favor of OnceLock from std ([#928])
+
+[#921]: https://github.com/lettre/lettre/pull/921
+[#924]: https://github.com/lettre/lettre/pull/924
+[#925]: https://github.com/lettre/lettre/pull/925
+[#928]: https://github.com/lettre/lettre/pull/928
+
 <a name="v0.11.2"></a>
 ### v0.11.2 (2023-11-23)
 
