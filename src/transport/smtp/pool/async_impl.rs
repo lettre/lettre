@@ -2,7 +2,7 @@ use std::{
     fmt::{self, Debug},
     mem,
     ops::{Deref, DerefMut},
-    sync::Arc,
+    sync::{Arc, OnceLock},
     time::{Duration, Instant},
 };
 
@@ -10,7 +10,6 @@ use futures_util::{
     lock::Mutex,
     stream::{self, StreamExt},
 };
-use once_cell::sync::OnceCell;
 
 use super::{
     super::{client::AsyncSmtpConnection, Error},
@@ -22,7 +21,7 @@ pub struct Pool<E: Executor> {
     config: PoolConfig,
     connections: Mutex<Vec<ParkedConnection>>,
     client: AsyncSmtpClient<E>,
-    handle: OnceCell<E::Handle>,
+    handle: OnceLock<E::Handle>,
 }
 
 struct ParkedConnection {
@@ -41,7 +40,7 @@ impl<E: Executor> Pool<E> {
             config,
             connections: Mutex::new(Vec::new()),
             client,
-            handle: OnceCell::new(),
+            handle: OnceLock::new(),
         });
 
         {
