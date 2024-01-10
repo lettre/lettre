@@ -98,27 +98,13 @@ impl Mechanism {
                 let decoded_challenge = challenge
                     .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
-                let decode = |data: &str| -> Result<String, Error> {
-                    crate::base64::decode(data)
-                        .map_err(error::client)
-                        .and_then(|bytes| String::from_utf8(bytes).map_err(error::client))
-                };
-
-                let user_name_text = decode("VXNlciBOYW1lAA==")?;
-                let password_text = decode("UGFzc3dvcmQA")?;
-
-                if [
-                    "User Name",
-                    "Username:",
-                    "Username",
-                    user_name_text.as_str(),
-                ]
-                .contains(&decoded_challenge)
+                if ["User Name", "Username:", "Username", "User Name\0"]
+                    .contains(&decoded_challenge)
                 {
                     return Ok(credentials.authentication_identity.clone());
                 }
 
-                if ["Password", "Password:", password_text.as_str()].contains(&decoded_challenge) {
+                if ["Password", "Password:", "Password\0"].contains(&decoded_challenge) {
                     return Ok(credentials.secret.clone());
                 }
 
