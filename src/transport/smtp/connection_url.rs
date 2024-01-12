@@ -112,7 +112,16 @@ pub(crate) fn from_connection_url<B: TransportBuilder>(connection_url: &str) -> 
     }
 
     if let Some(password) = connection_url.password() {
-        let credentials = Credentials::new(connection_url.username().into(), password.into());
+        let percent_decode = |s: &str| {
+            percent_encoding::percent_decode_str(s)
+                .decode_utf8()
+                .map(|cow| cow.into_owned())
+                .map_err(error::connection)
+        };
+        let credentials = Credentials::new(
+            percent_decode(connection_url.username())?,
+            percent_decode(password)?,
+        );
         builder = builder.credentials(credentials);
     }
 
