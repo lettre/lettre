@@ -18,10 +18,11 @@ pub(super) enum Part {
 }
 
 impl Part {
-    pub(super) fn body_raw(&self) -> Vec<u8> {
+    #[cfg(feature = "dkim")]
+    pub(super) fn format_body(&self, out: &mut Vec<u8>) {
         match self {
-            Part::Single(part) => part.body_raw(),
-            Part::Multi(part) => part.body_raw(),
+            Part::Single(part) => part.format_body(out),
+            Part::Multi(part) => part.format_body(out),
         }
     }
 }
@@ -142,11 +143,10 @@ impl SinglePart {
         out
     }
 
-    pub(super) fn body_raw(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+    /// Format only the signlepart body
+    fn format_body(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.body);
         out.extend_from_slice(b"\r\n");
-        out
     }
 }
 
@@ -155,8 +155,7 @@ impl EmailFormat for SinglePart {
         write!(out, "{}", self.headers)
             .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
-        out.extend_from_slice(&self.body);
-        out.extend_from_slice(b"\r\n");
+        self.format_body(out);
     }
 }
 
@@ -390,31 +389,8 @@ impl MultiPart {
         out
     }
 
-    pub(super) fn body_raw(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-
-        let boundary = self.boundary();
-
-        for part in &self.parts {
-            out.extend_from_slice(b"--");
-            out.extend_from_slice(boundary.as_bytes());
-            out.extend_from_slice(b"\r\n");
-            part.format(&mut out);
-        }
-
-        out.extend_from_slice(b"--");
-        out.extend_from_slice(boundary.as_bytes());
-        out.extend_from_slice(b"--\r\n");
-        out
-    }
-}
-
-impl EmailFormat for MultiPart {
-    fn format(&self, out: &mut Vec<u8>) {
-        write!(out, "{}", self.headers)
-            .expect("A Write implementation panicked while formatting headers");
-        out.extend_from_slice(b"\r\n");
-
+    /// Format only the multipart body
+    fn format_body(&self, out: &mut Vec<u8>) {
         let boundary = self.boundary();
 
         for part in &self.parts {
@@ -427,6 +403,15 @@ impl EmailFormat for MultiPart {
         out.extend_from_slice(b"--");
         out.extend_from_slice(boundary.as_bytes());
         out.extend_from_slice(b"--\r\n");
+    }
+}
+
+impl EmailFormat for MultiPart {
+    fn format(&self, out: &mut Vec<u8>) {
+        write!(out, "{}", self.headers)
+            .expect("A Write implementation panicked while formatting headers");
+        out.extend_from_slice(b"\r\n");
+        self.format_body(out);
     }
 }
 
