@@ -85,7 +85,7 @@ walkdir = "2"
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
 async-std = { version = "1.8", features = ["attributes"] }
 serde_json = "1"
-maud = "0.25"
+maud = "0.26"
 
 [[bench]]
 harness = false
