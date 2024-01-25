@@ -381,6 +381,22 @@ mod tests {
         assert!(matches!(builder.info.tls, Tls::Wrapper(_)));
         assert_eq!(builder.info.server, "smtp.example.com");
 
+        let builder = SmtpTransport::from_url(
+            "smtps://user%40example.com:pa$$word%3F%22!@smtp.example.com:465",
+        )
+        .unwrap();
+
+        assert_eq!(builder.info.port, 465);
+        assert_eq!(
+            builder.info.credentials,
+            Some(Credentials::new(
+                "user@example.com".to_owned(),
+                "pa$$word?\"!".to_owned()
+            ))
+        );
+        assert!(matches!(builder.info.tls, Tls::Wrapper(_)));
+        assert_eq!(builder.info.server, "smtp.example.com");
+
         let builder =
             SmtpTransport::from_url("smtp://username:password@smtp.example.com:587?tls=required")
                 .unwrap();
