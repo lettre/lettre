@@ -1,3 +1,15 @@
+<a name="v0.11.4"></a>
+### v0.11.4 (2024-01-28)
+
+#### Bug fixes
+
+* Percent decode credentials in SMTP connect URL ([#932], [#934])
+* Fix mimebody DKIM body-hash computation ([#923])
+
+[#923]: https://github.com/lettre/lettre/pull/923
+[#932]: https://github.com/lettre/lettre/pull/932
+[#934]: https://github.com/lettre/lettre/pull/934
+
 <a name="v0.11.3"></a>
 ### v0.11.3 (2024-01-02)
 
