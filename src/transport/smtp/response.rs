@@ -132,6 +132,12 @@ impl Code {
     }
 }
 
+impl From<Code> for u16 {
+    fn from(code: Code) -> Self {
+        code.detail as u16 + 10 * code.category as u16 + 100 * code.severity as u16
+    }
+}
+
 /// Contains an SMTP reply, with separated code and message
 ///
 /// The text message is optional, only the code is mandatory
@@ -315,6 +321,17 @@ mod test {
         };
 
         assert_eq!(code.to_string(), "421");
+    }
+
+    #[test]
+    fn test_code_to_u16() {
+        let code = Code {
+            severity: Severity::TransientNegativeCompletion,
+            category: Category::Connections,
+            detail: Detail::One,
+        };
+        let c: u16 = code.into();
+        assert_eq!(c, 421);
     }
 
     #[test]
