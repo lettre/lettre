@@ -98,11 +98,13 @@ impl Mechanism {
                 let decoded_challenge = challenge
                     .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
-                if ["User Name", "Username:", "Username"].contains(&decoded_challenge) {
+                if ["User Name", "Username:", "Username", "User Name\0"]
+                    .contains(&decoded_challenge)
+                {
                     return Ok(credentials.authentication_identity.clone());
                 }
 
-                if ["Password", "Password:"].contains(&decoded_challenge) {
+                if ["Password", "Password:", "Password\0"].contains(&decoded_challenge) {
                     return Ok(credentials.secret.clone());
                 }
 
