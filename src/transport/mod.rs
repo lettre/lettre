@@ -32,7 +32,7 @@
 //! | [`smtp`]     | SMTP     | [`SmtpTransport`]     | [`AsyncSmtpTransport`]     | Uses the SMTP protocol to send emails to a relay server |
 //! | [`sendmail`] | Sendmail | [`SendmailTransport`] | [`AsyncSendmailTransport`] | Uses the `sendmail` command to send emails              |
 //! | [`file`]     | File     | [`FileTransport`]     | [`AsyncFileTransport`]     | Saves the email as an `.eml` file                       |
-//! | [`stub`]     | Debug    | [`StubTransport`]     | [`StubTransport`]          | Drops the email - Useful for debugging                  |
+//! | [`stub`]     | Debug    | [`StubTransport`]     | [`AsyncStubTransport`]     | Drops the email - Useful for debugging                  |
 //!
 //! ## Building an email
 //!
@@ -97,6 +97,7 @@
 //! [`FileTransport`]: crate::FileTransport
 //! [`AsyncFileTransport`]: crate::AsyncFileTransport
 //! [`StubTransport`]: crate::transport::stub::StubTransport
+//! [`AsyncStubTransport`]: crate::transport::stub::AsyncStubTransport
 
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use async_trait::async_trait;
