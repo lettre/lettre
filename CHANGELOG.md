@@ -244,7 +244,7 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 * Update `hostname` to 0.3
 * Update to `nom` 6
 * Replace `log` with `tracing`
-* Move CI to Github Actions
+* Move CI to GitHub Actions
 * Use criterion for benchmarks
 
 <a name="v0.9.2"></a>

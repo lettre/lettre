@@ -65,7 +65,7 @@ impl AsyncSmtpConnection {
     /// If `tls_parameters` is `Some`, then the connection will use Implicit TLS (sometimes
     /// referred to as `SMTPS`). See also [`AsyncSmtpConnection::starttls`].
     ///
-    /// If `local_addres` is `Some`, then the address provided shall be used to bind the
+    /// If `local_address` is `Some`, then the address provided shall be used to bind the
     /// connection to a specific local address using [`tokio1_crate::net::TcpSocket::bind`].
     ///
     /// Sends EHLO and parses server information
