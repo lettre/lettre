@@ -88,7 +88,7 @@ impl Mailbox {
 
 impl Display for Mailbox {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        if let Some(ref name) = self.name {
+        if let Some(name) = &self.name {
             let name = name.trim();
             if !name.is_empty() {
                 write_word(f, name)?;

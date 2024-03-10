@@ -52,10 +52,10 @@ impl Default for ClientId {
 
 impl Display for ClientId {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
-            Self::Domain(ref value) => f.write_str(value),
-            Self::Ipv4(ref value) => write!(f, "[{value}]"),
-            Self::Ipv6(ref value) => write!(f, "[IPv6:{value}]"),
+        match self {
+            Self::Domain(value) => f.write_str(value),
+            Self::Ipv4(value) => write!(f, "[{value}]"),
+            Self::Ipv6(value) => write!(f, "[IPv6:{value}]"),
         }
     }
 }
@@ -92,11 +92,11 @@ pub enum Extension {
 
 impl Display for Extension {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
+        match self {
             Extension::EightBitMime => f.write_str("8BITMIME"),
             Extension::SmtpUtfEight => f.write_str("SMTPUTF8"),
             Extension::StartTls => f.write_str("STARTTLS"),
-            Extension::Authentication(ref mechanism) => write!(f, "AUTH {mechanism}"),
+            Extension::Authentication(mechanism) => write!(f, "AUTH {mechanism}"),
         }
     }
 }
@@ -226,16 +226,16 @@ pub enum MailParameter {
 
 impl Display for MailParameter {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
-            MailParameter::Body(ref value) => write!(f, "BODY={value}"),
+        match self {
+            MailParameter::Body(value) => write!(f, "BODY={value}"),
             MailParameter::Size(size) => write!(f, "SIZE={size}"),
             MailParameter::SmtpUtfEight => f.write_str("SMTPUTF8"),
             MailParameter::Other {
-                ref keyword,
-                value: Some(ref value),
+                keyword,
+                value: Some(value),
             } => write!(f, "{}={}", keyword, XText(value)),
             MailParameter::Other {
-                ref keyword,
+                keyword,
                 value: None,
             } => f.write_str(keyword),
         }
@@ -276,13 +276,13 @@ pub enum RcptParameter {
 
 impl Display for RcptParameter {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match *self {
+        match &self {
             RcptParameter::Other {
-                ref keyword,
-                value: Some(ref value),
+                keyword,
+                value: Some(value),
             } => write!(f, "{keyword}={}", XText(value)),
             RcptParameter::Other {
-                ref keyword,
+                keyword,
                 value: None,
             } => f.write_str(keyword),
         }
