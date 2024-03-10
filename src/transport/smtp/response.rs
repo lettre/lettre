@@ -5,7 +5,6 @@ use std::{
     fmt::{Display, Formatter, Result},
     result,
     str::FromStr,
-    string::ToString,
 };
 
 use nom::{
