@@ -151,11 +151,11 @@ impl Executor for Tokio1Executor {
         match tls {
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
+                    conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
                 }
             }
             Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
+                conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             _ => (),
         }
@@ -247,11 +247,11 @@ impl Executor for AsyncStd1Executor {
         match tls {
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
+                    conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
                 }
             }
             Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
+                conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             _ => (),
         }

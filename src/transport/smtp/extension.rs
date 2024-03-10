@@ -4,7 +4,6 @@ use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
     net::{Ipv4Addr, Ipv6Addr},
-    result::Result,
 };
 
 use crate::transport::smtp::{

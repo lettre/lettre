@@ -336,11 +336,11 @@ impl SmtpClient {
         match self.info.tls {
             Tls::Opportunistic(ref tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters, &self.info.hello_name)?;
+                    conn = conn.starttls(tls_parameters, &self.info.hello_name)?;
                 }
             }
             Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters, &self.info.hello_name)?;
+                conn = conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             _ => (),
         }

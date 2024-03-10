@@ -2,8 +2,7 @@
 use std::sync::Arc;
 use std::{
     io::{self, Read, Write},
-    mem,
-    net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
+    net::{IpAddr, Shutdown, SocketAddr, TcpStream, ToSocketAddrs},
     time::Duration,
 };
 
@@ -40,16 +39,10 @@ enum InnerNetworkStream {
     RustlsTls(StreamOwned<ClientConnection, TcpStream>),
     #[cfg(feature = "boring-tls")]
     BoringTls(SslStream<TcpStream>),
-    /// Can't be built
-    None,
 }
 
 impl NetworkStream {
     fn new(inner: InnerNetworkStream) -> Self {
-        if let InnerNetworkStream::None = inner {
-            debug_assert!(false, "InnerNetworkStream::None must never be built");
-        }
-
         NetworkStream { inner }
     }
 
@@ -63,13 +56,6 @@ impl NetworkStream {
             InnerNetworkStream::RustlsTls(ref s) => s.get_ref().peer_addr(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref s) => s.get_ref().peer_addr(),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(SocketAddr::V4(SocketAddrV4::new(
-                    Ipv4Addr::new(127, 0, 0, 1),
-                    80,
-                )))
-            }
         }
     }
 
@@ -83,10 +69,6 @@ impl NetworkStream {
             InnerNetworkStream::RustlsTls(ref s) => s.get_ref().shutdown(how),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref s) => s.get_ref().shutdown(how),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
         }
     }
 
@@ -139,13 +121,13 @@ impl NetworkStream {
         let tcp_stream = try_connect(server, timeout, local_addr)?;
         let mut stream = NetworkStream::new(InnerNetworkStream::Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
-            stream.upgrade_tls(tls_parameters)?;
+            stream = stream.upgrade_tls(tls_parameters)?;
         }
         Ok(stream)
     }
 
-    pub fn upgrade_tls(&mut self, tls_parameters: &TlsParameters) -> Result<(), Error> {
-        match &self.inner {
+    pub fn upgrade_tls(self, tls_parameters: &TlsParameters) -> Result<Self, Error> {
+        match self.inner {
             #[cfg(not(any(
                 feature = "native-tls",
                 feature = "rustls-tls",
@@ -157,18 +139,11 @@ impl NetworkStream {
             }
 
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
-            InnerNetworkStream::Tcp(_) => {
-                // get owned TcpStream
-                let tcp_stream = mem::replace(&mut self.inner, InnerNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerNetworkStream::Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
-                };
-
-                self.inner = Self::upgrade_tls_impl(tcp_stream, tls_parameters)?;
-                Ok(())
+            InnerNetworkStream::Tcp(tcp_stream) => {
+                let inner = Self::upgrade_tls_impl(tcp_stream, tls_parameters)?;
+                Ok(Self { inner })
             }
-            _ => Ok(()),
+            _ => Ok(self),
         }
     }
 
@@ -216,10 +191,6 @@ impl NetworkStream {
             InnerNetworkStream::RustlsTls(_) => true,
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(_) => true,
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                false
-            }
         }
     }
 
@@ -249,7 +220,6 @@ impl NetworkStream {
                 .unwrap()
                 .to_der()
                 .map_err(error::tls)?),
-            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
         }
     }
 
@@ -267,10 +237,6 @@ impl NetworkStream {
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref mut stream) => {
                 stream.get_ref().set_read_timeout(duration)
-            }
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
             }
         }
     }
@@ -292,10 +258,6 @@ impl NetworkStream {
             InnerNetworkStream::BoringTls(ref mut stream) => {
                 stream.get_ref().set_write_timeout(duration)
             }
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
         }
     }
 }
@@ -310,10 +272,6 @@ impl Read for NetworkStream {
             InnerNetworkStream::RustlsTls(ref mut s) => s.read(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref mut s) => s.read(buf),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(0)
-            }
         }
     }
 }
@@ -328,10 +286,6 @@ impl Write for NetworkStream {
             InnerNetworkStream::RustlsTls(ref mut s) => s.write(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref mut s) => s.write(buf),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(0)
-            }
         }
     }
 
@@ -344,10 +298,6 @@ impl Write for NetworkStream {
             InnerNetworkStream::RustlsTls(ref mut s) => s.flush(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(ref mut s) => s.flush(),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
         }
     }
 }

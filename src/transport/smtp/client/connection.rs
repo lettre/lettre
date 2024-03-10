@@ -138,20 +138,22 @@ impl SmtpConnection {
 
     #[allow(unused_variables)]
     pub fn starttls(
-        &mut self,
+        mut self,
         tls_parameters: &TlsParameters,
         hello_name: &ClientId,
-    ) -> Result<(), Error> {
+    ) -> Result<Self, Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
-                self.stream.get_mut().upgrade_tls(tls_parameters)?;
+                let stream = self.stream.into_inner();
+                let stream = stream.upgrade_tls(tls_parameters)?;
+                self.stream = BufReader::new(stream);
                 #[cfg(feature = "tracing")]
                 tracing::debug!("connection encrypted");
                 // Send EHLO again
                 try_smtp!(self.ehlo(hello_name), self);
-                Ok(())
+                Ok(self)
             }
             #[cfg(not(any(
                 feature = "native-tls",

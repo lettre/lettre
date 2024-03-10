@@ -208,18 +208,20 @@ impl AsyncSmtpConnection {
     /// [rfc8314]: https://www.rfc-editor.org/rfc/rfc8314
     #[allow(unused_variables)]
     pub async fn starttls(
-        &mut self,
+        mut self,
         tls_parameters: TlsParameters,
         hello_name: &ClientId,
-    ) -> Result<(), Error> {
+    ) -> Result<Self, Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             try_smtp!(self.command(Starttls).await, self);
-            self.stream.get_mut().upgrade_tls(tls_parameters).await?;
+            let stream = self.stream.into_inner();
+            let stream = stream.upgrade_tls(tls_parameters).await?;
+            self.stream = BufReader::new(stream);
             #[cfg(feature = "tracing")]
             tracing::debug!("connection encrypted");
             // Send EHLO again
             try_smtp!(self.ehlo(hello_name).await, self);
-            Ok(())
+            Ok(self)
         } else {
             Err(error::client("STARTTLS is not supported on this server"))
         }

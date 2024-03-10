@@ -11,8 +11,7 @@ use async_native_tls::TlsStream as AsyncStd1TlsStream;
 #[cfg(feature = "async-std1")]
 use async_std::net::{TcpStream as AsyncStd1TcpStream, ToSocketAddrs as AsyncStd1ToSocketAddrs};
 use futures_io::{
-    AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Error as IoError, ErrorKind,
-    Result as IoResult,
+    AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Result as IoResult,
 };
 #[cfg(feature = "async-std1-rustls-tls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsTlsStream;
@@ -91,16 +90,10 @@ enum InnerAsyncNetworkStream {
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "async-std1-rustls-tls")]
     AsyncStd1RustlsTls(AsyncStd1RustlsTlsStream<AsyncStd1TcpStream>),
-    /// Can't be built
-    None,
 }
 
 impl AsyncNetworkStream {
     fn new(inner: InnerAsyncNetworkStream) -> Self {
-        if let InnerAsyncNetworkStream::None = inner {
-            debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-        }
-
         AsyncNetworkStream { inner }
     }
 
@@ -123,13 +116,6 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1NativeTls(ref s) => s.get_ref().peer_addr(),
             #[cfg(feature = "async-std1-rustls-tls")]
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(ref s) => s.get_ref().0.peer_addr(),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Err(IoError::new(
-                    ErrorKind::Other,
-                    "InnerAsyncNetworkStream::None must never be built",
-                ))
-            }
         }
     }
 
@@ -199,7 +185,7 @@ impl AsyncNetworkStream {
         let mut stream =
             AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(Box::new(tcp_stream)));
         if let Some(tls_parameters) = tls_parameters {
-            stream.upgrade_tls(tls_parameters).await?;
+            stream = stream.upgrade_tls(tls_parameters).await?;
         }
         Ok(stream)
     }
@@ -250,13 +236,13 @@ impl AsyncNetworkStream {
 
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
-            stream.upgrade_tls(tls_parameters).await?;
+            stream = stream.upgrade_tls(tls_parameters).await?;
         }
         Ok(stream)
     }
 
-    pub async fn upgrade_tls(&mut self, tls_parameters: TlsParameters) -> Result<(), Error> {
-        match &self.inner {
+    pub async fn upgrade_tls(self, tls_parameters: TlsParameters) -> Result<Self, Error> {
+        match self.inner {
             #[cfg(all(
                 feature = "tokio1",
                 not(any(
@@ -275,18 +261,11 @@ impl AsyncNetworkStream {
                 feature = "tokio1-rustls-tls",
                 feature = "tokio1-boring-tls"
             ))]
-            InnerAsyncNetworkStream::Tokio1Tcp(_) => {
-                // get owned TcpStream
-                let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
-                };
-
-                self.inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters)
+            InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) => {
+                let inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters)
                     .await
                     .map_err(error::connection)?;
-                Ok(())
+                Ok(Self { inner })
             }
             #[cfg(all(
                 feature = "async-std1",
@@ -298,20 +277,13 @@ impl AsyncNetworkStream {
             }
 
             #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
-            InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
-                // get owned TcpStream
-                let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
-                };
-
-                self.inner = Self::upgrade_asyncstd1_tls(tcp_stream, tls_parameters)
+            InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream) => {
+                let inner = Self::upgrade_asyncstd1_tls(tcp_stream, tls_parameters)
                     .await
                     .map_err(error::connection)?;
-                Ok(())
+                Ok(Self { inner })
             }
-            _ => Ok(()),
+            _ => Ok(self),
         }
     }
 
@@ -460,7 +432,6 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1NativeTls(_) => true,
             #[cfg(feature = "async-std1-rustls-tls")]
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(_) => true,
-            InnerAsyncNetworkStream::None => false,
         }
     }
 
@@ -509,7 +480,6 @@ impl AsyncNetworkStream {
                 .first()
                 .unwrap()
                 .to_vec()),
-            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
         }
     }
 }
@@ -567,10 +537,6 @@ impl FuturesAsyncRead for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(ref mut s) => {
                 Pin::new(s).poll_read(cx, buf)
             }
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(0))
-            }
         }
     }
 }
@@ -600,10 +566,6 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(ref mut s) => {
                 Pin::new(s).poll_write(cx, buf)
             }
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(0))
-            }
         }
     }
 
@@ -623,10 +585,6 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1NativeTls(ref mut s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "async-std1-rustls-tls")]
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(ref mut s) => Pin::new(s).poll_flush(cx),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(()))
-            }
         }
     }
 
@@ -646,10 +604,6 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1NativeTls(ref mut s) => Pin::new(s).poll_close(cx),
             #[cfg(feature = "async-std1-rustls-tls")]
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(ref mut s) => Pin::new(s).poll_close(cx),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(()))
-            }
         }
     }
 }
