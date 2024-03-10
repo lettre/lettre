@@ -317,9 +317,9 @@ impl SmtpClient {
     /// Handles encryption and authentication
     pub fn connection(&self) -> Result<SmtpConnection, Error> {
         #[allow(clippy::match_single_binding)]
-        let tls_parameters = match self.info.tls {
+        let tls_parameters = match &self.info.tls {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters),
+            Tls::Wrapper(tls_parameters) => Some(tls_parameters),
             _ => None,
         };
 
@@ -333,13 +333,13 @@ impl SmtpClient {
         )?;
 
         #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
-        match self.info.tls {
-            Tls::Opportunistic(ref tls_parameters) => {
+        match &self.info.tls {
+            Tls::Opportunistic(tls_parameters) => {
                 if conn.can_starttls() {
                     conn.starttls(tls_parameters, &self.info.hello_name)?;
                 }
             }
-            Tls::Required(ref tls_parameters) => {
+            Tls::Required(tls_parameters) => {
                 conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             _ => (),

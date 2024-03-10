@@ -54,7 +54,7 @@ impl fmt::Debug for Error {
 
         builder.field("kind", &self.inner.kind);
 
-        if let Some(ref source) = self.inner.source {
+        if let Some(source) = &self.inner.source {
             builder.field("source", source);
         }
 
@@ -70,7 +70,7 @@ impl fmt::Display for Error {
             Kind::Envelope => f.write_str("internal client error")?,
         };
 
-        if let Some(ref e) = self.inner.source {
+        if let Some(e) = &self.inner.source {
             write!(f, ": {e}")?;
         }
 
