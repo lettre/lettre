@@ -39,7 +39,7 @@ use tokio1_rustls::client::TlsStream as Tokio1RustlsTlsStream;
     feature = "async-std1-rustls-tls"
 ))]
 use super::InnerTlsParameters;
-use super::TlsParameters;
+use super::{ConnectionState, TlsParameters};
 #[cfg(feature = "tokio1")]
 use crate::transport::smtp::client::net::resolved_address_filter;
 use crate::transport::smtp::{error, Error};
@@ -48,6 +48,7 @@ use crate::transport::smtp::{error, Error};
 #[derive(Debug)]
 pub struct AsyncNetworkStream {
     inner: InnerAsyncNetworkStream,
+    state: ConnectionState,
 }
 
 #[cfg(feature = "tokio1")]
@@ -94,7 +95,18 @@ enum InnerAsyncNetworkStream {
 
 impl AsyncNetworkStream {
     fn new(inner: InnerAsyncNetworkStream) -> Self {
-        AsyncNetworkStream { inner }
+        AsyncNetworkStream {
+            inner,
+            state: ConnectionState::Ok,
+        }
+    }
+
+    pub(super) fn state(&self) -> ConnectionState {
+        self.state
+    }
+
+    pub(super) fn set_state(&mut self, state: ConnectionState) {
+        self.state = state;
     }
 
     /// Returns peer's address
@@ -265,7 +277,10 @@ impl AsyncNetworkStream {
                 let inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters)
                     .await
                     .map_err(error::connection)?;
-                Ok(Self { inner })
+                Ok(Self {
+                    inner,
+                    state: ConnectionState::Ok,
+                })
             }
             #[cfg(all(
                 feature = "async-std1",
@@ -281,7 +296,10 @@ impl AsyncNetworkStream {
                 let inner = Self::upgrade_asyncstd1_tls(tcp_stream, tls_parameters)
                     .await
                     .map_err(error::connection)?;
-                Ok(Self { inner })
+                Ok(Self {
+                    inner,
+                    state: ConnectionState::Ok,
+                })
             }
             _ => Ok(self),
         }
@@ -581,6 +599,8 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
     }
 
     fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<IoResult<()>> {
+        self.state = ConnectionState::Closed;
+
         match &mut self.inner {
             #[cfg(feature = "tokio1")]
             InnerAsyncNetworkStream::Tokio1Tcp(s) => Pin::new(s).poll_shutdown(cx),

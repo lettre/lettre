@@ -16,12 +16,13 @@ use socket2::{Domain, Protocol, Type};
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 use super::InnerTlsParameters;
-use super::TlsParameters;
+use super::{ConnectionState, TlsParameters};
 use crate::transport::smtp::{error, Error};
 
 /// A network stream
 pub struct NetworkStream {
     inner: InnerNetworkStream,
+    state: ConnectionState,
 }
 
 /// Represents the different types of underlying network streams
@@ -43,7 +44,18 @@ enum InnerNetworkStream {
 
 impl NetworkStream {
     fn new(inner: InnerNetworkStream) -> Self {
-        NetworkStream { inner }
+        NetworkStream {
+            inner,
+            state: ConnectionState::Ok,
+        }
+    }
+
+    pub(super) fn state(&self) -> ConnectionState {
+        self.state
+    }
+
+    pub(super) fn set_state(&mut self, state: ConnectionState) {
+        self.state = state;
     }
 
     /// Returns peer's address
@@ -60,7 +72,9 @@ impl NetworkStream {
     }
 
     /// Shutdowns the connection
-    pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
+    pub fn shutdown(&mut self, how: Shutdown) -> io::Result<()> {
+        self.state = ConnectionState::Closed;
+
         match &self.inner {
             InnerNetworkStream::Tcp(s) => s.shutdown(how),
             #[cfg(feature = "native-tls")]
@@ -141,7 +155,10 @@ impl NetworkStream {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             InnerNetworkStream::Tcp(tcp_stream) => {
                 let inner = Self::upgrade_tls_impl(tcp_stream, tls_parameters)?;
-                Ok(Self { inner })
+                Ok(Self {
+                    inner,
+                    state: ConnectionState::Ok,
+                })
             }
             _ => Ok(self),
         }
