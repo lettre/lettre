@@ -2,7 +2,6 @@ use std::{
     borrow::Cow,
     error::Error as StdError,
     fmt::{self, Display},
-    iter::IntoIterator,
     time::SystemTime,
 };
 

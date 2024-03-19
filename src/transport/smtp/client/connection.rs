@@ -7,7 +7,7 @@ use std::{
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
-use super::{ClientCodec, NetworkStream, TlsParameters};
+use super::{ClientCodec, ConnectionState, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
     transport::smtp::{
@@ -20,25 +20,11 @@ use crate::{
     },
 };
 
-macro_rules! try_smtp (
-    ($err: expr, $client: ident) => ({
-        match $err {
-            Ok(val) => val,
-            Err(err) => {
-                $client.abort();
-                return Err(From::from(err))
-            },
-        }
-    })
-);
-
 /// Structure that implements the SMTP client
 pub struct SmtpConnection {
     /// TCP stream between client and server
     /// Value is None before connection
     stream: BufReader<NetworkStream>,
-    /// Panic state
-    panic: bool,
     /// Information about the server
     server_info: ServerInfo,
 }
@@ -65,7 +51,6 @@ impl SmtpConnection {
         let stream = BufReader::new(stream);
         let mut conn = SmtpConnection {
             stream,
-            panic: false,
             server_info: ServerInfo::default(),
         };
         conn.set_timeout(timeout).map_err(error::network)?;
@@ -110,26 +95,25 @@ impl SmtpConnection {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
-        try_smtp!(
-            self.command(Mail::new(envelope.from().cloned(), mail_options)),
-            self
-        );
+        self.command(Mail::new(envelope.from().cloned(), mail_options))?;
 
         // Recipient
         for to_address in envelope.to() {
-            try_smtp!(self.command(Rcpt::new(to_address.clone(), vec![])), self);
+            self.command(Rcpt::new(to_address.clone(), vec![]))?;
         }
 
         // Data
-        try_smtp!(self.command(Data), self);
+        self.command(Data)?;
 
         // Message content
-        let result = try_smtp!(self.message(email), self);
-        Ok(result)
+        self.message(email)
     }
 
     pub fn has_broken(&self) -> bool {
-        self.panic
+        match self.stream.get_ref().state() {
+            ConnectionState::Ok => false,
+            ConnectionState::Broken | ConnectionState::Closed => true,
+        }
     }
 
     pub fn can_starttls(&self) -> bool {
@@ -138,20 +122,22 @@ impl SmtpConnection {
 
     #[allow(unused_variables)]
     pub fn starttls(
-        &mut self,
+        mut self,
         tls_parameters: &TlsParameters,
         hello_name: &ClientId,
-    ) -> Result<(), Error> {
+    ) -> Result<Self, Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             {
-                try_smtp!(self.command(Starttls), self);
-                self.stream.get_mut().upgrade_tls(tls_parameters)?;
+                self.command(Starttls)?;
+                let stream = self.stream.into_inner();
+                let stream = stream.upgrade_tls(tls_parameters)?;
+                self.stream = BufReader::new(stream);
                 #[cfg(feature = "tracing")]
                 tracing::debug!("connection encrypted");
                 // Send EHLO again
-                try_smtp!(self.ehlo(hello_name), self);
-                Ok(())
+                self.ehlo(hello_name)?;
+                Ok(self)
             }
             #[cfg(not(any(
                 feature = "native-tls",
@@ -168,22 +154,24 @@ impl SmtpConnection {
 
     /// Send EHLO and update server info
     fn ehlo(&mut self, hello_name: &ClientId) -> Result<(), Error> {
-        let ehlo_response = try_smtp!(self.command(Ehlo::new(hello_name.clone())), self);
-        self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
+        let ehlo_response = self.command(Ehlo::new(hello_name.clone()))?;
+        self.server_info = ServerInfo::from_response(&ehlo_response)?;
         Ok(())
     }
 
     pub fn quit(&mut self) -> Result<Response, Error> {
-        Ok(try_smtp!(self.command(Quit), self))
+        self.command(Quit)
     }
 
     pub fn abort(&mut self) {
-        // Only try to quit if we are not already broken
-        if !self.panic {
-            self.panic = true;
-            let _ = self.command(Quit);
+        match self.stream.get_ref().state() {
+            ConnectionState::Ok | ConnectionState::Broken => {
+                let _ = self.command(Quit);
+                let _ = self.stream.get_mut().shutdown(std::net::Shutdown::Both);
+                self.stream.get_mut().set_state(ConnectionState::Closed);
+            }
+            ConnectionState::Closed => {}
         }
-        let _ = self.stream.get_mut().shutdown(std::net::Shutdown::Both);
     }
 
     /// Sets the underlying stream
@@ -224,14 +212,11 @@ impl SmtpConnection {
 
         while challenges > 0 && response.has_code(334) {
             challenges -= 1;
-            response = try_smtp!(
-                self.command(Auth::new_from_response(
-                    mechanism,
-                    credentials.clone(),
-                    &response,
-                )?),
-                self
-            );
+            response = self.command(Auth::new_from_response(
+                mechanism,
+                credentials.clone(),
+                &response,
+            )?)?;
         }
 
         if challenges == 0 {
@@ -260,11 +245,16 @@ impl SmtpConnection {
 
     /// Writes a string to the server
     fn write(&mut self, string: &[u8]) -> Result<(), Error> {
+        self.stream.get_ref().state().verify()?;
+        self.stream.get_mut().set_state(ConnectionState::Broken);
+
         self.stream
             .get_mut()
             .write_all(string)
             .map_err(error::network)?;
         self.stream.get_mut().flush().map_err(error::network)?;
+
+        self.stream.get_mut().set_state(ConnectionState::Ok);
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -273,6 +263,9 @@ impl SmtpConnection {
 
     /// Gets the SMTP response
     pub fn read_response(&mut self) -> Result<Response, Error> {
+        self.stream.get_ref().state().verify()?;
+        self.stream.get_mut().set_state(ConnectionState::Broken);
+
         let mut buffer = String::with_capacity(100);
 
         while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
@@ -280,6 +273,8 @@ impl SmtpConnection {
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
+                    self.stream.get_mut().set_state(ConnectionState::Ok);
+
                     return if response.is_positive() {
                         Ok(response)
                     } else {
