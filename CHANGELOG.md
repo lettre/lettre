@@ -1,3 +1,26 @@
+<a name="v0.11.5"></a>
+### v0.11.5 (2024-03-25)
+
+#### Features
+
+* Support SMTP SASL draft login challenge ([#911])
+* Add conversion from SMTP response code to integer ([#941])
+
+#### Misc
+
+* Upgrade `rustls` to v0.23 ([#950])
+* Bump `base64` to v0.22 ([#945])
+* Fix typos in documentation ([#943], [#944])
+* Add `Cargo.lock` ([#942])
+
+[#911]: https://github.com/lettre/lettre/pull/911
+[#941]: https://github.com/lettre/lettre/pull/941
+[#942]: https://github.com/lettre/lettre/pull/942
+[#943]: https://github.com/lettre/lettre/pull/943
+[#944]: https://github.com/lettre/lettre/pull/944
+[#945]: https://github.com/lettre/lettre/pull/945
+[#950]: https://github.com/lettre/lettre/pull/950
+
 <a name="v0.11.4"></a>
 ### v0.11.4 (2024-01-28)
 
