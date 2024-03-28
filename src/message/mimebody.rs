@@ -420,7 +420,6 @@ mod test {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::message::header;
 
     #[test]
     fn single_part_binary() {
