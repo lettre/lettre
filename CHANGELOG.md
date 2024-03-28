@@ -1,3 +1,17 @@
+<a name="v0.11.6"></a>
+### v0.11.6 (2024-03-28)
+
+#### Bug fixes
+
+* Upgraded `email-encoding` to v0.3 - fixing multiple encoding bugs in the process ([#952])
+
+#### Misc
+
+* Updated copyright year in license ([#954])
+
+[#952]: https://github.com/lettre/lettre/pull/952
+[#954]: https://github.com/lettre/lettre/pull/954
+
 <a name="v0.11.5"></a>
 ### v0.11.5 (2024-03-25)
 
