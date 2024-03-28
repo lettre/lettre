@@ -1,4 +1,4 @@
-use email_encoding::headers::EmailWriter;
+use email_encoding::headers::writer::EmailWriter;
 
 use super::{Header, HeaderName, HeaderValue};
 use crate::{
@@ -31,7 +31,7 @@ macro_rules! mailbox_header {
                 let mut encoded_value = String::new();
                 let line_len = $header_name.len() + ": ".len();
                 {
-                    let mut w = EmailWriter::new(&mut encoded_value, line_len, 0, false, false);
+                    let mut w = EmailWriter::new(&mut encoded_value, line_len, 0, false);
                     self.0.encode(&mut w).expect("writing `Mailbox` returned an error");
                 }
 
@@ -81,7 +81,7 @@ macro_rules! mailboxes_header {
                 let mut encoded_value = String::new();
                 let line_len = $header_name.len() + ": ".len();
                 {
-                    let mut w = EmailWriter::new(&mut encoded_value, line_len, 0, false, false);
+                    let mut w = EmailWriter::new(&mut encoded_value, line_len, 0, false);
                     self.0.encode(&mut w).expect("writing `Mailboxes` returned an error");
                 }
 

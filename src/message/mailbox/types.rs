@@ -6,7 +6,7 @@ use std::{
 };
 
 use chumsky::prelude::*;
-use email_encoding::headers::EmailWriter;
+use email_encoding::headers::writer::EmailWriter;
 
 use super::parsers;
 use crate::address::{Address, AddressError};
@@ -72,7 +72,7 @@ impl Mailbox {
     pub(crate) fn encode(&self, w: &mut EmailWriter<'_>) -> FmtResult {
         if let Some(name) = &self.name {
             email_encoding::headers::quoted_string::encode(name, w)?;
-            w.optional_breakpoint();
+            w.space();
             w.write_char('<')?;
         }
 
@@ -261,7 +261,7 @@ impl Mailboxes {
         for mailbox in self.iter() {
             if !mem::take(&mut first) {
                 w.write_char(',')?;
-                w.optional_breakpoint();
+                w.space();
             }
 
             mailbox.encode(w)?;
