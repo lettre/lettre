@@ -4,7 +4,6 @@ use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
     net::{Ipv4Addr, Ipv6Addr},
-    result::Result,
 };
 
 use crate::transport::smtp::{
@@ -292,14 +291,8 @@ impl Display for RcptParameter {
 
 #[cfg(test)]
 mod test {
-
-    use std::collections::HashSet;
-
     use super::*;
-    use crate::transport::smtp::{
-        authentication::Mechanism,
-        response::{Category, Code, Detail, Response, Severity},
-    };
+    use crate::transport::smtp::response::{Category, Code, Detail, Severity};
 
     #[test]
     fn test_clientid_fmt() {
