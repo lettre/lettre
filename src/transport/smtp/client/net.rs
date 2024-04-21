@@ -55,14 +55,14 @@ impl NetworkStream {
 
     /// Returns peer's address
     pub fn peer_addr(&self) -> io::Result<SocketAddr> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref s) => s.peer_addr(),
+        match &self.inner {
+            InnerNetworkStream::Tcp(s) => s.peer_addr(),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref s) => s.get_ref().peer_addr(),
+            InnerNetworkStream::NativeTls(s) => s.get_ref().peer_addr(),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref s) => s.get_ref().peer_addr(),
+            InnerNetworkStream::RustlsTls(s) => s.get_ref().peer_addr(),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref s) => s.get_ref().peer_addr(),
+            InnerNetworkStream::BoringTls(s) => s.get_ref().peer_addr(),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(SocketAddr::V4(SocketAddrV4::new(
@@ -75,14 +75,14 @@ impl NetworkStream {
 
     /// Shutdowns the connection
     pub fn shutdown(&self, how: Shutdown) -> io::Result<()> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref s) => s.shutdown(how),
+        match &self.inner {
+            InnerNetworkStream::Tcp(s) => s.shutdown(how),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref s) => s.get_ref().shutdown(how),
+            InnerNetworkStream::NativeTls(s) => s.get_ref().shutdown(how),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref s) => s.get_ref().shutdown(how),
+            InnerNetworkStream::RustlsTls(s) => s.get_ref().shutdown(how),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref s) => s.get_ref().shutdown(how),
+            InnerNetworkStream::BoringTls(s) => s.get_ref().shutdown(how),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(())
@@ -208,7 +208,7 @@ impl NetworkStream {
     }
 
     pub fn is_encrypted(&self) -> bool {
-        match self.inner {
+        match &self.inner {
             InnerNetworkStream::Tcp(_) => false,
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(_) => true,
@@ -254,20 +254,14 @@ impl NetworkStream {
     }
 
     pub fn set_read_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut stream) => stream.set_read_timeout(duration),
+        match &mut self.inner {
+            InnerNetworkStream::Tcp(stream) => stream.set_read_timeout(duration),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref mut stream) => {
-                stream.get_ref().set_read_timeout(duration)
-            }
+            InnerNetworkStream::NativeTls(stream) => stream.get_ref().set_read_timeout(duration),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref mut stream) => {
-                stream.get_ref().set_read_timeout(duration)
-            }
+            InnerNetworkStream::RustlsTls(stream) => stream.get_ref().set_read_timeout(duration),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref mut stream) => {
-                stream.get_ref().set_read_timeout(duration)
-            }
+            InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_read_timeout(duration),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(())
@@ -277,21 +271,15 @@ impl NetworkStream {
 
     /// Set write timeout for IO calls
     pub fn set_write_timeout(&mut self, duration: Option<Duration>) -> io::Result<()> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut stream) => stream.set_write_timeout(duration),
+        match &mut self.inner {
+            InnerNetworkStream::Tcp(stream) => stream.set_write_timeout(duration),
 
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref mut stream) => {
-                stream.get_ref().set_write_timeout(duration)
-            }
+            InnerNetworkStream::NativeTls(stream) => stream.get_ref().set_write_timeout(duration),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref mut stream) => {
-                stream.get_ref().set_write_timeout(duration)
-            }
+            InnerNetworkStream::RustlsTls(stream) => stream.get_ref().set_write_timeout(duration),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref mut stream) => {
-                stream.get_ref().set_write_timeout(duration)
-            }
+            InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_write_timeout(duration),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(())
@@ -302,14 +290,14 @@ impl NetworkStream {
 
 impl Read for NetworkStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut s) => s.read(buf),
+        match &mut self.inner {
+            InnerNetworkStream::Tcp(s) => s.read(buf),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref mut s) => s.read(buf),
+            InnerNetworkStream::NativeTls(s) => s.read(buf),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref mut s) => s.read(buf),
+            InnerNetworkStream::RustlsTls(s) => s.read(buf),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref mut s) => s.read(buf),
+            InnerNetworkStream::BoringTls(s) => s.read(buf),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(0)
@@ -320,14 +308,14 @@ impl Read for NetworkStream {
 
 impl Write for NetworkStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut s) => s.write(buf),
+        match &mut self.inner {
+            InnerNetworkStream::Tcp(s) => s.write(buf),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref mut s) => s.write(buf),
+            InnerNetworkStream::NativeTls(s) => s.write(buf),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref mut s) => s.write(buf),
+            InnerNetworkStream::RustlsTls(s) => s.write(buf),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref mut s) => s.write(buf),
+            InnerNetworkStream::BoringTls(s) => s.write(buf),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(0)
@@ -336,14 +324,14 @@ impl Write for NetworkStream {
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        match self.inner {
-            InnerNetworkStream::Tcp(ref mut s) => s.flush(),
+        match &mut self.inner {
+            InnerNetworkStream::Tcp(s) => s.flush(),
             #[cfg(feature = "native-tls")]
-            InnerNetworkStream::NativeTls(ref mut s) => s.flush(),
+            InnerNetworkStream::NativeTls(s) => s.flush(),
             #[cfg(feature = "rustls-tls")]
-            InnerNetworkStream::RustlsTls(ref mut s) => s.flush(),
+            InnerNetworkStream::RustlsTls(s) => s.flush(),
             #[cfg(feature = "boring-tls")]
-            InnerNetworkStream::BoringTls(ref mut s) => s.flush(),
+            InnerNetworkStream::BoringTls(s) => s.flush(),
             InnerNetworkStream::None => {
                 debug_assert!(false, "InnerNetworkStream::None must never be built");
                 Ok(())
