@@ -41,7 +41,7 @@ fn main() {
 
     // Plaintext connection which MUST then successfully upgrade to TLS via STARTTLS
     {
-        tracing::info!("Trying to establish a plaintext connection to {} and then updating it via the SMTP STARTTLS extension", smtp_host);
+        tracing::info!("Trying to establish a plaintext connection to {} and then upgrading it via the SMTP STARTTLS extension", smtp_host);
 
         let transport = SmtpTransport::starttls_relay(&smtp_host)
             .expect("build SmtpTransport::starttls_relay")
