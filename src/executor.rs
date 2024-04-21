@@ -134,7 +134,7 @@ impl Executor for Tokio1Executor {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
             #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
+            Tls::Wrapper(tls_parameters) => Some(tls_parameters.clone()),
             _ => None,
         };
         #[allow(unused_mut)]
@@ -149,13 +149,13 @@ impl Executor for Tokio1Executor {
 
         #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls-tls"))]
         match tls {
-            Tls::Opportunistic(ref tls_parameters) => {
+            Tls::Opportunistic(tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
+                    conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
                 }
             }
-            Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
+            Tls::Required(tls_parameters) => {
+                conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             _ => (),
         }
@@ -231,7 +231,7 @@ impl Executor for AsyncStd1Executor {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
             #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
-            Tls::Wrapper(ref tls_parameters) => Some(tls_parameters.clone()),
+            Tls::Wrapper(tls_parameters) => Some(tls_parameters.clone()),
             _ => None,
         };
         #[allow(unused_mut)]
@@ -245,13 +245,13 @@ impl Executor for AsyncStd1Executor {
 
         #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
         match tls {
-            Tls::Opportunistic(ref tls_parameters) => {
+            Tls::Opportunistic(tls_parameters) => {
                 if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
+                    conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
                 }
             }
-            Tls::Required(ref tls_parameters) => {
-                conn.starttls(tls_parameters.clone(), hello_name).await?;
+            Tls::Required(tls_parameters) => {
+                conn = conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             _ => (),
         }

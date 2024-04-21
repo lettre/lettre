@@ -40,6 +40,7 @@ pub use self::{
     connection::SmtpConnection,
     tls::{Certificate, CertificateStore, Tls, TlsParameters, TlsParametersBuilder},
 };
+use super::{error, Error};
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_connection;
@@ -48,6 +49,23 @@ mod async_net;
 mod connection;
 mod net;
 mod tls;
+
+#[derive(Debug, Copy, Clone)]
+enum ConnectionState {
+    Ok,
+    Broken,
+    Closed,
+}
+
+impl ConnectionState {
+    fn verify(&mut self) -> Result<(), Error> {
+        match self {
+            Self::Ok => Ok(()),
+            Self::Broken => Err(error::connection("connection broken")),
+            Self::Closed => Err(error::connection("connection closed")),
+        }
+    }
+}
 
 /// The codec used for transparency
 #[derive(Debug)]

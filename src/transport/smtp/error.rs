@@ -119,7 +119,7 @@ impl fmt::Debug for Error {
 
         builder.field("kind", &self.inner.kind);
 
-        if let Some(ref source) = self.inner.source {
+        if let Some(source) = &self.inner.source {
             builder.field("source", source);
         }
 
@@ -129,22 +129,22 @@ impl fmt::Debug for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.inner.kind {
+        match &self.inner.kind {
             Kind::Response => f.write_str("response error")?,
             Kind::Client => f.write_str("internal client error")?,
             Kind::Network => f.write_str("network error")?,
             Kind::Connection => f.write_str("Connection error")?,
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
             Kind::Tls => f.write_str("tls error")?,
-            Kind::Transient(ref code) => {
+            Kind::Transient(code) => {
                 write!(f, "transient error ({code})")?;
             }
-            Kind::Permanent(ref code) => {
+            Kind::Permanent(code) => {
                 write!(f, "permanent error ({code})")?;
             }
         };
 
-        if let Some(ref e) = self.inner.source {
+        if let Some(e) = &self.inner.source {
             write!(f, ": {e}")?;
         }
 
