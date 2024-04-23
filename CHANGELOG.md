@@ -1,3 +1,18 @@
+<a name="v0.11.7"></a>
+### v0.11.7 (2024-04-23)
+
+#### Misc
+
+* Bump `hostname` to v0.4 ([#956])
+* Fix `tracing` message consistency ([#960])
+* Bump minimum required `rustls` to v0.23.5 ([#958])
+* Dropped use of `ref` syntax in the entire project ([#959])
+
+[#956]: https://github.com/lettre/lettre/pull/956
+[#958]: https://github.com/lettre/lettre/pull/958
+[#959]: https://github.com/lettre/lettre/pull/959
+[#960]: https://github.com/lettre/lettre/pull/960
+
 <a name="v0.11.6"></a>
 ### v0.11.6 (2024-03-28)
 
