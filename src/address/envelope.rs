@@ -14,9 +14,69 @@ pub struct Envelope {
     /// The envelope recipient's addresses
     ///
     /// This can not be empty.
+    #[cfg_attr(
+        feature = "serde",
+        serde(deserialize_with = "serde_forward_path::deserialize")
+    )]
     forward_path: Vec<Address>,
     /// The envelope sender address
     reverse_path: Option<Address>,
+}
+
+/// just like the default implementation to deserialize `Vec<Address>` but it
+/// forbids **de**serializing empty lists
+#[cfg(feature = "serde")]
+mod serde_forward_path {
+    use super::Address;
+    /// dummy type required for serde
+    /// see example: https://serde.rs/deserialize-map.html
+    struct CustomVisitor;
+    impl<'de> serde::de::Visitor<'de> for CustomVisitor {
+        type Value = Vec<Address>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a non-empty list of recipient addresses")
+        }
+
+        fn visit_seq<S>(self, mut access: S) -> Result<Self::Value, S::Error>
+        where
+            S: serde::de::SeqAccess<'de>,
+        {
+            let mut seq: Vec<Address> = Vec::with_capacity(access.size_hint().unwrap_or(0));
+            while let Some(key) = access.next_element()? {
+                seq.push(key);
+            }
+            if seq.len() == 0 {
+                Err(serde::de::Error::invalid_length(seq.len(), &self))
+            } else {
+                Ok(seq)
+            }
+        }
+    }
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Address>, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_seq(CustomVisitor {})
+    }
+
+    #[cfg(test)]
+    mod tests {
+        #[test]
+        fn deserializing_empty_recipient_list_returns_error() {
+            assert!(
+                serde_json::from_str::<crate::address::Envelope>(r#"{"forward_path": []}"#)
+                    .is_err()
+            );
+        }
+        #[test]
+        fn deserializing_non_empty_recipient_list_is_ok() {
+            serde_json::from_str::<crate::address::Envelope>(
+                r#"{ "forward_path": [ {"user":"foo", "domain":"example.com"} ] }"#,
+            )
+            .unwrap();
+        }
+    }
 }
 
 impl Envelope {
