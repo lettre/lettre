@@ -46,7 +46,7 @@ mod serde_forward_path {
             while let Some(key) = access.next_element()? {
                 seq.push(key);
             }
-            if seq.len() == 0 {
+            if seq.is_empty() {
                 Err(serde::de::Error::invalid_length(seq.len(), &self))
             } else {
                 Ok(seq)
