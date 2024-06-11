@@ -12,7 +12,7 @@
 //!
 //! * a service from your Cloud or hosting provider
 //! * an email server ([MTA] for Mail Transfer Agent, like Postfix or Exchange), running either
-//! locally on your servers or accessible over the network
+//!   locally on your servers or accessible over the network
 //! * a dedicated external service, like Mailchimp, Mailgun, etc.
 //!
 //! In most cases, the best option is to:
