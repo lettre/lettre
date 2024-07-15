@@ -559,6 +559,7 @@ impl Debug for Certificate {
 }
 
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
+#[allow(missing_copy_implementations)]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Identity,
@@ -587,6 +588,7 @@ impl Clone for Identity {
     }
 }
 
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
 impl Identity {
     pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self {
