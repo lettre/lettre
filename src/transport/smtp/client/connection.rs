@@ -307,4 +307,10 @@ impl SmtpConnection {
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
     }
+
+    /// All the X509 certificates of the chain (DER encoded)
+    #[cfg(any(feature = "rustls-tls", feature = "boring-tls"))]
+    pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
+        self.stream.get_ref().certificate_chain()
+    }
 }
