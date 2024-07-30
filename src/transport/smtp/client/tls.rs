@@ -4,6 +4,7 @@ use std::{io, sync::Arc};
 
 #[cfg(feature = "boring-tls")]
 use boring::{
+    pkey::PKey,
     ssl::{SslConnector, SslVersion},
     x509::store::X509StoreBuilder,
 };
@@ -13,7 +14,7 @@ use native_tls::{Protocol, TlsConnector};
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     crypto::{verify_tls12_signature, verify_tls13_signature},
-    pki_types::{CertificateDer, ServerName, UnixTime},
+    pki_types::{CertificateDer, PrivateKeyDer, ServerName, UnixTime},
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
 
@@ -108,7 +109,7 @@ pub enum CertificateStore {
     /// For native-tls, this will use the system certificate store on Windows, the keychain on
     /// macOS, and OpenSSL directories on Linux (usually `/etc/ssl`).
     ///
-    /// For rustls, this will also use the the system store if the `rustls-native-certs` feature is
+    /// For rustls, this will also use the system store if the `rustls-native-certs` feature is
     /// enabled, or will fall back to `webpki-roots`.
     ///
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
@@ -139,6 +140,7 @@ pub struct TlsParametersBuilder {
     domain: String,
     cert_store: CertificateStore,
     root_certs: Vec<Certificate>,
+    identity: Option<Identity>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
@@ -152,6 +154,7 @@ impl TlsParametersBuilder {
             domain,
             cert_store: CertificateStore::Default,
             root_certs: Vec::new(),
+            identity: None,
             accept_invalid_hostnames: false,
             accept_invalid_certs: false,
             #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
@@ -167,9 +170,17 @@ impl TlsParametersBuilder {
 
     /// Add a custom root certificate
     ///
-    /// Can be used to safely connect to a server using a self signed certificate, for example.
+    /// Can be used to safely connect to a server using a self-signed certificate, for example.
     pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
         self.root_certs.push(cert);
+        self
+    }
+
+    /// Add a client certificate
+    ///
+    /// Can be used to configure a client certificate to present to the server.
+    pub fn identify_with(mut self, identity: Identity) -> Self {
+        self.identity = Some(identity);
         self
     }
 
@@ -275,6 +286,10 @@ impl TlsParametersBuilder {
         };
 
         tls_builder.min_protocol_version(Some(min_tls_version));
+        if let Some(identity) = self.identity {
+            tls_builder.identity(identity.native_tls);
+        }
+
         let connector = tls_builder.build().map_err(error::tls)?;
         Ok(TlsParameters {
             connector: InnerTlsParameters::NativeTls(connector),
@@ -315,6 +330,15 @@ impl TlsParametersBuilder {
             for cert in self.root_certs {
                 cert_store.add_cert(cert.boring_tls).map_err(error::tls)?;
             }
+        }
+
+        if let Some(identity) = self.identity {
+            tls_builder
+                .set_certificate(identity.boring_tls.0.as_ref())
+                .map_err(error::tls)?;
+            tls_builder
+                .set_private_key(identity.boring_tls.1.as_ref())
+                .map_err(error::tls)?;
         }
 
         let min_tls_version = match self.min_tls_version {
@@ -396,7 +420,13 @@ impl TlsParametersBuilder {
 
             tls.with_root_certificates(root_cert_store)
         };
-        let tls = tls.with_no_client_auth();
+        let tls = if let Some(identity) = self.identity {
+            let (client_certificates, private_key) = identity.rustls_tls;
+            tls.with_client_auth_cert(client_certificates, private_key)
+                .map_err(error::tls)?
+        } else {
+            tls.with_no_client_auth()
+        };
 
         Ok(TlsParameters {
             connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
@@ -461,7 +491,7 @@ impl TlsParameters {
     }
 }
 
-/// A client certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
+/// A certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
 pub struct Certificate {
@@ -525,6 +555,75 @@ impl Certificate {
 impl Debug for Certificate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Certificate").finish()
+    }
+}
+
+/// An identity that can be used with [`TlsParametersBuilder::identify_with`]
+#[allow(missing_copy_implementations)]
+pub struct Identity {
+    #[cfg(feature = "native-tls")]
+    native_tls: native_tls::Identity,
+    #[cfg(feature = "rustls-tls")]
+    rustls_tls: (Vec<CertificateDer<'static>>, PrivateKeyDer<'static>),
+    #[cfg(feature = "boring-tls")]
+    boring_tls: (boring::x509::X509, PKey<boring::pkey::Private>),
+}
+
+impl Debug for Identity {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Identity").finish()
+    }
+}
+
+impl Clone for Identity {
+    fn clone(&self) -> Self {
+        Identity {
+            #[cfg(feature = "native-tls")]
+            native_tls: self.native_tls.clone(),
+            #[cfg(feature = "rustls-tls")]
+            rustls_tls: (self.rustls_tls.0.clone(), self.rustls_tls.1.clone_key()),
+            #[cfg(feature = "boring-tls")]
+            boring_tls: (self.boring_tls.0.clone(), self.boring_tls.1.clone()),
+        }
+    }
+}
+
+#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+impl Identity {
+    pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
+        Ok(Self {
+            #[cfg(feature = "native-tls")]
+            native_tls: Identity::from_pem_native_tls(pem, key)?,
+            #[cfg(feature = "rustls-tls")]
+            rustls_tls: Identity::from_pem_rustls_tls(pem, key)?,
+            #[cfg(feature = "boring-tls")]
+            boring_tls: Identity::from_pem_boring_tls(pem, key)?,
+        })
+    }
+
+    #[cfg(feature = "native-tls")]
+    fn from_pem_native_tls(pem: &[u8], key: &[u8]) -> Result<native_tls::Identity, Error> {
+        native_tls::Identity::from_pkcs8(pem, key).map_err(error::tls)
+    }
+
+    #[cfg(feature = "rustls-tls")]
+    fn from_pem_rustls_tls(
+        pem: &[u8],
+        key: &[u8],
+    ) -> Result<(Vec<CertificateDer<'static>>, PrivateKeyDer<'static>), Error> {
+        let mut key = key;
+        let key = rustls_pemfile::private_key(&mut key).unwrap().unwrap();
+        Ok((vec![pem.to_owned().into()], key))
+    }
+
+    #[cfg(feature = "boring-tls")]
+    fn from_pem_boring_tls(
+        pem: &[u8],
+        key: &[u8],
+    ) -> Result<(boring::x509::X509, PKey<boring::pkey::Private>), Error> {
+        let cert = boring::x509::X509::from_pem(pem).map_err(error::tls)?;
+        let key = boring::pkey::PKey::private_key_from_pem(key).map_err(error::tls)?;
+        Ok((cert, key))
     }
 }
 
