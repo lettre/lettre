@@ -13,8 +13,10 @@ use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    crypto::WebPkiSupportedAlgorithms,
     crypto::{verify_tls12_signature, verify_tls13_signature},
     pki_types::{CertificateDer, PrivateKeyDer, ServerName, UnixTime},
+    server::ParsedCertificate,
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
 
@@ -195,10 +197,8 @@ impl TlsParametersBuilder {
     /// including those from other sites, are trusted.
     ///
     /// This method introduces significant vulnerabilities to man-in-the-middle attacks.
-    ///
-    /// Hostname verification can only be disabled with the `native-tls` TLS backend.
     #[cfg(any(feature = "native-tls", feature = "boring-tls"))]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "boring-tls"))))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature="rustls-tls" feature = "boring-tls"))))]
     pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
         self
@@ -376,50 +376,63 @@ impl TlsParametersBuilder {
         };
 
         let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
+        let provider = rustls::crypto::CryptoProvider::get_default()
+            .map(|arc| arc.clone())
+            .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
 
-        let tls = if self.accept_invalid_certs {
-            tls.dangerous()
-                .with_custom_certificate_verifier(Arc::new(InvalidCertsVerifier {}))
-        } else {
-            let mut root_cert_store = RootCertStore::empty();
+        // Build TLS config
+        let signature_algorithms = provider.signature_verification_algorithms;
 
-            #[cfg(feature = "rustls-native-certs")]
-            fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
-                let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
-                let (added, ignored) = store.add_parsable_certificates(native_certs);
-                #[cfg(feature = "tracing")]
-                tracing::debug!(
-                    "loaded platform certs with {added} valid and {ignored} ignored (invalid) certs"
-                );
-                Ok(())
+        let mut root_cert_store = RootCertStore::empty();
+
+        #[cfg(feature = "rustls-native-certs")]
+        fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
+            let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
+            let (added, ignored) = store.add_parsable_certificates(native_certs);
+            #[cfg(feature = "tracing")]
+            tracing::debug!(
+                "loaded platform certs with {added} valid and {ignored} ignored (invalid) certs"
+            );
+            Ok(())
+        }
+
+        #[cfg(feature = "rustls-tls")]
+        fn load_webpki_roots(store: &mut RootCertStore) {
+            store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        }
+
+        match self.cert_store {
+            CertificateStore::Default => {
+                #[cfg(feature = "rustls-native-certs")]
+                load_native_roots(&mut root_cert_store)?;
+                #[cfg(not(feature = "rustls-native-certs"))]
+                load_webpki_roots(&mut root_cert_store);
             }
-
             #[cfg(feature = "rustls-tls")]
-            fn load_webpki_roots(store: &mut RootCertStore) {
-                store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+            CertificateStore::WebpkiRoots => {
+                load_webpki_roots(&mut root_cert_store);
             }
+            CertificateStore::None => {}
+        }
+        for cert in self.root_certs {
+            for rustls_cert in cert.rustls {
+                root_cert_store.add(rustls_cert).map_err(error::tls)?;
+            }
+        }
 
-            match self.cert_store {
-                CertificateStore::Default => {
-                    #[cfg(feature = "rustls-native-certs")]
-                    load_native_roots(&mut root_cert_store)?;
-                    #[cfg(not(feature = "rustls-native-certs"))]
-                    load_webpki_roots(&mut root_cert_store);
-                }
-                #[cfg(feature = "rustls-tls")]
-                CertificateStore::WebpkiRoots => {
-                    load_webpki_roots(&mut root_cert_store);
-                }
-                CertificateStore::None => {}
-            }
-            for cert in self.root_certs {
-                for rustls_cert in cert.rustls {
-                    root_cert_store.add(rustls_cert).map_err(error::tls)?;
-                }
-            }
-
+        let tls = if self.accept_invalid_certs || self.accept_invalid_hostnames {
+            let verifier = InvalidCertsVerifier {
+                ignore_invalid_hostnames: self.accept_invalid_hostnames,
+                ignore_invalid_certs: self.accept_invalid_certs,
+                roots: root_cert_store,
+                signature_algorithms,
+            };
+            tls.dangerous()
+                .with_custom_certificate_verifier(Arc::new(verifier))
+        } else {
             tls.with_root_certificates(root_cert_store)
         };
+
         let tls = if let Some(identity) = self.identity {
             let (client_certificates, private_key) = identity.rustls_tls;
             tls.with_client_auth_cert(client_certificates, private_key)
@@ -629,18 +642,38 @@ impl Identity {
 
 #[cfg(feature = "rustls-tls")]
 #[derive(Debug)]
-struct InvalidCertsVerifier;
+struct InvalidCertsVerifier {
+    ignore_invalid_hostnames: bool,
+    ignore_invalid_certs: bool,
+    roots: RootCertStore,
+    signature_algorithms: WebPkiSupportedAlgorithms,
+}
 
 #[cfg(feature = "rustls-tls")]
 impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
-        _end_entity: &CertificateDer<'_>,
-        _intermediates: &[CertificateDer<'_>],
-        _server_name: &ServerName<'_>,
-        _ocsp_response: &[u8],
-        _now: UnixTime,
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        server_name: &ServerName<'_>,
+        ocsp_response: &[u8],
+        now: UnixTime,
     ) -> Result<ServerCertVerified, TlsError> {
+        let cert = ParsedCertificate::try_from(end_entity)?;
+
+        if !self.ignore_invalid_certs {
+            rustls::client::verify_server_cert_signed_by_trust_anchor(
+                &cert,
+                &self.roots,
+                intermediates,
+                now,
+                self.signature_algorithms.all,
+            )?;
+        }
+
+        if !self.ignore_invalid_hostnames {
+            rustls::client::verify_server_name(&cert, server_name)?;
+        }
         Ok(ServerCertVerified::assertion())
     }
 
