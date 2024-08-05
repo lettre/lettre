@@ -198,7 +198,7 @@ impl TlsParametersBuilder {
     ///
     /// This method introduces significant vulnerabilities to man-in-the-middle attacks.
     #[cfg(any(feature = "native-tls", feature = "boring-tls"))]
-    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature="rustls-tls" feature = "boring-tls"))))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))))]
     pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
         self
