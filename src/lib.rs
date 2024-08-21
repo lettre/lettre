@@ -174,21 +174,7 @@ mod compiletime_checks {
     If you'd like to use `boring-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
-    /*
-    #[cfg(all(
-        feature = "async-std1",
-        feature = "native-tls",
-        not(feature = "async-std1-native-tls")
-    ))]
-    compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the `async-std1-native-tls` feature hasn't been turned on.
-    If you'd like to use rustls make sure that the `native-tls` hasn't been enabled by mistake (you may need to import lettre without default features)
-    If you're building a library which depends on lettre import it without default features and enable just the features you need.");
-    */
-    #[cfg(all(
-        feature = "async-std1",
-        feature = "native-tls",
-        not(feature = "async-std1-native-tls")
-    ))]
+    #[cfg(all(feature = "async-std1", feature = "native-tls",))]
     compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
 If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
 If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.

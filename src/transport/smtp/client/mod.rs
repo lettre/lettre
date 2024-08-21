@@ -139,7 +139,7 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "log")]
+    #[cfg(feature = "tracing")]
     fn test_escape_crlf() {
         assert_eq!(escape_crlf("\r\n"), "<CRLF>");
         assert_eq!(escape_crlf("EHLO my_name\r\n"), "EHLO my_name<CRLF>");

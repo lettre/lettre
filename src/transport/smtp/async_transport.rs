@@ -82,7 +82,6 @@ where
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
-        feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
     #[cfg_attr(
@@ -117,7 +116,6 @@ where
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
-        feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
     #[cfg_attr(
@@ -353,7 +351,6 @@ impl AsyncSmtpTransportBuilder {
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
-        feature = "async-std1-native-tls",
         feature = "async-std1-rustls-tls"
     ))]
     #[cfg_attr(

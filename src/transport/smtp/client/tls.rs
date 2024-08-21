@@ -380,7 +380,7 @@ impl TlsParametersBuilder {
 
         let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
         let provider = rustls::crypto::CryptoProvider::get_default()
-            .map(|arc| arc.clone())
+            .cloned()
             .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
 
         // Build TLS config
@@ -659,7 +659,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
         end_entity: &CertificateDer<'_>,
         intermediates: &[CertificateDer<'_>],
         server_name: &ServerName<'_>,
-        ocsp_response: &[u8],
+        _ocsp_response: &[u8],
         now: UnixTime,
     ) -> Result<ServerCertVerified, TlsError> {
         let cert = ParsedCertificate::try_from(end_entity)?;

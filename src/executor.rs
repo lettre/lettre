@@ -230,7 +230,7 @@ impl Executor for AsyncStd1Executor {
     ) -> Result<AsyncSmtpConnection, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
-            #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
+            #[cfg(feature = "async-std1-rustls-tls")]
             Tls::Wrapper(tls_parameters) => Some(tls_parameters.clone()),
             _ => None,
         };
@@ -243,7 +243,7 @@ impl Executor for AsyncStd1Executor {
         )
         .await?;
 
-        #[cfg(any(feature = "async-std1-native-tls", feature = "async-std1-rustls-tls"))]
+        #[cfg(feature = "async-std1-rustls-tls")]
         match tls {
             Tls::Opportunistic(tls_parameters) => {
                 if conn.can_starttls() {
