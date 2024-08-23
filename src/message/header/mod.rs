@@ -189,10 +189,7 @@ pub struct HeaderName(Cow<'static, str>);
 impl HeaderName {
     /// Creates a new header name
     pub fn new_from_ascii(ascii: String) -> Result<Self, InvalidHeaderName> {
-        if !ascii.is_empty()
-            && ascii.len() <= 76
-            && ascii.is_ascii()
-            && !ascii.contains(|c| c == ':' || c == ' ')
+        if !ascii.is_empty() && ascii.len() <= 76 && ascii.is_ascii() && !ascii.contains([':', ' '])
         {
             Ok(Self(Cow::Owned(ascii)))
         } else {
