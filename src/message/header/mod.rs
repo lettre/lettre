@@ -161,18 +161,9 @@ impl Display for Headers {
 /// A possible error when converting a `HeaderName` from another type.
 // comes from `http` crate
 #[allow(missing_copy_implementations)]
-#[derive(Clone)]
-pub struct InvalidHeaderName {
-    _priv: (),
-}
-
-impl fmt::Debug for InvalidHeaderName {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("InvalidHeaderName")
-            // skip _priv noise
-            .finish()
-    }
-}
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct InvalidHeaderName;
 
 impl fmt::Display for InvalidHeaderName {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -193,7 +184,7 @@ impl HeaderName {
         {
             Ok(Self(Cow::Owned(ascii)))
         } else {
-            Err(InvalidHeaderName { _priv: () })
+            Err(InvalidHeaderName)
         }
     }
 
