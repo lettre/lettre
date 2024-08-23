@@ -124,22 +124,18 @@ impl Headers {
     }
 
     pub(crate) fn find_header(&self, name: &str) -> Option<&HeaderValue> {
-        self.headers
-            .iter()
-            .find(|value| name.eq_ignore_ascii_case(&value.name))
+        self.headers.iter().find(|value| name == value.name)
     }
 
     fn find_header_mut(&mut self, name: &str) -> Option<&mut HeaderValue> {
-        self.headers
-            .iter_mut()
-            .find(|value| name.eq_ignore_ascii_case(&value.name))
+        self.headers.iter_mut().find(|value| name == value.name)
     }
 
     fn find_header_index(&self, name: &str) -> Option<usize> {
         self.headers
             .iter()
             .enumerate()
-            .find(|(_i, value)| name.eq_ignore_ascii_case(&value.name))
+            .find(|(_i, value)| name == value.name)
             .map(|(i, _)| i)
     }
 }
@@ -254,23 +250,19 @@ impl AsRef<str> for HeaderName {
 
 impl PartialEq<HeaderName> for HeaderName {
     fn eq(&self, other: &HeaderName) -> bool {
-        let s1: &str = self.as_ref();
-        let s2: &str = other.as_ref();
-        s1 == s2
+        self.eq_ignore_ascii_case(other)
     }
 }
 
 impl PartialEq<&str> for HeaderName {
     fn eq(&self, other: &&str) -> bool {
-        let s: &str = self.as_ref();
-        s == *other
+        self.eq_ignore_ascii_case(other)
     }
 }
 
 impl PartialEq<HeaderName> for &str {
     fn eq(&self, other: &HeaderName) -> bool {
-        let s: &str = other.as_ref();
-        *self == s
+        self.eq_ignore_ascii_case(other)
     }
 }
 
@@ -462,6 +454,60 @@ mod tests {
     #[should_panic]
     fn const_empty_headername() {
         let _ = HeaderName::new_from_ascii_str("");
+    }
+
+    #[test]
+    fn headername_headername_eq() {
+        assert_eq!(
+            HeaderName::new_from_ascii_str("From"),
+            HeaderName::new_from_ascii_str("From")
+        );
+    }
+
+    #[test]
+    fn headername_str_eq() {
+        assert_eq!(HeaderName::new_from_ascii_str("From"), "From");
+    }
+
+    #[test]
+    fn str_headername_eq() {
+        assert_eq!("From", HeaderName::new_from_ascii_str("From"));
+    }
+
+    #[test]
+    fn headername_headername_eq_case_insensitive() {
+        assert_eq!(
+            HeaderName::new_from_ascii_str("From"),
+            HeaderName::new_from_ascii_str("from")
+        );
+    }
+
+    #[test]
+    fn headername_str_eq_case_insensitive() {
+        assert_eq!(HeaderName::new_from_ascii_str("From"), "from");
+    }
+
+    #[test]
+    fn str_headername_eq_case_insensitive() {
+        assert_eq!("from", HeaderName::new_from_ascii_str("From"));
+    }
+
+    #[test]
+    fn headername_headername_ne() {
+        assert_ne!(
+            HeaderName::new_from_ascii_str("From"),
+            HeaderName::new_from_ascii_str("To")
+        );
+    }
+
+    #[test]
+    fn headername_str_ne() {
+        assert_ne!(HeaderName::new_from_ascii_str("From"), "To");
+    }
+
+    #[test]
+    fn str_headername_ne() {
+        assert_ne!("From", HeaderName::new_from_ascii_str("To"));
     }
 
     // names taken randomly from https://it.wikipedia.org/wiki/Pinco_Pallino
