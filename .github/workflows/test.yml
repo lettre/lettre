@@ -13,16 +13,16 @@ env:
 
 jobs:
   rustfmt:
-    name: rustfmt / nightly-2023-06-22
+    name: rustfmt / nightly-2024-09-01
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install rust
         run: |
-          rustup default nightly-2023-06-22
+          rustup default nightly-2024-09-01
           rustup component add rustfmt
 
       - name: cargo fmt
@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install rust
         run: |
@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install rust
         run: rustup update --no-self-update stable
@@ -80,7 +80,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install rust
         run: |
@@ -134,7 +134,7 @@ jobs:
 #    name: Coverage
 #    runs-on: ubuntu-latest
 #    steps:
-#      - uses: actions/checkout@v2
+#      - uses: actions/checkout@v4
 #      - uses: actions-rs/toolchain@v1
 #        with:
 #          toolchain: nightly
