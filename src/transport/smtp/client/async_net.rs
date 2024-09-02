@@ -431,6 +431,48 @@ impl AsyncNetworkStream {
         }
     }
 
+    pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
+        match &self.inner {
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => {
+                Err(error::client("Connection is not encrypted"))
+            }
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(_) => panic!("Unsupported"),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(stream) => Ok(stream
+                .get_ref()
+                .1
+                .peer_certificates()
+                .unwrap()
+                .iter()
+                .map(|c| c.to_vec())
+                .collect()),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(stream) => Ok(stream
+                .ssl()
+                .peer_cert_chain()
+                .unwrap()
+                .iter()
+                .map(|c| c.to_der().map_err(error::tls))
+                .collect::<Result<Vec<_>, _>>()?),
+            #[cfg(feature = "async-std1")]
+            InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
+                Err(error::client("Connection is not encrypted"))
+            }
+            #[cfg(feature = "async-std1-rustls-tls")]
+            InnerAsyncNetworkStream::AsyncStd1RustlsTls(stream) => Ok(stream
+                .get_ref()
+                .1
+                .peer_certificates()
+                .unwrap()
+                .iter()
+                .map(|c| c.to_vec())
+                .collect()),
+            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+        }
+    }
+
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         match &self.inner {
             #[cfg(feature = "tokio1")]
