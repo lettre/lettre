@@ -1,3 +1,27 @@
+<a name="v0.11.8"></a>
+### v0.11.8 (2024-09-03)
+
+#### Features
+
+* Add mTLS support ([#974])
+* Implement `accept_invalid_hostnames` for rustls ([#977])
+* Provide certificate chain for peer certificates when using `rustls` or `boring-tls` ([#976])
+
+#### Changes
+
+* Make `HeaderName` comparisons via `PartialEq` case insensitive ([#980])
+
+#### Misc
+
+* Fix clippy warnings ([#979])
+* Replace manual impl of `#[non_exhaustive]` for `InvalidHeaderName` ([#981])
+
+[#974]: https://github.com/lettre/lettre/pull/974
+[#976]: https://github.com/lettre/lettre/pull/976
+[#977]: https://github.com/lettre/lettre/pull/977
+[#980]: https://github.com/lettre/lettre/pull/980
+[#981]: https://github.com/lettre/lettre/pull/981
+
 <a name="v0.11.7"></a>
 ### v0.11.7 (2024-04-23)
 
