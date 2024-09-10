@@ -197,7 +197,7 @@ impl TlsParametersBuilder {
     /// including those from other sites, are trusted.
     ///
     /// This method introduces significant vulnerabilities to man-in-the-middle attacks.
-    #[cfg(any(feature = "native-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
