@@ -557,9 +557,28 @@ mod test {
     }
 
     #[test]
+    fn parse_address_only_trim() {
+        assert_eq!(
+            " kayo@example.com ".parse(),
+            Ok(Mailbox::new(None, "kayo@example.com".parse().unwrap()))
+        );
+    }
+
+    #[test]
     fn parse_address_with_name() {
         assert_eq!(
             "K. <kayo@example.com>".parse(),
+            Ok(Mailbox::new(
+                Some("K.".into()),
+                "kayo@example.com".parse().unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_address_with_name_trim() {
+        assert_eq!(
+            " K. <kayo@example.com> ".parse(),
             Ok(Mailbox::new(
                 Some("K.".into()),
                 "kayo@example.com".parse().unwrap()
@@ -578,7 +597,7 @@ mod test {
     #[test]
     fn parse_address_with_empty_name_trim() {
         assert_eq!(
-            " <kayo@example.com>".parse(),
+            " <kayo@example.com> ".parse(),
             Ok(Mailbox::new(None, "kayo@example.com".parse().unwrap()))
         );
     }

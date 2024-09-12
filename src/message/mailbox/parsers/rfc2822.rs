@@ -170,7 +170,9 @@ fn phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 // mailbox         =       name-addr / addr-spec
 pub(crate) fn mailbox() -> impl Parser<char, (Option<String>, (String, String)), Error = Cheap<char>>
 {
-    choice((name_addr(), addr_spec().map(|addr| (None, addr)))).then_ignore(end())
+    choice((name_addr(), addr_spec().map(|addr| (None, addr))))
+        .padded()
+        .then_ignore(end())
 }
 
 // name-addr       =       [display-name] angle-addr
