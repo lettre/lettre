@@ -390,11 +390,14 @@ impl TlsParametersBuilder {
 
         #[cfg(feature = "rustls-native-certs")]
         fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
-            let native_certs = rustls_native_certs::load_native_certs().map_err(error::tls)?;
-            let (added, ignored) = store.add_parsable_certificates(native_certs);
+            let rustls_native_certs::CertificateResult { certs, errors, .. } =
+                rustls_native_certs::load_native_certs();
+            let errors_len = errors.len();
+
+            let (added, ignored) = store.add_parsable_certificates(certs);
             #[cfg(feature = "tracing")]
             tracing::debug!(
-                "loaded platform certs with {added} valid and {ignored} ignored (invalid) certs"
+                "loaded platform certs with {errors_len} failing to load, {added} valid and {ignored} ignored (invalid) certs"
             );
             Ok(())
         }
