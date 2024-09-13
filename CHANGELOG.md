@@ -1,3 +1,21 @@
+<a name="v0.11.9"></a>
+### v0.11.9 (2024-09-13)
+
+#### Bug fixes
+
+* Fix feature gate for `accept_invalid_hostnames` for rustls ([#988])
+* Fix parsing `Mailbox` with trailing spaces ([#986])
+
+#### Misc
+
+* Bump `rustls-native-certs` to v0.8 ([#992])
+* Make getting started example in readme complete ([#990])
+
+[#988]: https://github.com/lettre/lettre/pull/988
+[#986]: https://github.com/lettre/lettre/pull/986
+[#990]: https://github.com/lettre/lettre/pull/990
+[#992]: https://github.com/lettre/lettre/pull/992
+
 <a name="v0.11.8"></a>
 ### v0.11.8 (2024-09-03)
 
