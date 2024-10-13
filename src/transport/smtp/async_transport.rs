@@ -24,6 +24,7 @@ use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
 
 /// Asynchronously sends emails using the SMTP protocol
+#[derive(Clone)]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSmtpTransport<E: Executor> {
     #[cfg(feature = "pool")]
@@ -277,20 +278,6 @@ impl<E: Executor> Debug for AsyncSmtpTransport<E> {
     }
 }
 
-impl<E> Clone for AsyncSmtpTransport<E>
-where
-    E: Executor,
-{
-    fn clone(&self) -> Self {
-        Self {
-            #[cfg(feature = "pool")]
-            inner: Arc::clone(&self.inner),
-            #[cfg(not(feature = "pool"))]
-            inner: self.inner.clone(),
-        }
-    }
-}
-
 /// Contains client configuration.
 /// Instances of this struct can be created using functions of [`AsyncSmtpTransport`].
 #[derive(Debug, Clone)]
@@ -394,6 +381,7 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
+#[derive(Clone)]
 pub struct AsyncSmtpClient<E> {
     info: SmtpInfo,
     marker_: PhantomData<E>,
@@ -428,19 +416,5 @@ impl<E> Debug for AsyncSmtpClient<E> {
         let mut builder = f.debug_struct("AsyncSmtpClient");
         builder.field("info", &self.info);
         builder.finish()
-    }
-}
-
-// `clone` is unused when the `pool` feature is on
-#[allow(dead_code)]
-impl<E> AsyncSmtpClient<E>
-where
-    E: Executor,
-{
-    fn clone(&self) -> Self {
-        Self {
-            info: self.info.clone(),
-            marker_: PhantomData,
-        }
     }
 }
