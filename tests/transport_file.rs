@@ -53,6 +53,12 @@ mod sync {
     }
 
     #[test]
+    fn file_transport_clone() {
+        let sender = FileTransport::new(temp_dir());
+        let _ = sender.clone();
+    }
+
+    #[test]
     #[cfg(feature = "file-transport-envelope")]
     fn file_transport_with_envelope() {
         let sender = FileTransport::with_envelope(temp_dir());
@@ -149,6 +155,12 @@ mod tokio_1 {
         );
         remove_file(eml_file).unwrap();
     }
+
+    #[tokio::test]
+    async fn file_transport_tokio1_clone() {
+        let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
+        let _ = sender.clone();
+    }
 }
 
 #[cfg(test)]
@@ -199,5 +211,11 @@ mod asyncstd_1 {
             )
         );
         remove_file(eml_file).unwrap();
+    }
+
+    #[async_std::test]
+    async fn file_transport_asyncstd1_clone() {
+        let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
+        let _ = sender.clone();
     }
 }
