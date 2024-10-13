@@ -98,7 +98,7 @@ pub trait SpawnHandle: Debug + Send + Sync + 'static + private::Sealed {
 #[non_exhaustive]
 #[cfg(feature = "tokio1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tokio1Executor;
 
 #[async_trait]
@@ -194,7 +194,7 @@ impl SpawnHandle for tokio1_crate::task::JoinHandle<()> {
 #[non_exhaustive]
 #[cfg(feature = "async-std1")]
 #[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AsyncStd1Executor;
 
 #[async_trait]
