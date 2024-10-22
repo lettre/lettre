@@ -1,11 +1,11 @@
-use std::{mem, ops::Deref};
+use std::{mem, ops::Deref, sync::Arc};
 
 use crate::message::header::ContentTransferEncoding;
 
 /// A [`Message`][super::Message] or [`SinglePart`][super::SinglePart] body that has already been encoded.
 #[derive(Debug, Clone)]
 pub struct Body {
-    buf: Vec<u8>,
+    buf: Arc<[u8]>,
     encoding: ContentTransferEncoding,
 }
 
@@ -39,7 +39,7 @@ impl Body {
 
         let encoding = buf.encoding(false);
         buf.encode_crlf();
-        Self::new_impl(buf.into(), encoding)
+        Self::new_impl(Vec::from(buf).into(), encoding)
     }
 
     /// Encode the supplied `buf`, using the provided `encoding`.
@@ -77,7 +77,7 @@ impl Body {
         }
 
         buf.encode_crlf();
-        Ok(Self::new_impl(buf.into(), encoding))
+        Ok(Self::new_impl(Vec::from(buf).into(), encoding))
     }
 
     /// Builds a new `Body` using a pre-encoded buffer.
@@ -87,11 +87,14 @@ impl Body {
     /// `buf` shouldn't contain non-ascii characters, lines longer than 1000 characters or nul bytes.
     #[inline]
     pub fn dangerous_pre_encoded(buf: Vec<u8>, encoding: ContentTransferEncoding) -> Self {
-        Self { buf, encoding }
+        Self {
+            buf: buf.into(),
+            encoding,
+        }
     }
 
     /// Encodes the supplied `buf` using the provided `encoding`
-    fn new_impl(buf: Vec<u8>, encoding: ContentTransferEncoding) -> Self {
+    fn new_impl(buf: Arc<[u8]>, encoding: ContentTransferEncoding) -> Self {
         match encoding {
             ContentTransferEncoding::SevenBit
             | ContentTransferEncoding::EightBit
@@ -133,7 +136,16 @@ impl Body {
 
     /// Consumes `Body` and returns the inner `Vec<u8>`
     #[inline]
+    #[deprecated(
+        note = "The inner memory is not stored into `Vec<u8>` anymore. Consider using `into_inner`"
+    )]
     pub fn into_vec(self) -> Vec<u8> {
+        self.buf.to_vec()
+    }
+
+    /// Consumes `Body` and returns the inner `Arc<[u8]>`
+    #[inline]
+    pub fn into_inner(self) -> Arc<[u8]> {
         self.buf
     }
 }

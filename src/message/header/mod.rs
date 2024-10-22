@@ -18,6 +18,7 @@ pub use self::{
     special::*,
     textual::*,
 };
+use super::EmailFormat;
 use crate::BoxError;
 
 mod content;
@@ -151,6 +152,19 @@ impl Display for Headers {
         }
 
         Ok(())
+    }
+}
+
+impl EmailFormat for Headers {
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
+        for value in &self.headers {
+            out.extend([
+                Cow::Borrowed(value.name.as_bytes()),
+                Cow::Borrowed(b": "),
+                Cow::Borrowed(value.encoded_value.as_bytes()),
+                Cow::Borrowed(b"\r\n"),
+            ]);
+        }
     }
 }
 

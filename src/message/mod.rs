@@ -198,7 +198,7 @@
 //! ```
 //! </details>
 
-use std::{io::Write, iter, time::SystemTime};
+use std::{borrow::Cow, iter, sync::Arc, time::SystemTime};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
@@ -226,7 +226,23 @@ const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 /// Something that can be formatted as an email message
 trait EmailFormat {
     // Use a writer?
-    fn format(&self, out: &mut Vec<u8>);
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>);
+
+    fn format_to_vec(&self) -> Vec<u8> {
+        struct Formatter(Vec<u8>);
+
+        impl<'a> Extend<Cow<'a, [u8]>> for Formatter {
+            fn extend<T: IntoIterator<Item = Cow<'a, [u8]>>>(&mut self, iter: T) {
+                for chunk in iter {
+                    self.0.extend_from_slice(&chunk);
+                }
+            }
+        }
+
+        let mut formatted = Formatter(Vec::new());
+        self.format(&mut formatted);
+        formatted.0
+    }
 }
 
 /// A builder for messages
@@ -454,7 +470,7 @@ impl MessageBuilder {
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
-        self.build(MessageBody::Raw(body.into_vec()))
+        self.build(MessageBody::Raw(body.into_inner()))
     }
 
     /// Create message using mime body ([`MultiPart`][self::MultiPart])
@@ -489,7 +505,7 @@ pub struct Message {
 #[derive(Clone, Debug)]
 enum MessageBody {
     Mime(Part),
-    Raw(Vec<u8>),
+    Raw(Arc<[u8]>),
 }
 
 impl Message {
@@ -515,9 +531,7 @@ impl Message {
 
     /// Get message content formatted for SMTP
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        self.format(&mut out);
-        out
+        self.format_to_vec()
     }
 
     #[cfg(feature = "dkim")]
@@ -593,15 +607,13 @@ impl Message {
 }
 
 impl EmailFormat for Message {
-    fn format(&self, out: &mut Vec<u8>) {
-        write!(out, "{}", self.headers)
-            .expect("A Write implementation panicked while formatting headers");
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
+        self.headers.format(out);
 
         match &self.body {
             MessageBody::Mime(p) => p.format(out),
             MessageBody::Raw(r) => {
-                out.extend_from_slice(b"\r\n");
-                out.extend_from_slice(r)
+                out.extend([Cow::Borrowed("\r\n".as_bytes()), Cow::Borrowed(r)]);
             }
         }
     }

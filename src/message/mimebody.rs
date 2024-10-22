@@ -1,4 +1,4 @@
-use std::{io::Write, iter::repeat_with};
+use std::{borrow::Cow, iter::repeat_with, sync::Arc};
 
 use mime::Mime;
 
@@ -28,7 +28,7 @@ impl Part {
 }
 
 impl EmailFormat for Part {
-    fn format(&self, out: &mut Vec<u8>) {
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
         match self {
             Part::Single(part) => part.format(out),
             Part::Multi(part) => part.format(out),
@@ -71,7 +71,7 @@ impl SinglePartBuilder {
 
         SinglePart {
             headers: self.headers,
-            body: body.into_vec(),
+            body: body.into_inner(),
         }
     }
 }
@@ -100,7 +100,7 @@ impl Default for SinglePartBuilder {
 #[derive(Debug, Clone)]
 pub struct SinglePart {
     headers: Headers,
-    body: Vec<u8>,
+    body: Arc<[u8]>,
 }
 
 impl SinglePart {
@@ -138,24 +138,18 @@ impl SinglePart {
 
     /// Get message content formatted for sending
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        self.format(&mut out);
-        out
-    }
-
-    /// Format only the signlepart body
-    fn format_body(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&self.body);
-        out.extend_from_slice(b"\r\n");
+        self.format_to_vec()
     }
 }
 
 impl EmailFormat for SinglePart {
-    fn format(&self, out: &mut Vec<u8>) {
-        write!(out, "{}", self.headers)
-            .expect("A Write implementation panicked while formatting headers");
-        out.extend_from_slice(b"\r\n");
-        self.format_body(out);
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
+        self.headers.format(out);
+        out.extend([
+            Cow::Borrowed("\r\n".as_bytes()),
+            Cow::Borrowed(&self.body),
+            Cow::Borrowed(b"\r\n"),
+        ]);
     }
 }
 
@@ -384,33 +378,36 @@ impl MultiPart {
 
     /// Get message content formatted for SMTP
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        self.format(&mut out);
-        out
+        self.format_to_vec()
     }
 
     /// Format only the multipart body
-    fn format_body(&self, out: &mut Vec<u8>) {
+    fn format_body<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
         let boundary = self.boundary();
 
         for part in &self.parts {
-            out.extend_from_slice(b"--");
-            out.extend_from_slice(boundary.as_bytes());
-            out.extend_from_slice(b"\r\n");
+            out.extend([
+                Cow::Borrowed("--".as_bytes()),
+                // FIXME: this clone shouldn't exist
+                Cow::Owned(boundary.clone().into()),
+                Cow::Borrowed("\r\n".as_bytes()),
+            ]);
             part.format(out);
         }
 
-        out.extend_from_slice(b"--");
-        out.extend_from_slice(boundary.as_bytes());
-        out.extend_from_slice(b"--\r\n");
+        out.extend([
+            Cow::Borrowed("--".as_bytes()),
+            Cow::Owned(boundary.into()),
+            Cow::Borrowed("--\r\n".as_bytes()),
+        ]);
     }
 }
 
 impl EmailFormat for MultiPart {
-    fn format(&self, out: &mut Vec<u8>) {
-        write!(out, "{}", self.headers)
-            .expect("A Write implementation panicked while formatting headers");
-        out.extend_from_slice(b"\r\n");
+    fn format<'a>(&'a self, out: &mut impl Extend<Cow<'a, [u8]>>) {
+        self.headers.format(out);
+        out.extend([Cow::Borrowed("\r\n".as_bytes())]);
+
         self.format_body(out);
     }
 }
