@@ -32,7 +32,7 @@ impl Transport for SmtpTransport {
         let result = conn.send(envelope, email)?;
 
         #[cfg(not(feature = "pool"))]
-        conn.quit()?;
+        conn.abort();
 
         Ok(result)
     }

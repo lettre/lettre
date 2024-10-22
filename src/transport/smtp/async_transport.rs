@@ -45,7 +45,7 @@ impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
         let result = conn.send(envelope, email).await?;
 
         #[cfg(not(feature = "pool"))]
-        conn.quit().await?;
+        conn.abort().await;
 
         Ok(result)
     }
