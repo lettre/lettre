@@ -98,13 +98,17 @@ impl Mechanism {
                 let decoded_challenge = challenge
                     .ok_or_else(|| error::client("This mechanism does expect a challenge"))?;
 
-                if ["User Name", "Username:", "Username", "User Name\0"]
-                    .contains(&decoded_challenge)
-                {
+                if contains_ignore_ascii_case(
+                    decoded_challenge,
+                    ["User Name", "Username:", "Username", "User Name\0"],
+                ) {
                     return Ok(credentials.authentication_identity.clone());
                 }
 
-                if ["Password", "Password:", "Password\0"].contains(&decoded_challenge) {
+                if contains_ignore_ascii_case(
+                    decoded_challenge,
+                    ["Password", "Password:", "Password\0"],
+                ) {
                     return Ok(credentials.secret.clone());
                 }
 
@@ -119,6 +123,15 @@ impl Mechanism {
             },
         }
     }
+}
+
+fn contains_ignore_ascii_case<'a>(
+    haystack: &str,
+    needles: impl IntoIterator<Item = &'a str>,
+) -> bool {
+    needles
+        .into_iter()
+        .any(|item| item.eq_ignore_ascii_case(haystack))
 }
 
 #[cfg(test)]
@@ -150,6 +163,23 @@ mod test {
         );
         assert_eq!(
             mechanism.response(&credentials, Some("Password")).unwrap(),
+            "wonderland"
+        );
+        assert!(mechanism.response(&credentials, None).is_err());
+    }
+
+    #[test]
+    fn test_login_case_insensitive() {
+        let mechanism = Mechanism::Login;
+
+        let credentials = Credentials::new("alice".to_owned(), "wonderland".to_owned());
+
+        assert_eq!(
+            mechanism.response(&credentials, Some("username")).unwrap(),
+            "alice"
+        );
+        assert_eq!(
+            mechanism.response(&credentials, Some("password")).unwrap(),
             "wonderland"
         );
         assert!(mechanism.response(&credentials, None).is_err());
