@@ -1,3 +1,14 @@
+<a name="v0.11.10"></a>
+### v0.11.10 (2024-10-23)
+
+#### Bug fixes
+
+* Ignore disconnect errors when `pool` feature of SMTP transport is disabled ([#999])
+* Use case insensitive comparisons for matching login challenge requests ([#1000])
+
+[#999]: https://github.com/lettre/lettre/pull/999
+[#1000]: https://github.com/lettre/lettre/pull/1000
+
 <a name="v0.11.9"></a>
 ### v0.11.9 (2024-09-13)
 
