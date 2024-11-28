@@ -174,7 +174,7 @@ impl Mailboxes {
         self
     }
 
-    /// Adds a new [`Mailbox`] to the list, in a Vec::push style pattern.
+    /// Adds a new [`Mailbox`] to the list, in a `Vec::push` style pattern.
     ///
     /// # Examples
     ///
