@@ -62,7 +62,7 @@ impl TransportBuilder for AsyncSmtpTransportBuilder {
     }
 }
 
-/// Create a new SmtpTransportBuilder or AsyncSmtpTransportBuilder from a connection URL
+/// Create a new `SmtpTransportBuilder` or `AsyncSmtpTransportBuilder` from a connection URL
 pub(crate) fn from_connection_url<B: TransportBuilder>(connection_url: &str) -> Result<B, Error> {
     let connection_url = Url::parse(connection_url).map_err(error::connection)?;
     let tls: Option<String> = connection_url

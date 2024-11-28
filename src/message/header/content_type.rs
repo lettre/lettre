@@ -119,7 +119,7 @@ mod serde {
         {
             struct ContentTypeVisitor;
 
-            impl<'de> Visitor<'de> for ContentTypeVisitor {
+            impl Visitor<'_> for ContentTypeVisitor {
                 type Value = ContentType;
 
                 // The error message which states what the Visitor expects to

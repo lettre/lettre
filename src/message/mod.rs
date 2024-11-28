@@ -345,7 +345,7 @@ impl MessageBuilder {
                 let hostname = hostname::get()
                     .map_err(|_| ())
                     .and_then(|s| s.into_string().map_err(|_| ()))
-                    .unwrap_or_else(|_| DEFAULT_MESSAGE_ID_DOMAIN.to_owned());
+                    .unwrap_or_else(|()| DEFAULT_MESSAGE_ID_DOMAIN.to_owned());
                 #[cfg(not(feature = "hostname"))]
                 let hostname = DEFAULT_MESSAGE_ID_DOMAIN.to_owned();
 

@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 #[derive(Debug)]
 pub struct XText<'a>(pub &'a str);
 
-impl<'a> Display for XText<'a> {
+impl Display for XText<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         let mut rest = self.0;
         while let Some(idx) = rest.find(|c| c < '!' || c == '+' || c == '=') {
