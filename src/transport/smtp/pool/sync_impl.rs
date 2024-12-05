@@ -72,7 +72,7 @@ impl Pool {
 
                         #[cfg(feature = "tracing")]
                         let mut created = 0;
-                        for _ in count..=(min_idle as usize) {
+                        for _ in count..(min_idle as usize) {
                             let conn = match pool.client.connection() {
                                 Ok(conn) => conn,
                                 Err(err) => {
