@@ -1,3 +1,24 @@
+<a name="v0.11.11"></a>
+### v0.11.11 (2024-12-05)
+
+#### Upgrade notes
+
+* MSRV is now 1.71 ([#1008])
+
+#### Bug fixes
+
+* Fix off-by-one error reaching the minimum number of configured pooled connections ([#1012])
+
+#### Misc
+
+* Fix clippy warnings ([#1009])
+* Fix `-Zminimal-versions` build ([#1007])
+
+[#1007]: https://github.com/lettre/lettre/pull/1007
+[#1008]: https://github.com/lettre/lettre/pull/1008
+[#1009]: https://github.com/lettre/lettre/pull/1009
+[#1012]: https://github.com/lettre/lettre/pull/1012
+
 <a name="v0.11.10"></a>
 ### v0.11.10 (2024-10-23)
 
