@@ -33,13 +33,14 @@
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{Message, SmtpTransport, Transport};
+//! use lettre::{message::header::ContentType, Message, SmtpTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Create TLS transport on port 465
@@ -59,6 +60,7 @@
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
+//!     message::header::ContentType,
 //!     transport::smtp::{
 //!         authentication::{Credentials, Mechanism},
 //!         PoolConfig,
@@ -71,6 +73,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Create TLS transport on port 587 with STARTTLS
@@ -99,6 +102,7 @@
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
+//!     message::header::ContentType,
 //!     transport::smtp::client::{Tls, TlsParameters},
 //!     Message, SmtpTransport, Transport,
 //! };
@@ -108,6 +112,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! // Custom TLS configuration

@@ -11,7 +11,7 @@
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{FileTransport, Message, Transport};
+//! use lettre::{message::header::ContentType, FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -20,6 +20,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(&email);
@@ -44,7 +45,7 @@
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{FileTransport, Message, Transport};
+//! use lettre::{message::header::ContentType, FileTransport, Message, Transport};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::with_envelope(temp_dir());
@@ -53,6 +54,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(&email);
@@ -73,7 +75,9 @@
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{AsyncFileTransport, AsyncTransport, Message, Tokio1Executor};
+//! use lettre::{
+//!     message::header::ContentType, AsyncFileTransport, AsyncTransport, Message, Tokio1Executor,
+//! };
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<Tokio1Executor>::new(temp_dir());
@@ -82,6 +86,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(email).await;
@@ -99,7 +104,10 @@
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message};
+//! use lettre::{
+//!     message::header::ContentType, AsyncFileTransport, AsyncStd1Executor, AsyncTransport,
+//!     Message,
+//! };
 //!
 //! // Write to the local temp directory
 //! let sender = AsyncFileTransport::<AsyncStd1Executor>::new(temp_dir());
@@ -108,6 +116,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let result = sender.send(email).await;
@@ -125,6 +134,7 @@
 //! Reply-To: Yuin <yuin@domain.tld>
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
+//! Content-Type: text/plain; charset=utf-8
 //! Date: Tue, 18 Aug 2020 22:50:17 GMT
 //!
 //! Be happy!

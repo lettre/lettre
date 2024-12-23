@@ -7,13 +7,14 @@
 //! #
 //! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, SendmailTransport, Transport};
+//! use lettre::{message::header::ContentType, Message, SendmailTransport, Transport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = SendmailTransport::new();
@@ -34,7 +35,8 @@
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{
-//!     AsyncSendmailTransport, AsyncTransport, Message, SendmailTransport, Tokio1Executor,
+//!     message::header::ContentType, AsyncSendmailTransport, AsyncTransport, Message,
+//!     SendmailTransport, Tokio1Executor,
 //! };
 //!
 //! let email = Message::builder()
@@ -42,6 +44,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = AsyncSendmailTransport::<Tokio1Executor>::new();
@@ -58,13 +61,13 @@
 //! #
 //! # #[cfg(all(feature = "async-std1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
-//! use lettre::{Message, AsyncTransport, AsyncStd1Executor, AsyncSendmailTransport};
+//! use lettre::{Message, AsyncTransport, AsyncStd1Executor,message::header::ContentType, AsyncSendmailTransport};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
-//!     .subject("Happy new year")
+//!     .subject("Happy new year").header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = AsyncSendmailTransport::<AsyncStd1Executor>::new();
