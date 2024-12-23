@@ -59,27 +59,61 @@ pub enum TlsVersion {
     Tlsv13,
 }
 
-/// How to apply TLS to a client connection
+/// Specifies how to establish a TLS connection
+///
+/// TLDR: Use [`Tls::Wrapper`] or [`Tls::Required`] when
+/// connecting to a remote server, [`Tls::None`] when
+/// connecting to a local server.
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
 pub enum Tls {
-    /// Insecure connection only (for testing purposes)
+    /// Insecure (plaintext) connection only.
+    ///
+    /// This option **always** uses a plaintext connection and should only
+    /// be used for trusted local relays. It is **highly discouraged**
+    /// for remote servers, as it exposes credentials and emails to potential
+    /// interception.
+    ///
+    /// Note: Servers requiring credentials or emails to be sent over TLS
+    /// may reject connections when this option is used.
     None,
-    /// Start with insecure connection and use `STARTTLS` when available
+    /// Begin with a plaintext connection and attempt to use `STARTTLS` if available.
+    ///
+    /// lettre will try to upgrade to a TLS-secured connection but will fall back
+    /// to plaintext if the server does not support TLS. This option is provided for
+    /// compatibility but is **strongly discouraged**, as it exposes connections to
+    /// potential MITM (man-in-the-middle) attacks.
+    ///
+    /// Warning: A malicious intermediary could intercept the `STARTTLS` flag,
+    /// causing lettre to believe the server only supports plaintext connections.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
     )]
     Opportunistic(TlsParameters),
-    /// Start with insecure connection and require `STARTTLS`
+    /// Begin with a plaintext connection and require `STARTTLS` for security.
+    ///
+    /// lettre will upgrade plaintext TCP connections to TLS before transmitting
+    /// any sensitive data. If the server does not support TLS, the connection
+    /// attempt will fail, ensuring no credentials or emails are sent in plaintext.
+    ///
+    /// Unlike [`Tls::Opportunistic`], this option is secure against MITM attacks.
+    /// For optimal security and performance, consider using [`Tls::Wrapper`] instead,
+    /// as it requires fewer roundtrips to establish a secure connection.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
     )]
     Required(TlsParameters),
-    /// Use TLS wrapped connection
+    /// Establish a connection wrapped in TLS from the start.
+    ///
+    /// lettre connects to the server and immediately performs a TLS handshake.
+    /// If the handshake fails, the connection attempt is aborted without
+    /// transmitting any sensitive data.
+    ///
+    /// This is the fastest and most secure option for establishing a connection.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
