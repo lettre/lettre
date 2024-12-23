@@ -265,12 +265,34 @@ impl SmtpTransportBuilder {
     }
 
     /// Set the port to use
+    ///
+    /// # ⚠️⚠️⚠️ You probably don't need to call this method ⚠️⚠️⚠️
+    ///
+    /// lettre usually picks the correct `port` when building
+    /// [`SmtpTransport`] using [`SmtpTransport::relay`] or
+    /// [`SmtpTransport::starttls_relay`].
+    ///
+    /// # Errors
+    ///
+    /// Using the incorrect `port` and [`Self::tls`] combination may
+    /// lead to hard to debug IO errors coming from the TLS library.
     pub fn port(mut self, port: u16) -> Self {
         self.info.port = port;
         self
     }
 
     /// Set the TLS settings to use
+    ///
+    /// # ⚠️⚠️⚠️ You probably don't need to call this method ⚠️⚠️⚠️
+    ///
+    /// By default lettre chooses the correct `tls` configuration when
+    /// building [`SmtpTransport`] using [`SmtpTransport::relay`] or
+    /// [`SmtpTransport::starttls_relay`].
+    ///
+    /// # Errors
+    ///
+    /// Using the wrong [`Tls`] and [`Self::port`] combination may
+    /// lead to hard to debug IO errors coming from the TLS library.
     #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
