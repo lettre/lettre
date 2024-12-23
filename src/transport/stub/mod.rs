@@ -11,7 +11,9 @@
 //! ```rust
 //! # #[cfg(feature = "builder")]
 //! # {
-//! use lettre::{transport::stub::StubTransport, Message, Transport};
+//! use lettre::{
+//!     message::header::ContentType, transport::stub::StubTransport, Message, Transport,
+//! };
 //!
 //! # use std::error::Error;
 //! # fn try_main() -> Result<(), Box<dyn Error>> {
@@ -20,6 +22,7 @@
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let mut sender = StubTransport::new_ok();

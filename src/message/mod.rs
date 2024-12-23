@@ -537,7 +537,10 @@ impl Message {
     /// Example:
     /// ```rust
     /// use lettre::{
-    ///     message::dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///     message::{
+    ///         dkim::{DkimConfig, DkimSigningAlgorithm, DkimSigningKey},
+    ///         header::ContentType,
+    ///     },
     ///     Message,
     /// };
     ///
@@ -546,6 +549,7 @@ impl Message {
     ///     .reply_to("Bob <bob@example.org>".parse().unwrap())
     ///     .to("Carla <carla@example.net>".parse().unwrap())
     ///     .subject("Hello")
+    ///     .header(ContentType::TEXT_PLAIN)
     ///     .body("Hi there, it's a test email, with utf-8 chars ë!\n\n\n".to_owned())
     ///     .unwrap();
     /// let key = "-----BEGIN RSA PRIVATE KEY-----

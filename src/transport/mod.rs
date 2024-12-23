@@ -56,13 +56,17 @@
 //! #
 //! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{transport::smtp::authentication::Credentials, Message, SmtpTransport, Transport};
+//! use lettre::{
+//!     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
+//!     SmtpTransport, Transport,
+//! };
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
 //!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
 //!     .to("Hei <hei@domain.tld>".parse()?)
 //!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
