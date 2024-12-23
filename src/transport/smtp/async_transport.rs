@@ -12,6 +12,12 @@ use async_trait::async_trait;
 use super::pool::async_impl::Pool;
 #[cfg(feature = "pool")]
 use super::PoolConfig;
+#[cfg(any(
+    feature = "tokio1-native-tls",
+    feature = "tokio1-rustls-tls",
+    feature = "async-std1-rustls-tls"
+))]
+use super::Tls;
 use super::{
     client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
 };
@@ -336,6 +342,17 @@ impl AsyncSmtpTransportBuilder {
     }
 
     /// Set the port to use
+    ///
+    /// # ⚠️⚠️⚠️ You probably don't need to call this method ⚠️⚠️⚠️
+    ///
+    /// lettre usually picks the correct `port` when building
+    /// [`AsyncSmtpTransport`] using [`AsyncSmtpTransport::relay`] or
+    /// [`AsyncSmtpTransport::starttls_relay`].
+    ///
+    /// # Errors
+    ///
+    /// Using the incorrect `port` and [`Self::tls`] combination may
+    /// lead to hard to debug IO errors coming from the TLS library.
     pub fn port(mut self, port: u16) -> Self {
         self.info.port = port;
         self
@@ -348,6 +365,17 @@ impl AsyncSmtpTransportBuilder {
     }
 
     /// Set the TLS settings to use
+    ///
+    /// # ⚠️⚠️⚠️ You probably don't need to call this method ⚠️⚠️⚠️
+    ///
+    /// By default lettre chooses the correct `tls` configuration when
+    /// building [`AsyncSmtpTransport`] using [`AsyncSmtpTransport::relay`] or
+    /// [`AsyncSmtpTransport::starttls_relay`].
+    ///
+    /// # Errors
+    ///
+    /// Using the incorrect [`Tls`] and [`Self::port`] combination may
+    /// lead to hard to debug IO errors coming from the TLS library.
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls-tls",
@@ -361,7 +389,7 @@ impl AsyncSmtpTransportBuilder {
             feature = "async-std1-rustls-tls"
         )))
     )]
-    pub fn tls(mut self, tls: super::Tls) -> Self {
+    pub fn tls(mut self, tls: Tls) -> Self {
         self.info.tls = tls;
         self
     }
