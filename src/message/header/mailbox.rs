@@ -110,7 +110,7 @@ mailbox_header! {
 
     `Sender` header
 
-    This header contains [`Mailbox`][self::Mailbox] associated with sender.
+    This header contains [`Mailbox`] associated with sender.
 
     ```no_test
     header::Sender("Mr. Sender <sender@example.com>".parse().unwrap())
@@ -124,7 +124,7 @@ mailboxes_header! {
 
     `From` header
 
-    This header contains [`Mailboxes`][self::Mailboxes].
+    This header contains [`Mailboxes`].
 
      */
     (From, "From")
@@ -135,7 +135,7 @@ mailboxes_header! {
 
     `Reply-To` header
 
-    This header contains [`Mailboxes`][self::Mailboxes].
+    This header contains [`Mailboxes`].
 
      */
     (ReplyTo, "Reply-To")
@@ -146,7 +146,7 @@ mailboxes_header! {
 
     `To` header
 
-    This header contains [`Mailboxes`][self::Mailboxes].
+    This header contains [`Mailboxes`].
 
      */
     (To, "To")
@@ -157,7 +157,7 @@ mailboxes_header! {
 
     `Cc` header
 
-    This header contains [`Mailboxes`][self::Mailboxes].
+    This header contains [`Mailboxes`].
 
      */
     (Cc, "Cc")
@@ -168,7 +168,7 @@ mailboxes_header! {
 
     `Bcc` header
 
-    This header contains [`Mailboxes`][self::Mailboxes].
+    This header contains [`Mailboxes`].
 
      */
     (Bcc, "Bcc")

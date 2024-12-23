@@ -457,12 +457,12 @@ impl MessageBuilder {
         self.build(MessageBody::Raw(body.into_vec()))
     }
 
-    /// Create message using mime body ([`MultiPart`][self::MultiPart])
+    /// Create message using mime body ([`MultiPart`])
     pub fn multipart(self, part: MultiPart) -> Result<Message, EmailError> {
         self.mime_1_0().build(MessageBody::Mime(Part::Multi(part)))
     }
 
-    /// Create message using mime body ([`SinglePart`][self::SinglePart])
+    /// Create message using mime body ([`SinglePart`])
     pub fn singlepart(self, part: SinglePart) -> Result<Message, EmailError> {
         self.mime_1_0().build(MessageBody::Mime(Part::Single(part)))
     }
