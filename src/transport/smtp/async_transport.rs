@@ -353,7 +353,7 @@ impl AsyncSmtpTransportBuilder {
         self
     }
 
-    /// Set the authentication mechanism to use
+    /// Set the authentication credentials to use
     pub fn credentials(mut self, credentials: Credentials) -> Self {
         self.info.credentials = Some(credentials);
         self
