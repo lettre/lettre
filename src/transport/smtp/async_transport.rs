@@ -30,6 +30,30 @@ use crate::Tokio1Executor;
 use crate::{Envelope, Executor};
 
 /// Asynchronously sends emails using the SMTP protocol
+///
+/// `AsyncSmtpTransport` is the primary way for communicating
+/// with SMTP relay servers to send email messages. It holds the
+/// client connect configuration and creates new connections
+/// as necessary.
+///
+/// # Connection pool
+///
+/// When the `pool` feature is enabled (default), `AsyncSmtpTransport` maintains a
+/// connection pool to manage SMTP connections. The pool:
+///
+/// - Establishes a new connection when sending a message.
+/// - Recycles connections internally after a message is sent.
+/// - Reuses connections for subsequent messages, reducing connection setup overhead.
+///
+/// The connection pool can grow to hold multiple SMTP connections if multiple
+/// emails are sent concurrently, as SMTP does not support multiplexing within a
+/// single connection.
+///
+/// However, **connection reuse is not possible** if the `SyncSmtpTransport` instance
+/// is dropped after every email send operation. You must reuse the instance
+/// of this struct for the connection pool to be of any use.
+///
+/// To customize connection pool settings, use [`AsyncSmtpTransportBuilder::pool_config`].
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 pub struct AsyncSmtpTransport<E: Executor> {
     #[cfg(feature = "pool")]
