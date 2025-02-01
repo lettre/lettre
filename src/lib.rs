@@ -34,12 +34,24 @@
 //!
 //! _Secure SMTP connections using TLS from the `native-tls` crate_
 //!
-//! Uses schannel on Windows, Security-Framework on macOS, and OpenSSL on Linux.
+//! Uses schannel on Windows, Security-Framework on macOS, and OpenSSL
+//! on all other platforms.
 //!
 //! * **native-tls** 📫: TLS support for the synchronous version of the API
 //! * **tokio1-native-tls**: TLS support for the `tokio1` async version of the API
 //!
 //! NOTE: native-tls isn't supported with `async-std`
+//!
+//! ##### Building lettre with OpenSSL
+//!
+//! When building lettre with native-tls on a system that makes
+//! use of OpenSSL, the following packages will need to be installed
+//! in order for the build and the compiled program to run properly.
+//!
+//! | Distro       | Build-time packages        | Runtime packages             |
+//! | ------------ | -------------------------- | ---------------------------- |
+//! | Debian       | `pkg-config`, `libssl-dev` | `libssl3`, `ca-certificates` |
+//! | Alpine Linux | `pkgconf`, `openssl-dev`   | `libssl3`, `ca-certificates` |
 //!
 //! #### SMTP over TLS via the boring crate (Boring TLS)
 //!
