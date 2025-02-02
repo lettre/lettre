@@ -69,7 +69,7 @@ impl Display for DkimSigningAlgorithm {
     }
 }
 
-/// Describe [`DkimSigning`] key error
+/// Describe [`DkimSigningKey`] key error
 #[derive(Debug)]
 pub struct DkimSigningKeyError(InnerDkimSigningKeyError);
 
