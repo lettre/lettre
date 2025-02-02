@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.11.11">
-    <img src="https://deps.rs/crate/lettre/0.11.11/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.11.12">
+    <img src="https://deps.rs/crate/lettre/0.11.12/status.svg"
       alt="dependency status" />
   </a>
 </div>
@@ -107,7 +107,7 @@ cargo run --example autoconfigure SMTP_HOST
 
 ## Testing
 
-The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed 
+The `lettre` tests require an open mail server listening locally on port 2525 and the `sendmail` command. If you have python installed
 such a server can be launched with `python -m smtpd -n -c DebuggingServer 127.0.0.1:2525`
 
 Alternatively only unit tests can be run by doing `cargo test --lib`.
