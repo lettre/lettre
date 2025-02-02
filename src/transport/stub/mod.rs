@@ -26,8 +26,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let mut sender = StubTransport::new_ok();
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! assert_eq!(
 //!     sender.messages(),
 //!     vec![(
