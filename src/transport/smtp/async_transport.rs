@@ -191,54 +191,72 @@ where
 
     /// Creates a `AsyncSmtpTransportBuilder` from a connection URL
     ///
-    /// The protocol, credentials, host and port can be provided in a single URL.
-    /// Use the scheme `smtp` for an unencrypted relay (optionally in combination with the
-    /// `tls` parameter to allow/require STARTTLS) or `smtps` for SMTP over TLS.
-    /// The path section of the url can be used to set an alternative name for
-    /// the HELO / EHLO command.
-    /// For example `smtps://username:password@smtp.example.com/client.example.com:465`
-    /// will set the HELO / EHLO name `client.example.com`.
+    /// The protocol, credentials, host, port and EHLO name can be provided
+    /// in a single URL. This may be simpler than having to configure SMTP
+    /// through multiple configuration parameters and then having to pass
+    /// those options to lettre.
     ///
-    /// <table>
-    ///   <thead>
-    ///     <tr>
-    ///       <th>scheme</th>
-    ///       <th>tls parameter</th>
-    ///       <th>example</th>
-    ///       <th>remarks</th>
-    ///     </tr>
-    ///   </thead>
-    ///   <tbody>
-    ///     <tr>
-    ///      <td>smtps</td>
-    ///      <td>-</td>
-    ///      <td>smtps://smtp.example.com</td>
-    ///      <td>SMTP over TLS, recommended method</td>
-    ///     </tr>
-    ///     <tr>
-    ///      <td>smtp</td>
-    ///      <td>required</td>
-    ///      <td>smtp://smtp.example.com?tls=required</td>
-    ///      <td>SMTP with STARTTLS required, when SMTP over TLS is not available</td>
-    ///     </tr>
-    ///     <tr>
-    ///      <td>smtp</td>
-    ///      <td>opportunistic</td>
-    ///      <td>smtp://smtp.example.com?tls=opportunistic</td>
-    ///      <td>
-    ///         SMTP with optionally STARTTLS when supported by the server.
-    ///         Caution: this method is vulnerable to a man-in-the-middle attack.
-    ///         Not recommended for production use.
-    ///       </td>
-    ///     </tr>
-    ///     <tr>
-    ///      <td>smtp</td>
-    ///      <td>-</td>
-    ///      <td>smtp://smtp.example.com</td>
-    ///      <td>Unencrypted SMTP, not recommended for production use.</td>
-    ///     </tr>
-    ///   </tbody>
-    /// </table>
+    /// The URL is created in the following way:
+    /// `scheme://user:pass@hostname:port/ehlo-name?tls=TLS`.
+    ///
+    /// `user` (Username) and `pass` (Password) are optional in case the
+    /// SMTP relay doesn't require authentication. When `port` is not
+    /// configured it is automatically determined based on the `scheme`.
+    /// `ehlo-name` optionally overwrites the hostname sent for the EHLO
+    /// command. `TLS` controls whether STARTTLS is simply enabled
+    /// (`opportunistic` - not enough to prevent man-in-the-middle attacks)
+    /// or `required` (require the server to upgrade the connection to
+    /// STARTTLS, otherwise fail on suspicion of main-in-the-middle attempt).
+    ///
+    /// Use the following table to construct your SMTP url:
+    ///
+    /// | scheme  | `tls` query parameter | example                                            | default port | remarks                                                                                                                               |
+    /// | ------- | --------------------- | -------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+    /// | `smtps` | unset                 | `smtps://user:pass@hostname:port`                  | 465          | SMTP over TLS, recommended method                                                                                                     |
+    /// | `smtp`  | `required`            | `smtp://user:pass@hostname:port?tls=required`      | 587          | SMTP with STARTTLS required, when SMTP over TLS is not available                                                                      |
+    /// | `smtp`  | `opportunistic`       | `smtp://user:pass@hostname:port?tls=opportunistic` | 587          | SMTP with optionally STARTTLS when supported by the server. Not suitable for production use: vulnerable to a man-in-the-middle attack |
+    /// | `smtp`  | unset                 | `smtp://user:pass@hostname:port`                   | 587          | Always unencrypted SMTP. Not suitable for production use: sends all data unencrypted                                                  |
+    ///
+    /// IMPORTANT: some parameters like `user` and `pass` cannot simply
+    /// be concatenated to construct the final URL because special characters
+    /// contained within the parameter may confuse the URL decoder.
+    /// Manually URL encode the parameters before concatenating them or use
+    /// a proper URL encoder, like the following cargo script:
+    ///
+    /// ```rust
+    /// # let _ = r#"
+    /// #!/usr/bin/env cargo
+    ///
+    /// //! ```cargo
+    /// //! [dependencies]
+    /// //! url = "2"
+    /// //! ```
+    /// # "#;
+    ///
+    /// use url::Url;
+    ///
+    /// fn main() {
+    ///     // don't touch this line
+    ///     let mut url = Url::parse("foo://bar").unwrap();
+    ///
+    ///     // configure the scheme (`smtp` or `smtps`) here.
+    ///     url.set_scheme("smtps").unwrap();
+    ///     // configure the username and password.
+    ///     // remove the following two lines if unauthenticated.
+    ///     url.set_username("username").unwrap();
+    ///     url.set_password(Some("password")).unwrap();
+    ///     // configure the hostname
+    ///     url.set_host(Some("smtp.example.com")).unwrap();
+    ///     // configure the port - only necessary if using a non-default port
+    ///     url.set_port(Some(465)).unwrap();
+    ///     // configure the EHLO name
+    ///     url.set_path("ehlo-name");
+    ///
+    ///     println!("{url}");
+    /// }
+    /// ```
+    ///
+    /// The connection URL can then be used in the following way:
     ///
     /// ```rust,no_run
     /// use lettre::{
@@ -262,15 +280,11 @@ where
     /// let mailer: AsyncSmtpTransport<Tokio1Executor> =
     ///     AsyncSmtpTransport::<Tokio1Executor>::from_url(
     ///         "smtps://username:password@smtp.example.com:465",
-    ///     )
-    ///     .unwrap()
+    ///     )?
     ///     .build();
     ///
     /// // Send the email
-    /// match mailer.send(email).await {
-    ///     Ok(_) => println!("Email sent successfully!"),
-    ///     Err(e) => panic!("Could not send email: {e:?}"),
-    /// }
+    /// mailer.send(email).await?;
     /// # Ok(())
     /// # }
     /// ```
