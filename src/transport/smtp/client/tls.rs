@@ -423,7 +423,7 @@ impl TlsParametersBuilder {
         let mut root_cert_store = RootCertStore::empty();
 
         #[cfg(feature = "rustls-native-certs")]
-        fn load_native_roots(store: &mut RootCertStore) -> Result<(), Error> {
+        fn load_native_roots(store: &mut RootCertStore) {
             let rustls_native_certs::CertificateResult { certs, errors, .. } =
                 rustls_native_certs::load_native_certs();
             let errors_len = errors.len();
@@ -433,7 +433,6 @@ impl TlsParametersBuilder {
             tracing::debug!(
                 "loaded platform certs with {errors_len} failing to load, {added} valid and {ignored} ignored (invalid) certs"
             );
-            Ok(())
         }
 
         #[cfg(feature = "rustls-tls")]
@@ -444,7 +443,7 @@ impl TlsParametersBuilder {
         match self.cert_store {
             CertificateStore::Default => {
                 #[cfg(feature = "rustls-native-certs")]
-                load_native_roots(&mut root_cert_store)?;
+                load_native_roots(&mut root_cert_store);
                 #[cfg(not(feature = "rustls-native-certs"))]
                 load_webpki_roots(&mut root_cert_store);
             }
@@ -662,10 +661,11 @@ impl Identity {
     #[cfg(feature = "rustls-tls")]
     fn from_pem_rustls_tls(
         pem: &[u8],
-        key: &[u8],
+        mut key: &[u8],
     ) -> Result<(Vec<CertificateDer<'static>>, PrivateKeyDer<'static>), Error> {
-        let mut key = key;
-        let key = rustls_pemfile::private_key(&mut key).unwrap().unwrap();
+        let key = rustls_pemfile::private_key(&mut key)
+            .map_err(error::tls)?
+            .ok_or_else(|| error::tls("no private key found"))?;
         Ok((vec![pem.to_owned().into()], key))
     }
 

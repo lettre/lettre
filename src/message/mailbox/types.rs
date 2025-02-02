@@ -351,7 +351,7 @@ impl FromStr for Mailboxes {
         })?;
 
         for (name, (user, domain)) in parsed_mailboxes {
-            mailboxes.push(Mailbox::new(name, Address::new(user, domain)?))
+            mailboxes.push(Mailbox::new(name, Address::new(user, domain)?));
         }
 
         Ok(Mailboxes(mailboxes))
@@ -531,7 +531,7 @@ mod test {
         assert_eq!(
             format!(
                 "{}",
-                Mailbox::new(Some("".into()), "kayo@example.com".parse().unwrap())
+                Mailbox::new(Some("".to_owned()), "kayo@example.com".parse().unwrap())
             ),
             "kayo@example.com"
         );

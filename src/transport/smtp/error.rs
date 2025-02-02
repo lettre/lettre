@@ -142,7 +142,7 @@ impl fmt::Display for Error {
             Kind::Permanent(code) => {
                 write!(f, "permanent error ({code})")?;
             }
-        };
+        }
 
         if let Some(e) = &self.inner.source {
             write!(f, ": {e}")?;

@@ -65,7 +65,7 @@ impl fmt::Display for Error {
         match self.inner.kind {
             Kind::Response => f.write_str("response error")?,
             Kind::Client => f.write_str("internal client error")?,
-        };
+        }
 
         if let Some(e) = &self.inner.source {
             write!(f, ": {e}")?;
