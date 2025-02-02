@@ -1,3 +1,33 @@
+<a name="v0.11.12"></a>
+### v0.11.12 (2025-02-02)
+
+#### Misc
+
+* Warn against manually configuring `port` and `tls` on SMTP transport builder ([#1014])
+* Document variants of `Tls` enum ([#1015])
+* Fix rustdoc warnings ([#1016])
+* Add `ContentType::TEXT_PLAIN` to `Message` builder examples ([#1017])
+* Document `SmtpTransport` and `AsyncSmtpTransport` ([#1018])
+* Fix typo in transport builder `credentials` method ([#1019])
+* Document required system dependencies for OpenSSL ([#1030])
+* Improve docs for the `transport::smtp` module ([#1031])
+* Improve docs for smtp transport builder `from_url` ([#1032])
+* Replace `assert!` with `?` on `send` examples ([#1033])
+* Warn on more pedantic clippy lints and fix them ([#1035], [#1036])
+
+[#1014]: https://github.com/lettre/lettre/pull/1014
+[#1015]: https://github.com/lettre/lettre/pull/1015
+[#1016]: https://github.com/lettre/lettre/pull/1016
+[#1017]: https://github.com/lettre/lettre/pull/1017
+[#1018]: https://github.com/lettre/lettre/pull/1018
+[#1019]: https://github.com/lettre/lettre/pull/1019
+[#1030]: https://github.com/lettre/lettre/pull/1030
+[#1031]: https://github.com/lettre/lettre/pull/1031
+[#1032]: https://github.com/lettre/lettre/pull/1032
+[#1033]: https://github.com/lettre/lettre/pull/1033
+[#1035]: https://github.com/lettre/lettre/pull/1035
+[#1036]: https://github.com/lettre/lettre/pull/1036
+
 <a name="v0.11.11"></a>
 ### v0.11.11 (2024-12-05)
 
@@ -540,6 +570,6 @@ Several breaking changes were made between 0.9 and 0.10, but changes should be s
 
 *  multipart support
 *  add non-consuming methods for Email builders
-* `add_header` does not return the builder anymore, 
+* `add_header` does not return the builder anymore,
   for consistency with other methods. Use the `header`
   method instead
