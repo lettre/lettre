@@ -26,45 +26,17 @@
 //!
 //! The relay server can be the local email server, a specific host or a third-party service.
 //!
-//! #### Simple example
+//! #### Simple example with authentication
 //!
-//! This is the most basic example of usage:
-//!
-//! ```rust,no_run
-//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
-//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
-//! use lettre::{message::header::ContentType, Message, SmtpTransport, Transport};
-//!
-//! let email = Message::builder()
-//!     .from("NoBody <nobody@domain.tld>".parse()?)
-//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
-//!     .to("Hei <hei@domain.tld>".parse()?)
-//!     .subject("Happy new year")
-//!     .header(ContentType::TEXT_PLAIN)
-//!     .body(String::from("Be happy!"))?;
-//!
-//! // Create TLS transport on port 465
-//! let sender = SmtpTransport::relay("smtp.example.com")?.build();
-//! // Send the email via remote relay
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
-//! # Ok(())
-//! # }
-//! ```
-//!
-//! #### Authentication
-//!
-//! Example with authentication and connection pool:
+//! A good starting point for sending emails via SMTP relay is to
+//! do the following:
 //!
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
 //!     message::header::ContentType,
-//!     transport::smtp::{
-//!         authentication::{Credentials, Mechanism},
-//!         PoolConfig,
-//!     },
+//!     transport::smtp::authentication::{Credentials, Mechanism},
 //!     Message, SmtpTransport, Transport,
 //! };
 //!
@@ -76,34 +48,36 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! // Create TLS transport on port 587 with STARTTLS
-//! let sender = SmtpTransport::starttls_relay("smtp.example.com")?
+//! // Create the SMTPS transport
+//! let sender = SmtpTransport::relay("smtp.example.com")?
 //!     // Add credentials for authentication
 //!     .credentials(Credentials::new(
 //!         "username".to_owned(),
 //!         "password".to_owned(),
 //!     ))
-//!     // Configure expected authentication mechanism
+//!     // Optionally configure expected authentication mechanism
 //!     .authentication(vec![Mechanism::Plain])
-//!     // Connection pool settings
-//!     .pool_config(PoolConfig::new().max_size(20))
 //!     .build();
 //!
 //! // Send the email via remote relay
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! # Ok(())
 //! # }
 //! ```
 //!
-//! You can specify custom TLS settings:
+//! #### Shortening configuration
+//!
+//! It can be very repetitive to ask the user for every SMTP connection parameter.
+//! In some cases this can be simplified by using a connection URI instead.
+//!
+//! For more information take a look at [`SmtpTransport::from_url`] or [`AsyncSmtpTransport::from_url`].
 //!
 //! ```rust,no_run
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
 //!     message::header::ContentType,
-//!     transport::smtp::client::{Tls, TlsParameters},
+//!     transport::smtp::authentication::{Credentials, Mechanism},
 //!     Message, SmtpTransport, Transport,
 //! };
 //!
@@ -115,21 +89,101 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! // Custom TLS configuration
-//! let tls = TlsParameters::builder("smtp.example.com".to_owned())
-//!     .dangerous_accept_invalid_certs(true)
+//! // Create the SMTPS transport
+//! let sender = SmtpTransport::from_url("smtps://username:password@smtp.example.com")?.build();
+//!
+//! // Send the email via remote relay
+//! sender.send(&email)?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! #### Advanced configuration with custom TLS settings
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # fn test() -> Result<(), Box<dyn std::error::Error>> {
+//! use std::fs;
+//!
+//! use lettre::{
+//!     message::header::ContentType,
+//!     transport::smtp::client::{Certificate, Tls, TlsParameters},
+//!     Message, SmtpTransport, Transport,
+//! };
+//!
+//! let email = Message::builder()
+//!     .from("NoBody <nobody@domain.tld>".parse()?)
+//!     .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!     .to("Hei <hei@domain.tld>".parse()?)
+//!     .subject("Happy new year")
+//!     .header(ContentType::TEXT_PLAIN)
+//!     .body(String::from("Be happy!"))?;
+//!
+//! // Custom TLS configuration - Use a self signed certificate
+//! let cert = fs::read("self-signed.crt")?;
+//! let cert = Certificate::from_pem(&cert)?;
+//! let tls = TlsParameters::builder(/* TLS SNI value */ "smtp.example.com".to_owned())
+//!     .add_root_certificate(cert)
 //!     .build()?;
 //!
-//! // Create TLS transport on port 465
+//! // Create the SMTPS transport
 //! let sender = SmtpTransport::relay("smtp.example.com")?
-//!     // Custom TLS configuration
-//!     .tls(Tls::Required(tls))
+//!     .tls(Tls::Wrapper(tls))
 //!     .build();
 //!
 //! // Send the email via remote relay
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! # Ok(())
+//! # }
+//! ```
+//!
+//! #### Connection pooling
+//!
+//! [`SmtpTransport`] and [`AsyncSmtpTransport`] store connections in
+//! a connection pool by default. This avoids connecting and disconnecting
+//! from the relay server for every message the application tries to send. For the connection pool
+//! to work the instance of the transport **must** be reused.
+//! In a webserver context it may go about this:
+//!
+//! ```rust,no_run
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # fn test() {
+//! use lettre::{
+//!     message::header::ContentType,
+//!     transport::smtp::{authentication::Credentials, PoolConfig},
+//!     Message, SmtpTransport, Transport,
+//! };
+//! #
+//! # type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+//!
+//! /// The global application state
+//! #[derive(Debug)]
+//! struct AppState {
+//!     smtp: SmtpTransport,
+//!     // ... other global application parameters
+//! }
+//!
+//! impl AppState {
+//!     pub fn new(smtp_url: &str) -> Result<Self> {
+//!         let smtp = SmtpTransport::from_url(smtp_url)?.build();
+//!         Ok(Self { smtp })
+//!     }
+//! }
+//!
+//! fn handle_request(app_state: &AppState) -> Result<String> {
+//!     let email = Message::builder()
+//!         .from("NoBody <nobody@domain.tld>".parse()?)
+//!         .reply_to("Yuin <yuin@domain.tld>".parse()?)
+//!         .to("Hei <hei@domain.tld>".parse()?)
+//!         .subject("Happy new year")
+//!         .header(ContentType::TEXT_PLAIN)
+//!         .body(String::from("Be happy!"))?;
+//!
+//!     // Send the email via remote relay
+//!     app_state.smtp.send(&email)?;
+//!
+//!     Ok("The email has successfully been sent!".to_owned())
+//! }
 //! # }
 //! ```
 
