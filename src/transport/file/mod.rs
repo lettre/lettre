@@ -23,8 +23,7 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! # Ok(())
 //! # }
 //!
@@ -57,8 +56,7 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! # Ok(())
 //! # }
 //!
@@ -89,8 +87,7 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let result = sender.send(email).await;
-//! assert!(result.is_ok());
+//! sender.send(email).await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -119,8 +116,7 @@
 //!     .header(ContentType::TEXT_PLAIN)
 //!     .body(String::from("Be happy!"))?;
 //!
-//! let result = sender.send(email).await;
-//! assert!(result.is_ok());
+//! sender.send(email).await?;
 //! # Ok(())
 //! # }
 //! ```

@@ -86,8 +86,7 @@ impl AsyncSmtpConnection {
     ///     Some(TlsParameters::new("example.com".to_owned())?),
     ///     None,
     /// )
-    /// .await
-    /// .unwrap();
+    /// .await?;
     /// # Ok(())
     /// # }
     /// ```

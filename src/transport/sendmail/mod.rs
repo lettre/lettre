@@ -18,8 +18,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = SendmailTransport::new();
-//! let result = sender.send(&email);
-//! assert!(result.is_ok());
+//! sender.send(&email)?;
 //! # Ok(())
 //! # }
 //!
@@ -48,8 +47,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = AsyncSendmailTransport::<Tokio1Executor>::new();
-//! let result = sender.send(email).await;
-//! assert!(result.is_ok());
+//! sender.send(email).await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -71,8 +69,7 @@
 //!     .body(String::from("Be happy!"))?;
 //!
 //! let sender = AsyncSendmailTransport::<AsyncStd1Executor>::new();
-//! let result = sender.send(email).await;
-//! assert!(result.is_ok());
+//! sender.send(email).await?;
 //! # Ok(())
 //! # }
 //! ```
