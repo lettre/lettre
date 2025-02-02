@@ -170,7 +170,7 @@ impl AsyncNetworkStream {
                             last_err = Some(io::Error::new(
                                 io::ErrorKind::TimedOut,
                                 "connection timed out",
-                            ))
+                            ));
                         }
                     }
                 } else {
@@ -222,7 +222,7 @@ impl AsyncNetworkStream {
                         last_err = Some(io::Error::new(
                             io::ErrorKind::TimedOut,
                             "connection timed out",
-                        ))
+                        ));
                     }
                 }
             }
@@ -270,9 +270,8 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 // get owned TcpStream
                 let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
+                let InnerAsyncNetworkStream::Tokio1Tcp(tcp_stream) = tcp_stream else {
+                    unreachable!()
                 };
 
                 self.inner = Self::upgrade_tokio1_tls(tcp_stream, tls_parameters)
@@ -290,9 +289,8 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
                 // get owned TcpStream
                 let tcp_stream = mem::replace(&mut self.inner, InnerAsyncNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
+                let InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream) = tcp_stream else {
+                    unreachable!()
                 };
 
                 self.inner = Self::upgrade_asyncstd1_tls(tcp_stream, tls_parameters)

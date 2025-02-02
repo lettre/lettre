@@ -415,7 +415,7 @@ mod tests {
 
     #[test]
     fn empty_headername() {
-        assert!(HeaderName::new_from_ascii(String::from("")).is_err());
+        assert!(HeaderName::new_from_ascii("".to_owned()).is_err());
     }
 
     #[test]

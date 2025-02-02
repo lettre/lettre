@@ -129,9 +129,8 @@ impl Display for ServerInfo {
 impl ServerInfo {
     /// Parses a EHLO response to create a `ServerInfo`
     pub fn from_response(response: &Response) -> Result<ServerInfo, Error> {
-        let name = match response.first_word() {
-            Some(name) => name,
-            None => return Err(error::response("Could not read server name")),
+        let Some(name) = response.first_word() else {
+            return Err(error::response("Could not read server name"));
         };
 
         let mut features: HashSet<Extension> = HashSet::new();
@@ -169,7 +168,7 @@ impl ServerInfo {
                     }
                 }
                 _ => (),
-            };
+            }
         }
 
         Ok(ServerInfo {

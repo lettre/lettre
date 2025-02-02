@@ -149,7 +149,14 @@
     clippy::wildcard_imports,
     clippy::str_to_string,
     clippy::empty_structs_with_brackets,
-    clippy::zero_sized_map_values
+    clippy::zero_sized_map_values,
+    clippy::manual_let_else,
+    clippy::semicolon_if_nothing_returned,
+    clippy::unnecessary_wraps,
+    clippy::doc_markdown,
+    clippy::explicit_iter_loop,
+    clippy::redundant_closure_for_method_calls,
+    // Rust 1.86: clippy::unnecessary_semicolon,
 )]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 

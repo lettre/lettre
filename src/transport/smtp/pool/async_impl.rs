@@ -109,7 +109,7 @@ impl<E: Executor> Pool<E> {
                                 #[cfg(feature = "tracing")]
                                 tracing::debug!("dropped {} idle connections", dropped.len());
 
-                                abort_concurrent(dropped.into_iter().map(|conn| conn.unpark()))
+                                abort_concurrent(dropped.into_iter().map(ParkedConnection::unpark))
                                     .await;
                             }
                         }
@@ -229,7 +229,7 @@ impl<E: Executor> Drop for Pool<E> {
                 handle.shutdown().await;
             }
 
-            abort_concurrent(connections.into_iter().map(|conn| conn.unpark())).await;
+            abort_concurrent(connections.into_iter().map(ParkedConnection::unpark)).await;
         });
     }
 }

@@ -29,7 +29,7 @@ pub struct Envelope {
 mod serde_forward_path {
     use super::Address;
     /// dummy type required for serde
-    /// see example: https://serde.rs/deserialize-map.html
+    /// see example: <https://serde.rs/deserialize-map.html>
     struct CustomVisitor;
     impl<'de> serde::de::Visitor<'de> for CustomVisitor {
         type Value = Vec<Address>;

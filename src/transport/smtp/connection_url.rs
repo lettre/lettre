@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use url::Url;
 
 #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
@@ -84,26 +86,26 @@ pub(crate) fn from_connection_url<B: TransportBuilder>(connection_url: &str) -> 
         ("smtp", Some("required")) => {
             builder = builder
                 .port(connection_url.port().unwrap_or(SUBMISSION_PORT))
-                .tls(Tls::Required(TlsParameters::new(host.into())?))
+                .tls(Tls::Required(TlsParameters::new(host.into())?));
         }
         #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
         ("smtp", Some("opportunistic")) => {
             builder = builder
                 .port(connection_url.port().unwrap_or(SUBMISSION_PORT))
-                .tls(Tls::Opportunistic(TlsParameters::new(host.into())?))
+                .tls(Tls::Opportunistic(TlsParameters::new(host.into())?));
         }
         #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
         ("smtps", _) => {
             builder = builder
                 .port(connection_url.port().unwrap_or(SUBMISSIONS_PORT))
-                .tls(Tls::Wrapper(TlsParameters::new(host.into())?))
+                .tls(Tls::Wrapper(TlsParameters::new(host.into())?));
         }
         (scheme, tls) => {
             return Err(error::connection(format!(
                 "Unknown scheme '{scheme}' or tls parameter '{tls:?}', note that a transport with TLS requires one of the TLS features"
             )))
         }
-    };
+    }
 
     // use the path segment of the URL as name in the name in the HELO / EHLO command
     if connection_url.path().len() > 1 {
@@ -115,7 +117,7 @@ pub(crate) fn from_connection_url<B: TransportBuilder>(connection_url: &str) -> 
         let percent_decode = |s: &str| {
             percent_encoding::percent_decode_str(s)
                 .decode_utf8()
-                .map(|cow| cow.into_owned())
+                .map(Cow::into_owned)
                 .map_err(error::connection)
         };
         let credentials = Credentials::new(

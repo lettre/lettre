@@ -527,7 +527,7 @@ impl Message {
         match &self.body {
             MessageBody::Mime(p) => p.format_body(&mut out),
             MessageBody::Raw(r) => out.extend_from_slice(r),
-        };
+        }
         out.extend_from_slice(b"\r\n");
         out
     }
@@ -605,7 +605,7 @@ impl EmailFormat for Message {
             MessageBody::Mime(p) => p.format(out),
             MessageBody::Raw(r) => {
                 out.extend_from_slice(b"\r\n");
-                out.extend_from_slice(r)
+                out.extend_from_slice(r);
             }
         }
     }
@@ -769,7 +769,7 @@ mod test {
                 continue;
             }
 
-            assert_eq!(line.0, line.1)
+            assert_eq!(line.0, line.1);
         }
     }
 

@@ -160,9 +160,8 @@ impl NetworkStream {
             InnerNetworkStream::Tcp(_) => {
                 // get owned TcpStream
                 let tcp_stream = mem::replace(&mut self.inner, InnerNetworkStream::None);
-                let tcp_stream = match tcp_stream {
-                    InnerNetworkStream::Tcp(tcp_stream) => tcp_stream,
-                    _ => unreachable!(),
+                let InnerNetworkStream::Tcp(tcp_stream) = tcp_stream else {
+                    unreachable!()
                 };
 
                 self.inner = Self::upgrade_tls_impl(tcp_stream, tls_parameters)?;
