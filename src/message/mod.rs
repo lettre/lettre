@@ -198,7 +198,8 @@
 //! ```
 //! </details>
 
-use std::{io::Write, iter, time::SystemTime};
+use std::{io::Write, iter};
+use web_time::SystemTime;
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
@@ -625,7 +626,7 @@ fn make_message_id() -> String {
 
 #[cfg(test)]
 mod test {
-    use std::time::{Duration, SystemTime};
+    use web_time::{Duration, SystemTime};
 
     use pretty_assertions::assert_eq;
 

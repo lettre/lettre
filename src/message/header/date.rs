@@ -1,9 +1,23 @@
-use std::time::SystemTime;
+use web_time::SystemTime;
 
 use httpdate::HttpDate;
 
 use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
+
+fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
+    let duration = time
+        .duration_since(web_time::SystemTime::UNIX_EPOCH)
+        .unwrap();
+    std::time::SystemTime::UNIX_EPOCH + duration
+}
+
+fn from_std_systemtime(time: std::time::SystemTime) -> web_time::SystemTime {
+    let duration = time
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .unwrap();
+    web_time::SystemTime::UNIX_EPOCH + duration
+}
 
 /// Message `Date` header
 ///
@@ -14,7 +28,7 @@ pub struct Date(HttpDate);
 impl Date {
     /// Build a `Date` from [`SystemTime`]
     pub fn new(st: SystemTime) -> Self {
-        Self(st.into())
+        Self(to_std_systemtime(st).into())
     }
 
     /// Get the current date
@@ -66,7 +80,7 @@ impl From<SystemTime> for Date {
 
 impl From<Date> for SystemTime {
     fn from(this: Date) -> SystemTime {
-        this.0.into()
+        from_std_systemtime(this.0.into())
     }
 }
 

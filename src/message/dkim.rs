@@ -2,8 +2,8 @@ use std::{
     borrow::Cow,
     error::Error as StdError,
     fmt::{self, Display},
-    time::SystemTime,
 };
+use web_time::SystemTime;
 
 use ed25519_dalek::Signer;
 use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign, RsaPrivateKey};
