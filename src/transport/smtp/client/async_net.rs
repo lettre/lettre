@@ -429,6 +429,30 @@ impl AsyncNetworkStream {
         }
     }
 
+    #[cfg(feature = "boring-tls")]
+    pub fn tls_verify_result(&self) -> Result<(), Error> {
+        match &self.inner {
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => {
+                Err(error::client("Connection is not encrypted"))
+            }
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(_) => panic!("Unsupported"),
+            #[cfg(feature = "tokio1-rustls-tls")]
+            InnerAsyncNetworkStream::Tokio1RustlsTls(_) => panic!("Unsupported"),
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(stream) => {
+                stream.ssl().verify_result().map_err(error::tls)
+            }
+            #[cfg(feature = "async-std1")]
+            InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
+                Err(error::client("Connection is not encrypted"))
+            }
+            #[cfg(feature = "async-std1-rustls-tls")]
+            InnerAsyncNetworkStream::AsyncStd1RustlsTls(_) => panic!("Unsupported"),
+            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+        }
+    }
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         match &self.inner {
             #[cfg(feature = "tokio1")]
