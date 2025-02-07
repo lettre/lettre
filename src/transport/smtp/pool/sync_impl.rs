@@ -109,6 +109,7 @@ impl Pool {
                             }
                         }
 
+                        drop(pool);
                         thread::sleep(idle_timeout);
                     }
                 })
