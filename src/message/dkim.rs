@@ -3,6 +3,10 @@ use std::{
     error::Error as StdError,
     fmt::{self, Display},
 };
+
+#[cfg(not(feature = "web"))]
+use std::time::SystemTime;
+#[cfg(feature = "web")]
 use web_time::SystemTime;
 
 use ed25519_dalek::Signer;

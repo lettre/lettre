@@ -199,6 +199,10 @@
 //! </details>
 
 use std::{io::Write, iter};
+
+#[cfg(not(feature = "web"))]
+use std::time::SystemTime;
+#[cfg(feature = "web")]
 use web_time::SystemTime;
 
 pub use attachment::Attachment;
@@ -626,6 +630,10 @@ fn make_message_id() -> String {
 
 #[cfg(test)]
 mod test {
+
+    #[cfg(not(feature = "web"))]
+    use std::time::{Duration, SystemTime};
+    #[cfg(feature = "web")]
     use web_time::{Duration, SystemTime};
 
     use pretty_assertions::assert_eq;

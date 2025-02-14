@@ -1,23 +1,12 @@
+#[cfg(not(feature = "web"))]
+use std::time::SystemTime;
+#[cfg(feature = "web")]
 use web_time::SystemTime;
 
 use httpdate::HttpDate;
 
 use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
-
-fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
-    let duration = time
-        .duration_since(web_time::SystemTime::UNIX_EPOCH)
-        .unwrap();
-    std::time::SystemTime::UNIX_EPOCH + duration
-}
-
-fn from_std_systemtime(time: std::time::SystemTime) -> web_time::SystemTime {
-    let duration = time
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        .unwrap();
-    web_time::SystemTime::UNIX_EPOCH + duration
-}
 
 /// Message `Date` header
 ///
@@ -28,7 +17,10 @@ pub struct Date(HttpDate);
 impl Date {
     /// Build a `Date` from [`SystemTime`]
     pub fn new(st: SystemTime) -> Self {
-        Self(to_std_systemtime(st).into())
+        #[cfg(not(feature = "web"))]
+        return Self(st.into());
+        #[cfg(feature = "web")]
+        return Self(to_std_systemtime(st).into());
     }
 
     /// Get the current date
@@ -80,7 +72,10 @@ impl From<SystemTime> for Date {
 
 impl From<Date> for SystemTime {
     fn from(this: Date) -> SystemTime {
-        from_std_systemtime(this.0.into())
+        #[cfg(not(feature = "web"))]
+        return this.0.into();
+        #[cfg(feature = "web")]
+        return from_std_systemtime(this.0.into());
     }
 }
 
@@ -146,4 +141,20 @@ mod test {
             ))
         );
     }
+}
+
+#[cfg(feature = "web")]
+fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
+    let duration = time
+        .duration_since(web_time::SystemTime::UNIX_EPOCH)
+        .unwrap();
+    std::time::SystemTime::UNIX_EPOCH + duration
+}
+
+#[cfg(feature = "web")]
+fn from_std_systemtime(time: std::time::SystemTime) -> web_time::SystemTime {
+    let duration = time
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .unwrap();
+    web_time::SystemTime::UNIX_EPOCH + duration
 }
