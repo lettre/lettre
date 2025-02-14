@@ -198,8 +198,7 @@
 //! ```
 //! </details>
 
-use std::time::SystemTime;
-use std::{io::Write, iter};
+use std::{io::Write, iter, time::SystemTime};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
@@ -640,8 +639,9 @@ mod test {
 
     use std::time::{Duration, SystemTime};
 
-    use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
     use pretty_assertions::assert_eq;
+
+    use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 
     #[test]
     fn email_missing_originator() {

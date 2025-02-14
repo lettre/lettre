@@ -1,8 +1,8 @@
-use std::time::SystemTime;
 use std::{
     borrow::Cow,
     error::Error as StdError,
     fmt::{self, Display},
+    time::SystemTime,
 };
 
 use ed25519_dalek::Signer;
