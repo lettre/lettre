@@ -126,7 +126,7 @@ tokio1-boring-tls = ["tokio1", "boring-tls", "dep:tokio1_boring"]
 dkim = ["dep:base64", "dep:sha2", "dep:rsa", "dep:ed25519-dalek"]
 
 # wasm support
-web = ["web-time"]
+web = ["dep:web-time"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(lettre_ignore_tls_mismatch)'] }
