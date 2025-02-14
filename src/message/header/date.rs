@@ -1,9 +1,6 @@
-#[cfg(not(feature = "web"))]
 use std::time::SystemTime;
 
 use httpdate::HttpDate;
-#[cfg(feature = "web")]
-use web_time::SystemTime;
 
 use super::{Header, HeaderName, HeaderValue};
 use crate::BoxError;
@@ -17,17 +14,19 @@ pub struct Date(HttpDate);
 impl Date {
     /// Build a `Date` from [`SystemTime`]
     pub fn new(st: SystemTime) -> Self {
-        #[cfg(not(feature = "web"))]
-        return Self(st.into());
-        #[cfg(feature = "web")]
-        return Self(to_std_systemtime(st).into());
+        Self(st.into())
     }
 
     /// Get the current date
     ///
     /// Shortcut for `Date::new(SystemTime::now())`
     pub fn now() -> Self {
-        Self::new(SystemTime::now())
+        #[cfg(not(feature = "web"))]
+        return Self::new(SystemTime::now());
+        #[cfg(feature = "web")]
+        return Self::new(crate::message::to_std_systemtime(
+            web_time::SystemTime::now(),
+        ));
     }
 }
 
@@ -72,10 +71,7 @@ impl From<SystemTime> for Date {
 
 impl From<Date> for SystemTime {
     fn from(this: Date) -> SystemTime {
-        #[cfg(not(feature = "web"))]
-        return this.0.into();
-        #[cfg(feature = "web")]
-        return from_std_systemtime(this.0.into());
+        this.0.into()
     }
 }
 
@@ -141,20 +137,4 @@ mod test {
             ))
         );
     }
-}
-
-#[cfg(feature = "web")]
-fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
-    let duration = time
-        .duration_since(web_time::SystemTime::UNIX_EPOCH)
-        .unwrap();
-    std::time::SystemTime::UNIX_EPOCH + duration
-}
-
-#[cfg(feature = "web")]
-fn from_std_systemtime(time: std::time::SystemTime) -> web_time::SystemTime {
-    let duration = time
-        .duration_since(std::time::SystemTime::UNIX_EPOCH)
-        .unwrap();
-    web_time::SystemTime::UNIX_EPOCH + duration
 }

@@ -1,4 +1,3 @@
-#[cfg(not(feature = "web"))]
 use std::time::SystemTime;
 use std::{
     borrow::Cow,
@@ -9,8 +8,6 @@ use std::{
 use ed25519_dalek::Signer;
 use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign, RsaPrivateKey};
 use sha2::{Digest, Sha256};
-#[cfg(feature = "web")]
-use web_time::SystemTime;
 
 use crate::message::{
     header::{HeaderName, HeaderValue},
@@ -349,6 +346,13 @@ fn dkim_canonicalize_headers<'a>(
 /// Sign with Dkim a message by adding Dkim-Signature header created with configuration expressed by
 /// `dkim_config`
 pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
+    #[cfg(feature = "web")]
+    dkim_sign_fixed_time(
+        message,
+        dkim_config,
+        crate::message::to_std_systemtime(web_time::SystemTime::now()),
+    );
+    #[cfg(not(feature = "web"))]
     dkim_sign_fixed_time(message, dkim_config, SystemTime::now());
 }
 

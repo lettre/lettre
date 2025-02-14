@@ -198,7 +198,6 @@
 //! ```
 //! </details>
 
-#[cfg(not(feature = "web"))]
 use std::time::SystemTime;
 use std::{io::Write, iter};
 
@@ -208,8 +207,6 @@ pub use body::{Body, IntoBody, MaybeString};
 pub use dkim::*;
 pub use mailbox::*;
 pub use mimebody::*;
-#[cfg(feature = "web")]
-use web_time::SystemTime;
 
 mod attachment;
 mod body;
@@ -281,7 +278,10 @@ impl MessageBuilder {
     /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
     /// if no date has been provided.
     pub fn date_now(self) -> Self {
-        self.date(SystemTime::now())
+        #[cfg(not(feature = "web"))]
+        return self.date(SystemTime::now());
+        #[cfg(feature = "web")]
+        return self.date(to_std_systemtime(web_time::SystemTime::now()));
     }
 
     /// Set or add mailbox to `ReplyTo` header
@@ -627,17 +627,21 @@ fn make_message_id() -> String {
     iter::repeat_with(fastrand::alphanumeric).take(36).collect()
 }
 
+#[cfg(feature = "web")]
+pub(crate) fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
+    let duration = time
+        .duration_since(web_time::SystemTime::UNIX_EPOCH)
+        .unwrap();
+    std::time::SystemTime::UNIX_EPOCH + duration
+}
+
 #[cfg(test)]
 mod test {
 
-    #[cfg(not(feature = "web"))]
     use std::time::{Duration, SystemTime};
 
-    use pretty_assertions::assert_eq;
-    #[cfg(feature = "web")]
-    use web_time::{Duration, SystemTime};
-
     use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn email_missing_originator() {
