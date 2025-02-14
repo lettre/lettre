@@ -198,12 +198,9 @@
 //! ```
 //! </details>
 
-use std::{io::Write, iter};
-
 #[cfg(not(feature = "web"))]
 use std::time::SystemTime;
-#[cfg(feature = "web")]
-use web_time::SystemTime;
+use std::{io::Write, iter};
 
 pub use attachment::Attachment;
 pub use body::{Body, IntoBody, MaybeString};
@@ -211,6 +208,8 @@ pub use body::{Body, IntoBody, MaybeString};
 pub use dkim::*;
 pub use mailbox::*;
 pub use mimebody::*;
+#[cfg(feature = "web")]
+use web_time::SystemTime;
 
 mod attachment;
 mod body;
@@ -633,10 +632,10 @@ mod test {
 
     #[cfg(not(feature = "web"))]
     use std::time::{Duration, SystemTime};
-    #[cfg(feature = "web")]
-    use web_time::{Duration, SystemTime};
 
     use pretty_assertions::assert_eq;
+    #[cfg(feature = "web")]
+    use web_time::{Duration, SystemTime};
 
     use super::{header, mailbox::Mailbox, make_message_id, Message, MultiPart, SinglePart};
 

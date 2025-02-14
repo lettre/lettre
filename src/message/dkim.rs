@@ -1,17 +1,16 @@
+#[cfg(not(feature = "web"))]
+use std::time::SystemTime;
 use std::{
     borrow::Cow,
     error::Error as StdError,
     fmt::{self, Display},
 };
 
-#[cfg(not(feature = "web"))]
-use std::time::SystemTime;
-#[cfg(feature = "web")]
-use web_time::SystemTime;
-
 use ed25519_dalek::Signer;
 use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign, RsaPrivateKey};
 use sha2::{Digest, Sha256};
+#[cfg(feature = "web")]
+use web_time::SystemTime;
 
 use crate::message::{
     header::{HeaderName, HeaderValue},
