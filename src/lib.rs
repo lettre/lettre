@@ -219,6 +219,7 @@ mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
+mod time;
 pub mod transport;
 
 use std::error::Error as StdError;
