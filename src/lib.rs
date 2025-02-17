@@ -107,6 +107,7 @@
 //! * **tracing**: Logging using the `tracing` crate
 //! * **mime03**: Allow creating a [`ContentType`] from an existing [mime 0.3] `Mime` struct
 //! * **dkim**: Add support for signing email with DKIM
+//! * **web**: WebAssembly support using the `web-time` crate for time operations
 //!
 //! [`SMTP`]: crate::transport::smtp
 //! [`sendmail`]: crate::transport::sendmail

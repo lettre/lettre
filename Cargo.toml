@@ -75,6 +75,9 @@ ed25519-dalek = { version = "2", optional = true }
 # email formats
 email_address = { version = "0.2.1", default-features = false }
 
+# webtime for wasm support
+web-time = { version = "1.1.0", optional = true }
+
 [dev-dependencies]
 pretty_assertions = "1"
 criterion = "0.5"
@@ -121,6 +124,9 @@ tokio1-rustls-tls = ["tokio1", "rustls-tls", "dep:tokio1_rustls"]
 tokio1-boring-tls = ["tokio1", "boring-tls", "dep:tokio1_boring"]
 
 dkim = ["dep:base64", "dep:sha2", "dep:rsa", "dep:ed25519-dalek"]
+
+# wasm support
+web = ["dep:web-time"]
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(lettre_ignore_tls_mismatch)'] }

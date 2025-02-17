@@ -346,6 +346,13 @@ fn dkim_canonicalize_headers<'a>(
 /// Sign with Dkim a message by adding Dkim-Signature header created with configuration expressed by
 /// `dkim_config`
 pub fn dkim_sign(message: &mut Message, dkim_config: &DkimConfig) {
+    #[cfg(feature = "web")]
+    dkim_sign_fixed_time(
+        message,
+        dkim_config,
+        crate::message::to_std_systemtime(web_time::SystemTime::now()),
+    );
+    #[cfg(not(feature = "web"))]
     dkim_sign_fixed_time(message, dkim_config, SystemTime::now());
 }
 

@@ -21,7 +21,12 @@ impl Date {
     ///
     /// Shortcut for `Date::new(SystemTime::now())`
     pub fn now() -> Self {
-        Self::new(SystemTime::now())
+        #[cfg(not(feature = "web"))]
+        return Self::new(SystemTime::now());
+        #[cfg(feature = "web")]
+        return Self::new(crate::message::to_std_systemtime(
+            web_time::SystemTime::now(),
+        ));
     }
 }
 
