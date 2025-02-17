@@ -9,10 +9,15 @@ pub(crate) fn now() -> SystemTime {
         SystemTime::UNIX_EPOCH + duration
     }
 
+    #[allow(
+        clippy::disallowed_methods,
+        reason = "`web-time` aliases `std::time::SystemTime::now` on non-WASM platforms"
+    )]
     to_std_systemtime(web_time::SystemTime::now())
 }
 
 #[cfg(not(feature = "web"))]
 pub(crate) fn now() -> SystemTime {
+    #[expect(clippy::disallowed_methods, reason = "the `web` feature is disabled")]
     SystemTime::now()
 }
