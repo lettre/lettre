@@ -1,3 +1,20 @@
+<a name="v0.11.13"></a>
+### v0.11.13 (2025-02-17)
+
+#### Features
+
+* Add WASM support ([#1037], [#1042])
+* Add method to get the TLS verify result with BoringSSL ([#1039])
+
+#### Bug fixes
+
+* Synchronous pool shutdowns being arbitrarily delayed ([#1041])
+
+[#1037]: https://github.com/lettre/lettre/pull/1037
+[#1039]: https://github.com/lettre/lettre/pull/1039
+[#1041]: https://github.com/lettre/lettre/pull/1041
+[#1042]: https://github.com/lettre/lettre/pull/1042
+
 <a name="v0.11.12"></a>
 ### v0.11.12 (2025-02-02)
 
