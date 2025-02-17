@@ -77,6 +77,11 @@ impl Error {
         matches!(self.inner.kind, Kind::Tls)
     }
 
+    /// Returns true if the error is because the transport was shut down
+    pub fn is_transport_shutdown(&self) -> bool {
+        matches!(self.inner.kind, Kind::TransportShutdown)
+    }
+
     /// Returns the status code, if the error was generated from a response.
     pub fn status(&self) -> Option<Code> {
         match self.inner.kind {
@@ -111,6 +116,8 @@ pub(crate) enum Kind {
     )]
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     Tls,
+    /// Transport shutdown error
+    TransportShutdown,
 }
 
 impl fmt::Debug for Error {
@@ -136,6 +143,7 @@ impl fmt::Display for Error {
             Kind::Connection => f.write_str("Connection error")?,
             #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Kind::Tls => f.write_str("tls error")?,
+            Kind::TransportShutdown => f.write_str("transport has been shut down")?,
             Kind::Transient(code) => {
                 write!(f, "transient error ({code})")?;
             }
@@ -188,4 +196,8 @@ pub(crate) fn connection<E: Into<BoxError>>(e: E) -> Error {
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub(crate) fn tls<E: Into<BoxError>>(e: E) -> Error {
     Error::new(Kind::Tls, Some(e))
+}
+
+pub(crate) fn transport_shutdown() -> Error {
+    Error::new::<BoxError>(Kind::TransportShutdown, None)
 }

@@ -60,6 +60,13 @@ impl Transport for SmtpTransport {
 
         Ok(result)
     }
+
+    fn shutdown(&self) -> Result<(), Self::Error> {
+        #[cfg(feature = "pool")]
+        self.inner.shutdown()?;
+
+        Ok(())
+    }
 }
 
 impl Debug for SmtpTransport {
