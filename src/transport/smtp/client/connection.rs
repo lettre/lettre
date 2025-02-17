@@ -308,6 +308,22 @@ impl SmtpConnection {
         self.stream.get_ref().peer_certificate()
     }
 
+    /// Currently this is only avaialable when using Boring TLS and
+    /// returns the result of the verification of the TLS certificate
+    /// presented by the peer, if any. Only the last error encountered
+    /// during verification is presented.
+    /// It can be useful when you don't want to fail outright the TLS
+    /// negotiation, for example when a self-signed certificate is
+    /// encountered, but still want to record metrics or log the fact.
+    /// When using DANE verification, the PKI root of trust moves from
+    /// the CAs to DNS, so self-signed certificates are permitted as long
+    /// as the TLSA records match the leaf or issuer certificates.
+    /// It cannot be called on non Boring TLS streams.
+    #[cfg(feature = "boring-tls")]
+    pub fn tls_verify_result(&self) -> Result<(), Error> {
+        self.stream.get_ref().tls_verify_result()
+    }
+
     /// All the X509 certificates of the chain (DER encoded)
     #[cfg(any(feature = "rustls-tls", feature = "boring-tls"))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {

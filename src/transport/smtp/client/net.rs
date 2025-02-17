@@ -222,6 +222,22 @@ impl NetworkStream {
         }
     }
 
+    #[cfg(feature = "boring-tls")]
+    pub fn tls_verify_result(&self) -> Result<(), Error> {
+        match &self.inner {
+            InnerNetworkStream::Tcp(_) => Err(error::client("Connection is not encrypted")),
+            #[cfg(feature = "native-tls")]
+            InnerNetworkStream::NativeTls(_) => panic!("Unsupported"),
+            #[cfg(feature = "rustls-tls")]
+            InnerNetworkStream::RustlsTls(_) => panic!("Unsupported"),
+            #[cfg(feature = "boring-tls")]
+            InnerNetworkStream::BoringTls(stream) => {
+                stream.ssl().verify_result().map_err(error::tls)
+            }
+            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+        }
+    }
+
     #[cfg(any(feature = "rustls-tls", feature = "boring-tls"))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         match &self.inner {
