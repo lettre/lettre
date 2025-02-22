@@ -586,7 +586,7 @@ impl Certificate {
         #[cfg(feature = "rustls-tls")]
         let rustls_cert = {
             CertificateDer::pem_slice_iter(pem)
-                .collect::<Result<Vec<_>, rustls_pki_types::pem::Error>>()
+                .collect::<Result<Vec<_>, pki_types::pem::Error>>()
                 .map_err(|_| error::tls("invalid certificates"))?
         };
 
