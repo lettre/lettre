@@ -143,7 +143,7 @@ impl SmtpConnection {
         hello_name: &ClientId,
     ) -> Result<(), Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
                 self.stream.get_mut().upgrade_tls(tls_parameters)?;
@@ -153,11 +153,7 @@ impl SmtpConnection {
                 try_smtp!(self.ehlo(hello_name), self);
                 Ok(())
             }
-            #[cfg(not(any(
-                feature = "native-tls",
-                feature = "rustls-tls",
-                feature = "boring-tls"
-            )))]
+            #[cfg(not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))]
             // This should never happen as `Tls` can only be created
             // when a TLS library is enabled
             unreachable!("TLS support required but not supported");
@@ -303,7 +299,7 @@ impl SmtpConnection {
     }
 
     /// The X509 certificate of the server (DER encoded)
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
     }
@@ -325,7 +321,7 @@ impl SmtpConnection {
     }
 
     /// All the X509 certificates of the chain (DER encoded)
-    #[cfg(any(feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "rustls", feature = "boring-tls"))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         self.stream.get_ref().certificate_chain()
     }

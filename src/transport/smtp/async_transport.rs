@@ -14,8 +14,8 @@ use super::pool::async_impl::Pool;
 use super::PoolConfig;
 #[cfg(any(
     feature = "tokio1-native-tls",
-    feature = "tokio1-rustls-tls",
-    feature = "async-std1-rustls-tls"
+    feature = "tokio1-rustls",
+    feature = "async-std1-rustls"
 ))]
 use super::Tls;
 use super::{
@@ -111,15 +111,15 @@ where
     /// to validate TLS certificates.
     #[cfg(any(
         feature = "tokio1-native-tls",
-        feature = "tokio1-rustls-tls",
-        feature = "async-std1-rustls-tls"
+        feature = "tokio1-rustls",
+        feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
             feature = "tokio1-native-tls",
-            feature = "tokio1-rustls-tls",
-            feature = "async-std1-rustls-tls"
+            feature = "tokio1-rustls",
+            feature = "async-std1-rustls"
         )))
     )]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
@@ -145,15 +145,15 @@ where
     /// or emails will be sent to the server, protecting from downgrade attacks.
     #[cfg(any(
         feature = "tokio1-native-tls",
-        feature = "tokio1-rustls-tls",
-        feature = "async-std1-rustls-tls"
+        feature = "tokio1-rustls",
+        feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
             feature = "tokio1-native-tls",
-            feature = "tokio1-rustls-tls",
-            feature = "async-std1-rustls-tls"
+            feature = "tokio1-rustls",
+            feature = "async-std1-rustls"
         )))
     )]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
@@ -288,10 +288,10 @@ where
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn from_url(connection_url: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
         super::connection_url::from_connection_url(connection_url)
@@ -416,15 +416,15 @@ impl AsyncSmtpTransportBuilder {
     /// lead to hard to debug IO errors coming from the TLS library.
     #[cfg(any(
         feature = "tokio1-native-tls",
-        feature = "tokio1-rustls-tls",
-        feature = "async-std1-rustls-tls"
+        feature = "tokio1-rustls",
+        feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
         docsrs,
         doc(cfg(any(
             feature = "tokio1-native-tls",
-            feature = "tokio1-rustls-tls",
-            feature = "async-std1-rustls-tls"
+            feature = "tokio1-rustls",
+            feature = "async-std1-rustls"
         )))
     )]
     pub fn tls(mut self, tls: Tls) -> Self {

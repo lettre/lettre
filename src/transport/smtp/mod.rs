@@ -32,7 +32,7 @@
 //! do the following:
 //!
 //! ```rust,no_run
-//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
 //!     message::header::ContentType,
@@ -73,7 +73,7 @@
 //! For more information take a look at [`SmtpTransport::from_url`] or [`AsyncSmtpTransport::from_url`].
 //!
 //! ```rust,no_run
-//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
 //!     message::header::ContentType,
@@ -101,7 +101,7 @@
 //! #### Advanced configuration with custom TLS settings
 //!
 //! ```rust,no_run
-//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use std::fs;
 //!
@@ -146,7 +146,7 @@
 //! In a webserver context it may go about this:
 //!
 //! ```rust,no_run
-//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls-tls")))]
+//! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() {
 //! use lettre::{
 //!     message::header::ContentType,
@@ -199,7 +199,7 @@ pub use self::{
     error::Error,
     transport::{SmtpTransport, SmtpTransportBuilder},
 };
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{
     authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
