@@ -19,9 +19,12 @@ is-it-maintained-open-issues = { repository = "lettre/lettre" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
+email_address = { version = "0.2.1", default-features = false }
 chumsky = "0.9"
 idna = "1"
-tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true } # feature
+
+## tracing support
+tracing = { version = "0.1.16", default-features = false, features = ["std"], optional = true }
 
 # builder
 httpdate = { version = "1", optional = true }
@@ -33,7 +36,7 @@ email-encoding = { version = "0.3", optional = true }
 
 # file transport
 uuid = { version = "1", features = ["v4"], optional = true }
-serde = { version = "1", optional = true, features = ["derive"] }
+serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 
 # smtp-transport
@@ -68,14 +71,11 @@ tokio1_rustls = { package = "tokio-rustls", version = "0.26", default-features =
 tokio1_boring = { package = "tokio-boring", version = "4", optional = true }
 
 ## dkim
-sha2 = { version = "0.10", optional = true, features = ["oid"] }
+sha2 = { version = "0.10", features = ["oid"], optional = true }
 rsa = { version = "0.9", optional = true }
 ed25519-dalek = { version = "2", optional = true }
 
-# email formats
-email_address = { version = "0.2.1", default-features = false }
-
-# webtime for wasm support
+## web-time for wasm support
 web-time = { version = "1.1.0", optional = true }
 
 [dev-dependencies]
