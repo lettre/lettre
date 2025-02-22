@@ -1,3 +1,52 @@
+<a name="v0.11.14"></a>
+### v0.11.14 (2025-02-23)
+
+This release deprecates the `rustls-tls`, `tokio1-rustls-tls` and `async-std1-rustls-tls`
+features, which will be removed in lettre v0.12.
+
+rustls users should start migrating to the `rustls`, `tokio1-rustls` and
+`async-std1-rustls` features. Unlike the deprecated _*rustls-tls_ features,
+which automatically enabled the `ring` and `webpki-roots` backends, the new
+features do not. To complete the migration, users must either enable the
+`aws-lc-rs` or the `ring` feature. Additionally, those who rely on `webpki-roots`
+for TLS certificate verification must now explicitly enable its feature.
+Users of `rustls-native-certs` do not need to enable `webpki-roots`.
+
+Find out more about the new features via the [lettre rustls docs].
+
+#### Features
+
+* Make it possible to use different `rustls` crypto providers and TLS verifiers ([#1054])
+
+#### Bug fixes
+
+* Use the same `rustls` crypto provider everywhere ([#1055])
+
+#### Misc
+
+* Deprecate `AsyncNetworkStream` being public ([#1059])
+* Upgrade `nom` to v8 ([#1048])
+* Drop `rustls-pemfile` in favor of `rustls-pki-types` APIs ([#1050])
+* Ban direct use of `std::time::SystemTime::now` via clippy ([#1043])
+* Drop direct dependency on `rustls-pki-types` ([#1051])
+* Remove artifact from `web-time` refactor ([#1049])
+* Fix warnings with `rustls-native-certs` when `tracing` is disabled ([#1053])
+* Bump license year ([#1057])
+* Cleanup `Cargo.toml` style ([#1047])
+
+[lettre rustls docs]: https://docs.rs/lettre/0.11.14/lettre/index.html#smtp-over-tls-via-the-rustls-crate
+[#1043]: https://github.com/lettre/lettre/pull/1043
+[#1047]: https://github.com/lettre/lettre/pull/1047
+[#1048]: https://github.com/lettre/lettre/pull/1048
+[#1049]: https://github.com/lettre/lettre/pull/1049
+[#1050]: https://github.com/lettre/lettre/pull/1050
+[#1051]: https://github.com/lettre/lettre/pull/1051
+[#1053]: https://github.com/lettre/lettre/pull/1053
+[#1054]: https://github.com/lettre/lettre/pull/1054
+[#1055]: https://github.com/lettre/lettre/pull/1055
+[#1057]: https://github.com/lettre/lettre/pull/1057
+[#1059]: https://github.com/lettre/lettre/pull/1059
+
 <a name="v0.11.13"></a>
 ### v0.11.13 (2025-02-17)
 
