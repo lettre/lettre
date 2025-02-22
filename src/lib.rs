@@ -83,6 +83,9 @@
 //! When enabling `aws-lc-rs`, the `fips` feature can also be enabled to have
 //! rustls use the FIPS certified module of AWS-LC.
 //!
+//! `aws-lc-rs` may require cmake on some platforms to compile.
+//! `fips` always requires cmake and the Go compiler to compile.
+//!
 //! ##### rustls certificate verification backend
 //!
 //! _The TLS certificate verification backend to use with rustls_
