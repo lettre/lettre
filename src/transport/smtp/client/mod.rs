@@ -28,6 +28,7 @@ use std::fmt::Debug;
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_connection::AsyncSmtpConnection;
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
+#[allow(deprecated)]
 pub use self::async_net::AsyncNetworkStream;
 #[cfg(feature = "tokio1")]
 pub use self::async_net::AsyncTokioStream;
