@@ -6,7 +6,8 @@ use futures_util::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use super::async_net::AsyncTokioStream;
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
-use super::{AsyncNetworkStream, ClientCodec, TlsParameters};
+#[allow(deprecated)]
+use super::{async_net::AsyncNetworkStream, ClientCodec, TlsParameters};
 use crate::{
     transport::smtp::{
         authentication::{Credentials, Mechanism},
@@ -35,6 +36,7 @@ macro_rules! try_smtp (
 pub struct AsyncSmtpConnection {
     /// TCP stream between client and server
     /// Value is None before connection
+    #[allow(deprecated)]
     stream: BufReader<AsyncNetworkStream>,
     /// Panic state
     panic: bool,
@@ -56,6 +58,7 @@ impl AsyncSmtpConnection {
         stream: Box<dyn AsyncTokioStream>,
         hello_name: &ClientId,
     ) -> Result<AsyncSmtpConnection, Error> {
+        #[allow(deprecated)]
         let stream = AsyncNetworkStream::use_existing_tokio1(stream);
         Self::connect_impl(stream, hello_name).await
     }
@@ -98,6 +101,7 @@ impl AsyncSmtpConnection {
         tls_parameters: Option<TlsParameters>,
         local_address: Option<IpAddr>,
     ) -> Result<AsyncSmtpConnection, Error> {
+        #[allow(deprecated)]
         let stream =
             AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters, local_address)
                 .await?;
@@ -114,10 +118,12 @@ impl AsyncSmtpConnection {
         hello_name: &ClientId,
         tls_parameters: Option<TlsParameters>,
     ) -> Result<AsyncSmtpConnection, Error> {
+        #[allow(deprecated)]
         let stream = AsyncNetworkStream::connect_asyncstd1(server, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
+    #[allow(deprecated)]
     async fn connect_impl(
         stream: AsyncNetworkStream,
         hello_name: &ClientId,
@@ -245,6 +251,7 @@ impl AsyncSmtpConnection {
     }
 
     /// Sets the underlying stream
+    #[allow(deprecated)]
     pub fn set_stream(&mut self, stream: AsyncNetworkStream) {
         self.stream = BufReader::new(stream);
     }

@@ -44,6 +44,10 @@ use crate::transport::smtp::{error, Error};
 
 /// A network stream
 #[derive(Debug)]
+#[deprecated(
+    since = "0.11.14",
+    note = "This struct was not meant to be made public"
+)]
 pub struct AsyncNetworkStream {
     inner: InnerAsyncNetworkStream,
 }
@@ -89,6 +93,7 @@ enum InnerAsyncNetworkStream {
     None,
 }
 
+#[allow(deprecated)]
 impl AsyncNetworkStream {
     fn new(inner: InnerAsyncNetworkStream) -> Self {
         if let InnerAsyncNetworkStream::None = inner {
@@ -543,6 +548,7 @@ impl AsyncNetworkStream {
     }
 }
 
+#[allow(deprecated)]
 impl FuturesAsyncRead for AsyncNetworkStream {
     fn poll_read(
         mut self: Pin<&mut Self>,
@@ -598,6 +604,7 @@ impl FuturesAsyncRead for AsyncNetworkStream {
     }
 }
 
+#[allow(deprecated)]
 impl FuturesAsyncWrite for AsyncNetworkStream {
     fn poll_write(
         mut self: Pin<&mut Self>,
