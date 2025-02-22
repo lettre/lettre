@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result as FmtResult};
 
 /// Encode a string as xtext
 #[derive(Debug)]
-pub struct XText<'a>(pub &'a str);
+pub(crate) struct XText<'a>(pub(crate) &'a str);
 
 impl Display for XText<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {

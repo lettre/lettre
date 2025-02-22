@@ -53,7 +53,7 @@ mod serde_forward_path {
             }
         }
     }
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Address>, D::Error>
+    pub(super) fn deserialize<'de, D>(deserializer: D) -> Result<Vec<Address>, D::Error>
     where
         D: serde::Deserializer<'de>,
     {

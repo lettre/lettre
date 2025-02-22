@@ -163,6 +163,7 @@
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]
 #![deny(
+    unreachable_pub,
     missing_copy_implementations,
     trivial_casts,
     trivial_numeric_casts,
