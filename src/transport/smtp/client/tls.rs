@@ -433,6 +433,8 @@ impl TlsParametersBuilder {
             tracing::debug!(
                 "loaded platform certs with {errors_len} failing to load, {added} valid and {ignored} ignored (invalid) certs"
             );
+            #[cfg(not(feature = "tracing"))]
+            let _ = (errors_len, added, ignored);
         }
 
         #[cfg(feature = "rustls-tls")]
