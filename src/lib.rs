@@ -80,6 +80,9 @@
 //! * **aws-lc-rs**: use AWS-LC (via `aws-lc-rs`) as the `rustls` crypto backend
 //! * **ring**: use `ring` as the `rustls` crypto backend
 //!
+//! When enabling `aws-lc-rs`, the `fips` feature can also be enabled to have
+//! rustls use the FIPS certified module of AWS-LC.
+//!
 //! ##### rustls certificate verification backend
 //!
 //! _The TLS certificate verification backend to use with rustls_

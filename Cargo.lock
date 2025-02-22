@@ -242,11 +242,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
 [[package]]
+name = "aws-lc-fips-sys"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29003a681b2b9465c1139bfb726da452a841a8b025f35953f3bce71139f10b21"
+dependencies = [
+ "bindgen 0.69.5",
+ "cc",
+ "cmake",
+ "dunce",
+ "fs_extra",
+ "paste",
+ "regex",
+]
+
+[[package]]
 name = "aws-lc-rs"
 version = "1.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4cd755adf9707cf671e31d944a189be3deaaeee11c8bc1d669bb8022ac90fbd0"
 dependencies = [
+ "aws-lc-fips-sys",
  "aws-lc-sys",
  "paste",
  "zeroize",

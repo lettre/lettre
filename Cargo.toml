@@ -111,6 +111,7 @@ pool = ["dep:futures-util"]
 
 rustls = ["dep:rustls"]
 aws-lc-rs = ["rustls?/aws-lc-rs"]
+fips = ["aws-lc-rs", "rustls?/fips"]
 ring = ["rustls?/ring"]
 webpki-roots = ["dep:webpki-roots"]
 # deprecated
