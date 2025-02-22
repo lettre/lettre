@@ -12,8 +12,8 @@ use nom::{
     bytes::streaming::{tag, take_until},
     combinator::{complete, map},
     multi::many0,
-    sequence::{preceded, tuple},
-    IResult,
+    sequence::preceded,
+    IResult, Parser,
 };
 
 use crate::transport::smtp::{error, Error};
@@ -221,7 +221,8 @@ fn parse_severity(i: &str) -> IResult<&str, Severity> {
         map(tag("3"), |_| Severity::PositiveIntermediate),
         map(tag("4"), |_| Severity::TransientNegativeCompletion),
         map(tag("5"), |_| Severity::PermanentNegativeCompletion),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 fn parse_category(i: &str) -> IResult<&str, Category> {
@@ -232,7 +233,8 @@ fn parse_category(i: &str) -> IResult<&str, Category> {
         map(tag("3"), |_| Category::Unspecified3),
         map(tag("4"), |_| Category::Unspecified4),
         map(tag("5"), |_| Category::MailSystem),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 fn parse_detail(i: &str) -> IResult<&str, Detail> {
@@ -247,18 +249,20 @@ fn parse_detail(i: &str) -> IResult<&str, Detail> {
         map(tag("7"), |_| Detail::Seven),
         map(tag("8"), |_| Detail::Eight),
         map(tag("9"), |_| Detail::Nine),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
-    let (i, lines) = many0(tuple((
+    let (i, lines) = many0((
         parse_code,
         preceded(tag("-"), take_until("\r\n")),
         tag("\r\n"),
-    )))(i)?;
+    ))
+    .parse(i)?;
     let (i, (last_code, last_line)) =
-        tuple((parse_code, preceded(tag(" "), take_until("\r\n"))))(i)?;
-    let (i, _) = complete(tag("\r\n"))(i)?;
+        (parse_code, preceded(tag(" "), take_until("\r\n"))).parse(i)?;
+    let (i, _) = complete(tag("\r\n")).parse(i)?;
 
     // Check that all codes are equal.
     if !lines.iter().all(|&(code, _, _)| code == last_code) {

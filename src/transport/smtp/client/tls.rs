@@ -1,6 +1,6 @@
 use std::fmt::{self, Debug};
 #[cfg(feature = "rustls-tls")]
-use std::{io, sync::Arc};
+use std::sync::Arc;
 
 #[cfg(feature = "boring-tls")]
 use boring::{
@@ -15,7 +15,7 @@ use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     crypto::WebPkiSupportedAlgorithms,
     crypto::{verify_tls12_signature, verify_tls13_signature},
-    pki_types::{CertificateDer, PrivateKeyDer, ServerName, UnixTime},
+    pki_types::{self, pem::PemObject, CertificateDer, PrivateKeyDer, ServerName, UnixTime},
     server::ParsedCertificate,
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
@@ -585,11 +585,8 @@ impl Certificate {
 
         #[cfg(feature = "rustls-tls")]
         let rustls_cert = {
-            use std::io::Cursor;
-
-            let mut pem = Cursor::new(pem);
-            rustls_pemfile::certs(&mut pem)
-                .collect::<io::Result<Vec<_>>>()
+            CertificateDer::pem_slice_iter(pem)
+                .collect::<Result<Vec<_>, pki_types::pem::Error>>()
                 .map_err(|_| error::tls("invalid certificates"))?
         };
 
@@ -661,11 +658,16 @@ impl Identity {
     #[cfg(feature = "rustls-tls")]
     fn from_pem_rustls_tls(
         pem: &[u8],
-        mut key: &[u8],
+        key: &[u8],
     ) -> Result<(Vec<CertificateDer<'static>>, PrivateKeyDer<'static>), Error> {
-        let key = rustls_pemfile::private_key(&mut key)
-            .map_err(error::tls)?
-            .ok_or_else(|| error::tls("no private key found"))?;
+        let key = match PrivateKeyDer::from_pem_slice(key) {
+            Ok(key) => key,
+            Err(pki_types::pem::Error::NoItemsFound) => {
+                return Err(error::tls("no private key found"))
+            }
+            Err(err) => return Err(error::tls(err)),
+        };
+
         Ok((vec![pem.to_owned().into()], key))
     }
 
