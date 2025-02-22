@@ -368,7 +368,7 @@ impl AsyncSmtpConnection {
     }
 
     /// The X509 certificate of the server (DER encoded)
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
     }
@@ -390,7 +390,7 @@ impl AsyncSmtpConnection {
     }
 
     /// All the X509 certificates of the chain (DER encoded)
-    #[cfg(any(feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "rustls", feature = "boring-tls"))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         self.stream.get_ref().certificate_chain()
     }

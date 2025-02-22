@@ -64,13 +64,42 @@
 //!
 //! #### SMTP over TLS via the rustls crate
 //!
-//! _Secure SMTP connections using TLS from the `rustls-tls` crate_
+//! _Secure SMTP connections using TLS from the `rustls` crate_
 //!
 //! Rustls uses [ring] as the cryptography implementation. As a result, [not all Rust's targets are supported][ring-support].
 //!
-//! * **rustls-tls**: TLS support for the synchronous version of the API
-//! * **tokio1-rustls-tls**: TLS support for the `tokio1` async version of the API
-//! * **async-std1-rustls-tls**: TLS support for the `async-std1` async version of the API
+//! * **rustls**: TLS support for the synchronous version of the API
+//! * **tokio1-rustls**: TLS support for the `tokio1` async version of the API
+//! * **async-std1-rustls**: TLS support for the `async-std1` async version of the API
+//!
+//! ##### rustls crypto backends
+//!
+//! _The crypto implementation to use with rustls_
+//!
+//! When the `rustls` feature is enabled, one of the following crypto backends MUST also
+//! be enabled.
+//!
+//! * **aws-lc-rs**: use `aws-lc-rs` as the `rustls` crypto backend
+//! * **ring**: use `ring` as the `rustls` crypto backend
+//!
+//! ##### rustls certificate verification backend
+//!
+//! _The TLS certificate verification backend to use with rustls_
+//!
+//! When the `rustls` feature is enabled, one of the following verification backends
+//! MUST also be enabled.
+//!
+//! * **rustls-native-certs**: verify TLS certificates using the platform's native certificate store
+//! * **webpki-roots**: verify TLS certificates against Mozilla's root certificates
+//!
+//! For the `rustls-native-certs` backend to work correctly, the following packages
+//! will need to be installed in order for the build stage and the compiled program
+//! to run properly.
+//!
+//! | Distro       | Build-time packages        | Runtime packages             |
+//! | ------------ | -------------------------- | ---------------------------- |
+//! | Debian       | `pkg-config`, `libssl-dev` | `libssl3`, `ca-certificates` |
+//! | Alpine Linux | `pkgconf`, `openssl-dev`   | `libssl3`, `ca-certificates` |
 //!
 //! ### Sendmail transport
 //!
@@ -163,6 +192,22 @@
 
 #[cfg(not(lettre_ignore_tls_mismatch))]
 mod compiletime_checks {
+    #[cfg(all(feature = "rustls", not(feature = "aws-lc-rs"), not(feature = "ring")))]
+    compile_error!(
+        "feature `rustls` also requires either the `aws-lc-rs` or the `ring` feature to
+    be enabled"
+    );
+
+    #[cfg(all(
+        feature = "rustls",
+        not(feature = "rustls-native-certs"),
+        not(feature = "webpki-roots")
+    ))]
+    compile_error!(
+        "feature `rustls` also requires either the `rustls-native-certs` or the `webpki-roots` feature to
+    be enabled"
+    );
+
     #[cfg(all(feature = "native-tls", feature = "boring-tls"))]
     compile_error!("feature \"native-tls\" and feature \"boring-tls\" cannot be enabled at the same time, otherwise
     the executable will fail to link.");
@@ -219,6 +264,8 @@ mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
+#[cfg(feature = "rustls")]
+mod rustls_crypto;
 mod time;
 pub mod transport;
 

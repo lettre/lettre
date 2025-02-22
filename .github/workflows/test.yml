@@ -57,12 +57,12 @@ jobs:
 
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
-      
+
       - name: Install cargo hack
         run: cargo install cargo-hack --debug
 
       - name: Check with cargo hack
-        run: cargo hack check --feature-powerset --depth 3
+        run: cargo hack check --feature-powerset --depth 3 --at-least-one-of aws-lc-rs,ring --at-least-one-of rustls-native-certs,webpki-roots
 
   test:
     name: test / ${{ matrix.name }}
@@ -90,7 +90,7 @@ jobs:
       - name: Setup cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Install postfix  
+      - name: Install postfix
         run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install postfix
@@ -120,7 +120,7 @@ jobs:
 
       - name: Test with all features (-native-tls)
         run: cargo test --no-default-features --features async-std1,async-std1-rustls-tls,boring-tls,builder,dkim,file-transport,file-transport-envelope,hostname,mime03,pool,rustls-native-certs,rustls-tls,sendmail-transport,smtp-transport,tokio1,tokio1-boring-tls,tokio1-rustls-tls,tracing
-  
+
       - name: Test with all features (-boring-tls)
         run: cargo test --no-default-features --features async-std1,async-std1-rustls-tls,builder,dkim,file-transport,file-transport-envelope,hostname,mime03,native-tls,pool,rustls-native-certs,rustls-tls,sendmail-transport,smtp-transport,tokio1,tokio1-native-tls,tokio1-rustls-tls,tracing
 

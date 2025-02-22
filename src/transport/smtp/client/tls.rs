@@ -1,5 +1,5 @@
 use std::fmt::{self, Debug};
-#[cfg(feature = "rustls-tls")]
+#[cfg(feature = "rustls")]
 use std::sync::Arc;
 
 #[cfg(feature = "boring-tls")]
@@ -10,7 +10,7 @@ use boring::{
 };
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
-#[cfg(feature = "rustls-tls")]
+#[cfg(feature = "rustls")]
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     crypto::WebPkiSupportedAlgorithms,
@@ -20,13 +20,13 @@ use rustls::{
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
 };
 
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use crate::transport::smtp::{error, Error};
 
 /// TLS protocol versions.
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub enum TlsVersion {
     /// TLS 1.0
     ///
@@ -86,10 +86,10 @@ pub enum Tls {
     ///
     /// Warning: A malicious intermediary could intercept the `STARTTLS` flag,
     /// causing lettre to believe the server only supports plaintext connections.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     Opportunistic(TlsParameters),
     /// Begin with a plaintext connection and require `STARTTLS` for security.
@@ -101,10 +101,10 @@ pub enum Tls {
     /// Unlike [`Tls::Opportunistic`], this option is secure against MITM attacks.
     /// For optimal security and performance, consider using [`Tls::Wrapper`] instead,
     /// as it requires fewer roundtrips to establish a secure connection.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     Required(TlsParameters),
     /// Establish a connection wrapped in TLS from the start.
@@ -114,10 +114,10 @@ pub enum Tls {
     /// transmitting any sensitive data.
     ///
     /// This is the fastest and most secure option for establishing a connection.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     Wrapper(TlsParameters),
 }
@@ -126,11 +126,11 @@ impl Debug for Tls {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             Self::None => f.pad("None"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Opportunistic(_) => f.pad("Opportunistic"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Required(_) => f.pad("Required"),
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Self::Wrapper(_) => f.pad("Wrapper"),
         }
     }
@@ -154,7 +154,7 @@ pub enum CertificateStore {
     /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
     ///
     /// This option is only available in the rustls backend.
-    #[cfg(feature = "rustls-tls")]
+    #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
     WebpkiRoots,
     /// Don't use any system certificates.
     None,
@@ -179,7 +179,7 @@ pub struct TlsParametersBuilder {
     identity: Option<Identity>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     min_tls_version: TlsVersion,
 }
 
@@ -193,7 +193,7 @@ impl TlsParametersBuilder {
             identity: None,
             accept_invalid_hostnames: false,
             accept_invalid_certs: false,
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             min_tls_version: TlsVersion::Tlsv12,
         }
     }
@@ -231,10 +231,10 @@ impl TlsParametersBuilder {
     /// including those from other sites, are trusted.
     ///
     /// This method introduces significant vulnerabilities to man-in-the-middle attacks.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
@@ -244,7 +244,7 @@ impl TlsParametersBuilder {
     /// Controls which minimum TLS version is allowed
     ///
     /// Defaults to [`Tlsv12`][TlsVersion::Tlsv12].
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     pub fn set_min_tls_version(mut self, min_tls_version: TlsVersion) -> Self {
         self.min_tls_version = min_tls_version;
         self
@@ -273,17 +273,17 @@ impl TlsParametersBuilder {
 
     /// Creates a new `TlsParameters` using native-tls, boring-tls or rustls
     /// depending on which one is available
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn build(self) -> Result<TlsParameters, Error> {
-        #[cfg(feature = "rustls-tls")]
+        #[cfg(feature = "rustls")]
         return self.build_rustls();
-        #[cfg(all(not(feature = "rustls-tls"), feature = "native-tls"))]
+        #[cfg(all(not(feature = "rustls"), feature = "native-tls"))]
         return self.build_native();
-        #[cfg(all(not(feature = "rustls-tls"), feature = "boring-tls"))]
+        #[cfg(all(not(feature = "rustls"), feature = "boring-tls"))]
         return self.build_boring();
     }
 
@@ -397,8 +397,8 @@ impl TlsParametersBuilder {
     }
 
     /// Creates a new `TlsParameters` using rustls with the provided configuration
-    #[cfg(feature = "rustls-tls")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
+    #[cfg(feature = "rustls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
         let just_version3 = &[&rustls::version::TLS13];
         let supported_versions = match self.min_tls_version {
@@ -415,7 +415,7 @@ impl TlsParametersBuilder {
         let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
         let provider = rustls::crypto::CryptoProvider::get_default()
             .cloned()
-            .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
+            .unwrap_or_else(|| Arc::new(crate::rustls_crypto::crypto_provider()));
 
         // Build TLS config
         let signature_algorithms = provider.signature_verification_algorithms;
@@ -435,7 +435,7 @@ impl TlsParametersBuilder {
             );
         }
 
-        #[cfg(feature = "rustls-tls")]
+        #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
         fn load_webpki_roots(store: &mut RootCertStore) {
             store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         }
@@ -444,10 +444,10 @@ impl TlsParametersBuilder {
             CertificateStore::Default => {
                 #[cfg(feature = "rustls-native-certs")]
                 load_native_roots(&mut root_cert_store);
-                #[cfg(not(feature = "rustls-native-certs"))]
+                #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
                 load_webpki_roots(&mut root_cert_store);
             }
-            #[cfg(feature = "rustls-tls")]
+            #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
             CertificateStore::WebpkiRoots => {
                 load_webpki_roots(&mut root_cert_store);
             }
@@ -494,7 +494,7 @@ impl TlsParametersBuilder {
 pub enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
     NativeTls(TlsConnector),
-    #[cfg(feature = "rustls-tls")]
+    #[cfg(feature = "rustls")]
     RustlsTls(Arc<ClientConfig>),
     #[cfg(feature = "boring-tls")]
     BoringTls(SslConnector),
@@ -503,10 +503,10 @@ pub enum InnerTlsParameters {
 impl TlsParameters {
     /// Creates a new `TlsParameters` using native-tls or rustls
     /// depending on which one is available
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn new(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build()
@@ -525,8 +525,8 @@ impl TlsParameters {
     }
 
     /// Creates a new `TlsParameters` using rustls
-    #[cfg(feature = "rustls-tls")]
-    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-tls")))]
+    #[cfg(feature = "rustls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn new_rustls(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_rustls()
     }
@@ -549,13 +549,13 @@ impl TlsParameters {
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Certificate,
-    #[cfg(feature = "rustls-tls")]
+    #[cfg(feature = "rustls")]
     rustls: Vec<CertificateDer<'static>>,
     #[cfg(feature = "boring-tls")]
     boring_tls: boring::x509::X509,
 }
 
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 impl Certificate {
     /// Create a `Certificate` from a DER encoded certificate
     pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
@@ -568,7 +568,7 @@ impl Certificate {
         Ok(Self {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
-            #[cfg(feature = "rustls-tls")]
+            #[cfg(feature = "rustls")]
             rustls: vec![der.into()],
             #[cfg(feature = "boring-tls")]
             boring_tls: boring_tls_cert,
@@ -583,7 +583,7 @@ impl Certificate {
         #[cfg(feature = "boring-tls")]
         let boring_tls_cert = boring::x509::X509::from_pem(pem).map_err(error::tls)?;
 
-        #[cfg(feature = "rustls-tls")]
+        #[cfg(feature = "rustls")]
         let rustls_cert = {
             CertificateDer::pem_slice_iter(pem)
                 .collect::<Result<Vec<_>, pki_types::pem::Error>>()
@@ -593,7 +593,7 @@ impl Certificate {
         Ok(Self {
             #[cfg(feature = "native-tls")]
             native_tls: native_tls_cert,
-            #[cfg(feature = "rustls-tls")]
+            #[cfg(feature = "rustls")]
             rustls: rustls_cert,
             #[cfg(feature = "boring-tls")]
             boring_tls: boring_tls_cert,
@@ -612,7 +612,7 @@ impl Debug for Certificate {
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Identity,
-    #[cfg(feature = "rustls-tls")]
+    #[cfg(feature = "rustls")]
     rustls_tls: (Vec<CertificateDer<'static>>, PrivateKeyDer<'static>),
     #[cfg(feature = "boring-tls")]
     boring_tls: (boring::x509::X509, PKey<boring::pkey::Private>),
@@ -629,7 +629,7 @@ impl Clone for Identity {
         Identity {
             #[cfg(feature = "native-tls")]
             native_tls: self.native_tls.clone(),
-            #[cfg(feature = "rustls-tls")]
+            #[cfg(feature = "rustls")]
             rustls_tls: (self.rustls_tls.0.clone(), self.rustls_tls.1.clone_key()),
             #[cfg(feature = "boring-tls")]
             boring_tls: (self.boring_tls.0.clone(), self.boring_tls.1.clone()),
@@ -637,13 +637,13 @@ impl Clone for Identity {
     }
 }
 
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 impl Identity {
     pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self {
             #[cfg(feature = "native-tls")]
             native_tls: Identity::from_pem_native_tls(pem, key)?,
-            #[cfg(feature = "rustls-tls")]
+            #[cfg(feature = "rustls")]
             rustls_tls: Identity::from_pem_rustls_tls(pem, key)?,
             #[cfg(feature = "boring-tls")]
             boring_tls: Identity::from_pem_boring_tls(pem, key)?,
@@ -655,7 +655,7 @@ impl Identity {
         native_tls::Identity::from_pkcs8(pem, key).map_err(error::tls)
     }
 
-    #[cfg(feature = "rustls-tls")]
+    #[cfg(feature = "rustls")]
     fn from_pem_rustls_tls(
         pem: &[u8],
         key: &[u8],
@@ -682,7 +682,7 @@ impl Identity {
     }
 }
 
-#[cfg(feature = "rustls-tls")]
+#[cfg(feature = "rustls")]
 #[derive(Debug)]
 struct InvalidCertsVerifier {
     ignore_invalid_hostnames: bool,
@@ -691,7 +691,7 @@ struct InvalidCertsVerifier {
     signature_algorithms: WebPkiSupportedAlgorithms,
 }
 
-#[cfg(feature = "rustls-tls")]
+#[cfg(feature = "rustls")]
 impl ServerCertVerifier for InvalidCertsVerifier {
     fn verify_server_cert(
         &self,
@@ -729,7 +729,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
             message,
             cert,
             dss,
-            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+            &crate::rustls_crypto::crypto_provider().signature_verification_algorithms,
         )
     }
 
@@ -743,12 +743,12 @@ impl ServerCertVerifier for InvalidCertsVerifier {
             message,
             cert,
             dss,
-            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+            &crate::rustls_crypto::crypto_provider().signature_verification_algorithms,
         )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        rustls::crypto::ring::default_provider()
+        crate::rustls_crypto::crypto_provider()
             .signature_verification_algorithms
             .supported_schemes()
     }

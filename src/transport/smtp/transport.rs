@@ -7,7 +7,7 @@ use super::pool::sync_impl::Pool;
 #[cfg(feature = "pool")]
 use super::PoolConfig;
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
 use crate::{address::Envelope, Transport};
 
@@ -77,10 +77,10 @@ impl SmtpTransport {
     ///
     /// Creates an encrypted transport over submissions port, using the provided domain
     /// to validate TLS certificates.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
@@ -101,10 +101,10 @@ impl SmtpTransport {
     ///
     /// An error is returned if the connection can't be upgraded. No credentials
     /// or emails will be sent to the server, protecting from downgrade attacks.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn starttls_relay(relay: &str) -> Result<SmtpTransportBuilder, Error> {
         let tls_parameters = TlsParameters::new(relay.into())?;
@@ -230,10 +230,10 @@ impl SmtpTransport {
     /// # Ok(())
     /// # }
     /// ```
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn from_url(connection_url: &str) -> Result<SmtpTransportBuilder, Error> {
         super::connection_url::from_connection_url(connection_url)
@@ -333,10 +333,10 @@ impl SmtpTransportBuilder {
     ///
     /// Using the wrong [`Tls`] and [`Self::port`] combination may
     /// lead to hard to debug IO errors coming from the TLS library.
-    #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
-        doc(cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls")))
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn tls(mut self, tls: Tls) -> Self {
         self.info.tls = tls;
@@ -380,7 +380,7 @@ impl SmtpClient {
     pub fn connection(&self) -> Result<SmtpConnection, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match &self.info.tls {
-            #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+            #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             Tls::Wrapper(tls_parameters) => Some(tls_parameters),
             _ => None,
         };
@@ -394,7 +394,7 @@ impl SmtpClient {
             None,
         )?;
 
-        #[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+        #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
         match &self.info.tls {
             Tls::Opportunistic(tls_parameters) => {
                 if conn.can_starttls() {
