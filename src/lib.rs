@@ -66,8 +66,6 @@
 //!
 //! _Secure SMTP connections using TLS from the `rustls` crate_
 //!
-//! Rustls uses [ring] as the cryptography implementation. As a result, [not all Rust's targets are supported][ring-support].
-//!
 //! * **rustls**: TLS support for the synchronous version of the API
 //! * **tokio1-rustls**: TLS support for the `tokio1` async version of the API
 //! * **async-std1-rustls**: TLS support for the `async-std1` async version of the API
@@ -79,7 +77,7 @@
 //! When the `rustls` feature is enabled, one of the following crypto backends MUST also
 //! be enabled.
 //!
-//! * **aws-lc-rs**: use `aws-lc-rs` as the `rustls` crypto backend
+//! * **aws-lc-rs**: use AWS-LC (via `aws-lc-rs`) as the `rustls` crypto backend
 //! * **ring**: use `ring` as the `rustls` crypto backend
 //!
 //! ##### rustls certificate verification backend
@@ -98,8 +96,8 @@
 //!
 //! | Distro       | Build-time packages        | Runtime packages             |
 //! | ------------ | -------------------------- | ---------------------------- |
-//! | Debian       | `pkg-config`, `libssl-dev` | `libssl3`, `ca-certificates` |
-//! | Alpine Linux | `pkgconf`, `openssl-dev`   | `libssl3`, `ca-certificates` |
+//! | Debian       | none                       | `ca-certificates`            |
+//! | Alpine Linux | none                       | `ca-certificates`            |
 //!
 //! ### Sendmail transport
 //!
