@@ -13,8 +13,7 @@ use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls-tls")]
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    crypto::WebPkiSupportedAlgorithms,
-    crypto::{verify_tls12_signature, verify_tls13_signature},
+    crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
     pki_types::{self, pem::PemObject, CertificateDer, PrivateKeyDer, ServerName, UnixTime},
     server::ParsedCertificate,
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
@@ -412,14 +411,14 @@ impl TlsParametersBuilder {
             TlsVersion::Tlsv13 => just_version3,
         };
 
-        let tls = ClientConfig::builder_with_protocol_versions(supported_versions);
-        let provider = rustls::crypto::CryptoProvider::get_default()
+        let crypto_provider = CryptoProvider::get_default()
             .cloned()
             .unwrap_or_else(|| Arc::new(rustls::crypto::ring::default_provider()));
+        let tls = ClientConfig::builder_with_provider(Arc::clone(&crypto_provider))
+            .with_protocol_versions(supported_versions)
+            .map_err(error::tls)?;
 
         // Build TLS config
-        let signature_algorithms = provider.signature_verification_algorithms;
-
         let mut root_cert_store = RootCertStore::empty();
 
         #[cfg(feature = "rustls-native-certs")]
@@ -466,7 +465,7 @@ impl TlsParametersBuilder {
                 ignore_invalid_hostnames: self.accept_invalid_hostnames,
                 ignore_invalid_certs: self.accept_invalid_certs,
                 roots: root_cert_store,
-                signature_algorithms,
+                crypto_provider,
             };
             tls.dangerous()
                 .with_custom_certificate_verifier(Arc::new(verifier))
@@ -690,7 +689,7 @@ struct InvalidCertsVerifier {
     ignore_invalid_hostnames: bool,
     ignore_invalid_certs: bool,
     roots: RootCertStore,
-    signature_algorithms: WebPkiSupportedAlgorithms,
+    crypto_provider: Arc<CryptoProvider>,
 }
 
 #[cfg(feature = "rustls-tls")]
@@ -711,7 +710,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
                 &self.roots,
                 intermediates,
                 now,
-                self.signature_algorithms.all,
+                self.crypto_provider.signature_verification_algorithms.all,
             )?;
         }
 
@@ -731,7 +730,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
             message,
             cert,
             dss,
-            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+            &self.crypto_provider.signature_verification_algorithms,
         )
     }
 
@@ -745,12 +744,12 @@ impl ServerCertVerifier for InvalidCertsVerifier {
             message,
             cert,
             dss,
-            &rustls::crypto::ring::default_provider().signature_verification_algorithms,
+            &self.crypto_provider.signature_verification_algorithms,
         )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        rustls::crypto::ring::default_provider()
+        self.crypto_provider
             .signature_verification_algorithms
             .supported_schemes()
     }
