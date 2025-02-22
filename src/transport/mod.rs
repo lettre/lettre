@@ -140,6 +140,12 @@ pub trait Transport {
     }
 
     fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
+
+    /// Shuts down the transport. Future calls to [`send`] and [`send_raw`] might
+    /// fail.
+    fn shutdown(&self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
 
 /// Async Transport method for emails
@@ -166,4 +172,10 @@ pub trait AsyncTransport {
     }
 
     async fn send_raw(&self, envelope: &Envelope, email: &[u8]) -> Result<Self::Ok, Self::Error>;
+
+    /// Shuts down the transport. Future calls to [`send`] and [`send_raw`] might
+    /// fail.
+    async fn shutdown(&self) -> Result<(), Self::Error> {
+        Ok(())
+    }
 }
