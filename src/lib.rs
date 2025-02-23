@@ -64,13 +64,46 @@
 //!
 //! #### SMTP over TLS via the rustls crate
 //!
-//! _Secure SMTP connections using TLS from the `rustls-tls` crate_
+//! _Secure SMTP connections using TLS from the `rustls` crate_
 //!
-//! Rustls uses [ring] as the cryptography implementation. As a result, [not all Rust's targets are supported][ring-support].
+//! * **rustls**: TLS support for the synchronous version of the API
+//! * **tokio1-rustls**: TLS support for the `tokio1` async version of the API
+//! * **async-std1-rustls**: TLS support for the `async-std1` async version of the API
 //!
-//! * **rustls-tls**: TLS support for the synchronous version of the API
-//! * **tokio1-rustls-tls**: TLS support for the `tokio1` async version of the API
-//! * **async-std1-rustls-tls**: TLS support for the `async-std1` async version of the API
+//! ##### rustls crypto backends
+//!
+//! _The crypto implementation to use with rustls_
+//!
+//! When the `rustls` feature is enabled, one of the following crypto backends MUST also
+//! be enabled.
+//!
+//! * **aws-lc-rs**: use [AWS-LC] (via [`aws-lc-rs`]) as the `rustls` crypto backend
+//! * **ring**: use [`ring`] as the `rustls` crypto backend
+//!
+//! When enabling `aws-lc-rs`, the `fips` feature can also be enabled to have
+//! rustls use the FIPS certified module of AWS-LC.
+//!
+//! `aws-lc-rs` may require cmake on some platforms to compile.
+//! `fips` always requires cmake and the Go compiler to compile.
+//!
+//! ##### rustls certificate verification backend
+//!
+//! _The TLS certificate verification backend to use with rustls_
+//!
+//! When the `rustls` feature is enabled, one of the following verification backends
+//! MUST also be enabled.
+//!
+//! * **rustls-native-certs**: verify TLS certificates using the platform's native certificate store (see [`rustls-native-certs`])
+//! * **webpki-roots**: verify TLS certificates against Mozilla's root certificates (see [`webpki-roots`])
+//!
+//! For the `rustls-native-certs` backend to work correctly, the following packages
+//! will need to be installed in order for the build stage and the compiled program
+//! to run properly.
+//!
+//! | Distro       | Build-time packages        | Runtime packages             |
+//! | ------------ | -------------------------- | ---------------------------- |
+//! | Debian       | none                       | `ca-certificates`            |
+//! | Alpine Linux | none                       | `ca-certificates`            |
 //!
 //! ### Sendmail transport
 //!
@@ -115,8 +148,11 @@
 //! [`ContentType`]: crate::message::header::ContentType
 //! [tokio]: https://docs.rs/tokio/1
 //! [async-std]: https://docs.rs/async-std/1
-//! [ring]: https://github.com/briansmith/ring#ring
-//! [ring-support]: https://github.com/briansmith/ring#online-automated-testing
+//! [AWS-LC]: https://github.com/aws/aws-lc
+//! [`aws-lc-rs`]: https://crates.io/crates/aws-lc-rs
+//! [`ring`]: https://crates.io/crates/ring
+//! [`rustls-native-certs`]: https://crates.io/crates/rustls-native-certs
+//! [`webpki-roots`]: https://crates.io/crates/webpki-roots
 //! [Tokio 1.x]: https://docs.rs/tokio/1
 //! [async-std 1.x]: https://docs.rs/async-std/1
 //! [mime 0.3]: https://docs.rs/mime/0.3
@@ -163,6 +199,22 @@
 
 #[cfg(not(lettre_ignore_tls_mismatch))]
 mod compiletime_checks {
+    #[cfg(all(feature = "rustls", not(feature = "aws-lc-rs"), not(feature = "ring")))]
+    compile_error!(
+        "feature `rustls` also requires either the `aws-lc-rs` or the `ring` feature to
+    be enabled"
+    );
+
+    #[cfg(all(
+        feature = "rustls",
+        not(feature = "rustls-native-certs"),
+        not(feature = "webpki-roots")
+    ))]
+    compile_error!(
+        "feature `rustls` also requires either the `rustls-native-certs` or the `webpki-roots` feature to
+    be enabled"
+    );
+
     #[cfg(all(feature = "native-tls", feature = "boring-tls"))]
     compile_error!("feature \"native-tls\" and feature \"boring-tls\" cannot be enabled at the same time, otherwise
     the executable will fail to link.");
@@ -173,16 +225,12 @@ mod compiletime_checks {
         not(feature = "tokio1-native-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `native-tls` features, but the `tokio1-native-tls` feature hasn't been turned on.
-    If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+    If you were trying to opt into `rustls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
-    #[cfg(all(
-        feature = "tokio1",
-        feature = "rustls-tls",
-        not(feature = "tokio1-rustls-tls")
-    ))]
-    compile_error!("Lettre is being built with the `tokio1` and the `rustls-tls` features, but the `tokio1-rustls-tls` feature hasn't been turned on.
-    If you'd like to use `native-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
+    #[cfg(all(feature = "tokio1", feature = "rustls", not(feature = "tokio1-rustls")))]
+    compile_error!("Lettre is being built with the `tokio1` and the `rustls` features, but the `tokio1-rustls` feature hasn't been turned on.
+    If you'd like to use `native-tls` make sure that the `rustls` feature hasn't been enabled by mistake.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
@@ -191,22 +239,22 @@ mod compiletime_checks {
         not(feature = "tokio1-boring-tls")
     ))]
     compile_error!("Lettre is being built with the `tokio1` and the `boring-tls` features, but the `tokio1-boring-tls` feature hasn't been turned on.
-    If you'd like to use `boring-tls` make sure that the `rustls-tls` feature hasn't been enabled by mistake.
+    If you'd like to use `boring-tls` make sure that the `rustls` feature hasn't been enabled by mistake.
     Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
-    #[cfg(all(feature = "async-std1", feature = "native-tls",))]
+    #[cfg(all(feature = "async-std1", feature = "native-tls"))]
     compile_error!("Lettre is being built with the `async-std1` and the `native-tls` features, but the async-std integration doesn't support native-tls yet.
 If you'd like to work on the issue please take a look at https://github.com/lettre/lettre/issues/576.
-If you were trying to opt into `rustls-tls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
+If you were trying to opt into `rustls` and did not activate `native-tls`, disable the default-features of lettre in `Cargo.toml` and manually add the required features.
 Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 
     #[cfg(all(
         feature = "async-std1",
-        feature = "rustls-tls",
-        not(feature = "async-std1-rustls-tls")
+        feature = "rustls",
+        not(feature = "async-std1-rustls")
     ))]
-    compile_error!("Lettre is being built with the `async-std1` and the `rustls-tls` features, but the `async-std1-rustls-tls` feature hasn't been turned on.
-If you'd like to use `native-tls` make sure that the `rustls-tls` hasn't been enabled by mistake.
+    compile_error!("Lettre is being built with the `async-std1` and the `rustls` features, but the `async-std1-rustls` feature hasn't been turned on.
+If you'd like to use `native-tls` make sure that the `rustls` hasn't been enabled by mistake.
 Make sure to apply the same to any of your crate dependencies that use the `lettre` crate.");
 }
 
@@ -219,6 +267,8 @@ mod executor;
 #[cfg(feature = "builder")]
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 pub mod message;
+#[cfg(feature = "rustls")]
+mod rustls_crypto;
 mod time;
 pub mod transport;
 

@@ -33,9 +33,9 @@ pub use self::async_net::AsyncNetworkStream;
 #[cfg(feature = "tokio1")]
 pub use self::async_net::AsyncTokioStream;
 use self::net::NetworkStream;
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub(super) use self::tls::InnerTlsParameters;
-#[cfg(any(feature = "native-tls", feature = "rustls-tls", feature = "boring-tls"))]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub use self::tls::TlsVersion;
 pub use self::{
     connection::SmtpConnection,
