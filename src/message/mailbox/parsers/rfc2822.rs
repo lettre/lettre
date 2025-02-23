@@ -41,14 +41,14 @@ fn quoted_pair() -> impl Parser<char, char, Error = Cheap<char>> {
 
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
-pub fn fws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
+pub(super) fn fws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
     rfc2234::wsp()
         .or_not()
         .then_ignore(rfc2234::wsp().ignored().repeated())
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
-pub fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
+pub(super) fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
     // TODO: comment are not currently supported, so for now a cfws is
     // the same as a fws.
     fws()
@@ -106,12 +106,12 @@ pub(super) fn atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 }
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
-pub fn dot_atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn dot_atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     cfws().chain(dot_atom_text())
 }
 
 // dot-atom-text   =       1*atext *("." 1*atext)
-pub fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     atext().repeated().at_least(1).chain(
         just('.')
             .chain(atext().repeated().at_least(1))
@@ -204,7 +204,7 @@ pub(crate) fn mailbox_list(
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4.1
 
 // addr-spec       =       local-part "@" domain
-pub fn addr_spec() -> impl Parser<char, (String, String), Error = Cheap<char>> {
+pub(super) fn addr_spec() -> impl Parser<char, (String, String), Error = Cheap<char>> {
     local_part()
         .collect()
         .then_ignore(just('@'))
@@ -212,12 +212,12 @@ pub fn addr_spec() -> impl Parser<char, (String, String), Error = Cheap<char>> {
 }
 
 // local-part      =       dot-atom / quoted-string / obs-local-part
-pub fn local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     choice((dot_atom(), quoted_string(), obs_local_part()))
 }
 
 // domain          =       dot-atom / domain-literal / obs-domain
-pub fn domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     // NOTE: omitting domain-literal since it may never be used
     choice((dot_atom(), obs_domain()))
 }
@@ -240,11 +240,11 @@ fn obs_phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 // https://datatracker.ietf.org/doc/html/rfc2822#section-4.4
 
 // obs-local-part  =       word *("." word)
-pub fn obs_local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn obs_local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     word().chain(just('.').chain(word()).repeated().flatten())
 }
 
 // obs-domain      =       atom *("." atom)
-pub fn obs_domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn obs_domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
     atom().chain(just('.').chain(atom()).repeated().flatten())
 }

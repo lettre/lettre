@@ -13,7 +13,7 @@ use super::{
 };
 use crate::transport::smtp::transport::SmtpClient;
 
-pub struct Pool {
+pub(crate) struct Pool {
     config: PoolConfig,
     connections: Mutex<Vec<ParkedConnection>>,
     client: SmtpClient,
@@ -24,13 +24,13 @@ struct ParkedConnection {
     since: Instant,
 }
 
-pub struct PooledConnection {
+pub(crate) struct PooledConnection {
     conn: Option<SmtpConnection>,
     pool: Arc<Pool>,
 }
 
 impl Pool {
-    pub fn new(config: PoolConfig, client: SmtpClient) -> Arc<Self> {
+    pub(crate) fn new(config: PoolConfig, client: SmtpClient) -> Arc<Self> {
         let pool = Arc::new(Self {
             config,
             connections: Mutex::new(Vec::new()),
@@ -119,7 +119,7 @@ impl Pool {
         pool
     }
 
-    pub fn connection(self: &Arc<Self>) -> Result<PooledConnection, Error> {
+    pub(crate) fn connection(self: &Arc<Self>) -> Result<PooledConnection, Error> {
         loop {
             let conn = {
                 let mut connections = self.connections.lock().unwrap();

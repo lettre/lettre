@@ -58,7 +58,7 @@ struct ClientCodec {
 
 impl ClientCodec {
     /// Creates a new client codec
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             status: CodecStatus::StartOfNewLine,
         }

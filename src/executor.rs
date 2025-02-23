@@ -45,6 +45,7 @@ use crate::transport::smtp::Error;
 #[async_trait]
 pub trait Executor: Debug + Send + Sync + 'static + private::Sealed {
     #[cfg(feature = "smtp-transport")]
+    #[allow(private_bounds)]
     type Handle: SpawnHandle;
     #[cfg(feature = "smtp-transport")]
     type Sleep: Future<Output = ()> + Send + 'static;
@@ -82,7 +83,7 @@ pub trait Executor: Debug + Send + Sync + 'static + private::Sealed {
 #[doc(hidden)]
 #[cfg(feature = "smtp-transport")]
 #[async_trait]
-pub trait SpawnHandle: Debug + Send + Sync + 'static + private::Sealed {
+pub(crate) trait SpawnHandle: Debug + Send + Sync + 'static + private::Sealed {
     async fn shutdown(self);
 }
 

@@ -460,7 +460,7 @@ impl AsyncSmtpTransportBuilder {
 }
 
 /// Build client
-pub struct AsyncSmtpClient<E> {
+pub(super) struct AsyncSmtpClient<E> {
     info: SmtpInfo,
     marker_: PhantomData<E>,
 }
@@ -472,7 +472,7 @@ where
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
-    pub async fn connection(&self) -> Result<AsyncSmtpConnection, Error> {
+    pub(super) async fn connection(&self) -> Result<AsyncSmtpConnection, Error> {
         let mut conn = E::connect(
             &self.info.server,
             self.info.port,

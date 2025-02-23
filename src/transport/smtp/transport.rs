@@ -369,7 +369,7 @@ impl SmtpTransportBuilder {
 
 /// Build client
 #[derive(Debug, Clone)]
-pub struct SmtpClient {
+pub(super) struct SmtpClient {
     info: SmtpInfo,
 }
 
@@ -377,7 +377,7 @@ impl SmtpClient {
     /// Creates a new connection directly usable to send emails
     ///
     /// Handles encryption and authentication
-    pub fn connection(&self) -> Result<SmtpConnection, Error> {
+    pub(super) fn connection(&self) -> Result<SmtpConnection, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match &self.info.tls {
             #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]

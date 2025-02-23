@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
 
-pub struct Pool<E: Executor> {
+pub(crate) struct Pool<E: Executor> {
     config: PoolConfig,
     connections: Mutex<Vec<ParkedConnection>>,
     client: AsyncSmtpClient<E>,
@@ -29,13 +29,13 @@ struct ParkedConnection {
     since: Instant,
 }
 
-pub struct PooledConnection<E: Executor> {
+pub(crate) struct PooledConnection<E: Executor> {
     conn: Option<AsyncSmtpConnection>,
     pool: Arc<Pool<E>>,
 }
 
 impl<E: Executor> Pool<E> {
-    pub fn new(config: PoolConfig, client: AsyncSmtpClient<E>) -> Arc<Self> {
+    pub(crate) fn new(config: PoolConfig, client: AsyncSmtpClient<E>) -> Arc<Self> {
         let pool = Arc::new(Self {
             config,
             connections: Mutex::new(Vec::new()),
@@ -134,7 +134,7 @@ impl<E: Executor> Pool<E> {
         pool
     }
 
-    pub async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {
+    pub(crate) async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {
         loop {
             let conn = {
                 let mut connections = self.connections.lock().await;

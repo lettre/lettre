@@ -490,7 +490,7 @@ impl TlsParametersBuilder {
 
 #[derive(Clone)]
 #[allow(clippy::enum_variant_names)]
-pub enum InnerTlsParameters {
+pub(crate) enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
     NativeTls(TlsConnector),
     #[cfg(feature = "rustls")]
