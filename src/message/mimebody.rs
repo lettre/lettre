@@ -402,7 +402,7 @@ impl MultiPart {
 
         out.extend_from_slice(b"--");
         out.extend_from_slice(boundary.as_bytes());
-        out.extend_from_slice(b"--\r\n");
+        out.extend_from_slice(b"--\r\n\r\n");
     }
 }
 
@@ -511,7 +511,7 @@ mod test {
                 "Content-Transfer-Encoding: binary\r\n",
                 "\r\n",
                 "int main() { return 0; }\r\n",
-                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n"
             )
         );
     }
@@ -563,7 +563,7 @@ mod test {
                 "...\r\n",
                 "-----END PGP MESSAGE-----\r\n",
                 "\r\n",
-                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n"
             )
         );
     }
@@ -623,7 +623,7 @@ mod test {
                 "=3FYZ\r\n",
                 "-----END PGP SIGNATURE-----\r\n",
                 "\r\n",
-                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n"
             )
         );
     }
@@ -655,7 +655,7 @@ mod test {
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n"));
     }
 
     #[test]
@@ -700,14 +700,14 @@ mod test {
                            "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3\r\n",
                            "ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0\r\n",
                            "NTY3ODkwMTIzNDU2Nzg5MA==\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n",
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n",
                            "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
                            "Content-Type: text/plain; charset=utf-8\r\n",
                            "Content-Disposition: attachment; filename=\"example.c\"\r\n",
                            "Content-Transfer-Encoding: binary\r\n",
                            "\r\n",
                            "int main() { return 0; }\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
+                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n\r\n"));
     }
 
     #[test]
