@@ -155,6 +155,10 @@ impl<E: Executor> Pool<E> {
                 })
                 .await;
         }
+
+        if let Some(handle) = self.handle.get() {
+            handle.shutdown().await
+        }
     }
 
     pub(crate) async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {
