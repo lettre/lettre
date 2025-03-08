@@ -1,6 +1,5 @@
 use std::{
     fmt::{self, Debug},
-    mem,
     ops::{Deref, DerefMut},
     sync::{Arc, OnceLock},
     time::{Duration, Instant},
@@ -15,11 +14,15 @@ use super::{
     super::{client::AsyncSmtpConnection, Error},
     PoolConfig,
 };
-use crate::{executor::SpawnHandle, transport::smtp::async_transport::AsyncSmtpClient, Executor};
+use crate::{
+    executor::SpawnHandle,
+    transport::smtp::{async_transport::AsyncSmtpClient, error},
+    Executor,
+};
 
 pub(crate) struct Pool<E: Executor> {
     config: PoolConfig,
-    connections: Mutex<Vec<ParkedConnection>>,
+    connections: Mutex<Option<Vec<ParkedConnection>>>,
     client: AsyncSmtpClient<E>,
     handle: OnceLock<E::Handle>,
 }
@@ -38,7 +41,7 @@ impl<E: Executor> Pool<E> {
     pub(crate) fn new(config: PoolConfig, client: AsyncSmtpClient<E>) -> Arc<Self> {
         let pool = Arc::new(Self {
             config,
-            connections: Mutex::new(Vec::new()),
+            connections: Mutex::new(Some(Vec::new())),
             client,
             handle: OnceLock::new(),
         });
@@ -60,6 +63,10 @@ impl<E: Executor> Pool<E> {
                             #[allow(clippy::needless_collect)]
                             let (count, dropped) = {
                                 let mut connections = pool.connections.lock().await;
+                                let Some(connections) = connections.as_mut() else {
+                                    // The transport was shut down
+                                    return;
+                                };
 
                                 let to_drop = connections
                                     .iter()
@@ -92,6 +99,11 @@ impl<E: Executor> Pool<E> {
                                 };
 
                                 let mut connections = pool.connections.lock().await;
+                                let Some(connections) = connections.as_mut() else {
+                                    // The transport was shut down
+                                    return;
+                                };
+
                                 connections.push(ParkedConnection::park(conn));
 
                                 #[cfg(feature = "tracing")]
@@ -134,10 +146,29 @@ impl<E: Executor> Pool<E> {
         pool
     }
 
+    pub(crate) async fn shutdown(&self) {
+        let connections = { self.connections.lock().await.take() };
+        if let Some(connections) = connections {
+            stream::iter(connections)
+                .for_each_concurrent(8, |conn| async move {
+                    conn.unpark().abort().await;
+                })
+                .await;
+        }
+
+        if let Some(handle) = self.handle.get() {
+            handle.shutdown().await;
+        }
+    }
+
     pub(crate) async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {
         loop {
             let conn = {
                 let mut connections = self.connections.lock().await;
+                let Some(connections) = connections.as_mut() else {
+                    // The transport was shut down
+                    return Err(error::transport_shutdown());
+                };
                 connections.pop()
             };
 
@@ -181,13 +212,20 @@ impl<E: Executor> Pool<E> {
             #[cfg(feature = "tracing")]
             tracing::debug!("recycling connection");
 
-            let mut connections = self.connections.lock().await;
-            if connections.len() >= self.config.max_size as usize {
-                drop(connections);
-                conn.abort().await;
+            let mut connections_guard = self.connections.lock().await;
+
+            if let Some(connections) = connections_guard.as_mut() {
+                if connections.len() >= self.config.max_size as usize {
+                    drop(connections_guard);
+                    conn.abort().await;
+                } else {
+                    let conn = ParkedConnection::park(conn);
+                    connections.push(conn);
+                }
             } else {
-                let conn = ParkedConnection::park(conn);
-                connections.push(conn);
+                // The pool has already been shut down
+                drop(connections_guard);
+                conn.abort().await;
             }
         }
     }
@@ -200,7 +238,13 @@ impl<E: Executor> Debug for Pool<E> {
             .field(
                 "connections",
                 &match self.connections.try_lock() {
-                    Some(connections) => format!("{} connections", connections.len()),
+                    Some(connections) => {
+                        if let Some(connections) = connections.as_ref() {
+                            format!("{} connections", connections.len())
+                        } else {
+                            "SHUT DOWN".to_owned()
+                        }
+                    }
 
                     None => "LOCKED".to_owned(),
                 },
@@ -222,14 +266,16 @@ impl<E: Executor> Drop for Pool<E> {
         #[cfg(feature = "tracing")]
         tracing::debug!("dropping Pool");
 
-        let connections = mem::take(self.connections.get_mut());
+        let connections = self.connections.get_mut().take();
         let handle = self.handle.take();
         E::spawn(async move {
             if let Some(handle) = handle {
                 handle.shutdown().await;
             }
 
-            abort_concurrent(connections.into_iter().map(ParkedConnection::unpark)).await;
+            if let Some(connections) = connections {
+                abort_concurrent(connections.into_iter().map(ParkedConnection::unpark)).await;
+            }
         });
     }
 }

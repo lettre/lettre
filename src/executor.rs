@@ -84,7 +84,7 @@ pub trait Executor: Debug + Send + Sync + 'static + private::Sealed {
 #[cfg(feature = "smtp-transport")]
 #[async_trait]
 pub(crate) trait SpawnHandle: Debug + Send + Sync + 'static + private::Sealed {
-    async fn shutdown(self);
+    async fn shutdown(&self);
 }
 
 /// Async [`Executor`] using `tokio` `1.x`
@@ -178,7 +178,7 @@ impl Executor for Tokio1Executor {
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 #[async_trait]
 impl SpawnHandle for tokio1_crate::task::JoinHandle<()> {
-    async fn shutdown(self) {
+    async fn shutdown(&self) {
         self.abort();
     }
 }
@@ -202,7 +202,7 @@ pub struct AsyncStd1Executor;
 #[cfg(feature = "async-std1")]
 impl Executor for AsyncStd1Executor {
     #[cfg(feature = "smtp-transport")]
-    type Handle = async_std::task::JoinHandle<()>;
+    type Handle = futures_util::future::AbortHandle;
     #[cfg(feature = "smtp-transport")]
     type Sleep = BoxFuture<'static, ()>;
 
@@ -212,7 +212,9 @@ impl Executor for AsyncStd1Executor {
         F: Future<Output = ()> + Send + 'static,
         F::Output: Send + 'static,
     {
-        async_std::task::spawn(fut)
+        let (handle, registration) = futures_util::future::AbortHandle::new_pair();
+        async_std::task::spawn(futures_util::future::Abortable::new(fut, registration));
+        handle
     }
 
     #[cfg(feature = "smtp-transport")]
@@ -273,9 +275,9 @@ impl Executor for AsyncStd1Executor {
 
 #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
 #[async_trait]
-impl SpawnHandle for async_std::task::JoinHandle<()> {
-    async fn shutdown(self) {
-        self.cancel().await;
+impl SpawnHandle for futures_util::future::AbortHandle {
+    async fn shutdown(&self) {
+        self.abort();
     }
 }
 
@@ -292,5 +294,5 @@ mod private {
     impl Sealed for tokio1_crate::task::JoinHandle<()> {}
 
     #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
-    impl Sealed for async_std::task::JoinHandle<()> {}
+    impl Sealed for futures_util::future::AbortHandle {}
 }

@@ -60,6 +60,11 @@ impl Transport for SmtpTransport {
 
         Ok(result)
     }
+
+    fn shutdown(&self) {
+        #[cfg(feature = "pool")]
+        self.inner.shutdown();
+    }
 }
 
 impl Debug for SmtpTransport {
