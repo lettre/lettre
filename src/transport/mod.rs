@@ -143,9 +143,7 @@ pub trait Transport {
 
     /// Shuts down the transport. Future calls to [`send`] and [`send_raw`] might
     /// fail.
-    fn shutdown(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
+    fn shutdown(&self) {}
 }
 
 /// Async Transport method for emails
@@ -175,7 +173,5 @@ pub trait AsyncTransport {
 
     /// Shuts down the transport. Future calls to [`send`] and [`send_raw`] might
     /// fail.
-    async fn shutdown(&self) -> Result<(), Self::Error> {
-        Ok(())
-    }
+    async fn shutdown(&self) {}
 }

@@ -127,25 +127,13 @@ impl Pool {
         pool
     }
 
-    pub(crate) fn shutdown(&self) -> Result<(), Error> {
+    pub(crate) fn shutdown(&self) {
         let connections = { self.connections.lock().unwrap().take() };
-        let Some(connections) = connections else {
-            return Ok(());
-        };
-
-        // Return the first error we encounter, but still close all connections either way
-        let mut res = Ok(());
-        for conn in connections {
-            let mut conn = conn.unpark();
-            if let Err(err) = conn.quit() {
-                conn.abort();
-
-                if res.is_ok() {
-                    res = Err(err);
-                }
+        if let Some(connections) = connections {
+            for conn in connections {
+                conn.unpark().abort();
             }
         }
-        res
     }
 
     pub(crate) fn connection(self: &Arc<Self>) -> Result<PooledConnection, Error> {

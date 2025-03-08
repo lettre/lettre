@@ -146,27 +146,15 @@ impl<E: Executor> Pool<E> {
         pool
     }
 
-    pub(crate) async fn shutdown(&self) -> Result<(), Error> {
+    pub(crate) async fn shutdown(&self) {
         let connections = { self.connections.lock().await.take() };
-        let Some(connections) = connections else {
-            return Ok(());
-        };
-
-        // Return the first error we encounter, but still close all connections either way
-        let mut res = OnceLock::new();
-        let res_ref = &res;
-
-        stream::iter(connections)
-            .for_each_concurrent(8, |conn| async move {
-                let mut conn = conn.unpark();
-                if let Err(err) = conn.quit().await {
-                    conn.abort().await;
-                    _ = res_ref.set(Err(err));
-                }
-            })
-            .await;
-
-        res.take().unwrap_or(Ok(()))
+        if let Some(connections) = connections {
+            stream::iter(connections)
+                .for_each_concurrent(8, |conn| async move {
+                    conn.unpark().abort().await;
+                })
+                .await;
+        }
     }
 
     pub(crate) async fn connection(self: &Arc<Self>) -> Result<PooledConnection<E>, Error> {

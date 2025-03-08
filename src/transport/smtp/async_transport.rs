@@ -80,11 +80,9 @@ impl AsyncTransport for AsyncSmtpTransport<Tokio1Executor> {
         Ok(result)
     }
 
-    async fn shutdown(&self) -> Result<(), Self::Error> {
+    async fn shutdown(&self) {
         #[cfg(feature = "pool")]
-        self.inner.shutdown().await?;
-
-        Ok(())
+        self.inner.shutdown().await;
     }
 }
 
@@ -105,11 +103,9 @@ impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
         Ok(result)
     }
 
-    async fn shutdown(&self) -> Result<(), Self::Error> {
+    async fn shutdown(&self) {
         #[cfg(feature = "pool")]
-        self.inner.shutdown().await?;
-
-        Ok(())
+        self.inner.shutdown().await;
     }
 }
 
