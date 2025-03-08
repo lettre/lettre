@@ -1,7 +1,7 @@
 use std::{
     fmt::{self, Debug},
     ops::{Deref, DerefMut},
-    sync::{Arc, Mutex, TryLockError},
+    sync::{mpsc, Arc, Mutex, TryLockError},
     thread,
     time::{Duration, Instant},
 };
@@ -15,6 +15,7 @@ use crate::transport::smtp::{error, transport::SmtpClient};
 pub(crate) struct Pool {
     config: PoolConfig,
     connections: Mutex<Option<Vec<ParkedConnection>>>,
+    thread_terminator: mpsc::SyncSender<()>,
     client: SmtpClient,
 }
 
@@ -30,9 +31,12 @@ pub(crate) struct PooledConnection {
 
 impl Pool {
     pub(crate) fn new(config: PoolConfig, client: SmtpClient) -> Arc<Self> {
+        let (thread_tx, thread_rx) = mpsc::sync_channel(1);
+
         let pool = Arc::new(Self {
             config,
             connections: Mutex::new(Some(Vec::new())),
+            thread_terminator: thread_tx,
             client,
         });
 
@@ -118,7 +122,14 @@ impl Pool {
                         }
 
                         drop(pool);
-                        thread::sleep(idle_timeout);
+
+                        match thread_rx.recv_timeout(idle_timeout) {
+                            Ok(()) | Err(mpsc::RecvTimeoutError::Disconnected) => {
+                                // The transport was shut down
+                                return;
+                            }
+                            Err(mpsc::RecvTimeoutError::Timeout) => {}
+                        }
                     }
                 })
                 .expect("couldn't spawn the Pool thread");
@@ -134,6 +145,8 @@ impl Pool {
                 conn.unpark().abort();
             }
         }
+
+        _ = self.thread_terminator.try_send(());
     }
 
     pub(crate) fn connection(self: &Arc<Self>) -> Result<PooledConnection, Error> {
