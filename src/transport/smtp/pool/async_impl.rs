@@ -157,7 +157,7 @@ impl<E: Executor> Pool<E> {
         }
 
         if let Some(handle) = self.handle.get() {
-            handle.shutdown().await
+            handle.shutdown().await;
         }
     }
 
