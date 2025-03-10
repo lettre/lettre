@@ -1,3 +1,31 @@
+<a name="v0.11.15"></a>
+### v0.11.15 (2025-03-10)
+
+#### Upgrade notes
+
+* MSRV is now 1.74 ([#1060])
+
+#### Features
+
+* Add controlled shutdown methods ([#1045], [#1068])
+
+#### Misc
+
+* Deny `unreachable_pub` lint ([#1058])
+* Bump minimum supported `rustls` ([#1063])
+* Bump minimum supported `serde` ([#1064])
+* Upgrade semver compatible dependencies ([#1067])
+* Upgrade `email-encoding` to v0.4 ([#1069])
+
+[#1045]: https://github.com/lettre/lettre/pull/1045
+[#1058]: https://github.com/lettre/lettre/pull/1058
+[#1060]: https://github.com/lettre/lettre/pull/1060
+[#1063]: https://github.com/lettre/lettre/pull/1063
+[#1064]: https://github.com/lettre/lettre/pull/1064
+[#1067]: https://github.com/lettre/lettre/pull/1067
+[#1068]: https://github.com/lettre/lettre/pull/1068
+[#1069]: https://github.com/lettre/lettre/pull/1069
+
 <a name="v0.11.14"></a>
 ### v0.11.14 (2025-02-23)
 
