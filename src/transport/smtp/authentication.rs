@@ -116,10 +116,10 @@ impl Mechanism {
             }
             Mechanism::Xoauth2 => match challenge {
                 Some(_) => Err(error::client("This mechanism does not expect a challenge")),
-                None => Ok(format!(
+                None => Ok(crate::base64::encode(format!(
                     "user={}\x01auth=Bearer {}\x01\x01",
                     credentials.authentication_identity, credentials.secret
-                )),
+                ))),
             },
         }
     }
@@ -196,7 +196,8 @@ mod test {
 
         assert_eq!(
             mechanism.response(&credentials, None).unwrap(),
-            "user=username\x01auth=Bearer vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==\x01\x01"
+            // base64 of "user=username\x01auth=Bearer vF9dft4qmTc2Nvb3RlckBhdHRhdmlzdGEuY29tCg==\x01\x01"
+            "dXNlcj11c2VybmFtZQFhdXRoPUJlYXJlciB2RjlkZnQ0cW1UYzJOdmIzUmxja0JoZEhSaGRtbHpkR0V1WTI5dENnPT0BAQ==",
         );
         assert!(mechanism.response(&credentials, Some("test")).is_err());
     }
