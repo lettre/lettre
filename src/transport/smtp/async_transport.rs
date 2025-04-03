@@ -234,7 +234,7 @@ where
     /// a proper URL encoder, like the following cargo script:
     ///
     /// ```rust
-    /// # let _ = r#"
+    /// # const TOML: &str = r#"
     /// #!/usr/bin/env cargo
     ///
     /// //! ```cargo
