@@ -9,7 +9,7 @@ use std::{
 #[cfg(feature = "async-std1")]
 use async_std::net::{TcpStream as AsyncStd1TcpStream, ToSocketAddrs as AsyncStd1ToSocketAddrs};
 use futures_io::{
-    AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Error as IoError, ErrorKind,
+    AsyncRead as FuturesAsyncRead, AsyncWrite as FuturesAsyncWrite, Error as IoError,
     Result as IoResult,
 };
 #[cfg(feature = "async-std1-rustls")]
@@ -122,8 +122,7 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1RustlsTls(s) => s.get_ref().0.peer_addr(),
             InnerAsyncNetworkStream::None => {
                 debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Err(IoError::new(
-                    ErrorKind::Other,
+                Err(IoError::other(
                     "InnerAsyncNetworkStream::None must never be built",
                 ))
             }
