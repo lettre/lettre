@@ -173,7 +173,7 @@ pub struct FileTransport {
 }
 
 /// Asynchronously writes the content and the envelope information to a file
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(docsrs, doc(cfg(any(feature = "tokio1", feature = "async-std1"))))]
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]
@@ -269,6 +269,16 @@ where
         let envelope = serde_json::from_slice(&json).map_err(error::envelope)?;
 
         Ok((envelope, eml))
+    }
+}
+
+#[cfg(any(feature = "async-std1", feature = "tokio1"))]
+impl<E: Executor> Clone for AsyncFileTransport<E> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+            marker_: PhantomData,
+        }
     }
 }
 
