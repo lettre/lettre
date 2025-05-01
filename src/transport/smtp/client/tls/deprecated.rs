@@ -174,10 +174,10 @@ pub enum NativeTlsCertificateStore {
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
 pub enum RustlsCertificateStore {
     #[cfg(all(feature = "rustls", feature = "rustls-native-certs"))]
-    #[cfg_attr(docsrs, doc(all(feature = "rustls", feature = "rustls-native-certs")))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "rustls", feature = "rustls-native-certs"))))]
     NativeCerts,
     #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
-    #[cfg_attr(docsrs, doc(all(feature = "rustls", feature = "webpki-roots")))]
+    #[cfg_attr(docsrs, doc(cfg(all(feature = "rustls", feature = "webpki-roots"))))]
     WebpkiRoots,
     None,
 }
