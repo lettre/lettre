@@ -150,6 +150,8 @@ pub enum CertificateStore {
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
     #[default]
     Default,
+    #[cfg(all(feature = "rustls", feature = "rustls-platform-verifier"))]
+    RustlsPlatformVerifier,
     /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
     ///
     /// This option is only available in the rustls backend.
@@ -446,6 +448,8 @@ impl TlsParametersBuilder {
                 #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
                 load_webpki_roots(&mut root_cert_store);
             }
+            #[cfg(all(feature = "rustls", feature = "rustls-platform-verifier"))]
+            CertificateStore::RustlsPlatformVerifier => {}
             #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
             CertificateStore::WebpkiRoots => {
                 load_webpki_roots(&mut root_cert_store);
@@ -468,7 +472,19 @@ impl TlsParametersBuilder {
             tls.dangerous()
                 .with_custom_certificate_verifier(Arc::new(verifier))
         } else {
-            tls.with_root_certificates(root_cert_store)
+            #[cfg(all(feature = "rustls", feature = "rustls-platform-verifier"))]
+            {
+                tls.dangerous().with_custom_certificate_verifier(Arc::new(
+                    rustls_platform_verifier::Verifier::new_with_extra_roots(root_cert_store)
+                        .map_err(error::tls)?
+                        .with_provider(crypto_provider),
+                ))
+            }
+
+            #[cfg(not(all(feature = "rustls", feature = "rustls-platform-verifier")))]
+            {
+                tls.with_root_certificates(root_cert_store)
+            }
         };
 
         let tls = if let Some(identity) = self.identity {

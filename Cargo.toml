@@ -49,6 +49,7 @@ percent-encoding = { version = "2.3", optional = true }
 ## tls
 native-tls = { version = "0.2.9", optional = true } # feature
 rustls = { version = "0.23.18", default-features = false, features = ["logging", "std", "tls12"], optional = true }
+rustls-platform-verifier = { version = "0.5.2", optional = true }
 rustls-native-certs = { version = "0.8", optional = true }
 webpki-roots = { version = "0.26", optional = true }
 boring = { version = "4", optional = true }
@@ -97,7 +98,7 @@ harness = false
 name = "mailbox_parsing"
 
 [features]
-default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
+default = ["smtp-transport", "pool", "native-tls", "hostname", "builder", "rustls", "rustls-platform-verifier"]
 builder = ["dep:httpdate", "dep:mime", "dep:fastrand", "dep:quoted_printable", "dep:email-encoding"]
 mime03 = ["dep:mime"]
 
