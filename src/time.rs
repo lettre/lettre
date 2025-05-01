@@ -1,6 +1,6 @@
 use std::time::SystemTime;
 
-#[cfg(feature = "web")]
+#[cfg(all(feature = "web", target_arch = "wasm32"))]
 pub(crate) fn now() -> SystemTime {
     fn to_std_systemtime(time: web_time::SystemTime) -> std::time::SystemTime {
         let duration = time
@@ -18,7 +18,7 @@ pub(crate) fn now() -> SystemTime {
     to_std_systemtime(web_time::SystemTime::now())
 }
 
-#[cfg(not(feature = "web"))]
+#[cfg(not(all(feature = "web", target_arch = "wasm32")))]
 pub(crate) fn now() -> SystemTime {
     // FIXME: change to #[expect(clippy::disallowed_methods, reason = "the `web` feature is disabled")]
     #[allow(clippy::disallowed_methods)]
