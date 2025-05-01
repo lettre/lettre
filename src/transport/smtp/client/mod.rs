@@ -34,12 +34,12 @@ pub use self::async_net::AsyncNetworkStream;
 pub use self::async_net::AsyncTokioStream;
 use self::net::NetworkStream;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-pub(super) use self::tls::InnerTlsParameters;
+pub(super) use self::tls::deprecated::InnerTlsParameters;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-pub use self::tls::TlsVersion;
+pub use self::tls::deprecated::TlsVersion;
 pub use self::{
     connection::SmtpConnection,
-    tls::{Certificate, Identity, Tls, TlsParameters, TlsParametersBuilder},
+    tls::deprecated::{Certificate, Identity, Tls, TlsParameters, TlsParametersBuilder},
 };
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
