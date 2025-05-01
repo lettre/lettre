@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 #[cfg(feature = "boring-tls")]
 use boring::{
-    pkey::PKey,
     ssl::{SslConnector, SslVersion},
     x509::store::X509StoreBuilder,
 };
@@ -441,16 +440,16 @@ impl TlsParametersBuilder {
             let cert_store = tls_builder.cert_store_mut();
 
             for cert in self.root_certs {
-                cert_store.add_cert(cert.boring_tls).map_err(error::tls)?;
+                cert_store.add_cert(cert.boring_tls.0).map_err(error::tls)?;
             }
         }
 
         if let Some(identity) = self.identity {
             tls_builder
-                .set_certificate(identity.boring_tls.0.as_ref())
+                .set_certificate(identity.boring_tls.chain.as_ref())
                 .map_err(error::tls)?;
             tls_builder
-                .set_private_key(identity.boring_tls.1.as_ref())
+                .set_private_key(identity.boring_tls.key.as_ref())
                 .map_err(error::tls)?;
         }
 
