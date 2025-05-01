@@ -102,8 +102,8 @@
 //!
 //! | Verification backend       | Distro       | Build-time packages        | Runtime packages             |
 //! | ---------------------      | ------------ | -------------------------- | ---------------------------- |
-//! | `rustls-platform-verifier` | Debian       |                            |                              |
-//! | `rustls-platform-verifier` | Alpine Linux |                            |                              |
+//! | `rustls-platform-verifier` | Debian       | none                       | `ca-certificates`            |
+//! | `rustls-platform-verifier` | Alpine Linux | none                       | `ca-certificates`            |
 //! | `rustls-native-certs`      | Debian       | none                       | `ca-certificates`            |
 //! | `rustls-native-certs`      | Alpine Linux | none                       | `ca-certificates`            |
 //! | `webpki-roots`             | any          | none                       | none                         |
