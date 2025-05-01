@@ -98,7 +98,7 @@ harness = false
 name = "mailbox_parsing"
 
 [features]
-default = ["smtp-transport", "pool", "native-tls", "hostname", "builder", "rustls", "rustls-platform-verifier"]
+default = ["smtp-transport", "pool", "native-tls", "hostname", "builder"]
 builder = ["dep:httpdate", "dep:mime", "dep:fastrand", "dep:quoted_printable", "dep:email-encoding"]
 mime03 = ["dep:mime"]
 
