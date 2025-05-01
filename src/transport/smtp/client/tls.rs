@@ -165,8 +165,6 @@ pub struct TlsParameters {
     pub(crate) connector: InnerTlsParameters,
     /// The domain name which is expected in the TLS certificate from the server
     pub(super) domain: String,
-    #[cfg(feature = "boring-tls")]
-    pub(super) accept_invalid_hostnames: bool,
 }
 
 /// Builder for `TlsParameters`
@@ -328,10 +326,8 @@ impl TlsParametersBuilder {
 
         let connector = tls_builder.build().map_err(error::tls)?;
         Ok(TlsParameters {
-            connector: InnerTlsParameters::NativeTls(connector),
+            connector: InnerTlsParameters::NativeTls { connector },
             domain: self.domain,
-            #[cfg(feature = "boring-tls")]
-            accept_invalid_hostnames: self.accept_invalid_hostnames,
         })
     }
 
@@ -389,9 +385,11 @@ impl TlsParametersBuilder {
             .map_err(error::tls)?;
         let connector = tls_builder.build();
         Ok(TlsParameters {
-            connector: InnerTlsParameters::BoringTls(connector),
+            connector: InnerTlsParameters::BoringTls {
+                connector,
+                accept_invalid_hostnames: self.accept_invalid_hostnames,
+            },
             domain: self.domain,
-            accept_invalid_hostnames: self.accept_invalid_hostnames,
         })
     }
 
@@ -480,10 +478,10 @@ impl TlsParametersBuilder {
         };
 
         Ok(TlsParameters {
-            connector: InnerTlsParameters::RustlsTls(Arc::new(tls)),
+            connector: InnerTlsParameters::Rustls {
+                config: Arc::new(tls),
+            },
             domain: self.domain,
-            #[cfg(feature = "boring-tls")]
-            accept_invalid_hostnames: self.accept_invalid_hostnames,
         })
     }
 }
@@ -492,11 +490,14 @@ impl TlsParametersBuilder {
 #[allow(clippy::enum_variant_names)]
 pub(crate) enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
-    NativeTls(TlsConnector),
+    NativeTls { connector: TlsConnector },
     #[cfg(feature = "rustls")]
-    RustlsTls(Arc<ClientConfig>),
+    Rustls { config: Arc<ClientConfig> },
     #[cfg(feature = "boring-tls")]
-    BoringTls(SslConnector),
+    BoringTls {
+        connector: SslConnector,
+        accept_invalid_hostnames: bool,
+    },
 }
 
 impl TlsParameters {
