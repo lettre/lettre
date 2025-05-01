@@ -37,7 +37,7 @@ enum InnerNetworkStream {
     NativeTls(TlsStream<TcpStream>),
     /// Encrypted TCP stream
     #[cfg(feature = "rustls")]
-    RustlsTls(StreamOwned<ClientConnection, TcpStream>),
+    Rustls(StreamOwned<ClientConnection, TcpStream>),
     #[cfg(feature = "boring-tls")]
     BoringTls(SslStream<TcpStream>),
     /// Can't be built
@@ -60,7 +60,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(s) => s.get_ref().peer_addr(),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(s) => s.get_ref().peer_addr(),
+            InnerNetworkStream::Rustls(s) => s.get_ref().peer_addr(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.get_ref().peer_addr(),
             InnerNetworkStream::None => {
@@ -80,7 +80,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(s) => s.get_ref().shutdown(how),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(s) => s.get_ref().shutdown(how),
+            InnerNetworkStream::Rustls(s) => s.get_ref().shutdown(how),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.get_ref().shutdown(how),
             InnerNetworkStream::None => {
@@ -174,27 +174,30 @@ impl NetworkStream {
     ) -> Result<InnerNetworkStream, Error> {
         Ok(match &tls_parameters.connector {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls(connector) => {
+            InnerTlsParameters::NativeTls { connector } => {
                 let stream = connector
                     .connect(tls_parameters.domain(), tcp_stream)
                     .map_err(error::connection)?;
                 InnerNetworkStream::NativeTls(stream)
             }
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::RustlsTls(connector) => {
+            InnerTlsParameters::Rustls { config } => {
                 let domain = ServerName::try_from(tls_parameters.domain())
                     .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-                let connection = ClientConnection::new(Arc::clone(connector), domain.to_owned())
+                let connection = ClientConnection::new(Arc::clone(config), domain.to_owned())
                     .map_err(error::connection)?;
                 let stream = StreamOwned::new(connection, tcp_stream);
-                InnerNetworkStream::RustlsTls(stream)
+                InnerNetworkStream::Rustls(stream)
             }
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls(connector) => {
+            InnerTlsParameters::BoringTls {
+                connector,
+                accept_invalid_hostnames,
+            } => {
                 let stream = connector
                     .configure()
                     .map_err(error::connection)?
-                    .verify_hostname(tls_parameters.accept_invalid_hostnames)
+                    .verify_hostname(*accept_invalid_hostnames)
                     .connect(tls_parameters.domain(), tcp_stream)
                     .map_err(error::connection)?;
                 InnerNetworkStream::BoringTls(stream)
@@ -208,7 +211,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(_) => true,
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(_) => true,
+            InnerNetworkStream::Rustls(_) => true,
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(_) => true,
             InnerNetworkStream::None => {
@@ -225,7 +228,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(_) => panic!("Unsupported"),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(_) => panic!("Unsupported"),
+            InnerNetworkStream::Rustls(_) => panic!("Unsupported"),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => {
                 stream.ssl().verify_result().map_err(error::tls)
@@ -241,7 +244,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(_) => panic!("Unsupported"),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(stream) => Ok(stream
+            InnerNetworkStream::Rustls(stream) => Ok(stream
                 .conn
                 .peer_certificates()
                 .unwrap()
@@ -272,7 +275,7 @@ impl NetworkStream {
                 .to_der()
                 .map_err(error::tls)?),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(stream) => Ok(stream
+            InnerNetworkStream::Rustls(stream) => Ok(stream
                 .conn
                 .peer_certificates()
                 .unwrap()
@@ -296,7 +299,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(stream) => stream.get_ref().set_read_timeout(duration),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(stream) => stream.get_ref().set_read_timeout(duration),
+            InnerNetworkStream::Rustls(stream) => stream.get_ref().set_read_timeout(duration),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_read_timeout(duration),
             InnerNetworkStream::None => {
@@ -314,7 +317,7 @@ impl NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(stream) => stream.get_ref().set_write_timeout(duration),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(stream) => stream.get_ref().set_write_timeout(duration),
+            InnerNetworkStream::Rustls(stream) => stream.get_ref().set_write_timeout(duration),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_write_timeout(duration),
             InnerNetworkStream::None => {
@@ -332,7 +335,7 @@ impl Read for NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(s) => s.read(buf),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(s) => s.read(buf),
+            InnerNetworkStream::Rustls(s) => s.read(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.read(buf),
             InnerNetworkStream::None => {
@@ -350,7 +353,7 @@ impl Write for NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(s) => s.write(buf),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(s) => s.write(buf),
+            InnerNetworkStream::Rustls(s) => s.write(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.write(buf),
             InnerNetworkStream::None => {
@@ -366,7 +369,7 @@ impl Write for NetworkStream {
             #[cfg(feature = "native-tls")]
             InnerNetworkStream::NativeTls(s) => s.flush(),
             #[cfg(feature = "rustls")]
-            InnerNetworkStream::RustlsTls(s) => s.flush(),
+            InnerNetworkStream::Rustls(s) => s.flush(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.flush(),
             InnerNetworkStream::None => {
