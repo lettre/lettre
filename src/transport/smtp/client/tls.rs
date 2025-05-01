@@ -65,6 +65,16 @@ pub enum TlsVersion {
 /// connecting to a local server.
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Tls` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub enum Tls {
     /// Insecure (plaintext) connection only.
     ///
@@ -138,6 +148,16 @@ impl Debug for Tls {
 /// Source for the base set of root certificates to trust.
 #[allow(missing_copy_implementations)]
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `CertificateStore` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub enum CertificateStore {
     /// Use the default for the TLS backend.
     ///
@@ -161,6 +181,16 @@ pub enum CertificateStore {
 
 /// Parameters to use for secure clients
 #[derive(Clone)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `TlsParameters` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct TlsParameters {
     pub(crate) connector: InnerTlsParameters,
     /// The domain name which is expected in the TLS certificate from the server
@@ -169,6 +199,16 @@ pub struct TlsParameters {
 
 /// Builder for `TlsParameters`
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `TlsParametersBuilder` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct TlsParametersBuilder {
     domain: String,
     cert_store: CertificateStore,
@@ -546,6 +586,16 @@ impl TlsParameters {
 /// A certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Certificate` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Certificate,
@@ -609,6 +659,16 @@ impl Debug for Certificate {
 
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Identity` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: native_tls::Identity,
