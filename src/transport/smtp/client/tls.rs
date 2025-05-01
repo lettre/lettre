@@ -441,7 +441,7 @@ impl TlsParametersBuilder {
             store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         }
 
-        #[cfg_attr(not(feature = "rustls-platform-verifier"), expect(unused_mut))]
+        #[cfg_attr(not(feature = "rustls-platform-verifier"), allow(unused_mut))]
         let mut extra_roots = None::<Vec<CertificateDer<'static>>>;
         match self.cert_store {
             CertificateStore::Default => {
