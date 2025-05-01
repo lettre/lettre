@@ -242,6 +242,10 @@ impl TlsParametersBuilder {
     ///
     /// Defaults to [`Tlsv12`][TlsVersion::Tlsv12].
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+    )]
     pub fn set_min_tls_version(mut self, min_tls_version: TlsVersion) -> Self {
         self.min_tls_version = min_tls_version;
         self
