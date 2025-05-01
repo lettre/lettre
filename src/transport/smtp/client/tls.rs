@@ -441,7 +441,7 @@ impl TlsParametersBuilder {
             store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         }
 
-        #[cfg(feature = "rustls-platform-verifier")]
+        #[cfg_attr(not(feature = "rustls-platform-verifier"), expect(unused_mut))]
         let mut extra_roots = None::<Vec<CertificateDer<'static>>>;
         match self.cert_store {
             CertificateStore::Default => {
@@ -470,7 +470,9 @@ impl TlsParametersBuilder {
             }
         }
 
-        let tls = if self.accept_invalid_certs || self.accept_invalid_hostnames {
+        let tls = if self.accept_invalid_certs
+            || (extra_roots.is_none() && self.accept_invalid_hostnames)
+        {
             let verifier = InvalidCertsVerifier {
                 ignore_invalid_hostnames: self.accept_invalid_hostnames,
                 ignore_invalid_certs: self.accept_invalid_certs,
