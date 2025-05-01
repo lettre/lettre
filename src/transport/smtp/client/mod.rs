@@ -39,7 +39,7 @@ pub(super) use self::tls::InnerTlsParameters;
 pub use self::tls::TlsVersion;
 pub use self::{
     connection::SmtpConnection,
-    tls::{Certificate, CertificateStore, Identity, Tls, TlsParameters, TlsParametersBuilder},
+    tls::{Certificate, Identity, Tls, TlsParameters, TlsParametersBuilder},
 };
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
