@@ -34,6 +34,7 @@ impl Error {
 
     /// Returns true if the error is an envelope serialization or deserialization error
     #[cfg(feature = "file-transport-envelope")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "file-transport-envelope")))]
     pub fn is_envelope(&self) -> bool {
         matches!(self.inner.kind, Kind::Envelope)
     }

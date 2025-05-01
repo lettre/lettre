@@ -54,6 +54,7 @@ impl AsyncSmtpConnection {
     ///
     /// Sends EHLO and parses server information
     #[cfg(feature = "tokio1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
     pub async fn connect_with_transport(
         stream: Box<dyn AsyncTokioStream>,
         hello_name: &ClientId,
@@ -94,6 +95,7 @@ impl AsyncSmtpConnection {
     /// # }
     /// ```
     #[cfg(feature = "tokio1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
     pub async fn connect_tokio1<T: tokio1_crate::net::ToSocketAddrs>(
         server: T,
         timeout: Option<Duration>,
@@ -112,6 +114,7 @@ impl AsyncSmtpConnection {
     ///
     /// Sends EHLO and parses server information
     #[cfg(feature = "async-std1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
     pub async fn connect_asyncstd1<T: async_std::net::ToSocketAddrs>(
         server: T,
         timeout: Option<Duration>,
@@ -376,6 +379,10 @@ impl AsyncSmtpConnection {
 
     /// The X509 certificate of the server (DER encoded)
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+    )]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         self.stream.get_ref().peer_certificate()
     }
@@ -392,12 +399,14 @@ impl AsyncSmtpConnection {
     /// as the TLSA records match the leaf or issuer certificates.
     /// It cannot be called on non Boring TLS streams.
     #[cfg(feature = "boring-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn tls_verify_result(&self) -> Result<(), Error> {
         self.stream.get_ref().tls_verify_result()
     }
 
     /// All the X509 certificates of the chain (DER encoded)
     #[cfg(any(feature = "rustls", feature = "boring-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "rustls", feature = "boring-tls"))))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         self.stream.get_ref().certificate_chain()
     }
