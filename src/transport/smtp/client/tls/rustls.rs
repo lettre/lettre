@@ -4,7 +4,10 @@ use std::{
 };
 
 use rustls::{
-    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    client::{
+        danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+        ClientConfig,
+    },
     crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
     pki_types::{self, ServerName, UnixTime},
     server::ParsedCertificate,
@@ -12,6 +15,91 @@ use rustls::{
 };
 
 use crate::transport::smtp::error::{self, Error};
+
+pub(super) fn build_connector(
+    builder: super::TlsParametersBuilder<super::Rustls>,
+) -> Result<Arc<ClientConfig>, Error> {
+    let just_version3 = &[&rustls::version::TLS13];
+    let supported_versions = match builder.min_tls_version {
+        MinTlsVersion::Tlsv12 => rustls::ALL_VERSIONS,
+        MinTlsVersion::Tlsv13 => just_version3,
+    };
+
+    let crypto_provider = crate::rustls_crypto::crypto_provider();
+    let tls = ClientConfig::builder_with_provider(Arc::clone(&crypto_provider))
+        .with_protocol_versions(supported_versions)
+        .map_err(error::tls)?;
+
+    // Build TLS config
+    let mut root_cert_store = RootCertStore::empty();
+
+    match builder.cert_store {
+        #[cfg(feature = "rustls-native-certs")]
+        CertificateStore::NativeCerts => {
+            let rustls_native_certs::CertificateResult { certs, errors, .. } =
+                rustls_native_certs::load_native_certs();
+            let errors_len = errors.len();
+
+            let (added, ignored) = store.add_parsable_certificates(certs);
+            #[cfg(feature = "tracing")]
+            tracing::debug!(
+                "loaded platform certs with {errors_len} failing to load, {added} valid and {ignored} ignored (invalid) certs"
+            );
+            #[cfg(not(feature = "tracing"))]
+            let _ = (errors_len, added, ignored);
+        }
+        #[cfg(feature = "webpki-roots")]
+        CertificateStore::WebpkiRoots => {
+            root_cert_store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
+        }
+        CertificateStore::None => {}
+    }
+    for cert in builder.root_certs {
+        root_cert_store.add(cert.0).map_err(error::tls)?;
+    }
+
+    let tls = if builder.accept_invalid_certs || builder.accept_invalid_hostnames {
+        let verifier = InvalidCertsVerifier {
+            ignore_invalid_hostnames: builder.accept_invalid_hostnames,
+            ignore_invalid_certs: builder.accept_invalid_certs,
+            roots: root_cert_store,
+            crypto_provider,
+        };
+        tls.dangerous()
+            .with_custom_certificate_verifier(Arc::new(verifier))
+    } else {
+        tls.with_root_certificates(root_cert_store)
+    };
+
+    let tls = if let Some(identity) = builder.identity {
+        tls.with_client_auth_cert(identity.chain, identity.key)
+            .map_err(error::tls)?
+    } else {
+        tls.with_no_client_auth()
+    };
+    Ok(Arc::new(tls))
+}
+
+#[derive(Debug, Clone, Default)]
+#[non_exhaustive]
+pub enum CertificateStore {
+    #[cfg(feature = "rustls-native-certs")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-native-certs")))]
+    #[cfg_attr(feature = "rustls-native-certs", default)]
+    NativeCerts,
+    #[cfg(feature = "webpki-roots")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "webpki-roots")))]
+    #[cfg_attr(
+        all(feature = "webpki-roots", not(feature = "rustls-native-certs")),
+        default
+    )]
+    WebpkiRoots,
+    #[cfg_attr(
+        all(not(feature = "webpki-roots"), not(feature = "rustls-native-certs")),
+        default
+    )]
+    None,
+}
 
 #[derive(Clone)]
 pub struct Certificate(pub(super) pki_types::CertificateDer<'static>);
@@ -74,6 +162,14 @@ impl Debug for Identity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Identity").finish_non_exhaustive()
     }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+#[non_exhaustive]
+pub enum MinTlsVersion {
+    #[default]
+    Tlsv12,
+    Tlsv13,
 }
 
 // FIXME: remove `pub(super)`

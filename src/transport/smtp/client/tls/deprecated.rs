@@ -174,7 +174,10 @@ pub enum NativeTlsCertificateStore {
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
 pub enum RustlsCertificateStore {
     #[cfg(all(feature = "rustls", feature = "rustls-native-certs"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "rustls", feature = "rustls-native-certs"))))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(feature = "rustls", feature = "rustls-native-certs")))
+    )]
     NativeCerts,
     #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "rustls", feature = "webpki-roots"))))]
@@ -204,6 +207,7 @@ pub struct TlsParameters {
 
 /// Builder for `TlsParameters`
 #[derive(Debug, Clone)]
+#[deprecated]
 pub struct TlsParametersBuilder {
     domain: String,
     #[allow(deprecated)]
@@ -216,6 +220,7 @@ pub struct TlsParametersBuilder {
     min_tls_version: TlsVersion,
 }
 
+#[allow(deprecated)]
 impl TlsParametersBuilder {
     /// Creates a new builder for `TlsParameters`
     pub fn new(domain: String) -> Self {
