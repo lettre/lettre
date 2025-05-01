@@ -150,6 +150,8 @@ pub enum CertificateStore {
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
     #[default]
     Default,
+    #[cfg(all(feature = "rustls", feature = "rustls-platform-verifier"))]
+    RustlsPlatformVerifier,
     /// Use a hardcoded set of Mozilla roots via the `webpki-roots` crate.
     ///
     /// This option is only available in the rustls backend.
@@ -441,12 +443,18 @@ impl TlsParametersBuilder {
             store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         }
 
+        #[cfg_attr(not(feature = "rustls-platform-verifier"), allow(unused_mut))]
+        let mut extra_roots = None::<Vec<CertificateDer<'static>>>;
         match self.cert_store {
             CertificateStore::Default => {
                 #[cfg(feature = "rustls-native-certs")]
                 load_native_roots(&mut root_cert_store);
                 #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
                 load_webpki_roots(&mut root_cert_store);
+            }
+            #[cfg(feature = "rustls-platform-verifier")]
+            CertificateStore::RustlsPlatformVerifier => {
+                extra_roots = Some(Vec::new());
             }
             #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
             CertificateStore::WebpkiRoots => {
@@ -456,11 +464,17 @@ impl TlsParametersBuilder {
         }
         for cert in self.root_certs {
             for rustls_cert in cert.rustls {
+                #[cfg(feature = "rustls-platform-verifier")]
+                if let Some(extra_roots) = &mut extra_roots {
+                    extra_roots.push(rustls_cert.clone());
+                }
                 root_cert_store.add(rustls_cert).map_err(error::tls)?;
             }
         }
 
-        let tls = if self.accept_invalid_certs || self.accept_invalid_hostnames {
+        let tls = if self.accept_invalid_certs
+            || (extra_roots.is_none() && self.accept_invalid_hostnames)
+        {
             let verifier = InvalidCertsVerifier {
                 ignore_invalid_hostnames: self.accept_invalid_hostnames,
                 ignore_invalid_certs: self.accept_invalid_certs,
@@ -470,7 +484,21 @@ impl TlsParametersBuilder {
             tls.dangerous()
                 .with_custom_certificate_verifier(Arc::new(verifier))
         } else {
-            tls.with_root_certificates(root_cert_store)
+            #[cfg(feature = "rustls-platform-verifier")]
+            if let Some(extra_roots) = extra_roots {
+                tls.dangerous().with_custom_certificate_verifier(Arc::new(
+                    rustls_platform_verifier::Verifier::new_with_extra_roots(extra_roots)
+                        .map_err(error::tls)?
+                        .with_provider(crypto_provider),
+                ))
+            } else {
+                tls.with_root_certificates(root_cert_store)
+            }
+
+            #[cfg(not(feature = "rustls-platform-verifier"))]
+            {
+                tls.with_root_certificates(root_cert_store)
+            }
         };
 
         let tls = if let Some(identity) = self.identity {

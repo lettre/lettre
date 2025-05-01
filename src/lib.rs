@@ -93,17 +93,20 @@
 //! When the `rustls` feature is enabled, one of the following verification backends
 //! MUST also be enabled.
 //!
-//! * **rustls-native-certs**: verify TLS certificates using the platform's native certificate store (see [`rustls-native-certs`])
+//! * **rustls-platform-verifier**: verify TLS certificate using the OS's native certificate store (see [`rustls-platform-verifier`])
+//! * **rustls-native-certs**: verify TLS certificates using the platform's native certificate store (see [`rustls-native-certs`]) - when in doubt use `rustls-platform-verifier`
 //! * **webpki-roots**: verify TLS certificates against Mozilla's root certificates (see [`webpki-roots`])
 //!
-//! For the `rustls-native-certs` backend to work correctly, the following packages
-//! will need to be installed in order for the build stage and the compiled program
-//! to run properly.
+//! The following packages will need to be installed in order for the build
+//! stage and the compiled program to run properly.
 //!
-//! | Distro       | Build-time packages        | Runtime packages             |
-//! | ------------ | -------------------------- | ---------------------------- |
-//! | Debian       | none                       | `ca-certificates`            |
-//! | Alpine Linux | none                       | `ca-certificates`            |
+//! | Verification backend       | Distro       | Build-time packages        | Runtime packages             |
+//! | ---------------------      | ------------ | -------------------------- | ---------------------------- |
+//! | `rustls-platform-verifier` | Debian       | none                       | `ca-certificates`            |
+//! | `rustls-platform-verifier` | Alpine Linux | none                       | `ca-certificates`            |
+//! | `rustls-native-certs`      | Debian       | none                       | `ca-certificates`            |
+//! | `rustls-native-certs`      | Alpine Linux | none                       | `ca-certificates`            |
+//! | `webpki-roots`             | any          | none                       | none                         |
 //!
 //! ### Sendmail transport
 //!
@@ -151,6 +154,7 @@
 //! [AWS-LC]: https://github.com/aws/aws-lc
 //! [`aws-lc-rs`]: https://crates.io/crates/aws-lc-rs
 //! [`ring`]: https://crates.io/crates/ring
+//! [`rustls-platform-verifier`]: https://crates.io/crates/rustls-platform-verifier
 //! [`rustls-native-certs`]: https://crates.io/crates/rustls-native-certs
 //! [`webpki-roots`]: https://crates.io/crates/webpki-roots
 //! [Tokio 1.x]: https://docs.rs/tokio/1
@@ -208,12 +212,13 @@ mod compiletime_checks {
 
     #[cfg(all(
         feature = "rustls",
+        not(feature = "rustls-platform-verifier"),
         not(feature = "rustls-native-certs"),
         not(feature = "webpki-roots")
     ))]
     compile_error!(
-        "feature `rustls` also requires either the `rustls-native-certs` or the `webpki-roots` feature to
-    be enabled"
+        "feature `rustls` also requires either the `rustls-platform-verifier`, the `rustls-native-certs`
+    or the `webpki-roots` feature to be enabled"
     );
 
     #[cfg(all(feature = "native-tls", feature = "boring-tls"))]
