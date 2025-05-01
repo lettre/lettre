@@ -130,11 +130,13 @@ impl AsyncNetworkStream {
     }
 
     #[cfg(feature = "tokio1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
     pub fn use_existing_tokio1(stream: Box<dyn AsyncTokioStream>) -> AsyncNetworkStream {
         AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(stream))
     }
 
     #[cfg(feature = "tokio1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio1")))]
     pub async fn connect_tokio1<T: Tokio1ToSocketAddrs>(
         server: T,
         timeout: Option<Duration>,
@@ -201,6 +203,7 @@ impl AsyncNetworkStream {
     }
 
     #[cfg(feature = "async-std1")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "async-std1")))]
     pub async fn connect_asyncstd1<T: AsyncStd1ToSocketAddrs>(
         server: T,
         timeout: Option<Duration>,
@@ -437,6 +440,7 @@ impl AsyncNetworkStream {
     }
 
     #[cfg(feature = "boring-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn tls_verify_result(&self) -> Result<(), Error> {
         match &self.inner {
             #[cfg(feature = "tokio1")]
@@ -460,6 +464,7 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
         }
     }
+
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         match &self.inner {
             #[cfg(feature = "tokio1")]

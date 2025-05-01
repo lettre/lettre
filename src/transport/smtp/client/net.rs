@@ -222,6 +222,7 @@ impl NetworkStream {
     }
 
     #[cfg(feature = "boring-tls")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn tls_verify_result(&self) -> Result<(), Error> {
         match &self.inner {
             InnerNetworkStream::Tcp(_) => Err(error::client("Connection is not encrypted")),
@@ -238,6 +239,7 @@ impl NetworkStream {
     }
 
     #[cfg(any(feature = "rustls", feature = "boring-tls"))]
+    #[cfg_attr(docsrs, doc(cfg(any(feature = "rustls", feature = "boring-tls"))))]
     pub fn certificate_chain(&self) -> Result<Vec<Vec<u8>>, Error> {
         match &self.inner {
             InnerNetworkStream::Tcp(_) => Err(error::client("Connection is not encrypted")),
@@ -264,6 +266,10 @@ impl NetworkStream {
     }
 
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+    )]
     pub fn peer_certificate(&self) -> Result<Vec<u8>, Error> {
         match &self.inner {
             InnerNetworkStream::Tcp(_) => Err(error::client("Connection is not encrypted")),
