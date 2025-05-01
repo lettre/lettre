@@ -1,7 +1,10 @@
 #[cfg(feature = "boring-tls")]
-mod boring_tls;
+#[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
+pub mod boring_tls;
 pub(super) mod deprecated;
 #[cfg(feature = "native-tls")]
-mod native_tls;
+#[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
+pub mod native_tls;
 #[cfg(feature = "rustls")]
-mod rustls;
+#[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
+pub mod rustls;

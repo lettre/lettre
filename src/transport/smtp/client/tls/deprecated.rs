@@ -11,13 +11,7 @@ use boring::{
 #[cfg(feature = "native-tls")]
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls")]
-use rustls::{
-    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
-    pki_types::{self, pem::PemObject, CertificateDer, PrivateKeyDer, ServerName, UnixTime},
-    server::ParsedCertificate,
-    ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
-};
+use rustls::{ClientConfig, RootCertStore};
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use crate::transport::smtp::{error, Error};
@@ -372,7 +366,7 @@ impl TlsParametersBuilder {
             }
         }
         for cert in self.root_certs {
-            tls_builder.add_root_certificate(cert.native_tls);
+            tls_builder.add_root_certificate(cert.native_tls.0);
         }
         tls_builder.danger_accept_invalid_hostnames(self.accept_invalid_hostnames);
         tls_builder.danger_accept_invalid_certs(self.accept_invalid_certs);
@@ -390,7 +384,7 @@ impl TlsParametersBuilder {
 
         tls_builder.min_protocol_version(Some(min_tls_version));
         if let Some(identity) = self.identity {
-            tls_builder.identity(identity.native_tls);
+            tls_builder.identity(identity.native_tls.0);
         }
 
         let connector = tls_builder.build().map_err(error::tls)?;
@@ -547,12 +541,12 @@ impl TlsParametersBuilder {
         }
         for cert in self.root_certs {
             for rustls_cert in cert.rustls {
-                root_cert_store.add(rustls_cert).map_err(error::tls)?;
+                root_cert_store.add(rustls_cert.0).map_err(error::tls)?;
             }
         }
 
         let tls = if self.accept_invalid_certs || self.accept_invalid_hostnames {
-            let verifier = InvalidCertsVerifier {
+            let verifier = super::rustls::InvalidCertsVerifier {
                 ignore_invalid_hostnames: self.accept_invalid_hostnames,
                 ignore_invalid_certs: self.accept_invalid_certs,
                 roots: root_cert_store,
@@ -565,8 +559,7 @@ impl TlsParametersBuilder {
         };
 
         let tls = if let Some(identity) = self.identity {
-            let (client_certificates, private_key) = identity.rustls_tls;
-            tls.with_client_auth_cert(client_certificates, private_key)
+            tls.with_client_auth_cert(identity.rustls_tls.chain, identity.rustls_tls.key)
                 .map_err(error::tls)?
         } else {
             tls.with_no_client_auth()
@@ -644,55 +637,46 @@ impl TlsParameters {
 #[allow(missing_copy_implementations)]
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
-    native_tls: native_tls::Certificate,
+    native_tls: super::native_tls::Certificate,
     #[cfg(feature = "rustls")]
-    rustls: Vec<CertificateDer<'static>>,
+    rustls: Vec<super::rustls::Certificate>,
     #[cfg(feature = "boring-tls")]
-    boring_tls: boring::x509::X509,
+    boring_tls: super::boring_tls::Certificate,
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 impl Certificate {
     /// Create a `Certificate` from a DER encoded certificate
     pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
-        #[cfg(feature = "native-tls")]
-        let native_tls_cert = native_tls::Certificate::from_der(&der).map_err(error::tls)?;
-
-        #[cfg(feature = "boring-tls")]
-        let boring_tls_cert = boring::x509::X509::from_der(&der).map_err(error::tls)?;
-
         Ok(Self {
             #[cfg(feature = "native-tls")]
-            native_tls: native_tls_cert,
-            #[cfg(feature = "rustls")]
-            rustls: vec![der.into()],
+            native_tls: super::native_tls::Certificate::from_der(&der)?,
             #[cfg(feature = "boring-tls")]
-            boring_tls: boring_tls_cert,
+            boring_tls: super::boring_tls::Certificate::from_der(&der)?,
+            #[cfg(feature = "rustls")]
+            rustls: vec![super::rustls::Certificate::from_der(der)?],
         })
     }
 
     /// Create a `Certificate` from a PEM encoded certificate
     pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
-        #[cfg(feature = "native-tls")]
-        let native_tls_cert = native_tls::Certificate::from_pem(pem).map_err(error::tls)?;
-
-        #[cfg(feature = "boring-tls")]
-        let boring_tls_cert = boring::x509::X509::from_pem(pem).map_err(error::tls)?;
-
         #[cfg(feature = "rustls")]
         let rustls_cert = {
+            use rustls::pki_types::{self, pem::PemObject as _, CertificateDer};
+
             CertificateDer::pem_slice_iter(pem)
+                .map(|cert| Ok(super::rustls::Certificate(cert?)))
                 .collect::<Result<Vec<_>, pki_types::pem::Error>>()
                 .map_err(|_| error::tls("invalid certificates"))?
         };
 
         Ok(Self {
             #[cfg(feature = "native-tls")]
-            native_tls: native_tls_cert,
+            native_tls: super::native_tls::Certificate::from_pem(pem)?,
             #[cfg(feature = "rustls")]
             rustls: rustls_cert,
             #[cfg(feature = "boring-tls")]
-            boring_tls: boring_tls_cert,
+            boring_tls: super::boring_tls::Certificate::from_pem(pem)?,
         })
     }
 }
@@ -704,14 +688,15 @@ impl Debug for Certificate {
 }
 
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
+#[derive(Clone)]
 #[allow(missing_copy_implementations)]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
-    native_tls: native_tls::Identity,
+    native_tls: super::native_tls::Identity,
     #[cfg(feature = "rustls")]
-    rustls_tls: (Vec<CertificateDer<'static>>, PrivateKeyDer<'static>),
+    rustls_tls: super::rustls::Identity,
     #[cfg(feature = "boring-tls")]
-    boring_tls: (boring::x509::X509, PKey<boring::pkey::Private>),
+    boring_tls: super::boring_tls::Identity,
 }
 
 impl Debug for Identity {
@@ -720,132 +705,16 @@ impl Debug for Identity {
     }
 }
 
-impl Clone for Identity {
-    fn clone(&self) -> Self {
-        Identity {
-            #[cfg(feature = "native-tls")]
-            native_tls: self.native_tls.clone(),
-            #[cfg(feature = "rustls")]
-            rustls_tls: (self.rustls_tls.0.clone(), self.rustls_tls.1.clone_key()),
-            #[cfg(feature = "boring-tls")]
-            boring_tls: (self.boring_tls.0.clone(), self.boring_tls.1.clone()),
-        }
-    }
-}
-
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 impl Identity {
     pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self {
             #[cfg(feature = "native-tls")]
-            native_tls: Identity::from_pem_native_tls(pem, key)?,
+            native_tls: super::native_tls::Identity::from_pem(pem, key)?,
             #[cfg(feature = "rustls")]
-            rustls_tls: Identity::from_pem_rustls_tls(pem, key)?,
+            rustls_tls: super::rustls::Identity::from_pem(pem, key)?,
             #[cfg(feature = "boring-tls")]
-            boring_tls: Identity::from_pem_boring_tls(pem, key)?,
+            boring_tls: super::boring_tls::Identity::from_pem(pem, key)?,
         })
-    }
-
-    #[cfg(feature = "native-tls")]
-    fn from_pem_native_tls(pem: &[u8], key: &[u8]) -> Result<native_tls::Identity, Error> {
-        native_tls::Identity::from_pkcs8(pem, key).map_err(error::tls)
-    }
-
-    #[cfg(feature = "rustls")]
-    fn from_pem_rustls_tls(
-        pem: &[u8],
-        key: &[u8],
-    ) -> Result<(Vec<CertificateDer<'static>>, PrivateKeyDer<'static>), Error> {
-        let key = match PrivateKeyDer::from_pem_slice(key) {
-            Ok(key) => key,
-            Err(pki_types::pem::Error::NoItemsFound) => {
-                return Err(error::tls("no private key found"))
-            }
-            Err(err) => return Err(error::tls(err)),
-        };
-
-        Ok((vec![pem.to_owned().into()], key))
-    }
-
-    #[cfg(feature = "boring-tls")]
-    fn from_pem_boring_tls(
-        pem: &[u8],
-        key: &[u8],
-    ) -> Result<(boring::x509::X509, PKey<boring::pkey::Private>), Error> {
-        let cert = boring::x509::X509::from_pem(pem).map_err(error::tls)?;
-        let key = boring::pkey::PKey::private_key_from_pem(key).map_err(error::tls)?;
-        Ok((cert, key))
-    }
-}
-
-#[cfg(feature = "rustls")]
-#[derive(Debug)]
-struct InvalidCertsVerifier {
-    ignore_invalid_hostnames: bool,
-    ignore_invalid_certs: bool,
-    roots: RootCertStore,
-    crypto_provider: Arc<CryptoProvider>,
-}
-
-#[cfg(feature = "rustls")]
-impl ServerCertVerifier for InvalidCertsVerifier {
-    fn verify_server_cert(
-        &self,
-        end_entity: &CertificateDer<'_>,
-        intermediates: &[CertificateDer<'_>],
-        server_name: &ServerName<'_>,
-        _ocsp_response: &[u8],
-        now: UnixTime,
-    ) -> Result<ServerCertVerified, TlsError> {
-        let cert = ParsedCertificate::try_from(end_entity)?;
-
-        if !self.ignore_invalid_certs {
-            rustls::client::verify_server_cert_signed_by_trust_anchor(
-                &cert,
-                &self.roots,
-                intermediates,
-                now,
-                self.crypto_provider.signature_verification_algorithms.all,
-            )?;
-        }
-
-        if !self.ignore_invalid_hostnames {
-            rustls::client::verify_server_name(&cert, server_name)?;
-        }
-        Ok(ServerCertVerified::assertion())
-    }
-
-    fn verify_tls12_signature(
-        &self,
-        message: &[u8],
-        cert: &CertificateDer<'_>,
-        dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, TlsError> {
-        verify_tls12_signature(
-            message,
-            cert,
-            dss,
-            &self.crypto_provider.signature_verification_algorithms,
-        )
-    }
-
-    fn verify_tls13_signature(
-        &self,
-        message: &[u8],
-        cert: &CertificateDer<'_>,
-        dss: &DigitallySignedStruct,
-    ) -> Result<HandshakeSignatureValid, TlsError> {
-        verify_tls13_signature(
-            message,
-            cert,
-            dss,
-            &self.crypto_provider.signature_verification_algorithms,
-        )
-    }
-
-    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
-        self.crypto_provider
-            .signature_verification_algorithms
-            .supported_schemes()
     }
 }

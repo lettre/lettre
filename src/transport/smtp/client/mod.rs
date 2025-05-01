@@ -48,7 +48,7 @@ mod async_connection;
 mod async_net;
 mod connection;
 mod net;
-mod tls;
+pub mod tls;
 
 /// The codec used for transparency
 #[derive(Debug)]
