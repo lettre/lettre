@@ -385,9 +385,9 @@ impl AsyncNetworkStream {
     #[cfg(feature = "async-std1-rustls")]
     async fn upgrade_asyncstd1_tls(
         tcp_stream: AsyncStd1TcpStream,
-        mut tls_parameters: TlsParameters,
+        tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = mem::take(&mut tls_parameters.domain);
+        let domain = tls_parameters.domain().to_owned();
 
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
