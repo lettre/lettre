@@ -84,12 +84,7 @@ impl<B: TlsBackend> TlsParametersBuilder<B> {
     }
 
     fn build(self) -> Result<TlsParameters<B>, Error> {
-        let (server_name, connector, extra_info) = B::__build_connector(self)?;
-        Ok(TlsParameters {
-            server_name,
-            connector,
-            extra_info,
-        })
+        B::__build_connector(self)
     }
 }
 
@@ -101,9 +96,8 @@ trait TlsBackend: private::SealedTlsBackend {
     type MinTlsVersion: Default;
 
     #[doc(hidden)]
-    fn __build_connector(
-        builder: TlsParametersBuilder<Self>,
-    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error>;
+    fn __build_connector(builder: TlsParametersBuilder<Self>)
+        -> Result<TlsParameters<Self>, Error>;
 
     #[doc(hidden)]
     fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters;
@@ -139,9 +133,12 @@ impl TlsBackend for NativeTls {
 
     fn __build_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
-        self::native_tls::build_connector(builder)
-            .map(|(server_name, connector)| (server_name, connector, ()))
+    ) -> Result<TlsParameters<Self>, Error> {
+        self::native_tls::build_connector(builder).map(|(server_name, connector)| TlsParameters {
+            server_name,
+            connector,
+            extra_info: (),
+        })
     }
 
     fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters {
@@ -168,9 +165,12 @@ impl TlsBackend for Rustls {
 
     fn __build_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
-        self::rustls::build_connector(builder)
-            .map(|(server_name, connector)| (server_name, connector, ()))
+    ) -> Result<TlsParameters<Self>, Error> {
+        self::rustls::build_connector(builder).map(|(server_name, connector)| TlsParameters {
+            server_name,
+            connector,
+            extra_info: (),
+        })
     }
 
     fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters {
@@ -197,16 +197,14 @@ impl TlsBackend for BoringTls {
 
     fn __build_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
+    ) -> Result<TlsParameters<Self>, Error> {
         let accept_invalid_hostnames = builder.accept_invalid_hostnames;
-        self::boring_tls::build_connector(builder).map(|(server_name, connector)| {
-            (
-                server_name,
-                connector,
-                BoringTlsExtraInfo {
-                    accept_invalid_hostnames,
-                },
-            )
+        self::boring_tls::build_connector(builder).map(|(server_name, connector)| TlsParameters {
+            server_name,
+            connector,
+            extra_info: BoringTlsExtraInfo {
+                accept_invalid_hostnames,
+            },
         })
     }
 
