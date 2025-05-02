@@ -37,7 +37,7 @@ pub(super) fn build_connector(
                 rustls_native_certs::load_native_certs();
             let errors_len = errors.len();
 
-            let (added, ignored) = store.add_parsable_certificates(certs);
+            let (added, ignored) = root_cert_store.add_parsable_certificates(certs);
             #[cfg(feature = "tracing")]
             tracing::debug!(
                 "loaded platform certs with {errors_len} failing to load, {added} valid and {ignored} ignored (invalid) certs"
