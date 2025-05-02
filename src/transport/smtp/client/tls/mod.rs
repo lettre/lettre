@@ -12,8 +12,26 @@ pub(super) mod native_tls;
 pub(super) mod rustls;
 
 #[derive(Debug)]
+#[allow(private_bounds)]
+pub(in crate::transport::smtp) struct TlsParameters<B: TlsBackend> {
+    pub(in crate::transport::smtp) server_name: B::ServerName,
+    pub(in crate::transport::smtp) connector: B::Connector,
+    pub(in crate::transport::smtp) extra_info: B::ExtraInfo,
+}
+
+impl<B: TlsBackend> Clone for TlsParameters<B> {
+    fn clone(&self) -> Self {
+        Self {
+            server_name: self.server_name.clone(),
+            connector: self.connector.clone(),
+            extra_info: self.extra_info.clone(),
+        }
+    }
+}
+
+#[derive(Debug)]
 struct TlsParametersBuilder<B: TlsBackend> {
-    domain: String,
+    server_name: String,
     cert_store: B::CertificateStore,
     root_certs: Vec<B::Certificate>,
     identity: Option<B::Identity>,
@@ -23,9 +41,9 @@ struct TlsParametersBuilder<B: TlsBackend> {
 }
 
 impl<B: TlsBackend> TlsParametersBuilder<B> {
-    fn new(domain: String) -> Self {
+    fn new(server_name: String) -> Self {
         Self {
-            domain,
+            server_name,
             cert_store: Default::default(),
             root_certs: Vec::new(),
             identity: None,
@@ -65,13 +83,17 @@ impl<B: TlsBackend> TlsParametersBuilder<B> {
         self
     }
 
-    fn build_legacy(self) -> Result<self::current::TlsParameters, Error> {
-        let domain = self.domain.clone();
-        let connector = B::__build_legacy_connector(self)?;
-        Ok(self::current::TlsParameters { connector, domain })
+    fn build(self) -> Result<TlsParameters<B>, Error> {
+        let (server_name, connector, extra_info) = B::__build_connector(self)?;
+        Ok(TlsParameters {
+            server_name,
+            connector,
+            extra_info,
+        })
     }
 }
 
+#[allow(private_bounds)]
 trait TlsBackend: private::SealedTlsBackend {
     type CertificateStore: Default;
     type Certificate;
@@ -79,55 +101,33 @@ trait TlsBackend: private::SealedTlsBackend {
     type MinTlsVersion: Default;
 
     #[doc(hidden)]
-    fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error>;
+    fn __build_connector(
+        builder: TlsParametersBuilder<Self>,
+    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error>;
 
     #[doc(hidden)]
-    #[allow(private_interfaces)]
-    fn __build_legacy_connector(
-        builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::current::InnerTlsParameters, Error>;
+    fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters;
 }
 
-#[cfg(feature = "boring-tls")]
-#[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
-#[derive(Debug)]
-#[allow(missing_copy_implementations)]
-#[non_exhaustive]
-pub(super) struct BoringTls;
+#[cfg(feature = "native-tls")]
+type DefaultTlsBackend = NativeTls;
 
-#[cfg(feature = "boring-tls")]
-#[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
-impl TlsBackend for BoringTls {
-    type CertificateStore = self::boring_tls::CertificateStore;
-    type Certificate = self::boring_tls::Certificate;
-    type Identity = self::boring_tls::Identity;
-    type MinTlsVersion = self::boring_tls::MinTlsVersion;
+#[cfg(all(feature = "rustls", not(feature = "native-tls")))]
+type DefaultTlsBackend = Rustls;
 
-    #[allow(private_interfaces)]
-    fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
-        self::boring_tls::build_connector(builder)
-    }
-
-    #[allow(private_interfaces)]
-    fn __build_legacy_connector(
-        builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::current::InnerTlsParameters, Error> {
-        let accept_invalid_hostnames = builder.accept_invalid_hostnames;
-        Self::__build_connector(builder).map(|connector| {
-            self::current::InnerTlsParameters::BoringTls {
-                connector,
-                accept_invalid_hostnames,
-            }
-        })
-    }
-}
+#[cfg(all(
+    feature = "boring-tls",
+    not(feature = "native-tls"),
+    not(feature = "rustls")
+))]
+type DefaultTlsBackend = BoringTls;
 
 #[cfg(feature = "native-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub(super) struct NativeTls;
+pub(in crate::transport::smtp) struct NativeTls;
 
 #[cfg(feature = "native-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
@@ -137,17 +137,17 @@ impl TlsBackend for NativeTls {
     type Identity = self::native_tls::Identity;
     type MinTlsVersion = self::native_tls::MinTlsVersion;
 
-    #[allow(private_interfaces)]
-    fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
+    fn __build_connector(
+        builder: TlsParametersBuilder<Self>,
+    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
         self::native_tls::build_connector(builder)
+            .map(|(server_name, connector)| (server_name, connector, ()))
     }
 
-    #[allow(private_interfaces)]
-    fn __build_legacy_connector(
-        builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::current::InnerTlsParameters, Error> {
-        Self::__build_connector(builder)
-            .map(|connector| self::current::InnerTlsParameters::NativeTls { connector })
+    fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters {
+        self::current::TlsParameters {
+            inner: self::current::InnerTlsParameters::NativeTls(inner),
+        }
     }
 }
 
@@ -156,7 +156,7 @@ impl TlsBackend for NativeTls {
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub(super) struct Rustls;
+pub(in crate::transport::smtp) struct Rustls;
 
 #[cfg(feature = "rustls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
@@ -166,37 +166,90 @@ impl TlsBackend for Rustls {
     type Identity = self::rustls::Identity;
     type MinTlsVersion = self::rustls::MinTlsVersion;
 
-    #[allow(private_interfaces)]
-    fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
+    fn __build_connector(
+        builder: TlsParametersBuilder<Self>,
+    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
         self::rustls::build_connector(builder)
+            .map(|(server_name, connector)| (server_name, connector, ()))
     }
 
-    #[allow(private_interfaces)]
-    fn __build_legacy_connector(
-        builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::current::InnerTlsParameters, Error> {
-        Self::__build_connector(builder)
-            .map(|config| self::current::InnerTlsParameters::Rustls { config })
+    fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters {
+        self::current::TlsParameters {
+            inner: self::current::InnerTlsParameters::Rustls(inner),
+        }
     }
 }
 
-mod private {
-    pub(super) trait SealedTlsBackend: Sized {
-        type Connector;
+#[cfg(feature = "boring-tls")]
+#[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
+#[non_exhaustive]
+pub(in crate::transport::smtp) struct BoringTls;
+
+#[cfg(feature = "boring-tls")]
+#[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
+impl TlsBackend for BoringTls {
+    type CertificateStore = self::boring_tls::CertificateStore;
+    type Certificate = self::boring_tls::Certificate;
+    type Identity = self::boring_tls::Identity;
+    type MinTlsVersion = self::boring_tls::MinTlsVersion;
+
+    fn __build_connector(
+        builder: TlsParametersBuilder<Self>,
+    ) -> Result<(Self::ServerName, Self::Connector, Self::ExtraInfo), Error> {
+        let accept_invalid_hostnames = builder.accept_invalid_hostnames;
+        self::boring_tls::build_connector(builder).map(|(server_name, connector)| {
+            (
+                server_name,
+                connector,
+                BoringTlsExtraInfo {
+                    accept_invalid_hostnames,
+                },
+            )
+        })
     }
 
-    #[cfg(feature = "boring-tls")]
-    impl SealedTlsBackend for super::BoringTls {
-        type Connector = boring::ssl::SslConnector;
+    fn __build_current_tls_parameters(inner: TlsParameters<Self>) -> self::current::TlsParameters {
+        self::current::TlsParameters {
+            inner: self::current::InnerTlsParameters::BoringTls(inner),
+        }
+    }
+}
+
+#[cfg(feature = "boring-tls")]
+#[derive(Debug, Clone)]
+pub(in crate::transport::smtp) struct BoringTlsExtraInfo {
+    pub(super) accept_invalid_hostnames: bool,
+}
+
+mod private {
+    pub(in crate::transport::smtp) trait SealedTlsBackend:
+        Sized
+    {
+        type ServerName: Clone + AsRef<str>;
+        type Connector: Clone;
+        type ExtraInfo: Clone;
     }
 
     #[cfg(feature = "native-tls")]
     impl SealedTlsBackend for super::NativeTls {
+        type ServerName = Box<str>;
         type Connector = native_tls::TlsConnector;
+        type ExtraInfo = ();
     }
 
     #[cfg(feature = "rustls")]
     impl SealedTlsBackend for super::Rustls {
+        type ServerName = super::rustls::ServerName;
         type Connector = std::sync::Arc<rustls::client::ClientConfig>;
+        type ExtraInfo = ();
+    }
+
+    #[cfg(feature = "boring-tls")]
+    impl SealedTlsBackend for super::BoringTls {
+        type ServerName = Box<str>;
+        type Connector = boring::ssl::SslConnector;
+        type ExtraInfo = super::BoringTlsExtraInfo;
     }
 }

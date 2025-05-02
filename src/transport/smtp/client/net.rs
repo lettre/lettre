@@ -12,7 +12,7 @@ use boring::ssl::SslStream;
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
 #[cfg(feature = "rustls")]
-use rustls::{pki_types::ServerName, ClientConnection, StreamOwned};
+use rustls::{ClientConnection, StreamOwned};
 use socket2::{Domain, Protocol, Type};
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
@@ -172,33 +172,33 @@ impl NetworkStream {
         tcp_stream: TcpStream,
         tls_parameters: &TlsParameters,
     ) -> Result<InnerNetworkStream, Error> {
-        Ok(match &tls_parameters.connector {
+        Ok(match &tls_parameters.inner {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls { connector } => {
-                let stream = connector
-                    .connect(tls_parameters.domain(), tcp_stream)
+            InnerTlsParameters::NativeTls(inner) => {
+                let stream = inner
+                    .connector
+                    .connect(&inner.server_name, tcp_stream)
                     .map_err(error::connection)?;
                 InnerNetworkStream::NativeTls(stream)
             }
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::Rustls { config } => {
-                let domain = ServerName::try_from(tls_parameters.domain())
-                    .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-                let connection = ClientConnection::new(Arc::clone(config), domain.to_owned())
-                    .map_err(error::connection)?;
+            InnerTlsParameters::Rustls(inner) => {
+                let connection = ClientConnection::new(
+                    Arc::clone(&inner.connector),
+                    inner.server_name.inner_ref().clone(),
+                )
+                .map_err(error::connection)?;
                 let stream = StreamOwned::new(connection, tcp_stream);
                 InnerNetworkStream::Rustls(stream)
             }
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls {
-                connector,
-                accept_invalid_hostnames,
-            } => {
-                let stream = connector
+            InnerTlsParameters::BoringTls(inner) => {
+                let stream = inner
+                    .connector
                     .configure()
                     .map_err(error::connection)?
-                    .verify_hostname(*accept_invalid_hostnames)
-                    .connect(tls_parameters.domain(), tcp_stream)
+                    .verify_hostname(inner.extra_info.accept_invalid_hostnames)
+                    .connect(&inner.server_name, tcp_stream)
                     .map_err(error::connection)?;
                 InnerNetworkStream::BoringTls(stream)
             }

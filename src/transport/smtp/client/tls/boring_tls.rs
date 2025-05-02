@@ -9,7 +9,7 @@ use crate::transport::smtp::error::{self, Error};
 
 pub(super) fn build_connector(
     builder: super::TlsParametersBuilder<super::BoringTls>,
-) -> Result<SslConnector, Error> {
+) -> Result<(Box<str>, SslConnector), Error> {
     let mut tls_builder = SslConnector::builder(SslMethod::tls_client()).map_err(error::tls)?;
 
     if builder.accept_invalid_certs {
@@ -49,7 +49,7 @@ pub(super) fn build_connector(
     tls_builder
         .set_min_proto_version(Some(min_tls_version))
         .map_err(error::tls)?;
-    Ok(tls_builder.build())
+    Ok((builder.server_name.into_boxed_str(), tls_builder.build()))
 }
 
 #[derive(Debug, Clone, Default)]

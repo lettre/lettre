@@ -1,5 +1,6 @@
 use std::fmt::{self, Debug};
 
+use super::TlsBackend;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use crate::transport::smtp::{error, Error};
 
@@ -143,9 +144,7 @@ pub enum CertificateStore {
 /// Parameters to use for secure clients
 #[derive(Clone)]
 pub struct TlsParameters {
-    pub(crate) connector: InnerTlsParameters,
-    /// The domain name which is expected in the TLS certificate from the server
-    pub(super) domain: String,
+    pub(in crate::transport::smtp) inner: InnerTlsParameters,
 }
 
 /// Builder for `TlsParameters`
@@ -306,7 +305,7 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.native_tls);
         }
 
-        builder.build_legacy()
+        builder.build().map(TlsParameters::from_inner)
     }
 
     /// Creates a new `TlsParameters` using boring-tls with the provided configuration
@@ -345,7 +344,7 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.boring_tls);
         }
 
-        builder.build_legacy()
+        builder.build().map(TlsParameters::from_inner)
     }
 
     /// Creates a new `TlsParameters` using rustls with the provided configuration
@@ -386,24 +385,19 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.rustls_tls);
         }
 
-        builder.build_legacy()
+        builder.build().map(TlsParameters::from_inner)
     }
 }
 
 #[derive(Clone)]
 #[allow(clippy::enum_variant_names)]
-pub(crate) enum InnerTlsParameters {
+pub(in crate::transport::smtp) enum InnerTlsParameters {
     #[cfg(feature = "native-tls")]
-    NativeTls { connector: native_tls::TlsConnector },
+    NativeTls(super::TlsParameters<super::NativeTls>),
     #[cfg(feature = "rustls")]
-    Rustls {
-        config: std::sync::Arc<rustls::ClientConfig>,
-    },
+    Rustls(super::TlsParameters<super::Rustls>),
     #[cfg(feature = "boring-tls")]
-    BoringTls {
-        connector: boring::ssl::SslConnector,
-        accept_invalid_hostnames: bool,
-    },
+    BoringTls(super::TlsParameters<super::BoringTls>),
 }
 
 impl TlsParameters {
@@ -415,7 +409,9 @@ impl TlsParameters {
         doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn new(domain: String) -> Result<Self, Error> {
-        TlsParametersBuilder::new(domain).build()
+        super::TlsParametersBuilder::<super::DefaultTlsBackend>::new(domain)
+            .build()
+            .map(Self::from_inner)
     }
 
     /// Creates a new `TlsParameters` builder
@@ -427,25 +423,42 @@ impl TlsParameters {
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn new_native(domain: String) -> Result<Self, Error> {
-        TlsParametersBuilder::new(domain).build_native()
+        super::TlsParametersBuilder::<super::NativeTls>::new(domain)
+            .build()
+            .map(Self::from_inner)
     }
 
     /// Creates a new `TlsParameters` using rustls
     #[cfg(feature = "rustls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn new_rustls(domain: String) -> Result<Self, Error> {
-        TlsParametersBuilder::new(domain).build_rustls()
+        super::TlsParametersBuilder::<super::Rustls>::new(domain)
+            .build()
+            .map(Self::from_inner)
     }
 
     /// Creates a new `TlsParameters` using boring
     #[cfg(feature = "boring-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn new_boring(domain: String) -> Result<Self, Error> {
-        TlsParametersBuilder::new(domain).build_boring()
+        super::TlsParametersBuilder::<super::BoringTls>::new(domain)
+            .build()
+            .map(Self::from_inner)
+    }
+
+    fn from_inner<B: TlsBackend>(inner: super::TlsParameters<B>) -> Self {
+        B::__build_current_tls_parameters(inner)
     }
 
     pub fn domain(&self) -> &str {
-        &self.domain
+        match &self.inner {
+            #[cfg(feature = "native-tls")]
+            InnerTlsParameters::NativeTls(inner) => &inner.server_name,
+            #[cfg(feature = "rustls")]
+            InnerTlsParameters::Rustls(inner) => inner.server_name.as_ref(),
+            #[cfg(feature = "boring-tls")]
+            InnerTlsParameters::BoringTls(inner) => &inner.server_name,
+        }
     }
 }
 
@@ -471,7 +484,7 @@ impl Certificate {
             #[cfg(feature = "boring-tls")]
             boring_tls: super::boring_tls::Certificate::from_der(&der)?,
             #[cfg(feature = "rustls")]
-            rustls: vec![super::rustls::Certificate::from_der(der)?],
+            rustls: vec![super::rustls::Certificate::from_der(der)],
         })
     }
 

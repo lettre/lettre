@@ -6,7 +6,7 @@ use std::{
 use rustls::{
     client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
-    pki_types::{self, ServerName, UnixTime},
+    pki_types::{self, UnixTime},
     server::ParsedCertificate,
     ClientConfig, DigitallySignedStruct, RootCertStore, SignatureScheme,
 };
@@ -15,7 +15,7 @@ use crate::transport::smtp::error::{self, Error};
 
 pub(super) fn build_connector(
     builder: super::TlsParametersBuilder<super::Rustls>,
-) -> Result<Arc<ClientConfig>, Error> {
+) -> Result<(ServerName, Arc<ClientConfig>), Error> {
     let just_version3 = &[&rustls::version::TLS13];
     let supported_versions = match builder.min_tls_version {
         MinTlsVersion::Tlsv12 => rustls::ALL_VERSIONS,
@@ -74,7 +74,42 @@ pub(super) fn build_connector(
     } else {
         tls.with_no_client_auth()
     };
-    Ok(Arc::new(tls))
+    let server_name = ServerName::try_from(builder.server_name)?;
+    Ok((server_name, Arc::new(tls)))
+}
+
+#[derive(Clone)]
+pub(in crate::transport::smtp) struct ServerName {
+    val: pki_types::ServerName<'static>,
+    str_val: Box<str>,
+}
+
+impl ServerName {
+    #[allow(dead_code)]
+    pub(in crate::transport::smtp) fn inner(self) -> pki_types::ServerName<'static> {
+        self.val
+    }
+
+    pub(in crate::transport::smtp) fn inner_ref(&self) -> &pki_types::ServerName<'static> {
+        &self.val
+    }
+
+    fn try_from(value: String) -> Result<Self, crate::transport::smtp::Error> {
+        let val: pki_types::ServerName<'_> = value
+            .as_str()
+            .try_into()
+            .map_err(crate::transport::smtp::error::tls)?;
+        Ok(Self {
+            val: val.to_owned(),
+            str_val: value.into_boxed_str(),
+        })
+    }
+}
+
+impl AsRef<str> for ServerName {
+    fn as_ref(&self) -> &str {
+        &self.str_val
+    }
 }
 
 #[derive(Debug, Clone, Default)]
@@ -122,8 +157,8 @@ impl Certificate {
             .map_err(|_| error::tls("invalid certificate"))
     }
 
-    pub(super) fn from_der(der: Vec<u8>) -> Result<Self, Error> {
-        Ok(Self(der.into()))
+    pub(super) fn from_der(der: Vec<u8>) -> Self {
+        Self(der.into())
     }
 }
 
@@ -193,7 +228,7 @@ impl ServerCertVerifier for InvalidCertsVerifier {
         &self,
         end_entity: &pki_types::CertificateDer<'_>,
         intermediates: &[pki_types::CertificateDer<'_>],
-        server_name: &ServerName<'_>,
+        server_name: &pki_types::ServerName<'_>,
         _ocsp_response: &[u8],
         now: UnixTime,
     ) -> Result<ServerCertVerified, rustls::Error> {

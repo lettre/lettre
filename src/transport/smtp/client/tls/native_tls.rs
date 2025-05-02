@@ -6,7 +6,7 @@ use crate::transport::smtp::error::{self, Error};
 
 pub(super) fn build_connector(
     builder: super::TlsParametersBuilder<super::NativeTls>,
-) -> Result<TlsConnector, Error> {
+) -> Result<(Box<str>, TlsConnector), Error> {
     let mut tls_builder = TlsConnector::builder();
 
     match builder.cert_store {
@@ -32,7 +32,8 @@ pub(super) fn build_connector(
         tls_builder.identity(identity.0);
     }
 
-    tls_builder.build().map_err(error::tls)
+    let connector = tls_builder.build().map_err(error::tls)?;
+    Ok((builder.server_name.into_boxed_str(), connector))
 }
 
 #[derive(Debug, Clone, Default)]
