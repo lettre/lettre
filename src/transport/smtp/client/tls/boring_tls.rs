@@ -53,6 +53,7 @@ pub(super) fn build_connector(
 }
 
 #[derive(Debug, Clone, Default)]
+#[allow(missing_copy_implementations)]
 #[non_exhaustive]
 pub enum CertificateStore {
     #[default]
