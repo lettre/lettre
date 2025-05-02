@@ -37,6 +37,7 @@ use self::net::NetworkStream;
 pub(super) use self::tls::deprecated::InnerTlsParameters;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub use self::tls::deprecated::TlsVersion;
+#[allow(deprecated)]
 pub use self::{
     connection::SmtpConnection,
     tls::deprecated::{Certificate, Identity, Tls, TlsParameters, TlsParametersBuilder},

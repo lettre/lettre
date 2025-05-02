@@ -4,14 +4,11 @@ use std::{
 };
 
 use rustls::{
-    client::{
-        danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-        ClientConfig,
-    },
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
     crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
     pki_types::{self, ServerName, UnixTime},
     server::ParsedCertificate,
-    DigitallySignedStruct, RootCertStore, SignatureScheme,
+    ClientConfig, DigitallySignedStruct, RootCertStore, SignatureScheme,
 };
 
 use crate::transport::smtp::error::{self, Error};
