@@ -377,15 +377,13 @@ impl AsyncNetworkStream {
         tcp_stream: AsyncStd1TcpStream,
         tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = tls_parameters.domain().to_owned();
-
-        match tls_parameters.connector {
+        match tls_parameters.inner {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls { connector } => {
+            InnerTlsParameters::NativeTls(_) => {
                 panic!("native-tls isn't supported with async-std yet. See https://github.com/lettre/lettre/pull/531#issuecomment-757893531");
             }
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::Rustls { config } => {
+            InnerTlsParameters::Rustls(inner) => {
                 #[cfg(not(feature = "async-std1-rustls"))]
                 panic!("built without the async-std1-rustls feature");
 
@@ -393,7 +391,7 @@ impl AsyncNetworkStream {
                 return {
                     use futures_rustls::TlsConnector;
 
-                    let connector = TlsConnector::from(config);
+                    let connector = TlsConnector::from(inner.connector);
                     let stream = connector
                         .connect(inner.server_name.inner(), tcp_stream)
                         .await
@@ -402,7 +400,7 @@ impl AsyncNetworkStream {
                 };
             }
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls { .. } => {
+            InnerTlsParameters::BoringTls(_inner) => {
                 panic!("boring-tls isn't supported with async-std yet.");
             }
         }
