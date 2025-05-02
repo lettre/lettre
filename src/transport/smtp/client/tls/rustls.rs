@@ -169,13 +169,12 @@ pub enum MinTlsVersion {
     Tlsv13,
 }
 
-// FIXME: remove `pub(super)`
 #[derive(Debug)]
-pub(super) struct InvalidCertsVerifier {
-    pub(super) ignore_invalid_hostnames: bool,
-    pub(super) ignore_invalid_certs: bool,
-    pub(super) roots: RootCertStore,
-    pub(super) crypto_provider: Arc<CryptoProvider>,
+struct InvalidCertsVerifier {
+    ignore_invalid_hostnames: bool,
+    ignore_invalid_certs: bool,
+    roots: RootCertStore,
+    crypto_provider: Arc<CryptoProvider>,
 }
 
 impl ServerCertVerifier for InvalidCertsVerifier {
