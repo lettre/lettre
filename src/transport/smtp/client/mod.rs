@@ -36,6 +36,7 @@ use self::net::NetworkStream;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 pub(super) use self::tls::deprecated::InnerTlsParameters;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[allow(deprecated)]
 pub use self::tls::deprecated::TlsVersion;
 #[allow(deprecated)]
 pub use self::{

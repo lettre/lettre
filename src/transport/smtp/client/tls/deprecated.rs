@@ -7,6 +7,7 @@ use crate::transport::smtp::{error, Error};
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[deprecated]
 pub enum TlsVersion {
     /// TLS 1.0
     ///
@@ -157,11 +158,14 @@ pub struct TlsParametersBuilder {
     domain: String,
     #[allow(deprecated)]
     cert_store: CertificateStore,
+    #[allow(deprecated)]
     root_certs: Vec<Certificate>,
+    #[allow(deprecated)]
     identity: Option<Identity>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+    #[allow(deprecated)]
     min_tls_version: TlsVersion,
 }
 
@@ -473,6 +477,7 @@ impl TlsParameters {
 /// A certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[deprecated]
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Certificate,
@@ -483,6 +488,7 @@ pub struct Certificate {
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[allow(deprecated)]
 impl Certificate {
     /// Create a `Certificate` from a DER encoded certificate
     pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
@@ -519,6 +525,7 @@ impl Certificate {
     }
 }
 
+#[allow(deprecated)]
 impl Debug for Certificate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Certificate").finish()
@@ -528,6 +535,7 @@ impl Debug for Certificate {
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[deprecated]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Identity,
@@ -537,6 +545,7 @@ pub struct Identity {
     boring_tls: super::boring_tls::Identity,
 }
 
+#[allow(deprecated)]
 impl Debug for Identity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Identity").finish()
@@ -544,6 +553,7 @@ impl Debug for Identity {
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[allow(deprecated)]
 impl Identity {
     pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self {
