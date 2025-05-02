@@ -90,6 +90,8 @@ pub trait TlsBackend: private::SealedTlsBackend {
 
 #[cfg(feature = "boring-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
 #[non_exhaustive]
 pub struct BoringTls;
 
@@ -121,6 +123,8 @@ impl TlsBackend for BoringTls {
 
 #[cfg(feature = "native-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
 #[non_exhaustive]
 pub struct NativeTls;
 
@@ -147,6 +151,8 @@ impl TlsBackend for NativeTls {
 
 #[cfg(feature = "rustls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
+#[derive(Debug)]
+#[allow(missing_copy_implementations)]
 #[non_exhaustive]
 pub struct Rustls;
 
