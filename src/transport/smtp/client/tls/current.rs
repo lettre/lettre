@@ -305,7 +305,9 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.native_tls);
         }
 
-        builder.build().map(TlsParameters::from_inner)
+        builder
+            .build()
+            .map(super::NativeTls::__build_current_tls_parameters)
     }
 
     /// Creates a new `TlsParameters` using boring-tls with the provided configuration
@@ -344,7 +346,9 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.boring_tls);
         }
 
-        builder.build().map(TlsParameters::from_inner)
+        builder
+            .build()
+            .map(super::BoringTls::__build_current_tls_parameters)
     }
 
     /// Creates a new `TlsParameters` using rustls with the provided configuration
@@ -385,7 +389,9 @@ impl TlsParametersBuilder {
             builder = builder.identify_with(identity.rustls_tls);
         }
 
-        builder.build().map(TlsParameters::from_inner)
+        builder
+            .build()
+            .map(super::Rustls::__build_current_tls_parameters)
     }
 }
 
@@ -409,9 +415,7 @@ impl TlsParameters {
         doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
     pub fn new(domain: String) -> Result<Self, Error> {
-        super::TlsParametersBuilder::<super::DefaultTlsBackend>::new(domain)
-            .build()
-            .map(Self::from_inner)
+        Self::new_with::<super::DefaultTlsBackend>(domain)
     }
 
     /// Creates a new `TlsParameters` builder
@@ -423,31 +427,27 @@ impl TlsParameters {
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn new_native(domain: String) -> Result<Self, Error> {
-        super::TlsParametersBuilder::<super::NativeTls>::new(domain)
-            .build()
-            .map(Self::from_inner)
+        Self::new_with::<super::NativeTls>(domain)
     }
 
     /// Creates a new `TlsParameters` using rustls
     #[cfg(feature = "rustls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn new_rustls(domain: String) -> Result<Self, Error> {
-        super::TlsParametersBuilder::<super::Rustls>::new(domain)
-            .build()
-            .map(Self::from_inner)
+        Self::new_with::<super::Rustls>(domain)
     }
 
     /// Creates a new `TlsParameters` using boring
     #[cfg(feature = "boring-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn new_boring(domain: String) -> Result<Self, Error> {
-        super::TlsParametersBuilder::<super::BoringTls>::new(domain)
-            .build()
-            .map(Self::from_inner)
+        Self::new_with::<super::BoringTls>(domain)
     }
 
-    fn from_inner<B: TlsBackend>(inner: super::TlsParameters<B>) -> Self {
-        B::__build_current_tls_parameters(inner)
+    fn new_with<B: TlsBackend>(domain: String) -> Result<Self, Error> {
+        super::TlsParametersBuilder::<B>::new(domain)
+            .build()
+            .map(B::__build_current_tls_parameters)
     }
 
     pub fn domain(&self) -> &str {
