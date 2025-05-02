@@ -451,13 +451,13 @@ impl TlsParameters {
     }
 
     pub fn domain(&self) -> &str {
-        match &self.inner {
+        match self.inner {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls(inner) => &inner.server_name,
+            InnerTlsParameters::NativeTls(ref inner) => &inner.server_name,
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::Rustls(inner) => inner.server_name.as_ref(),
+            InnerTlsParameters::Rustls(ref inner) => inner.server_name.as_ref(),
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls(inner) => &inner.server_name,
+            InnerTlsParameters::BoringTls(ref inner) => &inner.server_name,
         }
     }
 }
