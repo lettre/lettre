@@ -393,12 +393,9 @@ impl AsyncNetworkStream {
                 return {
                     use futures_rustls::TlsConnector;
 
-                    let domain = ServerName::try_from(domain.as_str())
-                        .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-
                     let connector = TlsConnector::from(config);
                     let stream = connector
-                        .connect(domain.to_owned(), tcp_stream)
+                        .connect(inner.server_name.inner(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1Rustls(stream))
