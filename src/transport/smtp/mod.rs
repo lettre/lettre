@@ -107,10 +107,7 @@
 //!
 //! use lettre::{
 //!     message::header::ContentType,
-//!     transport::smtp::client::{
-//!         tls::{native_tls::Certificate, NativeTls, TlsParametersBuilder},
-//!         Tls,
-//!     },
+//!     transport::smtp::client::{Certificate, Tls, TlsParameters},
 //!     Message, SmtpTransport, Transport,
 //! };
 //!
@@ -125,11 +122,9 @@
 //! // Custom TLS configuration - Use a self signed certificate
 //! let cert = fs::read("self-signed.crt")?;
 //! let cert = Certificate::from_pem(&cert)?;
-//! let tls = TlsParametersBuilder::<NativeTls>::new(
-//!     /* TLS SNI value */ "smtp.example.com".to_owned(),
-//! )
-//! .add_root_certificate(cert)
-//! .build_legacy()?;
+//! let tls = TlsParameters::builder(/* TLS SNI value */ "smtp.example.com".to_owned())
+//!     .add_root_certificate(cert)
+//!     .build()?;
 //!
 //! // Create the SMTPS transport
 //! let sender = SmtpTransport::relay("smtp.example.com")?

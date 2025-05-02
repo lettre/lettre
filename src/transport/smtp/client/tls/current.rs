@@ -7,7 +7,6 @@ use crate::transport::smtp::{error, Error};
 #[derive(Debug, Copy, Clone)]
 #[non_exhaustive]
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-#[deprecated]
 pub enum TlsVersion {
     /// TLS 1.0
     ///
@@ -120,8 +119,6 @@ impl Debug for Tls {
 /// Source for the base set of root certificates to trust.
 #[allow(missing_copy_implementations)]
 #[derive(Clone, Debug, Default)]
-#[deprecated]
-#[allow(deprecated)]
 pub enum CertificateStore {
     /// Use the default for the TLS backend.
     ///
@@ -153,29 +150,22 @@ pub struct TlsParameters {
 
 /// Builder for `TlsParameters`
 #[derive(Debug, Clone)]
-#[deprecated]
 pub struct TlsParametersBuilder {
     domain: String,
-    #[allow(deprecated)]
     cert_store: CertificateStore,
-    #[allow(deprecated)]
     root_certs: Vec<Certificate>,
-    #[allow(deprecated)]
     identity: Option<Identity>,
     accept_invalid_hostnames: bool,
     accept_invalid_certs: bool,
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-    #[allow(deprecated)]
     min_tls_version: TlsVersion,
 }
 
-#[allow(deprecated)]
 impl TlsParametersBuilder {
     /// Creates a new builder for `TlsParameters`
     pub fn new(domain: String) -> Self {
         Self {
             domain,
-            #[allow(deprecated)]
             cert_store: CertificateStore::Default,
             root_certs: Vec::new(),
             identity: None,
@@ -187,8 +177,6 @@ impl TlsParametersBuilder {
     }
 
     /// Set the source for the base set of root certificates to trust.
-    #[deprecated]
-    #[allow(deprecated)]
     pub fn certificate_store(mut self, cert_store: CertificateStore) -> Self {
         self.cert_store = cert_store;
         self
@@ -272,7 +260,6 @@ impl TlsParametersBuilder {
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
-    #[deprecated]
     pub fn build(self) -> Result<TlsParameters, Error> {
         #[cfg(feature = "rustls")]
         return self.build_rustls();
@@ -286,7 +273,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
     pub fn build_native(self) -> Result<TlsParameters, Error> {
-        #[allow(deprecated)]
         let cert_store = match self.cert_store {
             CertificateStore::Default => super::native_tls::CertificateStore::System,
             CertificateStore::None => super::native_tls::CertificateStore::None,
@@ -330,7 +316,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "boring-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
     pub fn build_boring(self) -> Result<TlsParameters, Error> {
-        #[allow(deprecated)]
         let cert_store = match self.cert_store {
             CertificateStore::Default => super::boring_tls::CertificateStore::System,
             CertificateStore::None => super::boring_tls::CertificateStore::None,
@@ -367,7 +352,6 @@ impl TlsParametersBuilder {
     #[cfg(feature = "rustls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
-        #[allow(deprecated)]
         let cert_store = match self.cert_store {
             #[cfg(feature = "rustls-native-certs")]
             CertificateStore::Default => super::rustls::CertificateStore::NativeCerts,
@@ -430,14 +414,11 @@ impl TlsParameters {
         docsrs,
         doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
     )]
-    #[allow(deprecated)]
     pub fn new(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build()
     }
 
     /// Creates a new `TlsParameters` builder
-    #[deprecated]
-    #[allow(deprecated)]
     pub fn builder(domain: String) -> TlsParametersBuilder {
         TlsParametersBuilder::new(domain)
     }
@@ -445,8 +426,6 @@ impl TlsParameters {
     /// Creates a new `TlsParameters` using native-tls
     #[cfg(feature = "native-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
-    #[deprecated]
-    #[allow(deprecated)]
     pub fn new_native(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_native()
     }
@@ -454,8 +433,6 @@ impl TlsParameters {
     /// Creates a new `TlsParameters` using rustls
     #[cfg(feature = "rustls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
-    #[deprecated]
-    #[allow(deprecated)]
     pub fn new_rustls(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_rustls()
     }
@@ -463,8 +440,6 @@ impl TlsParameters {
     /// Creates a new `TlsParameters` using boring
     #[cfg(feature = "boring-tls")]
     #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
-    #[deprecated]
-    #[allow(deprecated)]
     pub fn new_boring(domain: String) -> Result<Self, Error> {
         TlsParametersBuilder::new(domain).build_boring()
     }
@@ -477,7 +452,6 @@ impl TlsParameters {
 /// A certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
-#[deprecated]
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Certificate,
@@ -488,7 +462,6 @@ pub struct Certificate {
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-#[allow(deprecated)]
 impl Certificate {
     /// Create a `Certificate` from a DER encoded certificate
     pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
@@ -504,28 +477,17 @@ impl Certificate {
 
     /// Create a `Certificate` from a PEM encoded certificate
     pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
-        #[cfg(feature = "rustls")]
-        let rustls_cert = {
-            use rustls::pki_types::{self, pem::PemObject as _, CertificateDer};
-
-            CertificateDer::pem_slice_iter(pem)
-                .map(|cert| Ok(super::rustls::Certificate(cert?)))
-                .collect::<Result<Vec<_>, pki_types::pem::Error>>()
-                .map_err(|_| error::tls("invalid certificates"))?
-        };
-
         Ok(Self {
             #[cfg(feature = "native-tls")]
             native_tls: super::native_tls::Certificate::from_pem(pem)?,
             #[cfg(feature = "rustls")]
-            rustls: rustls_cert,
+            rustls: super::rustls::Certificate::from_pem_bundle(pem)?,
             #[cfg(feature = "boring-tls")]
             boring_tls: super::boring_tls::Certificate::from_pem(pem)?,
         })
     }
 }
 
-#[allow(deprecated)]
 impl Debug for Certificate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Certificate").finish()
@@ -535,7 +497,6 @@ impl Debug for Certificate {
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
-#[deprecated]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Identity,
@@ -545,7 +506,6 @@ pub struct Identity {
     boring_tls: super::boring_tls::Identity,
 }
 
-#[allow(deprecated)]
 impl Debug for Identity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Identity").finish()
@@ -553,7 +513,6 @@ impl Debug for Identity {
 }
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-#[allow(deprecated)]
 impl Identity {
     pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self {

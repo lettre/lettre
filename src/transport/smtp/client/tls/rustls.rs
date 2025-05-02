@@ -80,7 +80,7 @@ pub(super) fn build_connector(
 #[derive(Debug, Clone, Default)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub enum CertificateStore {
+pub(super) enum CertificateStore {
     #[cfg(feature = "rustls-native-certs")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-native-certs")))]
     #[cfg_attr(feature = "rustls-native-certs", default)]
@@ -100,10 +100,11 @@ pub enum CertificateStore {
 }
 
 #[derive(Clone)]
-pub struct Certificate(pub(super) pki_types::CertificateDer<'static>);
+pub(super) struct Certificate(pub(super) pki_types::CertificateDer<'static>);
 
 impl Certificate {
-    pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
+    #[allow(dead_code)]
+    pub(super) fn from_pem(pem: &[u8]) -> Result<Self, Error> {
         use rustls::pki_types::pem::PemObject as _;
 
         Ok(Self(
@@ -112,7 +113,16 @@ impl Certificate {
         ))
     }
 
-    pub fn from_der(der: Vec<u8>) -> Result<Self, Error> {
+    pub(super) fn from_pem_bundle(pem: &[u8]) -> Result<Vec<Self>, Error> {
+        use rustls::pki_types::pem::PemObject as _;
+
+        pki_types::CertificateDer::pem_slice_iter(pem)
+            .map(|cert| Ok(Self(cert?)))
+            .collect::<Result<Vec<_>, pki_types::pem::Error>>()
+            .map_err(|_| error::tls("invalid certificate"))
+    }
+
+    pub(super) fn from_der(der: Vec<u8>) -> Result<Self, Error> {
         Ok(Self(der.into()))
     }
 }
@@ -123,13 +133,13 @@ impl Debug for Certificate {
     }
 }
 
-pub struct Identity {
+pub(super) struct Identity {
     pub(super) chain: Vec<pki_types::CertificateDer<'static>>,
     pub(super) key: pki_types::PrivateKeyDer<'static>,
 }
 
 impl Identity {
-    pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         use rustls::pki_types::pem::PemObject as _;
 
         let key = match pki_types::PrivateKeyDer::from_pem_slice(key) {
@@ -164,7 +174,7 @@ impl Debug for Identity {
 
 #[derive(Debug, Copy, Clone, Default)]
 #[non_exhaustive]
-pub enum MinTlsVersion {
+pub(super) enum MinTlsVersion {
     #[default]
     Tlsv12,
     Tlsv13,

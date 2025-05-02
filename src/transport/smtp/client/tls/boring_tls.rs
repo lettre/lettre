@@ -55,21 +55,21 @@ pub(super) fn build_connector(
 #[derive(Debug, Clone, Default)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub enum CertificateStore {
+pub(super) enum CertificateStore {
     #[default]
     System,
     None,
 }
 
 #[derive(Clone)]
-pub struct Certificate(pub(super) boring::x509::X509);
+pub(super) struct Certificate(pub(super) boring::x509::X509);
 
 impl Certificate {
-    pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_pem(pem: &[u8]) -> Result<Self, Error> {
         Ok(Self(boring::x509::X509::from_pem(pem).map_err(error::tls)?))
     }
 
-    pub fn from_der(der: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_der(der: &[u8]) -> Result<Self, Error> {
         Ok(Self(boring::x509::X509::from_der(der).map_err(error::tls)?))
     }
 }
@@ -81,13 +81,13 @@ impl Debug for Certificate {
 }
 
 #[derive(Clone)]
-pub struct Identity {
+pub(super) struct Identity {
     pub(super) chain: boring::x509::X509,
     pub(super) key: boring::pkey::PKey<boring::pkey::Private>,
 }
 
 impl Identity {
-    pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         let chain = boring::x509::X509::from_pem(pem).map_err(error::tls)?;
         let key = boring::pkey::PKey::private_key_from_pem(key).map_err(error::tls)?;
         Ok(Self { chain, key })
@@ -102,7 +102,7 @@ impl Debug for Identity {
 
 #[derive(Debug, Copy, Clone, Default)]
 #[non_exhaustive]
-pub enum MinTlsVersion {
+pub(super) enum MinTlsVersion {
     Tlsv10,
     Tlsv11,
     #[default]

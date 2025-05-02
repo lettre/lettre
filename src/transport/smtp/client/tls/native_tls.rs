@@ -38,23 +38,23 @@ pub(super) fn build_connector(
 #[derive(Debug, Clone, Default)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub enum CertificateStore {
+pub(super) enum CertificateStore {
     #[default]
     System,
     None,
 }
 
 #[derive(Clone)]
-pub struct Certificate(pub(super) native_tls::Certificate);
+pub(super) struct Certificate(pub(super) native_tls::Certificate);
 
 impl Certificate {
-    pub fn from_pem(pem: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_pem(pem: &[u8]) -> Result<Self, Error> {
         Ok(Self(
             native_tls::Certificate::from_pem(pem).map_err(error::tls)?,
         ))
     }
 
-    pub fn from_der(der: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_der(der: &[u8]) -> Result<Self, Error> {
         Ok(Self(
             native_tls::Certificate::from_der(der).map_err(error::tls)?,
         ))
@@ -68,10 +68,10 @@ impl Debug for Certificate {
 }
 
 #[derive(Clone)]
-pub struct Identity(pub(super) native_tls::Identity);
+pub(super) struct Identity(pub(super) native_tls::Identity);
 
 impl Identity {
-    pub fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
+    pub(super) fn from_pem(pem: &[u8], key: &[u8]) -> Result<Self, Error> {
         Ok(Self(
             native_tls::Identity::from_pkcs8(pem, key).map_err(error::tls)?,
         ))
@@ -86,7 +86,7 @@ impl Debug for Identity {
 
 #[derive(Debug, Copy, Clone, Default)]
 #[non_exhaustive]
-pub enum MinTlsVersion {
+pub(super) enum MinTlsVersion {
     Tlsv10,
     Tlsv11,
     #[default]

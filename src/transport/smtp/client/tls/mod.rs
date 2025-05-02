@@ -2,17 +2,17 @@ use crate::transport::smtp::Error;
 
 #[cfg(feature = "boring-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
-pub mod boring_tls;
-pub(super) mod deprecated;
+pub(super) mod boring_tls;
+pub(super) mod current;
 #[cfg(feature = "native-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
-pub mod native_tls;
+pub(super) mod native_tls;
 #[cfg(feature = "rustls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
-pub mod rustls;
+pub(super) mod rustls;
 
 #[derive(Debug)]
-pub struct TlsParametersBuilder<B: TlsBackend> {
+struct TlsParametersBuilder<B: TlsBackend> {
     domain: String,
     cert_store: B::CertificateStore,
     root_certs: Vec<B::Certificate>,
@@ -23,7 +23,7 @@ pub struct TlsParametersBuilder<B: TlsBackend> {
 }
 
 impl<B: TlsBackend> TlsParametersBuilder<B> {
-    pub fn new(domain: String) -> Self {
+    fn new(domain: String) -> Self {
         Self {
             domain,
             cert_store: Default::default(),
@@ -35,44 +35,44 @@ impl<B: TlsBackend> TlsParametersBuilder<B> {
         }
     }
 
-    pub fn certificate_store(mut self, cert_store: B::CertificateStore) -> Self {
+    fn certificate_store(mut self, cert_store: B::CertificateStore) -> Self {
         self.cert_store = cert_store;
         self
     }
 
-    pub fn add_root_certificate(mut self, cert: B::Certificate) -> Self {
+    fn add_root_certificate(mut self, cert: B::Certificate) -> Self {
         self.root_certs.push(cert);
         self
     }
 
-    pub fn identify_with(mut self, identity: B::Identity) -> Self {
+    fn identify_with(mut self, identity: B::Identity) -> Self {
         self.identity = Some(identity);
         self
     }
 
-    pub fn min_tls_version(mut self, min_tls_version: B::MinTlsVersion) -> Self {
+    fn min_tls_version(mut self, min_tls_version: B::MinTlsVersion) -> Self {
         self.min_tls_version = min_tls_version;
         self
     }
 
-    pub fn dangerous_accept_invalid_certs(mut self, accept_invalid_certs: bool) -> Self {
+    fn dangerous_accept_invalid_certs(mut self, accept_invalid_certs: bool) -> Self {
         self.accept_invalid_certs = accept_invalid_certs;
         self
     }
 
-    pub fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
+    fn dangerous_accept_invalid_hostnames(mut self, accept_invalid_hostnames: bool) -> Self {
         self.accept_invalid_hostnames = accept_invalid_hostnames;
         self
     }
 
-    pub fn build_legacy(self) -> Result<self::deprecated::TlsParameters, Error> {
+    fn build_legacy(self) -> Result<self::current::TlsParameters, Error> {
         let domain = self.domain.clone();
         let connector = B::__build_legacy_connector(self)?;
-        Ok(self::deprecated::TlsParameters { connector, domain })
+        Ok(self::current::TlsParameters { connector, domain })
     }
 }
 
-pub trait TlsBackend: private::SealedTlsBackend {
+trait TlsBackend: private::SealedTlsBackend {
     type CertificateStore: Default;
     type Certificate;
     type Identity;
@@ -85,7 +85,7 @@ pub trait TlsBackend: private::SealedTlsBackend {
     #[allow(private_interfaces)]
     fn __build_legacy_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::deprecated::InnerTlsParameters, Error>;
+    ) -> Result<self::current::InnerTlsParameters, Error>;
 }
 
 #[cfg(feature = "boring-tls")]
@@ -93,7 +93,7 @@ pub trait TlsBackend: private::SealedTlsBackend {
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub struct BoringTls;
+pub(super) struct BoringTls;
 
 #[cfg(feature = "boring-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "boring-tls")))]
@@ -103,6 +103,7 @@ impl TlsBackend for BoringTls {
     type Identity = self::boring_tls::Identity;
     type MinTlsVersion = self::boring_tls::MinTlsVersion;
 
+    #[allow(private_interfaces)]
     fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
         self::boring_tls::build_connector(builder)
     }
@@ -110,10 +111,10 @@ impl TlsBackend for BoringTls {
     #[allow(private_interfaces)]
     fn __build_legacy_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::deprecated::InnerTlsParameters, Error> {
+    ) -> Result<self::current::InnerTlsParameters, Error> {
         let accept_invalid_hostnames = builder.accept_invalid_hostnames;
         Self::__build_connector(builder).map(|connector| {
-            self::deprecated::InnerTlsParameters::BoringTls {
+            self::current::InnerTlsParameters::BoringTls {
                 connector,
                 accept_invalid_hostnames,
             }
@@ -126,7 +127,7 @@ impl TlsBackend for BoringTls {
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub struct NativeTls;
+pub(super) struct NativeTls;
 
 #[cfg(feature = "native-tls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "native-tls")))]
@@ -136,6 +137,7 @@ impl TlsBackend for NativeTls {
     type Identity = self::native_tls::Identity;
     type MinTlsVersion = self::native_tls::MinTlsVersion;
 
+    #[allow(private_interfaces)]
     fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
         self::native_tls::build_connector(builder)
     }
@@ -143,9 +145,9 @@ impl TlsBackend for NativeTls {
     #[allow(private_interfaces)]
     fn __build_legacy_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::deprecated::InnerTlsParameters, Error> {
+    ) -> Result<self::current::InnerTlsParameters, Error> {
         Self::__build_connector(builder)
-            .map(|connector| self::deprecated::InnerTlsParameters::NativeTls { connector })
+            .map(|connector| self::current::InnerTlsParameters::NativeTls { connector })
     }
 }
 
@@ -154,7 +156,7 @@ impl TlsBackend for NativeTls {
 #[derive(Debug)]
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
-pub struct Rustls;
+pub(super) struct Rustls;
 
 #[cfg(feature = "rustls")]
 #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
@@ -164,6 +166,7 @@ impl TlsBackend for Rustls {
     type Identity = self::rustls::Identity;
     type MinTlsVersion = self::rustls::MinTlsVersion;
 
+    #[allow(private_interfaces)]
     fn __build_connector(builder: TlsParametersBuilder<Self>) -> Result<Self::Connector, Error> {
         self::rustls::build_connector(builder)
     }
@@ -171,15 +174,14 @@ impl TlsBackend for Rustls {
     #[allow(private_interfaces)]
     fn __build_legacy_connector(
         builder: TlsParametersBuilder<Self>,
-    ) -> Result<self::deprecated::InnerTlsParameters, Error> {
+    ) -> Result<self::current::InnerTlsParameters, Error> {
         Self::__build_connector(builder)
-            .map(|config| self::deprecated::InnerTlsParameters::Rustls { config })
+            .map(|config| self::current::InnerTlsParameters::Rustls { config })
     }
 }
 
 mod private {
-    // FIXME: this should be `pub(super)` but the `private_bounds` lint doesn't like it
-    pub trait SealedTlsBackend: Sized {
+    pub(super) trait SealedTlsBackend: Sized {
         type Connector;
     }
 
