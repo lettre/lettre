@@ -23,7 +23,7 @@ pub struct TlsParametersBuilder<B: TlsBackend> {
 }
 
 impl<B: TlsBackend> TlsParametersBuilder<B> {
-    pub(super) fn new(domain: String) -> Self {
+    pub fn new(domain: String) -> Self {
         Self {
             domain,
             cert_store: Default::default(),

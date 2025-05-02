@@ -4,7 +4,7 @@ use lettre::{
     message::header::ContentType,
     transport::smtp::{
         authentication::Credentials,
-        client::{Certificate, Tls, TlsParameters},
+        client::{tls, Tls},
     },
     Message, SmtpTransport, Transport,
 };
@@ -23,10 +23,10 @@ fn main() {
 
     // Use a custom certificate stored on disk to securely verify the server's certificate
     let pem_cert = fs::read("certificate.pem").unwrap();
-    let cert = Certificate::from_pem(&pem_cert).unwrap();
-    let tls = TlsParameters::builder("smtp.server.com".to_owned())
+    let cert = tls::native_tls::Certificate::from_pem(&pem_cert).unwrap();
+    let tls = tls::TlsParametersBuilder::<tls::NativeTls>::new("smtp.server.com".to_owned())
         .add_root_certificate(cert)
-        .build()
+        .build_legacy()
         .unwrap();
 
     let creds = Credentials::new("smtp_username".to_owned(), "smtp_password".to_owned());
