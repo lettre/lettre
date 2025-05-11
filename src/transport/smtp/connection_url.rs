@@ -13,6 +13,7 @@ use super::{
 
 pub(crate) trait TransportBuilder {
     fn new<T: Into<String>>(server: T) -> Self;
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     fn tls(self, tls: super::Tls) -> Self;
     fn port(self, port: u16) -> Self;
     fn credentials(self, credentials: Credentials) -> Self;
@@ -24,6 +25,7 @@ impl TransportBuilder for SmtpTransportBuilder {
         Self::new(server)
     }
 
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     fn tls(self, tls: super::Tls) -> Self {
         self.tls(tls)
     }
@@ -47,6 +49,7 @@ impl TransportBuilder for AsyncSmtpTransportBuilder {
         Self::new(server)
     }
 
+    #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     fn tls(self, tls: super::Tls) -> Self {
         self.tls(tls)
     }

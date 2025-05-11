@@ -163,6 +163,7 @@ impl Envelope {
 }
 
 #[cfg(feature = "builder")]
+#[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
 impl TryFrom<&Headers> for Envelope {
     type Error = Error;
 

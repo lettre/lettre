@@ -199,6 +199,7 @@ impl FileTransport {
     /// Writes the email content in eml format and the envelope
     /// in json format.
     #[cfg(feature = "file-transport-envelope")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "file-transport-envelope")))]
     pub fn with_envelope<P: AsRef<Path>>(path: P) -> FileTransport {
         FileTransport {
             path: PathBuf::from(path.as_ref()),
@@ -211,6 +212,7 @@ impl FileTransport {
     ///
     /// Reads the envelope and the raw message content.
     #[cfg(feature = "file-transport-envelope")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "file-transport-envelope")))]
     pub fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
         use std::fs;
 
@@ -249,6 +251,7 @@ where
     /// Writes the email content in eml format and the envelope
     /// in json format.
     #[cfg(feature = "file-transport-envelope")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "file-transport-envelope")))]
     pub fn with_envelope<P: AsRef<Path>>(path: P) -> Self {
         Self {
             inner: FileTransport::with_envelope(path),
@@ -260,6 +263,7 @@ where
     ///
     /// Reads the envelope and the raw message content.
     #[cfg(feature = "file-transport-envelope")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "file-transport-envelope")))]
     pub async fn read(&self, email_id: &str) -> Result<(Envelope, Vec<u8>), Error> {
         let eml_file = self.inner.path.join(format!("{email_id}.eml"));
         let eml = E::fs_read(&eml_file).await.map_err(error::io)?;
