@@ -149,11 +149,7 @@ impl<E: Executor> Pool<E> {
     pub(crate) async fn shutdown(&self) {
         let connections = { self.connections.lock().await.take() };
         if let Some(connections) = connections {
-            stream::iter(connections)
-                .for_each_concurrent(8, |conn| async move {
-                    conn.unpark().abort().await;
-                })
-                .await;
+            abort_concurrent(connections.into_iter().map(ParkedConnection::unpark)).await;
         }
 
         if let Some(handle) = self.handle.get() {
