@@ -29,8 +29,18 @@ pub(super) fn build_connector(
 
     // Build TLS config
     let mut root_cert_store = RootCertStore::empty();
+    #[cfg(feature = "rustls-platform-verifier")]
+    let mut extra_roots = Vec::new();
 
     match builder.cert_store {
+        #[cfg(feature = "rustls-platform-verifier")]
+        CertificateStore::PlatformVerifier => {
+            extra_roots = builder
+                .root_certs
+                .iter()
+                .map(|cert| cert.0.clone())
+                .collect();
+        }
         #[cfg(feature = "rustls-native-certs")]
         CertificateStore::NativeCerts => {
             let rustls_native_certs::CertificateResult { certs, errors, .. } =
@@ -55,17 +65,32 @@ pub(super) fn build_connector(
         root_cert_store.add(cert.0).map_err(error::tls)?;
     }
 
-    let tls = if builder.accept_invalid_certs || builder.accept_invalid_hostnames {
-        let verifier = InvalidCertsVerifier {
-            ignore_invalid_hostnames: builder.accept_invalid_hostnames,
-            ignore_invalid_certs: builder.accept_invalid_certs,
-            roots: root_cert_store,
-            crypto_provider,
-        };
-        tls.dangerous()
-            .with_custom_certificate_verifier(Arc::new(verifier))
-    } else {
-        tls.with_root_certificates(root_cert_store)
+    let tls = match (
+        builder.cert_store,
+        builder.accept_invalid_certs,
+        builder.accept_invalid_hostnames,
+    ) {
+        #[cfg(feature = "rustls-platform-verifier")]
+        (CertificateStore::PlatformVerifier, false, _) => {
+            tls.dangerous().with_custom_certificate_verifier(Arc::new(
+                rustls_platform_verifier::Verifier::new_with_extra_roots(
+                    extra_roots,
+                    crypto_provider,
+                )
+                .map_err(error::tls)?,
+            ))
+        }
+        (_, true, _) | (_, _, true) => {
+            let verifier = InvalidCertsVerifier {
+                ignore_invalid_hostnames: builder.accept_invalid_hostnames,
+                ignore_invalid_certs: builder.accept_invalid_certs,
+                roots: root_cert_store,
+                crypto_provider,
+            };
+            tls.dangerous()
+                .with_custom_certificate_verifier(Arc::new(verifier))
+        }
+        _ => tls.with_root_certificates(root_cert_store),
     };
 
     let tls = if let Some(identity) = builder.identity {
@@ -116,19 +141,37 @@ impl AsRef<str> for ServerName {
 #[allow(missing_copy_implementations)]
 #[non_exhaustive]
 pub(super) enum CertificateStore {
+    #[cfg(feature = "rustls-platform-verifier")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "rustls-platform-verifier")))]
+    #[cfg_attr(feature = "rustls-platform-verifier", default)]
+    PlatformVerifier,
     #[cfg(feature = "rustls-native-certs")]
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls-native-certs")))]
-    #[cfg_attr(feature = "rustls-native-certs", default)]
+    #[cfg_attr(
+        all(
+            not(feature = "rustls-platform-verifier"),
+            feature = "rustls-native-certs",
+        ),
+        default
+    )]
     NativeCerts,
     #[cfg(feature = "webpki-roots")]
     #[cfg_attr(docsrs, doc(cfg(feature = "webpki-roots")))]
     #[cfg_attr(
-        all(feature = "webpki-roots", not(feature = "rustls-native-certs")),
+        all(
+            not(feature = "rustls-platform-verifier"),
+            not(feature = "rustls-native-certs"),
+            feature = "webpki-roots",
+        ),
         default
     )]
     WebpkiRoots,
     #[cfg_attr(
-        all(not(feature = "webpki-roots"), not(feature = "rustls-native-certs")),
+        all(
+            not(feature = "webpki-roots"),
+            not(feature = "rustls-platform-verifier"),
+            not(feature = "rustls-native-certs")
+        ),
         default
     )]
     None,

@@ -47,6 +47,16 @@ pub enum TlsVersion {
 /// connecting to a local server.
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Tls` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub enum Tls {
     /// Insecure (plaintext) connection only.
     ///
@@ -120,14 +130,25 @@ impl Debug for Tls {
 /// Source for the base set of root certificates to trust.
 #[allow(missing_copy_implementations)]
 #[derive(Clone, Debug, Default)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `CertificateStore` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub enum CertificateStore {
     /// Use the default for the TLS backend.
     ///
     /// For native-tls, this will use the system certificate store on Windows, the keychain on
     /// macOS, and OpenSSL directories on Linux (usually `/etc/ssl`).
     ///
-    /// For rustls, this will also use the system store if the `rustls-native-certs` feature is
-    /// enabled, or will fall back to `webpki-roots`.
+    /// For rustls, this will use the system certificate verifier if the `rustls-platform-verifier`
+    /// feature is enabled. If the `rustls-native-certs` feature is enabled, system certificate
+    /// store will be used. Otherwise, it will fall back to `webpki-roots`.
     ///
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
     #[default]
@@ -143,12 +164,32 @@ pub enum CertificateStore {
 
 /// Parameters to use for secure clients
 #[derive(Clone)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `TlsParameters` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct TlsParameters {
     pub(in crate::transport::smtp) inner: InnerTlsParameters,
 }
 
 /// Builder for `TlsParameters`
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `TlsParametersBuilder` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct TlsParametersBuilder {
     domain: String,
     cert_store: CertificateStore,
@@ -198,6 +239,8 @@ impl TlsParametersBuilder {
     }
 
     /// Controls whether certificates with an invalid hostname are accepted
+    ///
+    /// This option is silently disabled when using `rustls-platform-verifier`.
     ///
     /// Defaults to `false`.
     ///
@@ -356,10 +399,7 @@ impl TlsParametersBuilder {
     #[cfg_attr(docsrs, doc(cfg(feature = "rustls")))]
     pub fn build_rustls(self) -> Result<TlsParameters, Error> {
         let cert_store = match self.cert_store {
-            #[cfg(feature = "rustls-native-certs")]
-            CertificateStore::Default => super::rustls::CertificateStore::NativeCerts,
-            #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
-            CertificateStore::Default => super::rustls::CertificateStore::WebpkiRoots,
+            CertificateStore::Default => super::rustls::CertificateStore::default(),
             #[cfg(feature = "webpki-roots")]
             CertificateStore::WebpkiRoots => super::rustls::CertificateStore::WebpkiRoots,
             CertificateStore::None => super::rustls::CertificateStore::None,
@@ -465,6 +505,16 @@ impl TlsParameters {
 /// A certificate that can be used with [`TlsParametersBuilder::add_root_certificate`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Certificate` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct Certificate {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Certificate,
@@ -510,6 +560,16 @@ impl Debug for Certificate {
 /// An identity that can be used with [`TlsParametersBuilder::identify_with`]
 #[derive(Clone)]
 #[allow(missing_copy_implementations)]
+#[cfg_attr(
+    not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")),
+    deprecated(
+        note = "starting from lettre v0.12 `Identity` won't be available when none of the TLS backends are enabled"
+    )
+)]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))
+)]
 pub struct Identity {
     #[cfg(feature = "native-tls")]
     native_tls: super::native_tls::Identity,

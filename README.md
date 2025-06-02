@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.11.15">
-    <img src="https://deps.rs/crate/lettre/0.11.15/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.11.16">
+    <img src="https://deps.rs/crate/lettre/0.11.16/status.svg"
       alt="dependency status" />
   </a>
 </div>
@@ -73,9 +73,9 @@ use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
     let email = Message::builder()
-        .from("NoBody <nobody@domain.tld>".parse().unwrap())
-        .reply_to("Yuin <yuin@domain.tld>".parse().unwrap())
-        .to("Hei <hei@domain.tld>".parse().unwrap())
+        .from(Mailbox::new("NoBody".to_owned(), "nobody@domain.tld".parse().unwrap()))
+        .reply_to(Mailbox::new("Yuin".to_owned(), "yuin@domain.tld".parse().unwrap()))
+        .to(Mailbox::new("Hei".to_owned(), "hei@domain.tld".parse().unwrap()))
         .subject("Happy new year")
         .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy!"))

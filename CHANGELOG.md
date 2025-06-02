@@ -1,3 +1,39 @@
+<a name="v0.11.16"></a>
+### v0.11.16 (2025-05-12)
+
+#### Features
+
+* Always implement `Clone` for `AsyncFileTransport` ([#1075])
+
+#### Changes
+
+* `Tls`, `CertificateStore`, `TlsParameters`, `TlsParametersBuilder`, `Certificate` and `Identity`
+  are now marked as deprecated when no TLS backend is enabled. They will be properly feature gated
+  in lettre v0.12 ([#1084])
+
+#### Misc
+
+* Gate `web-time` behind `cfg(target_arch = "wasm32")]` ([#1086])
+* Add missing `#[doc(cfg(...))]` attributes ([#1086])
+* Upgrade `webpki-roots` to v1 ([#1088])
+* Cleanup internal `TlsParameters` and `(Async)NetworkStream` structures ([#1082])
+* Feature gate internal `TransportBuilder::tls` to avoid recursive call site warnings ([#1083])
+* Fix workaround for embedding cargo script in rustdoc output ([#1077])
+* Fix `clippy::io_other_error` warnings ([#1078])
+* Upgrade semver compatible dependencies ([#1076], [#1079], [#1080])
+
+[#1075]: https://github.com/lettre/lettre/pull/1075
+[#1076]: https://github.com/lettre/lettre/pull/1076
+[#1077]: https://github.com/lettre/lettre/pull/1077
+[#1078]: https://github.com/lettre/lettre/pull/1078
+[#1079]: https://github.com/lettre/lettre/pull/1079
+[#1080]: https://github.com/lettre/lettre/pull/1080
+[#1082]: https://github.com/lettre/lettre/pull/1082
+[#1083]: https://github.com/lettre/lettre/pull/1083
+[#1084]: https://github.com/lettre/lettre/pull/1084
+[#1086]: https://github.com/lettre/lettre/pull/1086
+[#1088]: https://github.com/lettre/lettre/pull/1088
+
 <a name="v0.11.15"></a>
 ### v0.11.15 (2025-03-10)
 
