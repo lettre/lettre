@@ -2,7 +2,8 @@ use std::fmt::{self, Debug};
 
 use super::TlsBackend;
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-use crate::transport::smtp::{error, Error};
+use crate::transport::smtp::error;
+use crate::transport::smtp::Error;
 
 /// TLS protocol versions.
 #[derive(Debug, Copy, Clone)]
