@@ -164,8 +164,9 @@ pub enum CertificateStore {
     /// For native-tls, this will use the system certificate store on Windows, the keychain on
     /// macOS, and OpenSSL directories on Linux (usually `/etc/ssl`).
     ///
-    /// For rustls, this will also use the system store if the `rustls-native-certs` feature is
-    /// enabled, or will fall back to `webpki-roots`.
+    /// For rustls, this will use the system certificate verifier if the `rustls-platform-verifier`
+    /// feature is enabled. If the `rustls-native-certs` feature is enabled, system certificate
+    /// store will be used. Otherwise, it will fall back to `webpki-roots`.
     ///
     /// The boring-tls backend uses the same logic as OpenSSL on all platforms.
     #[default]
@@ -258,6 +259,8 @@ impl TlsParametersBuilder {
     }
 
     /// Controls whether certificates with an invalid hostname are accepted
+    ///
+    /// This option is silently disabled when using `rustls-platform-verifier`.
     ///
     /// Defaults to `false`.
     ///
@@ -461,7 +464,10 @@ impl TlsParametersBuilder {
         // Build TLS config
         let mut root_cert_store = RootCertStore::empty();
 
-        #[cfg(feature = "rustls-native-certs")]
+        #[cfg(all(
+            not(feature = "rustls-platform-verifier"),
+            feature = "rustls-native-certs"
+        ))]
         fn load_native_roots(store: &mut RootCertStore) {
             let rustls_native_certs::CertificateResult { certs, errors, .. } =
                 rustls_native_certs::load_native_certs();
@@ -481,11 +487,26 @@ impl TlsParametersBuilder {
             store.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
         }
 
+        #[cfg_attr(not(feature = "rustls-platform-verifier"), allow(unused_mut))]
+        let mut extra_roots = None::<Vec<CertificateDer<'static>>>;
         match self.cert_store {
             CertificateStore::Default => {
-                #[cfg(feature = "rustls-native-certs")]
+                #[cfg(feature = "rustls-platform-verifier")]
+                {
+                    extra_roots = Some(Vec::new());
+                }
+
+                #[cfg(all(
+                    not(feature = "rustls-platform-verifier"),
+                    feature = "rustls-native-certs"
+                ))]
                 load_native_roots(&mut root_cert_store);
-                #[cfg(all(not(feature = "rustls-native-certs"), feature = "webpki-roots"))]
+
+                #[cfg(all(
+                    not(feature = "rustls-platform-verifier"),
+                    not(feature = "rustls-native-certs"),
+                    feature = "webpki-roots"
+                ))]
                 load_webpki_roots(&mut root_cert_store);
             }
             #[cfg(all(feature = "rustls", feature = "webpki-roots"))]
@@ -496,11 +517,17 @@ impl TlsParametersBuilder {
         }
         for cert in self.root_certs {
             for rustls_cert in cert.rustls {
+                #[cfg(feature = "rustls-platform-verifier")]
+                if let Some(extra_roots) = &mut extra_roots {
+                    extra_roots.push(rustls_cert.clone());
+                }
                 root_cert_store.add(rustls_cert).map_err(error::tls)?;
             }
         }
 
-        let tls = if self.accept_invalid_certs || self.accept_invalid_hostnames {
+        let tls = if self.accept_invalid_certs
+            || (extra_roots.is_none() && self.accept_invalid_hostnames)
+        {
             let verifier = InvalidCertsVerifier {
                 ignore_invalid_hostnames: self.accept_invalid_hostnames,
                 ignore_invalid_certs: self.accept_invalid_certs,
@@ -510,7 +537,23 @@ impl TlsParametersBuilder {
             tls.dangerous()
                 .with_custom_certificate_verifier(Arc::new(verifier))
         } else {
-            tls.with_root_certificates(root_cert_store)
+            #[cfg(feature = "rustls-platform-verifier")]
+            if let Some(extra_roots) = extra_roots {
+                tls.dangerous().with_custom_certificate_verifier(Arc::new(
+                    rustls_platform_verifier::Verifier::new_with_extra_roots(
+                        extra_roots,
+                        crypto_provider,
+                    )
+                    .map_err(error::tls)?,
+                ))
+            } else {
+                tls.with_root_certificates(root_cert_store)
+            }
+
+            #[cfg(not(feature = "rustls-platform-verifier"))]
+            {
+                tls.with_root_certificates(root_cert_store)
+            }
         };
 
         let tls = if let Some(identity) = self.identity {
