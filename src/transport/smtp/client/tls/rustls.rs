@@ -138,7 +138,7 @@ impl AsRef<str> for ServerName {
 }
 
 #[derive(Debug, Clone, Default)]
-#[allow(missing_copy_implementations)]
+#[allow(dead_code, missing_copy_implementations)]
 #[non_exhaustive]
 pub(super) enum CertificateStore {
     #[cfg(feature = "rustls-platform-verifier")]
