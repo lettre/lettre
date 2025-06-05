@@ -1,3 +1,21 @@
+<a name="v0.11.17"></a>
+### v0.11.17 (2025-06-06)
+
+#### Features
+
+* Add support for `rustls-platform-verifier` ([#1081])
+
+#### Misc
+
+* Change readme example to use `Mailbox::new` instead of string parsing ([#1090])
+* Replace futures-util `Mutex` with std `Mutex` in `AsyncStubTransport` ([#1091])
+* Avoid duplicate `abort_concurrent` implementation ([#1092])
+
+[#1081]: https://github.com/lettre/lettre/pull/1081
+[#1090]: https://github.com/lettre/lettre/pull/1090
+[#1091]: https://github.com/lettre/lettre/pull/1091
+[#1092]: https://github.com/lettre/lettre/pull/1092
+
 <a name="v0.11.16"></a>
 ### v0.11.16 (2025-05-12)
 
