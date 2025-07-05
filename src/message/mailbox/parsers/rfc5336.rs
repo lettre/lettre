@@ -3,7 +3,7 @@
 //!
 //! [RFC5336]: https://datatracker.ietf.org/doc/html/rfc5336
 
-use chumsky::{error::Cheap, prelude::*};
+use nom::{character::complete::satisfy, IResult, Parser};
 
 // 3.3.  Extended Mailbox Address Syntax
 // https://datatracker.ietf.org/doc/html/rfc5336#section-3.3
@@ -12,6 +12,6 @@ use chumsky::{error::Cheap, prelude::*};
 // UTF8-2 =  <See Section 4 of RFC 3629>
 // UTF8-3 =  <See Section 4 of RFC 3629>
 // UTF8-4 =  <See Section 4 of RFC 3629>
-pub(super) fn utf8_non_ascii() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c: &char| c.len_utf8() > 1)
+pub(super) fn utf8_non_ascii(input: &str) -> IResult<&str, char> {
+    satisfy(|c| c.len_utf8() > 1).parse(input)
 }
