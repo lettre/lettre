@@ -120,7 +120,12 @@ pub(super) fn atom(input: &str) -> IResult<&str, String> {
                 acc
             }),
         ),
-        |(_cfws, chars)| chars,
+        |(cfws, mut chars)| {
+            if let Some(cfws) = cfws {
+                chars.insert(0, cfws);
+            }
+            chars
+        },
     )
     .parse(input)
 }
