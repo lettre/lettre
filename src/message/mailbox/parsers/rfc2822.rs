@@ -146,7 +146,7 @@ pub(super) fn dot_atom_text(input: &str) -> IResult<&str, String> {
                         acc
                     }),
                 ),
-                |(dot, chars)| format!("{}{}", dot, chars),
+                |(dot, chars)| format!("{dot}{chars}"),
             )),
         ),
         |(first, rest)| {
@@ -196,7 +196,7 @@ fn quoted_string(input: &str) -> IResult<&str, String> {
                     acc
                 },
             ),
-            preceded(many0(satisfy(|c| c.is_whitespace())), rfc2234::dquote),
+            preceded(many0(satisfy(char::is_whitespace)), rfc2234::dquote),
         ),
         |s| s,
     )
@@ -240,13 +240,14 @@ fn display_name(input: &str) -> IResult<&str, String> {
 }
 
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
+#[allow(clippy::type_complexity)]
 pub(crate) fn mailbox_list(input: &str) -> IResult<&str, Vec<(Option<String>, (String, String))>> {
     terminated(
         separated_list0(
             delimited(
-                many0(satisfy(|c| c.is_whitespace())),
+                many0(satisfy(char::is_whitespace)),
                 char(','),
-                many0(satisfy(|c| c.is_whitespace())),
+                many0(satisfy(char::is_whitespace)),
             ),
             alt((name_addr, map(addr_spec, |addr| (None, addr)))),
         ),
@@ -302,9 +303,7 @@ pub(super) fn obs_local_part(input: &str) -> IResult<&str, String> {
     map(
         pair(
             word,
-            many0(map(pair(char('.'), word), |(dot, w)| {
-                format!("{}{}", dot, w)
-            })),
+            many0(map(pair(char('.'), word), |(dot, w)| format!("{dot}{w}"))),
         ),
         |(first, rest)| {
             let mut result = first;
@@ -322,9 +321,7 @@ pub(super) fn obs_domain(input: &str) -> IResult<&str, String> {
     map(
         pair(
             atom,
-            many0(map(pair(char('.'), atom), |(dot, a)| {
-                format!("{}{}", dot, a)
-            })),
+            many0(map(pair(char('.'), atom), |(dot, a)| format!("{dot}{a}"))),
         ),
         |(first, rest)| {
             let mut result = first;
