@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 email_address = { version = "0.2.1", default-features = false }
-chumsky = "0.9"
+nom = "8"
 idna = "1"
 
 ## tracing support
@@ -40,7 +40,6 @@ serde = { version = "1.0.110", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 
 # smtp-transport
-nom = { version = "8", optional = true }
 hostname = { version = "0.4", optional = true } # feature
 socket2 = { version = "0.6", optional = true }
 url = { version = "2.4", optional = true }
@@ -107,7 +106,7 @@ mime03 = ["dep:mime"]
 file-transport = ["dep:uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
 file-transport-envelope = ["serde", "dep:serde_json", "file-transport"]
 sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
-smtp-transport = ["dep:base64", "dep:nom", "dep:socket2", "dep:url", "dep:percent-encoding", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
+smtp-transport = ["dep:base64", "dep:socket2", "dep:url", "dep:percent-encoding", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
 pool = ["dep:futures-util"]
 

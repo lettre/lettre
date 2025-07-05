@@ -5,7 +5,6 @@ use std::{
     str::FromStr,
 };
 
-use chumsky::prelude::*;
 use email_encoding::headers::writer::EmailWriter;
 
 use super::parsers;
@@ -114,7 +113,7 @@ impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|_errs| {
+        let (_rest, (name, (user, domain))) = parsers::mailbox(src).map_err(|_errs| {
             // TODO: improve error management
             AddressError::InvalidInput
         })?;
@@ -345,7 +344,7 @@ impl FromStr for Mailboxes {
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
 
-        let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|_errs| {
+        let (_rest, parsed_mailboxes) = parsers::mailbox_list(src).map_err(|_errs| {
             // TODO: improve error management
             AddressError::InvalidInput
         })?;
