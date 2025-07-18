@@ -16,7 +16,10 @@ enum Disposition {
     /// File name
     Attached(String),
     /// Content id
-    Inline(String),
+    Inline {
+        content_id: String,
+        name: Option<String>,
+    },
 }
 
 impl Attachment {
@@ -81,7 +84,50 @@ impl Attachment {
     /// ```
     pub fn new_inline(content_id: String) -> Self {
         Attachment {
-            disposition: Disposition::Inline(content_id),
+            disposition: Disposition::Inline {
+                content_id,
+                name: None,
+            },
+        }
+    }
+
+    /// Create a new inline attachment giving it a name
+    ///
+    /// This attachment should be displayed inline into the message
+    /// body:
+    ///
+    /// ```html
+    /// <img src="cid:123">
+    /// ```
+    ///
+    ///
+    /// ```rust
+    /// # use std::error::Error;
+    /// use std::fs;
+    ///
+    /// use lettre::message::{header::ContentType, Attachment};
+    ///
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let content_id = String::from("123");
+    /// let file_name = String::from("image.jpg");
+    /// # if false {
+    /// let filebody = fs::read(&file_name)?;
+    /// # }
+    /// # let filebody = fs::read("docs/lettre.png")?;
+    /// let content_type = ContentType::parse("image/jpeg").unwrap();
+    /// let attachment =
+    ///     Attachment::new_inline_with_name(content_id, file_name).body(filebody, content_type);
+    ///
+    /// // The image `attachment` will display inline into the email.
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn new_inline_with_name(content_id: String, name: String) -> Self {
+        Attachment {
+            disposition: Disposition::Inline {
+                content_id,
+                name: Some(name),
+            },
         }
     }
 
@@ -95,9 +141,18 @@ impl Attachment {
             Disposition::Attached(filename) => {
                 builder.header(header::ContentDisposition::attachment(&filename))
             }
-            Disposition::Inline(content_id) => builder
+            Disposition::Inline {
+                content_id,
+                name: None,
+            } => builder
                 .header(header::ContentId::from(format!("<{content_id}>")))
                 .header(header::ContentDisposition::inline()),
+            Disposition::Inline {
+                content_id,
+                name: Some(name),
+            } => builder
+                .header(header::ContentId::from(format!("<{content_id}>")))
+                .header(header::ContentDisposition::inline_with_name(&name)),
         };
         builder = builder.header(content_type);
         builder.body(content)
@@ -136,6 +191,26 @@ mod tests {
             concat!(
                 "Content-ID: <id>\r\n",
                 "Content-Disposition: inline\r\n",
+                "Content-Type: text/plain\r\n",
+                "Content-Transfer-Encoding: 7bit\r\n\r\n",
+                "Hello world!\r\n"
+            )
+        );
+    }
+
+    #[test]
+    fn attachment_inline_with_name() {
+        let id = String::from("id");
+        let name = String::from("test");
+        let part = super::Attachment::new_inline_with_name(id, name).body(
+            String::from("Hello world!"),
+            ContentType::parse("text/plain").unwrap(),
+        );
+        assert_eq!(
+            &String::from_utf8_lossy(&part.formatted()),
+            concat!(
+                "Content-ID: <id>\r\n",
+                "Content-Disposition: inline; filename=\"test\"\r\n",
                 "Content-Type: text/plain\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n\r\n",
                 "Hello world!\r\n"
