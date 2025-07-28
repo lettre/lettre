@@ -14,8 +14,6 @@ use futures_io::{
 };
 #[cfg(feature = "async-std1-rustls")]
 use futures_rustls::client::TlsStream as AsyncStd1RustlsStream;
-#[cfg(any(feature = "tokio1-rustls", feature = "async-std1-rustls"))]
-use rustls::pki_types::ServerName;
 #[cfg(feature = "tokio1-boring-tls")]
 use tokio1_boring::SslStream as Tokio1SslStream;
 #[cfg(feature = "tokio1")]
@@ -319,11 +317,9 @@ impl AsyncNetworkStream {
         tcp_stream: Box<dyn AsyncTokioStream>,
         tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = tls_parameters.domain().to_owned();
-
-        match tls_parameters.connector {
+        match tls_parameters.inner {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls { connector } => {
+            InnerTlsParameters::NativeTls(inner) => {
                 #[cfg(not(feature = "tokio1-native-tls"))]
                 panic!("built without the tokio1-native-tls feature");
 
@@ -331,16 +327,16 @@ impl AsyncNetworkStream {
                 return {
                     use tokio1_native_tls_crate::TlsConnector;
 
-                    let connector = TlsConnector::from(connector);
+                    let connector = TlsConnector::from(inner.connector);
                     let stream = connector
-                        .connect(&domain, tcp_stream)
+                        .connect(&inner.server_name, tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1NativeTls(stream))
                 };
             }
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::Rustls { config } => {
+            InnerTlsParameters::Rustls(inner) => {
                 #[cfg(not(feature = "tokio1-rustls"))]
                 panic!("built without the tokio1-rustls feature");
 
@@ -348,31 +344,25 @@ impl AsyncNetworkStream {
                 return {
                     use tokio1_rustls::TlsConnector;
 
-                    let domain = ServerName::try_from(domain.as_str())
-                        .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-
-                    let connector = TlsConnector::from(config);
+                    let connector = TlsConnector::from(inner.connector);
                     let stream = connector
-                        .connect(domain.to_owned(), tcp_stream)
+                        .connect(inner.server_name.inner(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1Rustls(stream))
                 };
             }
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls {
-                connector,
-                accept_invalid_hostnames,
-            } => {
+            InnerTlsParameters::BoringTls(inner) => {
                 #[cfg(not(feature = "tokio1-boring-tls"))]
                 panic!("built without the tokio1-boring-tls feature");
 
                 #[cfg(feature = "tokio1-boring-tls")]
                 return {
-                    let mut config = connector.configure().map_err(error::connection)?;
-                    config.set_verify_hostname(accept_invalid_hostnames);
+                    let mut config = inner.connector.configure().map_err(error::connection)?;
+                    config.set_verify_hostname(inner.extra_info.accept_invalid_hostnames);
 
-                    let stream = tokio1_boring::connect(config, &domain, tcp_stream)
+                    let stream = tokio1_boring::connect(config, &inner.server_name, tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::Tokio1BoringTls(stream))
@@ -385,17 +375,15 @@ impl AsyncNetworkStream {
     #[cfg(feature = "async-std1-rustls")]
     async fn upgrade_asyncstd1_tls(
         tcp_stream: AsyncStd1TcpStream,
-        mut tls_parameters: TlsParameters,
+        tls_parameters: TlsParameters,
     ) -> Result<InnerAsyncNetworkStream, Error> {
-        let domain = mem::take(&mut tls_parameters.domain);
-
-        match tls_parameters.connector {
+        match tls_parameters.inner {
             #[cfg(feature = "native-tls")]
-            InnerTlsParameters::NativeTls { connector } => {
+            InnerTlsParameters::NativeTls(_) => {
                 panic!("native-tls isn't supported with async-std yet. See https://github.com/lettre/lettre/pull/531#issuecomment-757893531");
             }
             #[cfg(feature = "rustls")]
-            InnerTlsParameters::Rustls { config } => {
+            InnerTlsParameters::Rustls(inner) => {
                 #[cfg(not(feature = "async-std1-rustls"))]
                 panic!("built without the async-std1-rustls feature");
 
@@ -403,19 +391,16 @@ impl AsyncNetworkStream {
                 return {
                     use futures_rustls::TlsConnector;
 
-                    let domain = ServerName::try_from(domain.as_str())
-                        .map_err(|_| error::connection("domain isn't a valid DNS name"))?;
-
-                    let connector = TlsConnector::from(config);
+                    let connector = TlsConnector::from(inner.connector);
                     let stream = connector
-                        .connect(domain.to_owned(), tcp_stream)
+                        .connect(inner.server_name.inner(), tcp_stream)
                         .await
                         .map_err(error::connection)?;
                     Ok(InnerAsyncNetworkStream::AsyncStd1Rustls(stream))
                 };
             }
             #[cfg(feature = "boring-tls")]
-            InnerTlsParameters::BoringTls { .. } => {
+            InnerTlsParameters::BoringTls(_inner) => {
                 panic!("boring-tls isn't supported with async-std yet.");
             }
         }
