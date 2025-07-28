@@ -1,3 +1,17 @@
+<a name="v0.11.18"></a>
+### v0.11.18 (2025-07-28)
+
+#### Features
+
+* Allow inline attachments to be named ([#1101])
+
+#### Misc
+
+* Upgrade `socket2` to v0.6 ([#1098])
+
+[#1098]: https://github.com/lettre/lettre/pull/1098
+[#1101]: https://github.com/lettre/lettre/pull/1101
+
 <a name="v0.11.17"></a>
 ### v0.11.17 (2025-06-06)
 
