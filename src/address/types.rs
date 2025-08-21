@@ -83,7 +83,10 @@ impl Address {
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let address = Address::new_unchecked("a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me", "email.com")?;
+    /// let address = Address::new_unchecked(
+    ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me",
+    ///     "email.com",
+    /// )?;
     /// let expected = "user@email.com".parse::<Address>()?;
     /// assert_eq!(expected, address);
     /// # Ok(())
@@ -332,7 +335,8 @@ mod tests {
 
     #[test]
     fn test_unchecked() {
-        let user = "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me";
+        let user =
+            "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me";
         let domain = "maybe_valid.com";
         let address = Address::new_unchecked(user, domain);
         assert_eq!(address.user(), user);
