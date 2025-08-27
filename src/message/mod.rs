@@ -217,7 +217,7 @@ mod mimebody;
 
 use crate::{
     address::Envelope,
-    message::header::{ContentTransferEncoding, Header, Headers, MailboxesHeader},
+    message::header::{ContentTransferEncoding, Header, HeaderValue, Headers, MailboxesHeader},
     Error as EmailError,
 };
 
@@ -366,6 +366,12 @@ impl MessageBuilder {
     /// Set custom header to message
     pub fn header<H: Header>(mut self, header: H) -> Self {
         self.headers.set(header);
+        self
+    }
+
+    /// Set raw custom header to message
+    pub fn raw_header(mut self, raw_header: HeaderValue) -> Self {
+        self.headers.insert_raw(raw_header);
         self
     }
 
@@ -711,7 +717,10 @@ mod test {
             .header(header::To(
                 vec!["Pony O.P. <pony@domain.tld>".parse().unwrap()].into(),
             ))
-            .header(header::Subject::from(String::from("яңа ел белән!")))
+            .raw_header(header::HeaderValue::new(
+                header::HeaderName::new_from_ascii_str("Subject"),
+                "яңа ел белән!".to_owned(),
+            ))
             .body(String::from("Happy new year!"))
             .unwrap();
 
