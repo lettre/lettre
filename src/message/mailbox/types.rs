@@ -115,8 +115,8 @@ impl FromStr for Mailbox {
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
         let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|_errs| {
-            // TODO: improve error management
-            AddressError::InvalidInput
+            // TODO: avoid allocation?
+            AddressError::InvalidMailboxAddress(src.to_owned())
         })?;
 
         let mailbox = Mailbox::new(name, Address::new(user, domain)?);
@@ -347,7 +347,7 @@ impl FromStr for Mailboxes {
 
         let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|_errs| {
             // TODO: improve error management
-            AddressError::InvalidInput
+            AddressError::InvalidMailboxAddress(src.to_owned())
         })?;
 
         for (name, (user, domain)) in parsed_mailboxes {
