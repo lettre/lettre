@@ -19,6 +19,9 @@ pub struct Credentials {
 
 impl Credentials {
     /// Create a `Credentials` struct from username and password
+    ///
+    /// When using [`Mechanism::Xoauth2`], `password` is the raw
+    /// bearer access token.
     pub fn new(username: String, password: String) -> Credentials {
         Credentials {
             authentication_identity: username,
