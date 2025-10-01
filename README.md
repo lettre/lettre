@@ -67,15 +67,15 @@ lettre = "0.11"
 ```
 
 ```rust,no_run
-use lettre::message::header::ContentType;
+use lettre::message::{Mailbox, header::ContentType};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 
 fn main() {
     let email = Message::builder()
-        .from(Mailbox::new("NoBody".to_owned(), "nobody@domain.tld".parse().unwrap()))
-        .reply_to(Mailbox::new("Yuin".to_owned(), "yuin@domain.tld".parse().unwrap()))
-        .to(Mailbox::new("Hei".to_owned(), "hei@domain.tld".parse().unwrap()))
+        .from(Mailbox::new(Some("NoBody".to_owned()), "nobody@domain.tld".parse().unwrap()))
+        .reply_to(Mailbox::new(Some("Yuin".to_owned()), "yuin@domain.tld".parse().unwrap()))
+        .to(Mailbox::new(Some("Hei".to_owned()), "hei@domain.tld".parse().unwrap()))
         .subject("Happy new year")
         .header(ContentType::TEXT_PLAIN)
         .body(String::from("Be happy!"))
