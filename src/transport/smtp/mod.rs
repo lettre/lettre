@@ -221,6 +221,7 @@ mod pool;
 pub mod response;
 mod transport;
 pub(super) mod util;
+mod wasi_transport;
 
 // Registered port numbers:
 // https://www.iana.
