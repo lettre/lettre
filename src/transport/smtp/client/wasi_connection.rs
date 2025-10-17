@@ -1,12 +1,14 @@
+//#![cfg(target_arch = "wasm32")]
+
 use wasip3::wit_bindgen::StreamResult;
 
-use crate::transport::smtp::{
+use crate::{address::Envelope, transport::smtp::{
     client::{ClientCodec, wasi_net::WasiNetworkStream},
     commands::{Ehlo, Quit},
     error::{self, Error},
     extension::{ClientId, ServerInfo},
     response::{Response, parse_response},
-};
+}};
 use std::{fmt::Display, time::Duration};
 
 macro_rules! try_smtp (
@@ -21,12 +23,12 @@ macro_rules! try_smtp (
     })
 );
 // TODO : use SocketAddr as optional connection method in cases where we don't need hostname resolution
-pub enum SocketAddr {
-    /// An IPv4 socket address.
-    V4(wasip3::sockets::types::Ipv4SocketAddress),
-    /// An IPv6 socket address.
-    V6(wasip3::sockets::types::Ipv6SocketAddress),
-}
+// pub enum SocketAddr {
+//     /// An IPv4 socket address.
+//     V4(wasip3::sockets::types::Ipv4SocketAddress),
+//     /// An IPv6 socket address.
+//     V6(wasip3::sockets::types::Ipv6SocketAddress),
+// }
 
 pub struct WasiSmtpConnection {
     stream: WasiNetworkStream,
@@ -69,6 +71,10 @@ impl WasiSmtpConnection {
         Ok(conn)
     }
 
+    pub async fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
+        todo!();
+    }
+
     /// sends an SMTP command
     pub async fn command<C: Display>(&mut self, command: C) -> Result<Response, Error> {
         // write to socket
@@ -97,7 +103,7 @@ impl WasiSmtpConnection {
 
         Ok(())
     }
-    // there's no read_line function for the client_rx, instead we need to buffer and manually parse 
+    // there's no read_line function for the client_rx, instead we need to buffer and manually parse
     // response in chunks and seggregate them based on \r\n delimiter to structure a line
     // we then parse the response as usual.
     pub async fn read_response(&mut self) -> Result<Response, Error> {
@@ -202,11 +208,11 @@ impl WasiSmtpConnection {
         // drop(&mut self.stream.reader);
         // drop(&mut self.stream.writer);
         if let Some(finish_future) = self.stream.finish_future.take() {
-        finish_future.await.ok();
-    }
+            finish_future.await.ok();
+        }
     }
 
-    pub async fn message(&mut self, message: &[u8]) -> Result<Response, Error>{
+    pub async fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
         let mut out_buf: Vec<u8> = vec![];
         let mut codec = ClientCodec::new();
         codec.encode(message, &mut out_buf);

@@ -221,7 +221,8 @@ mod pool;
 pub mod response;
 mod transport;
 pub(super) mod util;
-mod wasi_transport;
+//#[cfg(target_arch = "wasm32")]
+pub mod wasi_transport;
 
 // Registered port numbers:
 // https://www.iana.

@@ -4,6 +4,8 @@
 //! WASI-compatible async network stream for lettre (wasip3)
 //! Concrete types for the wit-bindgen generated stream halves.
 
+//#![cfg(target_arch = "wasm32")]
+
 use std::time::Duration;
 
 use crate::transport::smtp::{error, Error};
@@ -91,13 +93,8 @@ impl WasiNetworkStream {
                 addr: IpSocketAddress,
                 timeout: Duration,
             ) -> Result<(), ErrorCode> {
-                // BUG here
-                // 
-                // 
-                //
-                // buggy import : need to create conditional flag feature setting for wasm32 target : 
-                // preferable to keep tokio:{time, sync, rt, io-util}
-                match tokio::time::timeout(timeout, socket.connect(addr)).await {
+                // Compiling to wasm32 target should resolve this error, but compiler will complain for now.
+                match tokio1_crate::time::timeout(timeout, socket.connect(addr)).await {
                     Ok(result) => result,
                     Err(_) => Err(ErrorCode::Timeout),
                 }
@@ -129,6 +126,10 @@ impl WasiNetworkStream {
         // Get the incoming reader and the finish future
         let (incoming_reader, finish_future) = socket.receive();
 
-        Ok(Self::from_halves(data_tx, incoming_reader, Some(finish_future)))
+        Ok(Self::from_halves(
+            data_tx,
+            incoming_reader,
+            Some(finish_future),
+        ))
     }
 }
