@@ -38,7 +38,7 @@ impl Default for ClientId {
         // client's address is dynamically assigned and the client does not have
         // an obvious name), an address literal SHOULD be substituted for the
         // domain name.
-        #[cfg(feature = "hostname")]
+        #[cfg(all(feature = "hostname"))]
         {
             hostname::get()
                 .ok()
