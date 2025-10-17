@@ -4,8 +4,7 @@
 //! WASI-compatible async network stream for lettre (wasip3)
 //! Concrete types for the wit-bindgen generated stream halves.
 
-#![cfg(target_arch = "wasm32")]
-
+#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
 use std::time::Duration;
 
 use crate::transport::smtp::{error, Error};
@@ -44,7 +43,7 @@ impl WasiNetworkStream {
     pub async fn connect_wasi(
         host: &str,
         port: u16,
-        timeout: Option<Duration>,
+        _timeout: Option<Duration>,
     ) -> Result<Self, Error> {
         let addresses = wasip3::sockets::ip_name_lookup::resolve_addresses(host.to_string())
             .await
@@ -86,38 +85,39 @@ impl WasiNetworkStream {
         eprintln!("wasip3: created tcp socket for port {}", port);
 
         // Connect with timeout handling
-        let connect_result = if let Some(timeout_duration) = timeout {
-            // Wrap the connect operation with a timeout
-            async fn connect_with_timeout(
-                socket: &wasip3::sockets::types::TcpSocket,
-                addr: IpSocketAddress,
-                timeout: Duration,
-            ) -> Result<(), ErrorCode> {
-                // Compiling to wasm32 target should resolve this error, but compiler will complain for now.
-                match tokio1_crate::time::timeout(timeout, socket.connect(addr)).await {
-                    Ok(result) => result,
-                    Err(_) => Err(ErrorCode::Timeout),
-                }
-            }
+        // let connect_result = if let Some(timeout_duration) = timeout {
+        //     // Wrap the connect operation with a timeout
+        //     async fn connect_with_timeout(
+        //         socket: &wasip3::sockets::types::TcpSocket,
+        //         addr: IpSocketAddress,
+        //         timeout: Duration,
+        //     ) -> Result<(), ErrorCode> {
+        //         // Compiling to wasm32 target should resolve this error, but compiler will complain for now.
+        //         match tokio1_crate::time::timeout(timeout, socket.connect(addr)).await {
+        //             Ok(result) => result,
+        //             Err(_) => Err(ErrorCode::Timeout),
+        //         }
+        //     }
 
-            connect_with_timeout(&socket, addr, timeout_duration).await
-        } else {
-            socket.connect(addr).await
-        };
+        //     connect_with_timeout(&socket, addr, timeout_duration).await
+        // } else {
+        //     socket.connect(addr).await
+        // };
+        socket.connect(addr).await.unwrap();
 
         // Handle connection errors, including timeout
-        connect_result.map_err(|e| {
-            error::connection(std::io::Error::new(
-                match e {
-                    ErrorCode::Timeout => std::io::ErrorKind::TimedOut,
-                    ErrorCode::ConnectionRefused => std::io::ErrorKind::ConnectionRefused,
-                    ErrorCode::ConnectionReset => std::io::ErrorKind::ConnectionReset,
-                    ErrorCode::ConnectionAborted => std::io::ErrorKind::ConnectionAborted,
-                    _ => std::io::ErrorKind::Other,
-                },
-                format!("Connection failed: {:?}", e),
-            ))
-        })?;
+        // connect_result.map_err(|e| {
+        //     error::connection(std::io::Error::new(
+        //         match e {
+        //             ErrorCode::Timeout => std::io::ErrorKind::TimedOut,
+        //             ErrorCode::ConnectionRefused => std::io::ErrorKind::ConnectionRefused,
+        //             ErrorCode::ConnectionReset => std::io::ErrorKind::ConnectionReset,
+        //             ErrorCode::ConnectionAborted => std::io::ErrorKind::ConnectionAborted,
+        //             _ => std::io::ErrorKind::Other,
+        //         },
+        //         format!("Connection failed: {:?}", e),
+        //     ))
+        // })?;
 
         // Create the guest-side writer (data_tx) and the host-side receiver (data_rx)
         let (data_tx, data_rx) = wit_stream::new();

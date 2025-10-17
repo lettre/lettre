@@ -7,9 +7,11 @@ use super::client::{Tls, TlsParameters};
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use super::AsyncSmtpTransportBuilder;
 use super::{
-    authentication::Credentials, error, extension::ClientId, Error, SmtpTransportBuilder,
+    authentication::Credentials, error, extension::ClientId, Error,
     SMTP_PORT, SUBMISSIONS_PORT, SUBMISSION_PORT,
 };
+#[cfg(not(target_arch = "wasm32"))]
+use super::SmtpTransportBuilder;
 
 pub(crate) trait TransportBuilder {
     fn new<T: Into<String>>(server: T) -> Self;

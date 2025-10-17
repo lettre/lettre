@@ -1,7 +1,7 @@
 //! WASI SMTP Transport for lettre (wasip3)
 //! Provides a high-level API for sending emails over WASI sockets
 
-#![cfg(target_arch = "wasm32")]
+#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
 
 use crate::address::Envelope;
 use crate::transport::smtp::client::wasi_connection::WasiSmtpConnection;

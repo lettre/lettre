@@ -1,5 +1,4 @@
-#![cfg(target_arch = "wasm32")]
-
+#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
 use wasip3::wit_bindgen::StreamResult;
 
 use crate::{
