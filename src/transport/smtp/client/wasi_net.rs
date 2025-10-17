@@ -4,7 +4,7 @@
 //! WASI-compatible async network stream for lettre (wasip3)
 //! Concrete types for the wit-bindgen generated stream halves.
 
-//#![cfg(target_arch = "wasm32")]
+#![cfg(target_arch = "wasm32")]
 
 use std::time::Duration;
 

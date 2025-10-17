@@ -221,7 +221,7 @@ mod pool;
 pub mod response;
 mod transport;
 pub(super) mod util;
-//#[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 pub mod wasi_transport;
 
 // Registered port numbers:

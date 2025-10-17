@@ -281,49 +281,6 @@ impl SpawnHandle for futures_util::future::AbortHandle {
     }
 }
 
-/// TODO : Write the docs
-///
-///
-///
-///
-///
-///
-///
-///
-///
-///
-/// 
-/// 
-#[allow(missing_copy_implementations)]
-#[non_exhaustive]
-#[cfg(target_arch = "wasm32")]
-#[derive(Debug)]
-pub struct WasiExecutor;
-
-#[async_trait]
-#[cfg(target_arch = "wasm32")]
-impl Executor for WasiExecutor {
-
-    //  Need to figure out a way to disable the required function impls
-
-    #[cfg(feature = "smtp-transport")]
-    async fn connect(
-        hostname: &str,
-        port: u16,
-        timeout: Option<Duration>,
-        hello_name: &ClientId,
-        tls: &Tls,
-    ) -> Result<WasiSmtpConnection, Error> {
-        #[allow(unused_mut)]
-        let mut conn =
-            WasiSmtpConnection::connect_wasi(hostname, port, timeout, hello_name).await?;
-
-        Ok(conn)
-    }
-
-}
-
-
 mod private {
     pub trait Sealed {}
 
@@ -338,7 +295,4 @@ mod private {
 
     #[cfg(all(feature = "smtp-transport", feature = "async-std1"))]
     impl Sealed for futures_util::future::AbortHandle {}
-
-    #[cfg(target_arch = "wasm32")]
-    impl Sealed for super::WasiExecutor {}
 }

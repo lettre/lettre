@@ -49,9 +49,9 @@ mod async_net;
 mod connection;
 mod net;
 mod tls;
-//#[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 pub mod wasi_connection;
-//#[cfg(target_arch = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 pub mod wasi_net;
 
 /// The codec used for transparency

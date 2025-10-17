@@ -1,14 +1,17 @@
-//#![cfg(target_arch = "wasm32")]
+#![cfg(target_arch = "wasm32")]
 
 use wasip3::wit_bindgen::StreamResult;
 
-use crate::{address::Envelope, transport::smtp::{
-    client::{ClientCodec, wasi_net::WasiNetworkStream},
-    commands::{Ehlo, Quit},
-    error::{self, Error},
-    extension::{ClientId, ServerInfo},
-    response::{Response, parse_response},
-}};
+use crate::{
+    address::Envelope,
+    transport::smtp::{
+        client::{wasi_net::WasiNetworkStream, ClientCodec},
+        commands::{Data, Ehlo, Mail, Quit, Rcpt},
+        error::{self, Error},
+        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        response::{parse_response, Response},
+    },
+};
 use std::{fmt::Display, time::Duration};
 
 macro_rules! try_smtp (
@@ -72,7 +75,45 @@ impl WasiSmtpConnection {
     }
 
     pub async fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
-        todo!();
+        let mut mail_options: Vec<MailParameter> = vec![];
+
+        if envelope.has_non_ascii_addresses() {
+            if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
+                return Err(error::client(
+                    "Envelope contains non-ascii chars but server does not support SMTPUTF8",
+                ));
+            }
+            mail_options.push(MailParameter::SmtpUtfEight);
+        }
+
+        if !email.is_ascii() {
+            if !self.server_info().supports_feature(Extension::EightBitMime) {
+                return Err(error::client(
+                    "Message contains non-ascii chars but server does not support 8BITMIME",
+                ));
+            }
+            mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
+        }
+
+        try_smtp!(
+            self.command(Mail::new(envelope.from().cloned(), mail_options))
+                .await,
+            self
+        );
+
+        for to_address in envelope.to() {
+            try_smtp!(
+                self.command(Rcpt::new(to_address.clone(), vec![])).await,
+                self
+            );
+        }
+
+        // Data
+        try_smtp!(self.command(Data).await, self);
+
+        // Message content
+        let result = try_smtp!(self.message(email).await, self);
+        Ok(result)
     }
 
     /// sends an SMTP command
