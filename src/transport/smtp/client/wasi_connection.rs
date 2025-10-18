@@ -75,7 +75,7 @@ impl WasiSmtpConnection {
 
     pub async fn send(&mut self, envelope: &Envelope, email: &[u8]) -> Result<Response, Error> {
         let mut mail_options: Vec<MailParameter> = vec![];
-
+        eprintln!("wasip3: Sending mail");
         if envelope.has_non_ascii_addresses() {
             if !self.server_info().supports_feature(Extension::SmtpUtfEight) {
                 return Err(error::client(
@@ -99,6 +99,7 @@ impl WasiSmtpConnection {
                 .await,
             self
         );
+        eprintln!("wasip3: logger 2");
 
         for to_address in envelope.to() {
             try_smtp!(
@@ -112,6 +113,7 @@ impl WasiSmtpConnection {
 
         // Message content
         let result = try_smtp!(self.message(email).await, self);
+        eprintln!("wasip3: Message content");
         Ok(result)
     }
 
@@ -127,6 +129,7 @@ impl WasiSmtpConnection {
     /// Wasi `write_all` returns (Optional) remaining bytes that weren't written
     async fn write(&mut self, string: &[u8]) -> Result<(), Error> {
         let remaining = self.stream.writer.write_all(string.to_vec()).await;
+        eprintln!("wasip3: writing bytes : {:?}", string.to_vec());
 
         if !remaining.is_empty() {
             return Err(error::network(std::io::Error::new(
@@ -235,6 +238,7 @@ impl WasiSmtpConnection {
 
     async fn ehlo(&mut self, hello_name: &ClientId) -> Result<(), Error> {
         let ehlo_response = try_smtp!(self.command(Ehlo::new(hello_name.clone())).await, self);
+        eprintln!("wasip3: ehlo Successful");
         self.server_info = try_smtp!(ServerInfo::from_response(&ehlo_response), self);
         Ok(())
     }
