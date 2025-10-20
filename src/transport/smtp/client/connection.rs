@@ -1,10 +1,4 @@
 #![cfg(not(target_arch = "wasm32"))]
-use std::{
-    fmt::Display,
-    io::{self, BufRead, BufReader, Write},
-    net::{IpAddr, ToSocketAddrs},
-    time::Duration,
-};
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
 use super::{ClientCodec, NetworkStream, TlsParameters};
@@ -18,6 +12,12 @@ use crate::{
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::{parse_response, Response},
     },
+};
+use std::{
+    fmt::Display,
+    io::{self, BufRead, BufReader, Write},
+    net::{IpAddr, ToSocketAddrs},
+    time::Duration,
 };
 
 macro_rules! try_smtp (

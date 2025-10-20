@@ -2,16 +2,19 @@ use std::borrow::Cow;
 
 use url::Url;
 
+use crate::transport::smtp::wasi_transport::WasiSmtpTransportBuilder;
+
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use super::client::{Tls, TlsParameters};
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use super::AsyncSmtpTransportBuilder;
-use super::{
-    authentication::Credentials, error, extension::ClientId, Error,
-    SMTP_PORT, SUBMISSIONS_PORT, SUBMISSION_PORT,
-};
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
 #[cfg(not(target_arch = "wasm32"))]
 use super::SmtpTransportBuilder;
+use super::{
+    authentication::Credentials, error, extension::ClientId, Error, SMTP_PORT, SUBMISSIONS_PORT,
+    SUBMISSION_PORT,
+};
 
 pub(crate) trait TransportBuilder {
     fn new<T: Into<String>>(server: T) -> Self;
@@ -52,6 +55,30 @@ impl TransportBuilder for AsyncSmtpTransportBuilder {
     }
 
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+    fn tls(self, tls: super::Tls) -> Self {
+        self.tls(tls)
+    }
+
+    fn port(self, port: u16) -> Self {
+        self.port(port)
+    }
+
+    fn credentials(self, credentials: Credentials) -> Self {
+        self.credentials(credentials)
+    }
+
+    fn hello_name(self, name: ClientId) -> Self {
+        self.hello_name(name)
+    }
+}
+
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+impl TransportBuilder for WasiSmtpTransportBuilder {
+    fn new<T: Into<String>>(server: T) -> Self {
+        Self::new(server)
+    }
+    // use wasi-tls for easier feature flag setting
+    //#[cfg(any(feature = "wasi-tls"))]
     fn tls(self, tls: super::Tls) -> Self {
         self.tls(tls)
     }

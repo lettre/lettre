@@ -54,9 +54,9 @@ mod connection;
 mod net;
 #[cfg(not(target_arch = "wasm32"))]
 mod tls;
-#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
 pub mod wasi_connection;
-#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
 pub mod wasi_net;
 
 /// The codec used for transparency

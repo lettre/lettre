@@ -187,23 +187,21 @@
 //! # }
 //! ```
 
-use std::time::Duration;
 #[cfg(not(target_arch = "wasm32"))]
 use client::Tls;
+use std::time::Duration;
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
+pub use self::error::Error;
 #[cfg(feature = "pool")]
 pub use self::pool::PoolConfig;
-pub use self::
-    error::Error
-;
 #[cfg(not(target_arch = "wasm32"))]
 pub use self::transport::{SmtpTransport, SmtpTransportBuilder};
 #[cfg(not(target_arch = "wasm32"))]
-use crate::transport::smtp::client::TlsParameters;
-#[cfg(not(target_arch = "wasm32"))]
 use crate::transport::smtp::client::SmtpConnection;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{
     authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
     extension::ClientId,
@@ -225,7 +223,7 @@ pub mod response;
 #[cfg(not(target_arch = "wasm32"))]
 mod transport;
 pub(super) mod util;
-#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
 pub mod wasi_transport;
 
 // Registered port numbers:
@@ -253,6 +251,7 @@ struct SmtpInfo {
     /// Port to connect to
     port: u16,
     /// TLS security configuration
+    tls: Tls,
     /// Optional enforced authentication mechanism
     authentication: Vec<Mechanism>,
     /// Credentials
@@ -271,6 +270,7 @@ impl Default for SmtpInfo {
             credentials: None,
             authentication: DEFAULT_MECHANISMS.into(),
             timeout: Some(DEFAULT_TIMEOUT),
+            tls: Tls::None,
         }
     }
 }

@@ -1,11 +1,12 @@
-#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
+//#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
 use wasip3::wit_bindgen::StreamResult;
 
 use crate::{
     address::Envelope,
     transport::smtp::{
-        client::{wasi_net::WasiNetworkStream, ClientCodec},
-        commands::{Data, Ehlo, Mail, Quit, Rcpt},
+        authentication::{Credentials, Mechanism},
+        client::{wasi_net::WasiNetworkStream, ClientCodec, TlsParameters},
+        commands::{Auth, Data, Ehlo, Mail, Quit, Rcpt, Starttls},
         error::{self, Error},
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
         response::{parse_response, Response},
@@ -47,9 +48,10 @@ impl WasiSmtpConnection {
         port: u16,
         timeout: Option<Duration>,
         hello_name: &ClientId,
+        tls_parameters: Option<TlsParameters>,
     ) -> Result<WasiSmtpConnection, Error> {
         // case : do we need support for non-hostname workflow ? ip-address passing ?
-        let stream = WasiNetworkStream::connect_wasi(host, port, timeout).await?;
+        let stream = WasiNetworkStream::connect_wasi(host, port, timeout, tls_parameters).await?;
         Self::connect_impl(stream, hello_name).await
     }
 
@@ -263,5 +265,75 @@ impl WasiSmtpConnection {
         self.write(out_buf.as_slice()).await?;
         self.write(b"\r\n.\r\n").await?;
         self.read_response().await
+    }
+
+    pub async fn auth(
+        &mut self,
+        mechanisms: &[Mechanism],
+        credentials: &Credentials,
+    ) -> Result<Response, Error> {
+        let mechanism = self
+            .server_info
+            .get_auth_mechanism(mechanisms)
+            .ok_or_else(|| error::client("No compatible authentication mechanism was found"))?;
+        let mut challenges: u8 = 10;
+        let mut response = self
+            .command(Auth::new(mechanism, credentials.clone(), None)?)
+            .await?;
+
+        while challenges > 0 && response.has_code(334) {
+            challenges -= 1;
+            response = try_smtp!(
+                self.command(Auth::new_from_response(
+                    mechanism,
+                    credentials.clone(),
+                    &response,
+                )?)
+                .await,
+                self
+            );
+        }
+
+        if challenges == 0 {
+            Err(error::response("Unexpected number of challenges"))
+        } else {
+            Ok(response)
+        }
+    }
+    pub fn can_starttls(&self) -> bool {
+        !self.is_encrypted() && self.server_info.supports_feature(Extension::StartTls)
+    }
+
+    // Ideally should be used only if the server supports it
+    pub async fn starttls(
+        &mut self,
+        _tls_parameters: TlsParameters,
+        hello_name: &ClientId,
+    ) -> Result<(), Error> {
+        if self.server_info.supports_feature(Extension::StartTls) {
+            try_smtp!(self.command(Starttls).await, self);
+            //
+            //
+            // Wasi-socket upgrade-tls steps go here
+            // Stub for now : probably shift over to wasip2 model
+            // even though its blocking, it's still feasible.
+
+            // this entire function can be demolished over preference for
+            // implicit tls upgrade in ./wasi_net.rs L:117
+            //
+            //
+            // Send EHLO again
+            try_smtp!(self.ehlo(hello_name).await, self);
+            Ok(())
+        } else {
+            Err(error::client("STARTTLS is not supported on this server"))
+        }
+    }
+
+    // Wasi-streams are by default not encrypted so return false
+    // But need to figure out a way to check eencryption status of stream primitives in wasi-tls
+    // required to checck if implicit tls-upgrade has already been done
+    pub fn is_encrypted(&self) -> bool {
+        return false;
     }
 }

@@ -1,9 +1,10 @@
 //! WASI-compatible async network stream for lettre (wasip3)
 //! Using wit_bindgen::rt::async_support::spawn for background send task
 
-#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
+//#![cfg(all(target_arch = "wasm32", feature = "wasi"))]
 use std::time::Duration;
 
+use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{error, Error};
 use wasip3::sockets::types::IpSocketAddress;
 use wasip3::wit_bindgen::rt::async_support::{spawn, FutureReader, StreamReader, StreamWriter};
@@ -37,6 +38,7 @@ impl WasiNetworkStream {
         host: &str,
         port: u16,
         _timeout: Option<Duration>,
+        tls_parameters: Option<TlsParameters>,
     ) -> Result<Self, Error> {
         let addresses = wasip3::sockets::ip_name_lookup::resolve_addresses(host.to_string())
             .await
@@ -75,7 +77,10 @@ impl WasiNetworkStream {
             wasip3::sockets::types::IpAddressFamily::Ipv4,
         )
         .expect("failed to create TCP socket");
-        eprintln!("wasip3: created tcp socket for addr {:?} port {}", addr, port);
+        eprintln!(
+            "wasip3: created tcp socket for addr {:?} port {}",
+            addr, port
+        );
 
         socket.connect(addr).await.map_err(|e| {
             error::connection(std::io::Error::new(
@@ -105,6 +110,15 @@ impl WasiNetworkStream {
         });
 
         eprintln!("wasip3: send task spawned, returning stream");
+
+        if let Some(tls_parameters) = tls_parameters {
+            // stream.upgrade_tls(tls_parameters).await?;
+            //
+            // Wasi-specific tls upgrade should take place here
+            // Stub for now, p3 support shaky
+            //
+            // TODO!
+        }
 
         Ok(Self::from_halves(
             data_tx,

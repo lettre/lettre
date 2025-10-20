@@ -117,7 +117,10 @@ pub mod file;
 #[cfg_attr(docsrs, doc(cfg(feature = "sendmail-transport")))]
 pub mod sendmail;
 #[cfg(any(feature = "smtp-transport", target_arch = "wasm32"))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "smtp-transport", target_arch = "wasm32"))))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(any(feature = "smtp-transport", target_arch = "wasm32")))
+)]
 pub mod smtp;
 pub mod stub;
 
