@@ -316,6 +316,24 @@ impl AsyncSmtpConnection {
         self.read_response().await
     }
 
+    /// Sends the message content by consuming an iterator that in it's whole represents a message.
+    pub async fn message_iter<I, B>(&mut self, message: I) -> Result<Response, Error>
+    where
+        I: Iterator<Item = B>,
+        B: AsRef<[u8]>,
+    {
+        let mut codec = ClientCodec::new();
+        for message_part in message {
+            let message_part = message_part.as_ref();
+            let mut out_buf = Vec::with_capacity(message_part.len());
+            codec.encode(message_part, &mut out_buf);
+            self.write(out_buf.as_slice()).await?;
+        }
+        self.write(b"\r\n.\r\n").await?;
+
+        self.read_response().await
+    }
+
     /// Sends an SMTP command
     pub async fn command<C: Display>(&mut self, command: C) -> Result<Response, Error> {
         self.write(command.to_string().as_bytes()).await?;
