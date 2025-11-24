@@ -179,7 +179,7 @@
     clippy::clone_on_ref_ptr,
     clippy::verbose_file_reads,
     clippy::unnecessary_self_imports,
-    clippy::string_to_string,
+    clippy::implicit_clone,
     clippy::mem_forget,
     clippy::cast_lossless,
     clippy::inefficient_to_string,
