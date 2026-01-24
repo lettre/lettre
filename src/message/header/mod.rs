@@ -40,6 +40,7 @@ pub trait Header: Clone {
 }
 
 /// A set of email headers
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, Default)]
 pub struct Headers {
     headers: Vec<HeaderValue>,
@@ -170,6 +171,7 @@ impl fmt::Display for InvalidHeaderName {
 impl Error for InvalidHeaderName {}
 
 /// A valid header name
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct HeaderName(Cow<'static, str>);
 
@@ -252,6 +254,7 @@ impl PartialEq<HeaderName> for &str {
 }
 
 /// A safe for use header value
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone, PartialEq)]
 pub struct HeaderValue {
     name: HeaderName,

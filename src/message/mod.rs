@@ -485,6 +485,7 @@ impl MessageBuilder {
 
 /// Email message which can be formatted
 #[cfg_attr(docsrs, doc(cfg(feature = "builder")))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 pub struct Message {
     headers: Headers,
@@ -492,6 +493,7 @@ pub struct Message {
     envelope: Envelope,
 }
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug)]
 enum MessageBody {
     Mime(Part),

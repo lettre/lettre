@@ -8,6 +8,7 @@ use crate::message::{
 };
 
 /// MIME part variants
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub(super) enum Part {
     /// Single part with content
@@ -98,6 +99,7 @@ impl Default for SinglePartBuilder {
 /// # }
 /// ```
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SinglePart {
     headers: Headers,
     body: Vec<u8>,
@@ -295,6 +297,7 @@ impl Default for MultiPartBuilder {
 }
 
 /// Multipart variant with parts
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Debug, Clone)]
 pub struct MultiPart {
     headers: Headers,
