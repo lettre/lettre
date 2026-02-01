@@ -76,6 +76,13 @@ impl Address {
 
     /// Creates a new email address from a user and domain, without validation.
     ///
+    /// # Safety
+    ///
+    /// Use this method only if you are completely sure your input is _known_ and valid, but rejected by the parser.
+    /// Do not use this method if the contents of either `user` or `domain` are unknown and/or obtained from user input.
+    ///
+    /// Prefer using [`Address::new()`] instead if possible.
+    ///
     /// # Examples
     ///
     /// ```
@@ -83,16 +90,16 @@ impl Address {
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
-    /// let address = Address::new_unchecked(
+    /// let address = Address::new_dangerous(
     ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me",
     ///     "email.com",
-    /// )?;
-    /// let expected = "user@email.com".parse::<Address>()?;
-    /// assert_eq!(expected, address);
+    /// );
+    /// assert_eq!(address.user(), "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me");
+    /// assert_eq!(address.domain(), "email.com");
     /// # Ok(())
     /// # }
     /// ```
-    pub fn new_unchecked<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Self {
+    pub fn new_dangerous<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Self {
         // same body as TryFrom impl without checks
         let user = user.as_ref();
         let domain = domain.as_ref();
@@ -338,7 +345,7 @@ mod tests {
         let user =
             "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me";
         let domain = "maybe_valid.com";
-        let address = Address::new_unchecked(user, domain);
+        let address = Address::new_dangerous(user, domain);
         assert_eq!(address.user(), user);
         assert_eq!(address.domain(), domain);
     }
