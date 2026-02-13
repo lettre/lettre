@@ -110,6 +110,17 @@ enum InnerDkimSigningKey {
     Ed25519(ed25519_dalek::SigningKey),
 }
 
+impl From<RsaPrivateKey> for DkimSigningKey {
+    fn from(value: RsaPrivateKey) -> Self {
+        Self(InnerDkimSigningKey::Rsa(value))
+    }
+}
+impl From<ed25519_dalek::SigningKey> for DkimSigningKey {
+    fn from(value: ed25519_dalek::SigningKey) -> Self {
+        Self(InnerDkimSigningKey::Ed25519(value))
+    }
+}
+
 impl DkimSigningKey {
     pub fn new(
         private_key: &str,
