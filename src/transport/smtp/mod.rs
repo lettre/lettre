@@ -187,23 +187,23 @@
 //! # }
 //! ```
 
-use std::time::Duration;
-
+#[cfg(not(target_arch = "wasm32"))]
 use client::Tls;
+use std::time::Duration;
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 pub use self::async_transport::{AsyncSmtpTransport, AsyncSmtpTransportBuilder};
+pub use self::error::Error;
 #[cfg(feature = "pool")]
 pub use self::pool::PoolConfig;
-pub use self::{
-    error::Error,
-    transport::{SmtpTransport, SmtpTransportBuilder},
-};
-#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[cfg(not(target_arch = "wasm32"))]
+pub use self::transport::{SmtpTransport, SmtpTransportBuilder};
+#[cfg(not(target_arch = "wasm32"))]
+use crate::transport::smtp::client::SmtpConnection;
+#[cfg(not(target_arch = "wasm32"))]
 use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{
     authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
-    client::SmtpConnection,
     extension::ClientId,
     response::Response,
 };
@@ -213,14 +213,18 @@ mod async_transport;
 pub mod authentication;
 pub mod client;
 pub mod commands;
+#[cfg(not(target_arch = "wasm32"))]
 mod connection_url;
 mod error;
 pub mod extension;
 #[cfg(feature = "pool")]
 mod pool;
 pub mod response;
+#[cfg(not(target_arch = "wasm32"))]
 mod transport;
 pub(super) mod util;
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+pub mod wasi_transport;
 
 // Registered port numbers:
 // https://www.iana.

@@ -316,7 +316,7 @@ pub use crate::transport::sendmail::SendmailTransport;
     any(feature = "tokio1", feature = "async-std1")
 ))]
 pub use crate::transport::smtp::AsyncSmtpTransport;
-#[cfg(feature = "smtp-transport")]
+#[cfg(not(target_arch = "wasm32"))]
 pub use crate::transport::smtp::SmtpTransport;
 #[doc(inline)]
 pub use crate::transport::Transport;

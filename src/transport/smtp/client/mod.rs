@@ -32,11 +32,13 @@ pub use self::async_connection::AsyncSmtpConnection;
 pub use self::async_net::AsyncNetworkStream;
 #[cfg(feature = "tokio1")]
 pub use self::async_net::AsyncTokioStream;
+#[cfg(not(target_arch = "wasm32"))]
 use self::net::NetworkStream;
-#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub(super) use self::tls::InnerTlsParameters;
-#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+#[cfg(not(target_arch = "wasm32"))]
 pub use self::tls::TlsVersion;
+#[cfg(not(target_arch = "wasm32"))]
 pub use self::{
     connection::SmtpConnection,
     tls::{Certificate, CertificateStore, Identity, Tls, TlsParameters, TlsParametersBuilder},
@@ -46,9 +48,16 @@ pub use self::{
 mod async_connection;
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 mod async_net;
+#[cfg(not(target_arch = "wasm32"))]
 mod connection;
+#[cfg(not(target_arch = "wasm32"))]
 mod net;
+#[cfg(not(target_arch = "wasm32"))]
 mod tls;
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+pub mod wasi_connection;
+//#[cfg(all(target_arch = "wasm32", feature = "wasi"))]
+pub mod wasi_net;
 
 /// The codec used for transparency
 #[derive(Debug)]

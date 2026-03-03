@@ -585,6 +585,8 @@ pub(crate) enum InnerTlsParameters {
         connector: SslConnector,
         accept_invalid_hostnames: bool,
     },
+    #[cfg(feature = "wasi-tls")]
+    WasiTls {},
 }
 
 impl TlsParameters {
