@@ -87,7 +87,7 @@ pub(super) fn atext(input: &str) -> IResult<&str, char> {
 
 // atom            =       [CFWS] 1*atext [CFWS]
 pub(super) fn atom(input: &str) -> IResult<&str, String> {
-    preceded(cfws, map(recognize(many1(atext)), str::to_string)).parse(input)
+    preceded(cfws, map(recognize(many1(atext)), str::to_owned)).parse(input)
 }
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
@@ -99,7 +99,7 @@ pub(super) fn dot_atom(input: &str) -> IResult<&str, String> {
 pub(super) fn dot_atom_text(input: &str) -> IResult<&str, String> {
     map(
         recognize(pair(many1(atext), many0(pair(char('.'), many1(atext))))),
-        str::to_string,
+        str::to_owned,
     )
     .parse(input)
 }
