@@ -1,6 +1,4 @@
 use std::fmt::Debug;
-#[cfg(feature = "smtp-transport")]
-use std::future::Future;
 #[cfg(feature = "file-transport")]
 use std::io::Result as IoResult;
 #[cfg(feature = "file-transport")]
