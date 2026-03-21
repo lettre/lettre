@@ -1,4 +1,6 @@
-use criterion::{Criterion, black_box, criterion_group, criterion_main};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
 use lettre::{Message, SmtpTransport, Transport, message::header::ContentType};
 
 fn bench_simple_send(c: &mut Criterion) {
