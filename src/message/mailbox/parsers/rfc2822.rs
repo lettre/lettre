@@ -6,9 +6,10 @@
 use nom::{
     IResult, Parser,
     branch::alt,
+    bytes::complete::take_while,
     character::complete::{char, one_of, satisfy},
-    combinator::{eof, map, opt},
-    multi::{fold_many0, fold_many1, many0, many1, separated_list0},
+    combinator::{eof, map, opt, recognize},
+    multi::{fold_many0, many0, many1, separated_list0},
     sequence::{delimited, pair, preceded, separated_pair, terminated},
 };
 
@@ -49,7 +50,7 @@ fn quoted_pair(input: &str) -> IResult<&str, char> {
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
 pub(super) fn fws(input: &str) -> IResult<&str, Option<char>> {
-    terminated(opt(rfc2234::wsp), many0(rfc2234::wsp)).parse(input)
+    terminated(opt(rfc2234::wsp), take_while(|c| c == ' ' || c == '\t')).parse(input)
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
@@ -86,14 +87,7 @@ pub(super) fn atext(input: &str) -> IResult<&str, char> {
 
 // atom            =       [CFWS] 1*atext [CFWS]
 pub(super) fn atom(input: &str) -> IResult<&str, String> {
-    preceded(
-        cfws,
-        fold_many1(atext, String::new, |mut acc, c| {
-            acc.push(c);
-            acc
-        }),
-    )
-    .parse(input)
+    preceded(cfws, map(recognize(many1(atext)), str::to_string)).parse(input)
 }
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
@@ -104,26 +98,8 @@ pub(super) fn dot_atom(input: &str) -> IResult<&str, String> {
 // dot-atom-text   =       1*atext *("." 1*atext)
 pub(super) fn dot_atom_text(input: &str) -> IResult<&str, String> {
     map(
-        pair(
-            fold_many1(atext, String::new, |mut acc, c| {
-                acc.push(c);
-                acc
-            }),
-            many0(pair(
-                char('.'),
-                fold_many1(atext, String::new, |mut acc, c| {
-                    acc.push(c);
-                    acc
-                }),
-            )),
-        ),
-        |(mut result, rest)| {
-            for (_, word) in rest {
-                result.push('.');
-                result.push_str(&word);
-            }
-            result
-        },
+        recognize(pair(many1(atext), many0(pair(char('.'), many1(atext))))),
+        str::to_string,
     )
     .parse(input)
 }
@@ -155,15 +131,11 @@ pub(super) fn qcontent(input: &str) -> IResult<&str, char> {
 fn quoted_string(input: &str) -> IResult<&str, String> {
     delimited(
         rfc2234::dquote,
-        fold_many0(
-            map(pair(fws, qcontent), |(_fws, c)| c),
-            String::new,
-            |mut acc, c| {
-                acc.push(c);
-                acc
-            },
-        ),
-        preceded(many0(satisfy(char::is_whitespace)), rfc2234::dquote),
+        fold_many0(preceded(fws, qcontent), String::new, |mut acc, c| {
+            acc.push(c);
+            acc
+        }),
+        preceded(fws, rfc2234::dquote),
     )
     .parse(input)
 }
@@ -187,9 +159,9 @@ fn phrase(input: &str) -> IResult<&str, String> {
 // mailbox         =       name-addr / addr-spec
 pub(crate) fn mailbox(input: &str) -> IResult<&str, (Option<String>, (String, String))> {
     delimited(
-        many0(satisfy(char::is_whitespace)),
+        take_while(char::is_whitespace),
         alt((name_addr, map(addr_spec, |addr| (None, addr)))),
-        (many0(satisfy(char::is_whitespace)), eof),
+        (take_while(char::is_whitespace), eof),
     )
     .parse(input)
 }
@@ -215,9 +187,9 @@ pub(crate) fn mailbox_list(input: &str) -> IResult<&str, Vec<(Option<String>, (S
     terminated(
         separated_list0(
             delimited(
-                many0(satisfy(char::is_whitespace)),
+                take_while(char::is_whitespace),
                 char(','),
-                many0(satisfy(char::is_whitespace)),
+                take_while(char::is_whitespace),
             ),
             alt((name_addr, map(addr_spec, |addr| (None, addr)))),
         ),
