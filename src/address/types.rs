@@ -76,7 +76,7 @@ impl Address {
 
     /// Creates a new email address from a user and domain, without validation.
     ///
-    /// # Safety
+    /// # Danger
     ///
     /// Use this method only if you are completely sure your input is _known_ and valid, but rejected by the parser.
     /// Do not use this method if the contents of either `user` or `domain` are unknown and/or obtained from user input.
