@@ -86,20 +86,12 @@ pub(super) fn atext(input: &str) -> IResult<&str, char> {
 
 // atom            =       [CFWS] 1*atext [CFWS]
 pub(super) fn atom(input: &str) -> IResult<&str, String> {
-    map(
-        pair(
-            cfws,
-            fold_many1(atext, String::new, |mut acc, c| {
-                acc.push(c);
-                acc
-            }),
-        ),
-        |(cfws, mut chars)| {
-            if let Some(cfws) = cfws {
-                chars.insert(0, cfws);
-            }
-            chars
-        },
+    preceded(
+        cfws,
+        fold_many1(atext, String::new, |mut acc, c| {
+            acc.push(c);
+            acc
+        }),
     )
     .parse(input)
 }
@@ -194,7 +186,12 @@ fn phrase(input: &str) -> IResult<&str, String> {
 
 // mailbox         =       name-addr / addr-spec
 pub(crate) fn mailbox(input: &str) -> IResult<&str, (Option<String>, (String, String))> {
-    terminated(alt((name_addr, map(addr_spec, |addr| (None, addr)))), eof).parse(input)
+    delimited(
+        many0(satisfy(char::is_whitespace)),
+        alt((name_addr, map(addr_spec, |addr| (None, addr)))),
+        (many0(satisfy(char::is_whitespace)), eof),
+    )
+    .parse(input)
 }
 
 // name-addr       =       [display-name] angle-addr
@@ -253,12 +250,19 @@ pub(super) fn domain(input: &str) -> IResult<&str, String> {
 
 // obs-phrase      =       word *(word / "." / CFWS)
 fn obs_phrase(input: &str) -> IResult<&str, String> {
-    // NOTE: the CFWS is already captured by the word, no need to add
-    // it there.
     map(
-        pair(word, many0(alt((word, map(char('.'), |c| c.to_string()))))),
+        pair(
+            word,
+            many0(pair(
+                opt(fws),
+                alt((word, map(char('.'), |c| c.to_string()))),
+            )),
+        ),
         |(mut result, rest)| {
-            for part in rest {
+            for (ws, part) in rest {
+                if ws.flatten().is_some() {
+                    result.push(' ');
+                }
                 result.push_str(&part);
             }
             result
