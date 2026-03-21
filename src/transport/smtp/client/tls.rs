@@ -384,7 +384,7 @@ impl TlsParametersBuilder {
     pub fn build_boring(self) -> Result<TlsParameters, Error> {
         use boring::ssl::{SslMethod, SslVerifyMode};
 
-        let mut tls_builder = SslConnector::builder(SslMethod::tls_client()).map_err(error::tls)?;
+        let mut tls_builder = SslConnector::builder(SslMethod::tls()).map_err(error::tls)?;
 
         if self.accept_invalid_certs {
             tls_builder.set_verify(SslVerifyMode::NONE);
