@@ -3,8 +3,8 @@ use std::{io::Write, iter::repeat_with};
 use mime::Mime;
 
 use crate::message::{
-    header::{self, ContentTransferEncoding, ContentType, Header, Headers},
     EmailFormat, IntoBody,
+    header::{self, ContentTransferEncoding, ContentType, Header, Headers},
 };
 
 /// MIME part variants
@@ -87,7 +87,7 @@ impl Default for SinglePartBuilder {
 /// # Example
 ///
 /// ```
-/// use lettre::message::{header, SinglePart};
+/// use lettre::message::{SinglePart, header};
 ///
 /// # use std::error::Error;
 /// # fn main() -> Result<(), Box<dyn Error>> {
@@ -641,21 +641,25 @@ mod test {
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>")));
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/alternative;\r\n",
-                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
-                           "\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: text/plain; charset=utf-8\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "Текст письма в уникоде\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: text/html; charset=utf-8\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/alternative;\r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "Текст письма в уникоде\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/html; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
 
     #[test]
@@ -679,35 +683,39 @@ mod test {
                              .header(header::ContentTransferEncoding::Binary)
                              .body(String::from("int main() { return 0; }")));
 
-        assert_eq!(String::from_utf8(part.formatted()).unwrap(),
-                   concat!("Content-Type: multipart/mixed;\r\n",
-                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
-                           "\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: multipart/related;\r\n",
-                           " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
-                           "\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: text/html; charset=utf-8\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: image/png\r\n",
-                           "Content-Location: /image.png\r\n",
-                           "Content-Transfer-Encoding: base64\r\n",
-                           "\r\n",
-                           "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3\r\n",
-                           "ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0\r\n",
-                           "NTY3ODkwMTIzNDU2Nzg5MA==\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
-                           "Content-Type: text/plain; charset=utf-8\r\n",
-                           "Content-Disposition: attachment; filename=\"example.c\"\r\n",
-                           "Content-Transfer-Encoding: binary\r\n",
-                           "\r\n",
-                           "int main() { return 0; }\r\n",
-                           "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"));
+        assert_eq!(
+            String::from_utf8(part.formatted()).unwrap(),
+            concat!(
+                "Content-Type: multipart/mixed;\r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: multipart/related;\r\n",
+                " boundary=\"0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\"\r\n",
+                "\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/html; charset=utf-8\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "<p>Текст <em>письма</em> в <a href=\"https://ru.wikipedia.org/wiki/Юникод\">уникоде</a><p>\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: image/png\r\n",
+                "Content-Location: /image.png\r\n",
+                "Content-Transfer-Encoding: base64\r\n",
+                "\r\n",
+                "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3\r\n",
+                "ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0\r\n",
+                "NTY3ODkwMTIzNDU2Nzg5MA==\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1\r\n",
+                "Content-Type: text/plain; charset=utf-8\r\n",
+                "Content-Disposition: attachment; filename=\"example.c\"\r\n",
+                "Content-Transfer-Encoding: binary\r\n",
+                "\r\n",
+                "int main() { return 0; }\r\n",
+                "--0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1--\r\n"
+            )
+        );
     }
 
     #[test]

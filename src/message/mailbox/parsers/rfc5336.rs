@@ -3,7 +3,7 @@
 //!
 //! [RFC5336]: https://datatracker.ietf.org/doc/html/rfc5336
 
-use nom::{character::complete::satisfy, IResult, Parser};
+use nom::{IResult, Parser, character::complete::satisfy};
 
 // 3.3.  Extended Mailbox Address Syntax
 // https://datatracker.ietf.org/doc/html/rfc5336#section-3.3

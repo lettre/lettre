@@ -11,7 +11,7 @@
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{message::header::ContentType, FileTransport, Message, Transport};
+//! use lettre::{FileTransport, Message, Transport, message::header::ContentType};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::new(temp_dir());
@@ -44,7 +44,7 @@
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use std::env::temp_dir;
 //!
-//! use lettre::{message::header::ContentType, FileTransport, Message, Transport};
+//! use lettre::{FileTransport, Message, Transport, message::header::ContentType};
 //!
 //! // Write to the local temp directory
 //! let sender = FileTransport::with_envelope(temp_dir());
@@ -74,7 +74,7 @@
 //! use std::env::temp_dir;
 //!
 //! use lettre::{
-//!     message::header::ContentType, AsyncFileTransport, AsyncTransport, Message, Tokio1Executor,
+//!     AsyncFileTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
 //! };
 //!
 //! // Write to the local temp directory
@@ -102,8 +102,8 @@
 //! use std::env::temp_dir;
 //!
 //! use lettre::{
-//!     message::header::ContentType, AsyncFileTransport, AsyncStd1Executor, AsyncTransport,
-//!     Message,
+//!     AsyncFileTransport, AsyncStd1Executor, AsyncTransport, Message,
+//!     message::header::ContentType,
 //! };
 //!
 //! // Write to the local temp directory
@@ -154,9 +154,9 @@ use async_trait::async_trait;
 use uuid::Uuid;
 
 pub use self::error::Error;
-use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use crate::{AsyncTransport, Executor};
+use crate::{Transport, address::Envelope};
 
 mod error;
 

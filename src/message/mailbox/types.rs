@@ -55,7 +55,7 @@ impl Mailbox {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{message::Mailbox, Address};
+    /// use lettre::{Address, message::Mailbox};
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
@@ -157,8 +157,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -179,8 +179,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -201,8 +201,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -228,8 +228,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;

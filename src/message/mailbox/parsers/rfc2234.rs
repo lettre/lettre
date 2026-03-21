@@ -4,9 +4,9 @@
 //! [RFC2234]: https://datatracker.ietf.org/doc/html/rfc2234
 
 use nom::{
+    IResult, Parser,
     branch::alt,
     character::complete::{char, satisfy},
-    IResult, Parser,
 };
 
 // 6.1  Core Rules

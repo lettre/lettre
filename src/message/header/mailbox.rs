@@ -2,8 +2,8 @@ use email_encoding::headers::writer::EmailWriter;
 
 use super::{Header, HeaderName, HeaderValue};
 use crate::{
-    message::mailbox::{Mailbox, Mailboxes},
     BoxError,
+    message::mailbox::{Mailbox, Mailboxes},
 };
 
 /// Header which can contains multiple mailboxes

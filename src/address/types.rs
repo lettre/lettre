@@ -74,6 +74,45 @@ impl Address {
         (user, domain).try_into()
     }
 
+    /// Creates a new email address from a user and domain, without validation.
+    ///
+    /// # Danger
+    ///
+    /// Use this method only if you are completely sure your input is _known_ and valid, but rejected by the parser.
+    /// Do not use this method if the contents of either `user` or `domain` are unknown and/or obtained from user input.
+    ///
+    /// Prefer using [`Address::new()`] instead if possible.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use lettre::Address;
+    ///
+    /// # use std::error::Error;
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let address = Address::new_dangerous(
+    ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me",
+    ///     "email.com",
+    /// );
+    /// assert_eq!(
+    ///     address.user(),
+    ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me"
+    /// );
+    /// assert_eq!(address.domain(), "email.com");
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn new_dangerous<U: AsRef<str>, D: AsRef<str>>(user: U, domain: D) -> Self {
+        // same body as TryFrom impl without checks
+        let user = user.as_ref();
+        let domain = domain.as_ref();
+        let serialized = format!("{user}@{domain}");
+        Address {
+            serialized,
+            at_start: user.len(),
+        }
+    }
+
     /// Gets the user portion of the `Address`.
     ///
     /// # Examples
@@ -302,5 +341,15 @@ mod tests {
         assert!(
             Address::check_domain("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.com").is_err()
         );
+    }
+
+    #[test]
+    fn test_unchecked() {
+        let user =
+            "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me";
+        let domain = "maybe_valid.com";
+        let address = Address::new_dangerous(user, domain);
+        assert_eq!(address.user(), user);
+        assert_eq!(address.domain(), domain);
     }
 }

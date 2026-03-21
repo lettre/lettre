@@ -12,13 +12,13 @@ use boring::ssl::SslStream;
 #[cfg(feature = "native-tls")]
 use native_tls::TlsStream;
 #[cfg(feature = "rustls")]
-use rustls::{pki_types::ServerName, ClientConnection, StreamOwned};
+use rustls::{ClientConnection, StreamOwned, pki_types::ServerName};
 use socket2::{Domain, Protocol, Type};
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use super::InnerTlsParameters;
 use super::TlsParameters;
-use crate::transport::smtp::{error, Error};
+use crate::transport::smtp::{Error, error};
 
 /// A network stream
 pub struct NetworkStream {
@@ -149,7 +149,9 @@ impl NetworkStream {
             #[cfg(not(any(feature = "native-tls", feature = "rustls", feature = "boring-tls")))]
             InnerNetworkStream::Tcp(_) => {
                 let _ = tls_parameters;
-                panic!("Trying to upgrade an NetworkStream without having enabled either the `native-tls` or the `rustls` feature");
+                panic!(
+                    "Trying to upgrade an NetworkStream without having enabled either the `native-tls` or the `rustls` feature"
+                );
             }
 
             #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]

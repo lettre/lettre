@@ -1,3 +1,33 @@
+<a name="v0.11.19"></a>
+### v0.11.19 (2025-10-08)
+
+#### Features
+
+* Add raw header setter to `MessageBuilder` ([#1108])
+
+#### Misc
+
+* Fix README example ([#1114])
+* Replace custom `static_assert!` macro with `std::assert!` ([#1112])
+
+[#1108]: https://github.com/lettre/lettre/pull/1108
+[#1112]: https://github.com/lettre/lettre/pull/1112
+[#1114]: https://github.com/lettre/lettre/pull/1114
+
+<a name="v0.11.18"></a>
+### v0.11.18 (2025-07-28)
+
+#### Features
+
+* Allow inline attachments to be named ([#1101])
+
+#### Misc
+
+* Upgrade `socket2` to v0.6 ([#1098])
+
+[#1098]: https://github.com/lettre/lettre/pull/1098
+[#1101]: https://github.com/lettre/lettre/pull/1101
+
 <a name="v0.11.17"></a>
 ### v0.11.17 (2025-06-06)
 

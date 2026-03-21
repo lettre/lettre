@@ -4,12 +4,12 @@
 //! [RFC2822]: https://datatracker.ietf.org/doc/html/rfc2822
 
 use nom::{
+    IResult, Parser,
     branch::alt,
     character::complete::{char, satisfy},
     combinator::{eof, map, opt},
     multi::{fold_many0, fold_many1, many0, many1, separated_list0},
     sequence::{delimited, pair, preceded, terminated},
-    IResult, Parser,
 };
 
 use super::{rfc2234, rfc5336};

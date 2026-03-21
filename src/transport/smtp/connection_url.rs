@@ -2,13 +2,13 @@ use std::borrow::Cow;
 
 use url::Url;
 
-#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-use super::client::{Tls, TlsParameters};
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use super::AsyncSmtpTransportBuilder;
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
+use super::client::{Tls, TlsParameters};
 use super::{
-    authentication::Credentials, error, extension::ClientId, Error, SmtpTransportBuilder,
-    SMTP_PORT, SUBMISSIONS_PORT, SUBMISSION_PORT,
+    Error, SMTP_PORT, SUBMISSION_PORT, SUBMISSIONS_PORT, SmtpTransportBuilder,
+    authentication::Credentials, error, extension::ClientId,
 };
 
 pub(crate) trait TransportBuilder {
@@ -106,7 +106,7 @@ pub(crate) fn from_connection_url<B: TransportBuilder>(connection_url: &str) -> 
         (scheme, tls) => {
             return Err(error::connection(format!(
                 "Unknown scheme '{scheme}' or tls parameter '{tls:?}', note that a transport with TLS requires one of the TLS features"
-            )))
+            )));
         }
     }
 

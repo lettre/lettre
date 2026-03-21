@@ -1,9 +1,9 @@
 use super::Address;
+use crate::Error;
 #[cfg(feature = "builder")]
 use crate::message::header::{self, Headers};
 #[cfg(feature = "builder")]
 use crate::message::{Mailbox, Mailboxes};
-use crate::Error;
 
 /// Simple email envelope representation
 ///
