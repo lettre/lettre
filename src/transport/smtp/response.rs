@@ -8,15 +8,15 @@ use std::{
 };
 
 use nom::{
+    IResult, Parser,
     branch::alt,
     bytes::streaming::{tag, take_until},
     combinator::{complete, map},
     multi::many0,
     sequence::preceded,
-    IResult, Parser,
 };
 
-use crate::transport::smtp::{error, Error};
+use crate::transport::smtp::{Error, error};
 
 /// The first digit indicates severity
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
@@ -366,46 +366,54 @@ mod test {
 
     #[test]
     fn test_response_is_positive() {
-        assert!(Response::new(
-            Code {
-                severity: Severity::PositiveCompletion,
-                category: Category::MailSystem,
-                detail: Detail::Zero,
-            },
-            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
-        )
-        .is_positive());
-        assert!(!Response::new(
-            Code {
-                severity: Severity::TransientNegativeCompletion,
-                category: Category::MailSystem,
-                detail: Detail::Zero,
-            },
-            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
-        )
-        .is_positive());
+        assert!(
+            Response::new(
+                Code {
+                    severity: Severity::PositiveCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail::Zero,
+                },
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
+            )
+            .is_positive()
+        );
+        assert!(
+            !Response::new(
+                Code {
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail::Zero,
+                },
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
+            )
+            .is_positive()
+        );
     }
 
     #[test]
     fn test_response_has_code() {
-        assert!(Response::new(
-            Code {
-                severity: Severity::TransientNegativeCompletion,
-                category: Category::MailSystem,
-                detail: Detail::One,
-            },
-            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
-        )
-        .has_code(451));
-        assert!(!Response::new(
-            Code {
-                severity: Severity::TransientNegativeCompletion,
-                category: Category::MailSystem,
-                detail: Detail::One,
-            },
-            vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
-        )
-        .has_code(251));
+        assert!(
+            Response::new(
+                Code {
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail::One,
+                },
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
+            )
+            .has_code(451)
+        );
+        assert!(
+            !Response::new(
+                Code {
+                    severity: Severity::TransientNegativeCompletion,
+                    category: Category::MailSystem,
+                    detail: Detail::One,
+                },
+                vec!["me".to_owned(), "8BITMIME".to_owned(), "SIZE 42".to_owned(),],
+            )
+            .has_code(251)
+        );
     }
 
     #[test]

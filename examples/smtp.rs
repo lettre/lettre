@@ -1,4 +1,4 @@
-use lettre::{message::header::ContentType, Message, SmtpTransport, Transport};
+use lettre::{Message, SmtpTransport, Transport, message::header::ContentType};
 
 fn main() {
     tracing_subscriber::fmt::init();

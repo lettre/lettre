@@ -11,13 +11,13 @@ use futures_util::{
 };
 
 use super::{
-    super::{client::AsyncSmtpConnection, Error},
+    super::{Error, client::AsyncSmtpConnection},
     PoolConfig,
 };
 use crate::{
+    Executor,
     executor::SpawnHandle,
     transport::smtp::{async_transport::AsyncSmtpClient, error},
-    Executor,
 };
 
 pub(crate) struct Pool<E: Executor> {

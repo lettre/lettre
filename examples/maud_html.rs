@@ -1,6 +1,6 @@
 use lettre::{
-    message::{header, MultiPart, SinglePart},
     FileTransport, Message, Transport,
+    message::{MultiPart, SinglePart, header},
 };
 use maud::html;
 

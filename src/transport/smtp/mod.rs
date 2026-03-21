@@ -35,9 +35,9 @@
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
+//!     Message, SmtpTransport, Transport,
 //!     message::header::ContentType,
 //!     transport::smtp::authentication::{Credentials, Mechanism},
-//!     Message, SmtpTransport, Transport,
 //! };
 //!
 //! let email = Message::builder()
@@ -76,9 +76,9 @@
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() -> Result<(), Box<dyn std::error::Error>> {
 //! use lettre::{
+//!     Message, SmtpTransport, Transport,
 //!     message::header::ContentType,
 //!     transport::smtp::authentication::{Credentials, Mechanism},
-//!     Message, SmtpTransport, Transport,
 //! };
 //!
 //! let email = Message::builder()
@@ -106,9 +106,9 @@
 //! use std::fs;
 //!
 //! use lettre::{
+//!     Message, SmtpTransport, Transport,
 //!     message::header::ContentType,
 //!     transport::smtp::client::{Certificate, Tls, TlsParameters},
-//!     Message, SmtpTransport, Transport,
 //! };
 //!
 //! let email = Message::builder()
@@ -149,9 +149,9 @@
 //! # #[cfg(all(feature = "builder", any(feature = "native-tls", feature = "rustls")))]
 //! # fn test() {
 //! use lettre::{
-//!     message::header::ContentType,
-//!     transport::smtp::{authentication::Credentials, PoolConfig},
 //!     Message, SmtpTransport, Transport,
+//!     message::header::ContentType,
+//!     transport::smtp::{PoolConfig, authentication::Credentials},
 //! };
 //! #
 //! # type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
@@ -202,7 +202,7 @@ pub use self::{
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 use crate::transport::smtp::client::TlsParameters;
 use crate::transport::smtp::{
-    authentication::{Credentials, Mechanism, DEFAULT_MECHANISMS},
+    authentication::{Credentials, DEFAULT_MECHANISMS, Mechanism},
     client::SmtpConnection,
     extension::ClientId,
     response::Response,

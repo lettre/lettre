@@ -40,7 +40,7 @@ use super::InnerTlsParameters;
 use super::TlsParameters;
 #[cfg(feature = "tokio1")]
 use crate::transport::smtp::client::net::resolved_address_filter;
-use crate::transport::smtp::{error, Error};
+use crate::transport::smtp::{Error, error};
 
 /// A network stream
 #[derive(Debug)]
@@ -266,7 +266,9 @@ impl AsyncNetworkStream {
             ))]
             InnerAsyncNetworkStream::Tokio1Tcp(_) => {
                 let _ = tls_parameters;
-                panic!("Trying to upgrade an AsyncNetworkStream without having enabled either the tokio1-native-tls or the tokio1-rustls feature");
+                panic!(
+                    "Trying to upgrade an AsyncNetworkStream without having enabled either the tokio1-native-tls or the tokio1-rustls feature"
+                );
             }
 
             #[cfg(any(
@@ -289,7 +291,9 @@ impl AsyncNetworkStream {
             #[cfg(all(feature = "async-std1", not(feature = "async-std1-rustls")))]
             InnerAsyncNetworkStream::AsyncStd1Tcp(_) => {
                 let _ = tls_parameters;
-                panic!("Trying to upgrade an AsyncNetworkStream without having enabled the async-std1-rustls feature");
+                panic!(
+                    "Trying to upgrade an AsyncNetworkStream without having enabled the async-std1-rustls feature"
+                );
             }
 
             #[cfg(feature = "async-std1-rustls")]
@@ -392,7 +396,9 @@ impl AsyncNetworkStream {
         match tls_parameters.connector {
             #[cfg(feature = "native-tls")]
             InnerTlsParameters::NativeTls { connector } => {
-                panic!("native-tls isn't supported with async-std yet. See https://github.com/lettre/lettre/pull/531#issuecomment-757893531");
+                panic!(
+                    "native-tls isn't supported with async-std yet. See https://github.com/lettre/lettre/pull/531#issuecomment-757893531"
+                );
             }
             #[cfg(feature = "rustls")]
             InnerTlsParameters::Rustls { config } => {

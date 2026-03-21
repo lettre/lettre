@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, black_box, criterion_group, criterion_main};
 use lettre::message::{Mailbox, Mailboxes};
 
 fn bench_parse_single(mailbox: &str) {

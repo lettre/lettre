@@ -1,6 +1,6 @@
 use crate::message::{
-    header::{self, ContentType},
     IntoBody, SinglePart,
+    header::{self, ContentType},
 };
 
 /// `SinglePart` builder for attachments
@@ -32,7 +32,7 @@ impl Attachment {
     /// # use std::error::Error;
     /// use std::fs;
     ///
-    /// use lettre::message::{header::ContentType, Attachment};
+    /// use lettre::message::{Attachment, header::ContentType};
     ///
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let filename = String::from("invoice.pdf");
@@ -67,7 +67,7 @@ impl Attachment {
     /// # use std::error::Error;
     /// use std::fs;
     ///
-    /// use lettre::message::{header::ContentType, Attachment};
+    /// use lettre::message::{Attachment, header::ContentType};
     ///
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let content_id = String::from("123");
@@ -105,7 +105,7 @@ impl Attachment {
     /// # use std::error::Error;
     /// use std::fs;
     ///
-    /// use lettre::message::{header::ContentType, Attachment};
+    /// use lettre::message::{Attachment, header::ContentType};
     ///
     /// # fn main() -> Result<(), Box<dyn Error>> {
     /// let content_id = String::from("123");

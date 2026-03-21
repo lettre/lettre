@@ -287,7 +287,7 @@ fn find_all_lf_char_indices(s: &str) -> Vec<usize> {
 mod test {
     use pretty_assertions::assert_eq;
 
-    use super::{in_place_crlf_line_endings, Body, ContentTransferEncoding};
+    use super::{Body, ContentTransferEncoding, in_place_crlf_line_endings};
 
     #[test]
     fn seven_bit_detect() {

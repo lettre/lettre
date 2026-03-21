@@ -2,7 +2,7 @@
 mod sync {
     use std::{sync::mpsc, thread};
 
-    use lettre::{address::Envelope, SmtpTransport, Transport};
+    use lettre::{SmtpTransport, Transport, address::Envelope};
 
     fn envelope() -> Envelope {
         Envelope::new(

@@ -16,6 +16,11 @@ use futures_util::future::BoxFuture;
     feature = "smtp-transport",
     any(feature = "tokio1", feature = "async-std1")
 ))]
+use crate::transport::smtp::Error;
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::client::AsyncSmtpConnection;
 #[cfg(all(
     feature = "smtp-transport",
@@ -27,11 +32,6 @@ use crate::transport::smtp::client::Tls;
     any(feature = "tokio1", feature = "async-std1")
 ))]
 use crate::transport::smtp::extension::ClientId;
-#[cfg(all(
-    feature = "smtp-transport",
-    any(feature = "tokio1", feature = "async-std1")
-))]
-use crate::transport::smtp::Error;
 
 /// Async executor abstraction trait
 ///
