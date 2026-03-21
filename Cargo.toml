@@ -10,7 +10,7 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo565.org>"]
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
-edition = "2021"
+edition = "2024"
 rust-version = "1.85"
 
 [badges]
