@@ -94,7 +94,10 @@ impl Address {
     ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me",
     ///     "email.com",
     /// );
-    /// assert_eq!(address.user(), "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me");
+    /// assert_eq!(
+    ///     address.user(),
+    ///     "a_very_long_email_address_that_would_normally_be_rejected_but_it_is_valid_trust_me"
+    /// );
     /// assert_eq!(address.domain(), "email.com");
     /// # Ok(())
     /// # }
