@@ -394,7 +394,7 @@ impl TlsParametersBuilder {
                 CertificateStore::None => {
                     // Replace the default store with an empty store.
                     tls_builder
-                        .set_cert_store(X509StoreBuilder::new().map_err(error::tls)?.build());
+                        .set_cert_store_builder(X509StoreBuilder::new().map_err(error::tls)?);
                 }
                 #[allow(unreachable_patterns)]
                 other => {
