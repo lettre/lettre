@@ -1,9 +1,9 @@
 use std::fmt::{Formatter, Result as FmtResult};
 
 use serde::{
+    Deserialize, Serialize,
     de::{Deserializer, Error as DeError, MapAccess, SeqAccess, Visitor},
     ser::Serializer,
-    Deserialize, Serialize,
 };
 
 use crate::message::{Mailbox, Mailboxes};

@@ -12,15 +12,15 @@ use boring::{
 use native_tls::{Protocol, TlsConnector};
 #[cfg(feature = "rustls")]
 use rustls::{
-    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
-    crypto::{verify_tls12_signature, verify_tls13_signature, CryptoProvider},
-    pki_types::{self, pem::PemObject, CertificateDer, PrivateKeyDer, ServerName, UnixTime},
-    server::ParsedCertificate,
     ClientConfig, DigitallySignedStruct, Error as TlsError, RootCertStore, SignatureScheme,
+    client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier},
+    crypto::{CryptoProvider, verify_tls12_signature, verify_tls13_signature},
+    pki_types::{self, CertificateDer, PrivateKeyDer, ServerName, UnixTime, pem::PemObject},
+    server::ParsedCertificate,
 };
 
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-use crate::transport::smtp::{error, Error};
+use crate::transport::smtp::{Error, error};
 
 /// TLS protocol versions.
 #[derive(Debug, Copy, Clone)]
@@ -346,7 +346,7 @@ impl TlsParametersBuilder {
             other => {
                 return Err(error::tls(format!(
                     "{other:?} is not supported in native tls"
-                )))
+                )));
             }
         }
         for cert in self.root_certs {
@@ -362,7 +362,7 @@ impl TlsParametersBuilder {
             TlsVersion::Tlsv13 => {
                 return Err(error::tls(
                     "min tls version Tlsv13 not supported in native tls",
-                ))
+                ));
             }
         };
 
@@ -400,7 +400,7 @@ impl TlsParametersBuilder {
                 other => {
                     return Err(error::tls(format!(
                         "{other:?} is not supported in boring tls"
-                    )))
+                    )));
                 }
             }
 
@@ -447,10 +447,10 @@ impl TlsParametersBuilder {
         let just_version3 = &[&rustls::version::TLS13];
         let supported_versions = match self.min_tls_version {
             TlsVersion::Tlsv10 => {
-                return Err(error::tls("min tls version Tlsv10 not supported in rustls"))
+                return Err(error::tls("min tls version Tlsv10 not supported in rustls"));
             }
             TlsVersion::Tlsv11 => {
-                return Err(error::tls("min tls version Tlsv11 not supported in rustls"))
+                return Err(error::tls("min tls version Tlsv11 not supported in rustls"));
             }
             TlsVersion::Tlsv12 => rustls::ALL_VERSIONS,
             TlsVersion::Tlsv13 => just_version3,
@@ -770,7 +770,7 @@ impl Identity {
         let key = match PrivateKeyDer::from_pem_slice(key) {
             Ok(key) => key,
             Err(pki_types::pem::Error::NoItemsFound) => {
-                return Err(error::tls("no private key found"))
+                return Err(error::tls("no private key found"));
             }
             Err(err) => return Err(error::tls(err)),
         };

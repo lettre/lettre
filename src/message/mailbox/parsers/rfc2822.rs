@@ -193,8 +193,8 @@ fn display_name() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
 }
 
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
-pub(crate) fn mailbox_list(
-) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Cheap<char>> {
+pub(crate) fn mailbox_list()
+-> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Cheap<char>> {
     choice((name_addr(), addr_spec().map(|addr| (None, addr))))
         .separated_by(just(',').padded())
         .then_ignore(end())

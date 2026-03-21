@@ -293,6 +293,8 @@ pub use crate::address::Address;
 #[cfg(feature = "builder")]
 #[doc(inline)]
 pub use crate::message::Message;
+#[doc(inline)]
+pub use crate::transport::Transport;
 #[cfg(all(
     feature = "file-transport",
     any(feature = "tokio1", feature = "async-std1")
@@ -318,8 +320,6 @@ pub use crate::transport::sendmail::SendmailTransport;
 pub use crate::transport::smtp::AsyncSmtpTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
-#[doc(inline)]
-pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 
 pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
@@ -328,7 +328,7 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(feature = "builder")]
 mod test {
     use super::*;
-    use crate::message::{header, header::Headers, Mailbox, Mailboxes};
+    use crate::message::{Mailbox, Mailboxes, header, header::Headers};
 
     #[test]
     fn envelope_from_headers() {

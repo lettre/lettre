@@ -26,10 +26,16 @@ fn main() {
             .build();
         match transport.test_connection() {
             Ok(true) => {
-                tracing::info!("Successfully connected to {} via a TLS wrapped connection (SmtpTransport::relay). This is the fastest option available for connecting to an SMTP server", smtp_host);
+                tracing::info!(
+                    "Successfully connected to {} via a TLS wrapped connection (SmtpTransport::relay). This is the fastest option available for connecting to an SMTP server",
+                    smtp_host
+                );
             }
             Ok(false) => {
-                tracing::error!("Couldn't connect to {} via a TLS wrapped connection. No more information is available", smtp_host);
+                tracing::error!(
+                    "Couldn't connect to {} via a TLS wrapped connection. No more information is available",
+                    smtp_host
+                );
             }
             Err(err) => {
                 tracing::error!(err = %err, "Couldn't connect to {} via a TLS wrapped connection", smtp_host);
@@ -41,7 +47,10 @@ fn main() {
 
     // Plaintext connection which MUST then successfully upgrade to TLS via STARTTLS
     {
-        tracing::info!("Trying to establish a plaintext connection to {} and then upgrading it via the SMTP STARTTLS extension", smtp_host);
+        tracing::info!(
+            "Trying to establish a plaintext connection to {} and then upgrading it via the SMTP STARTTLS extension",
+            smtp_host
+        );
 
         let transport = SmtpTransport::starttls_relay(&smtp_host)
             .expect("build SmtpTransport::starttls_relay")
@@ -49,7 +58,10 @@ fn main() {
             .build();
         match transport.test_connection() {
             Ok(true) => {
-                tracing::info!("Successfully connected to {} via a plaintext connection which then got upgraded to TLS via the SMTP STARTTLS extension (SmtpTransport::starttls_relay). This is the second best option after the previous TLS wrapped option", smtp_host);
+                tracing::info!(
+                    "Successfully connected to {} via a plaintext connection which then got upgraded to TLS via the SMTP STARTTLS extension (SmtpTransport::starttls_relay). This is the second best option after the previous TLS wrapped option",
+                    smtp_host
+                );
             }
             Ok(false) => {
                 tracing::error!(
@@ -77,7 +89,10 @@ fn main() {
             .build();
         match transport.test_connection() {
             Ok(true) => {
-                tracing::info!("Successfully connected to {} via a plaintext connection. This option is very insecure and shouldn't be used on the public internet (SmtpTransport::builder_dangerous)", smtp_host);
+                tracing::info!(
+                    "Successfully connected to {} via a plaintext connection. This option is very insecure and shouldn't be used on the public internet (SmtpTransport::builder_dangerous)",
+                    smtp_host
+                );
             }
             Ok(false) => {
                 tracing::error!(

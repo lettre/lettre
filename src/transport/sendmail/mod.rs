@@ -7,7 +7,7 @@
 //! #
 //! # #[cfg(all(feature = "sendmail-transport", feature = "builder"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
-//! use lettre::{message::header::ContentType, Message, SendmailTransport, Transport};
+//! use lettre::{Message, SendmailTransport, Transport, message::header::ContentType};
 //!
 //! let email = Message::builder()
 //!     .from("NoBody <nobody@domain.tld>".parse()?)
@@ -34,8 +34,8 @@
 //! # #[cfg(all(feature = "tokio1", feature = "sendmail-transport", feature = "builder"))]
 //! # async fn run() -> Result<(), Box<dyn Error>> {
 //! use lettre::{
-//!     message::header::ContentType, AsyncSendmailTransport, AsyncTransport, Message,
-//!     SendmailTransport, Tokio1Executor,
+//!     AsyncSendmailTransport, AsyncTransport, Message, SendmailTransport, Tokio1Executor,
+//!     message::header::ContentType,
 //! };
 //!
 //! let email = Message::builder()
@@ -90,9 +90,9 @@ pub use self::error::Error;
 use crate::AsyncStd1Executor;
 #[cfg(feature = "tokio1")]
 use crate::Tokio1Executor;
-use crate::{address::Envelope, Transport};
 #[cfg(any(feature = "async-std1", feature = "tokio1"))]
 use crate::{AsyncTransport, Executor};
+use crate::{Transport, address::Envelope};
 
 mod error;
 
