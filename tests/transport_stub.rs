@@ -1,7 +1,7 @@
 #[cfg(test)]
 #[cfg(feature = "builder")]
 mod sync {
-    use lettre::{transport::stub::StubTransport, Message, Transport};
+    use lettre::{Message, Transport, transport::stub::StubTransport};
 
     #[test]
     fn stub_transport() {
@@ -29,7 +29,7 @@ mod sync {
 #[cfg(test)]
 #[cfg(all(feature = "builder", feature = "tokio1"))]
 mod tokio_1 {
-    use lettre::{transport::stub::AsyncStubTransport, AsyncTransport, Message};
+    use lettre::{AsyncTransport, Message, transport::stub::AsyncStubTransport};
     use tokio1_crate as tokio;
 
     #[tokio::test]
@@ -58,7 +58,7 @@ mod tokio_1 {
 #[cfg(test)]
 #[cfg(all(feature = "builder", feature = "async-std1"))]
 mod asyncstd_1 {
-    use lettre::{transport::stub::AsyncStubTransport, AsyncTransport, Message};
+    use lettre::{AsyncTransport, Message, transport::stub::AsyncStubTransport};
 
     #[async_std::test]
     async fn stub_transport_asyncstd1() {

@@ -1,5 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use lettre::{message::header::ContentType, Message, SmtpTransport, Transport};
+use std::hint::black_box;
+
+use criterion::{Criterion, criterion_group, criterion_main};
+use lettre::{Message, SmtpTransport, Transport, message::header::ContentType};
 
 fn bench_simple_send(c: &mut Criterion) {
     let sender = SmtpTransport::builder_dangerous("127.0.0.1")

@@ -6,12 +6,12 @@ use std::{
 };
 
 use ed25519_dalek::Signer;
-use rsa::{pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign, RsaPrivateKey};
+use rsa::{RsaPrivateKey, pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign};
 use sha2::{Digest, Sha256};
 
 use crate::message::{
-    header::{HeaderName, HeaderValue},
     Headers, Message,
+    header::{HeaderName, HeaderValue},
 };
 
 /// Describe Dkim Canonicalization to apply to either body or headers
@@ -419,12 +419,11 @@ mod test {
 
     use super::{
         super::{
-            header::{HeaderName, HeaderValue},
             Header, Message,
+            header::{HeaderName, HeaderValue},
         },
-        dkim_canonicalize_body, dkim_canonicalize_headers, dkim_sign_fixed_time,
         DkimCanonicalization, DkimCanonicalizationType, DkimConfig, DkimSigningAlgorithm,
-        DkimSigningKey,
+        DkimSigningKey, dkim_canonicalize_body, dkim_canonicalize_headers, dkim_sign_fixed_time,
     };
     use crate::StdError;
 
@@ -487,14 +486,28 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
     fn test_headers_simple_canonicalize() {
         let message = test_message();
         dbg!(message.headers.to_string());
-        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Simple), "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be\r\n folded to several lines \r\n");
+        assert_eq!(
+            dkim_canonicalize_headers(
+                ["From", "Test"],
+                &message.headers,
+                DkimCanonicalizationType::Simple
+            ),
+            "From: =?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\nTest: test  test very very long with spaces and extra spaces   \twill be\r\n folded to several lines \r\n"
+        );
     }
 
     #[test]
     fn test_headers_relaxed_canonicalize() {
         let message = test_message();
         dbg!(message.headers.to_string());
-        assert_eq!(dkim_canonicalize_headers(["From", "Test"], &message.headers, DkimCanonicalizationType::Relaxed),"from:=?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n");
+        assert_eq!(
+            dkim_canonicalize_headers(
+                ["From", "Test"],
+                &message.headers,
+                DkimCanonicalizationType::Relaxed
+            ),
+            "from:=?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n"
+        );
     }
 
     #[test]
@@ -597,7 +610,8 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
                 "To: Test2 <test2@example.org>\r\n",
                 "Date: Thu, 01 Jan 1970 00:00:00 +0000\r\n",
                 "Test: test  test very very long with spaces and extra spaces   \twill be\r\n",
-                " folded to several lines \r\n","Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
+                " folded to several lines \r\n",
+                "Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
                 "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest;\r\n",
                 " c=relaxed/relaxed; q=dns/txt; t=0; h=date:from:subject:to;\r\n",

@@ -3,13 +3,13 @@ use std::sync::Arc;
 use std::{fmt::Debug, time::Duration};
 
 #[cfg(feature = "pool")]
-use super::pool::sync_impl::Pool;
-#[cfg(feature = "pool")]
 use super::PoolConfig;
+#[cfg(feature = "pool")]
+use super::pool::sync_impl::Pool;
 use super::{ClientId, Credentials, Error, Mechanism, Response, SmtpConnection, SmtpInfo};
 #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
-use super::{Tls, TlsParameters, SUBMISSIONS_PORT, SUBMISSION_PORT};
-use crate::{address::Envelope, Transport};
+use super::{SUBMISSION_PORT, SUBMISSIONS_PORT, Tls, TlsParameters};
+use crate::{Transport, address::Envelope};
 
 /// Synchronously send emails using the SMTP protocol
 ///
@@ -213,8 +213,8 @@ impl SmtpTransport {
     ///
     /// ```rust,no_run
     /// use lettre::{
-    ///     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
-    ///     SmtpTransport, Transport,
+    ///     Message, SmtpTransport, Transport, message::header::ContentType,
+    ///     transport::smtp::authentication::Credentials,
     /// };
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -401,10 +401,8 @@ impl SmtpClient {
 
         #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
         match &self.info.tls {
-            Tls::Opportunistic(tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters, &self.info.hello_name)?;
-                }
+            Tls::Opportunistic(tls_parameters) if conn.can_starttls() => {
+                conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             Tls::Required(tls_parameters) => {
                 conn.starttls(tls_parameters, &self.info.hello_name)?;
@@ -422,8 +420,8 @@ impl SmtpClient {
 #[cfg(test)]
 mod tests {
     use crate::{
-        transport::smtp::{authentication::Credentials, client::Tls},
         SmtpTransport,
+        transport::smtp::{authentication::Credentials, client::Tls},
     };
 
     #[test]

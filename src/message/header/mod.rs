@@ -186,21 +186,15 @@ impl HeaderName {
 
     /// Creates a new header name, panics on invalid name
     pub const fn new_from_ascii_str(ascii: &'static str) -> Self {
-        macro_rules! static_assert {
-            ($condition:expr) => {
-                let _ = [()][(!($condition)) as usize];
-            };
-        }
-
-        static_assert!(!ascii.is_empty());
-        static_assert!(ascii.len() <= 76);
+        assert!(!ascii.is_empty());
+        assert!(ascii.len() <= 76);
+        assert!(ascii.is_ascii());
 
         let bytes = ascii.as_bytes();
         let mut i = 0;
         while i < bytes.len() {
-            static_assert!(bytes[i].is_ascii());
-            static_assert!(bytes[i] != b' ');
-            static_assert!(bytes[i] != b':');
+            assert!(bytes[i] != b' ');
+            assert!(bytes[i] != b':');
 
             i += 1;
         }

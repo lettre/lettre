@@ -8,7 +8,7 @@
 //! # #[cfg(feature = "smtp-transport")]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::transport::smtp::{
-//!     client::SmtpConnection, commands::*, extension::ClientId, SMTP_PORT,
+//!     SMTP_PORT, client::SmtpConnection, commands::*, extension::ClientId,
 //! };
 //!
 //! let hello = ClientId::Domain("my_hostname".to_owned());

@@ -1,12 +1,12 @@
 use std::fs;
 
 use lettre::{
+    Message, SmtpTransport, Transport,
     message::header::ContentType,
     transport::smtp::{
         authentication::Credentials,
         client::{Certificate, Tls, TlsParameters},
     },
-    Message, SmtpTransport, Transport,
 };
 
 fn main() {

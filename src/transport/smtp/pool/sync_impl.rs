@@ -1,13 +1,13 @@
 use std::{
     fmt::{self, Debug},
     ops::{Deref, DerefMut},
-    sync::{mpsc, Arc, Mutex, TryLockError},
+    sync::{Arc, Mutex, TryLockError, mpsc},
     thread,
     time::{Duration, Instant},
 };
 
 use super::{
-    super::{client::SmtpConnection, Error},
+    super::{Error, client::SmtpConnection},
     PoolConfig,
 };
 use crate::transport::smtp::{error, transport::SmtpClient};

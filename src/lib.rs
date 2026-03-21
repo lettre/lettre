@@ -162,7 +162,7 @@
 //! [mime 0.3]: https://docs.rs/mime/0.3
 //! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
-#![doc(html_root_url = "https://docs.rs/crate/lettre/0.11.18")]
+#![doc(html_root_url = "https://docs.rs/crate/lettre/0.11.19")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]
@@ -179,7 +179,7 @@
     clippy::clone_on_ref_ptr,
     clippy::verbose_file_reads,
     clippy::unnecessary_self_imports,
-    clippy::string_to_string,
+    clippy::implicit_clone,
     clippy::mem_forget,
     clippy::cast_lossless,
     clippy::inefficient_to_string,
@@ -293,6 +293,8 @@ pub use crate::address::Address;
 #[cfg(feature = "builder")]
 #[doc(inline)]
 pub use crate::message::Message;
+#[doc(inline)]
+pub use crate::transport::Transport;
 #[cfg(all(
     feature = "file-transport",
     any(feature = "tokio1", feature = "async-std1")
@@ -318,8 +320,6 @@ pub use crate::transport::sendmail::SendmailTransport;
 pub use crate::transport::smtp::AsyncSmtpTransport;
 #[cfg(feature = "smtp-transport")]
 pub use crate::transport::smtp::SmtpTransport;
-#[doc(inline)]
-pub use crate::transport::Transport;
 use crate::{address::Envelope, error::Error};
 
 pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
@@ -328,7 +328,7 @@ pub(crate) type BoxError = Box<dyn StdError + Send + Sync>;
 #[cfg(feature = "builder")]
 mod test {
     use super::*;
-    use crate::message::{header, header::Headers, Mailbox, Mailboxes};
+    use crate::message::{Mailbox, Mailboxes, header, header::Headers};
 
     #[test]
     fn envelope_from_headers() {
