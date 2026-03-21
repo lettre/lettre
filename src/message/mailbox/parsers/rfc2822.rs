@@ -6,10 +6,10 @@
 use nom::{
     IResult, Parser,
     branch::alt,
-    character::complete::{char, satisfy},
+    character::complete::{char, one_of, satisfy},
     combinator::{eof, map, opt},
     multi::{fold_many0, fold_many1, many0, many1, separated_list0},
-    sequence::{delimited, pair, preceded, terminated},
+    sequence::{delimited, pair, preceded, separated_pair, terminated},
 };
 
 use super::{rfc2234, rfc5336};
@@ -49,11 +49,7 @@ fn quoted_pair(input: &str) -> IResult<&str, char> {
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
 pub(super) fn fws(input: &str) -> IResult<&str, Option<char>> {
-    map(
-        pair(opt(rfc2234::wsp), many0(rfc2234::wsp)),
-        |(first, _rest)| first,
-    )
-    .parse(input)
+    terminated(opt(rfc2234::wsp), many0(rfc2234::wsp)).parse(input)
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
@@ -81,29 +77,7 @@ pub(super) fn atext(input: &str) -> IResult<&str, char> {
     alt((
         rfc2234::alpha,
         rfc2234::digit,
-        satisfy(|c| {
-            matches!(
-                c,
-                '!' | '#'
-                    | '$'
-                    | '%'
-                    | '&'
-                    | '\''
-                    | '*'
-                    | '+'
-                    | '-'
-                    | '/'
-                    | '='
-                    | '?'
-                    | '^'
-                    | '_'
-                    | '`'
-                    | '{'
-                    | '|'
-                    | '}'
-                    | '~'
-            )
-        }),
+        one_of("!#$%&'*+-/=?^_`{|}~"),
         // also allow non ASCII UTF8 chars
         rfc5336::utf8_non_ascii,
     ))
@@ -132,7 +106,7 @@ pub(super) fn atom(input: &str) -> IResult<&str, String> {
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
 pub(super) fn dot_atom(input: &str) -> IResult<&str, String> {
-    map(pair(cfws, dot_atom_text), |(_cfws, text)| text).parse(input)
+    preceded(cfws, dot_atom_text).parse(input)
 }
 
 // dot-atom-text   =       1*atext *("." 1*atext)
@@ -143,21 +117,18 @@ pub(super) fn dot_atom_text(input: &str) -> IResult<&str, String> {
                 acc.push(c);
                 acc
             }),
-            many0(map(
-                pair(
-                    char('.'),
-                    fold_many1(atext, String::new, |mut acc, c| {
-                        acc.push(c);
-                        acc
-                    }),
-                ),
-                |(dot, chars)| format!("{dot}{chars}"),
+            many0(pair(
+                char('.'),
+                fold_many1(atext, String::new, |mut acc, c| {
+                    acc.push(c);
+                    acc
+                }),
             )),
         ),
-        |(first, rest)| {
-            let mut result = first;
-            for part in rest {
-                result.push_str(&part);
+        |(mut result, rest)| {
+            for (_, word) in rest {
+                result.push('.');
+                result.push_str(&word);
             }
             result
         },
@@ -190,20 +161,17 @@ pub(super) fn qcontent(input: &str) -> IResult<&str, char> {
 //                         DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 //                         [CFWS]
 fn quoted_string(input: &str) -> IResult<&str, String> {
-    map(
-        delimited(
-            rfc2234::dquote,
-            fold_many0(
-                map(pair(fws, qcontent), |(_fws, c)| c),
-                String::new,
-                |mut acc, c| {
-                    acc.push(c);
-                    acc
-                },
-            ),
-            preceded(many0(satisfy(char::is_whitespace)), rfc2234::dquote),
+    delimited(
+        rfc2234::dquote,
+        fold_many0(
+            map(pair(fws, qcontent), |(_fws, c)| c),
+            String::new,
+            |mut acc, c| {
+                acc.push(c);
+                acc
+            },
         ),
-        |s| s,
+        preceded(many0(satisfy(char::is_whitespace)), rfc2234::dquote),
     )
     .parse(input)
 }
@@ -266,7 +234,7 @@ pub(crate) fn mailbox_list(input: &str) -> IResult<&str, Vec<(Option<String>, (S
 
 // addr-spec       =       local-part "@" domain
 pub(super) fn addr_spec(input: &str) -> IResult<&str, (String, String)> {
-    pair(terminated(local_part, char('@')), domain).parse(input)
+    separated_pair(local_part, char('@'), domain).parse(input)
 }
 
 // local-part      =       dot-atom / quoted-string / obs-local-part
@@ -289,8 +257,7 @@ fn obs_phrase(input: &str) -> IResult<&str, String> {
     // it there.
     map(
         pair(word, many0(alt((word, map(char('.'), |c| c.to_string()))))),
-        |(first, rest)| {
-            let mut result = first;
+        |(mut result, rest)| {
             for part in rest {
                 result.push_str(&part);
             }
@@ -306,14 +273,11 @@ fn obs_phrase(input: &str) -> IResult<&str, String> {
 // obs-local-part  =       word *("." word)
 pub(super) fn obs_local_part(input: &str) -> IResult<&str, String> {
     map(
-        pair(
-            word,
-            many0(map(pair(char('.'), word), |(dot, w)| format!("{dot}{w}"))),
-        ),
-        |(first, rest)| {
-            let mut result = first;
-            for part in rest {
-                result.push_str(&part);
+        pair(word, many0(pair(char('.'), word))),
+        |(mut result, rest)| {
+            for (_, word) in rest {
+                result.push('.');
+                result.push_str(&word);
             }
             result
         },
@@ -324,14 +288,11 @@ pub(super) fn obs_local_part(input: &str) -> IResult<&str, String> {
 // obs-domain      =       atom *("." atom)
 pub(super) fn obs_domain(input: &str) -> IResult<&str, String> {
     map(
-        pair(
-            atom,
-            many0(map(pair(char('.'), atom), |(dot, a)| format!("{dot}{a}"))),
-        ),
-        |(first, rest)| {
-            let mut result = first;
-            for part in rest {
-                result.push_str(&part);
+        pair(atom, many0(pair(char('.'), atom))),
+        |(mut result, rest)| {
+            for (_, atom) in rest {
+                result.push('.');
+                result.push_str(&atom);
             }
             result
         },
