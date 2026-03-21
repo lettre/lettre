@@ -401,10 +401,8 @@ impl SmtpClient {
 
         #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
         match &self.info.tls {
-            Tls::Opportunistic(tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters, &self.info.hello_name)?;
-                }
+            Tls::Opportunistic(tls_parameters) if conn.can_starttls() => {
+                conn.starttls(tls_parameters, &self.info.hello_name)?;
             }
             Tls::Required(tls_parameters) => {
                 conn.starttls(tls_parameters, &self.info.hello_name)?;
