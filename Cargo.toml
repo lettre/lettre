@@ -52,7 +52,7 @@ rustls = { version = "0.23.18", default-features = false, features = ["logging",
 rustls-platform-verifier = { version = "0.6.0", optional = true }
 rustls-native-certs = { version = "0.8", optional = true }
 webpki-roots = { version = "1.0.0", optional = true }
-boring = { version = "4.19", optional = true }
+boring = { version = "5", optional = true }
 
 # async
 futures-io = { version = "0.3.7", optional = true }
@@ -67,7 +67,7 @@ futures-rustls = { version = "0.26", default-features = false, features = ["logg
 tokio1_crate = { package = "tokio", version = "1", optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.26", default-features = false, features = ["logging", "tls12"], optional = true }
-tokio1_boring = { package = "tokio-boring", version = "4.19", optional = true }
+tokio1_boring = { package = "tokio-boring", version = "5", optional = true }
 
 ## dkim
 sha2 = { version = "0.10", features = ["oid"], optional = true }
