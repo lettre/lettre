@@ -131,7 +131,10 @@ pub(super) fn qcontent(input: &str) -> IResult<&str, char> {
 fn quoted_string(input: &str) -> IResult<&str, String> {
     delimited(
         rfc2234::dquote,
-        fold_many0(preceded(fws, qcontent), String::new, |mut acc, c| {
+        fold_many0(pair(fws, qcontent), String::new, |mut acc, (ws, c)| {
+            if let Some(ws_char) = ws {
+                acc.push(ws_char);
+            }
             acc.push(c);
             acc
         }),

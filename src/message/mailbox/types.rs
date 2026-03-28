@@ -611,4 +611,15 @@ mod test {
             ))
         );
     }
+
+    #[test]
+    fn parse_quoted_display_name_preserves_spaces() {
+        assert_eq!(
+            "\"Last, First\" <kayo@example.com>".parse(),
+            Ok(Mailbox::new(
+                Some("Last, First".into()),
+                "kayo@example.com".parse().unwrap()
+            ))
+        );
+    }
 }
