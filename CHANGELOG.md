@@ -1,3 +1,24 @@
+<a name="v0.11.20"></a>
+### v0.11.20 (2026-03-28)
+
+#### Upgrade notes
+
+* MSRV is now 1.85 ([#1130])
+
+#### Features
+
+* Add `Address::new_dangerous` ([#1107])
+
+#### Misc
+
+* Replace `chumsky` with `nom` for email address parsing ([#1099])
+* Upgrade to Rust 2024 edition ([#1130])
+* Upgrade `boring` and `tokio-boring` to v5 ([#1130])
+
+[#1099]: https://github.com/lettre/lettre/pull/1099
+[#1107]: https://github.com/lettre/lettre/pull/1107
+[#1130]: https://github.com/lettre/lettre/pull/1130
+
 <a name="v0.11.19"></a>
 ### v0.11.19 (2025-10-08)
 
