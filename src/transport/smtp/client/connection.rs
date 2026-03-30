@@ -239,10 +239,22 @@ impl SmtpConnection {
 
     /// Sends the message content
     pub fn message(&mut self, message: &[u8]) -> Result<Response, Error> {
+        self.message_iter(std::iter::once(message))
+    }
+
+    /// Sends the message content by consuming an iterator that in its whole represents a message.
+    pub fn message_iter<I, B>(&mut self, message: I) -> Result<Response, Error>
+    where
+        I: Iterator<Item = B>,
+        B: AsRef<[u8]>,
+    {
         let mut codec = ClientCodec::new();
-        let mut out_buf = Vec::with_capacity(message.len());
-        codec.encode(message, &mut out_buf);
-        self.write(out_buf.as_slice())?;
+        for message_part in message {
+            let message_part = message_part.as_ref();
+            let mut out_buf = Vec::with_capacity(message_part.len());
+            codec.encode(message_part, &mut out_buf);
+            self.write(out_buf.as_slice())?;
+        }
         self.write(b"\r\n.\r\n")?;
 
         self.read_response()
