@@ -7,17 +7,17 @@ use super::async_net::AsyncTokioStream;
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
 #[allow(deprecated)]
-use super::{async_net::AsyncNetworkStream, ClientCodec, TlsParameters};
+use super::{ClientCodec, TlsParameters, async_net::AsyncNetworkStream};
 use crate::{
+    Envelope,
     transport::smtp::{
         authentication::{Credentials, Mechanism},
         commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::{parse_response, Response},
+        response::{Response, parse_response},
     },
-    Envelope,
 };
 
 macro_rules! try_smtp (
@@ -375,7 +375,7 @@ impl AsyncSmtpConnection {
                             response.code(),
                             Some(response.message().collect()),
                         ))
-                    }
+                    };
                 }
                 Err(nom::Err::Failure(e)) => {
                     return Err(error::response(e.to_string()));

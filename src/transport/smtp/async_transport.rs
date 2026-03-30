@@ -9,8 +9,6 @@ use std::{
 use async_trait::async_trait;
 
 #[cfg(feature = "pool")]
-use super::pool::async_impl::Pool;
-#[cfg(feature = "pool")]
 use super::PoolConfig;
 #[cfg(any(
     feature = "tokio1-native-tls",
@@ -18,8 +16,10 @@ use super::PoolConfig;
     feature = "async-std1-rustls"
 ))]
 use super::Tls;
+#[cfg(feature = "pool")]
+use super::pool::async_impl::Pool;
 use super::{
-    client::AsyncSmtpConnection, ClientId, Credentials, Error, Mechanism, Response, SmtpInfo,
+    ClientId, Credentials, Error, Mechanism, Response, SmtpInfo, client::AsyncSmtpConnection,
 };
 #[cfg(feature = "async-std1")]
 use crate::AsyncStd1Executor;
@@ -133,7 +133,7 @@ where
         )))
     )]
     pub fn relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{Tls, TlsParameters, SUBMISSIONS_PORT};
+        use super::{SUBMISSIONS_PORT, Tls, TlsParameters};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -167,7 +167,7 @@ where
         )))
     )]
     pub fn starttls_relay(relay: &str) -> Result<AsyncSmtpTransportBuilder, Error> {
-        use super::{Tls, TlsParameters, SUBMISSION_PORT};
+        use super::{SUBMISSION_PORT, Tls, TlsParameters};
 
         let tls_parameters = TlsParameters::new(relay.into())?;
 
@@ -270,8 +270,8 @@ where
     ///
     /// ```rust,no_run
     /// use lettre::{
-    ///     message::header::ContentType, transport::smtp::authentication::Credentials,
-    ///     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor,
+    ///     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
+    ///     transport::smtp::authentication::Credentials,
     /// };
     /// # use tokio1_crate as tokio;
     ///

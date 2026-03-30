@@ -3,7 +3,15 @@
 //!
 //! [RFC2822]: https://datatracker.ietf.org/doc/html/rfc2822
 
-use chumsky::{error::Cheap, prelude::*};
+use nom::{
+    IResult, Parser,
+    branch::alt,
+    bytes::complete::take_while,
+    character::complete::{char, one_of, satisfy},
+    combinator::{eof, map, opt, recognize},
+    multi::{fold_many0, many0, many1, separated_list0},
+    sequence::{delimited, pair, preceded, separated_pair, terminated},
+};
 
 use super::{rfc2234, rfc5336};
 
@@ -15,8 +23,8 @@ use super::{rfc2234, rfc5336};
 //                         %d12 /          ;  carriage return, line feed,
 //                         %d14-31 /       ;  and white space characters
 //                         %d127
-fn no_ws_ctl() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c| matches!(u32::from(*c), 1..=8 | 11 | 12 | 14..=31 | 127))
+fn no_ws_ctl(input: &str) -> IResult<&str, char> {
+    satisfy(|c| matches!(u32::from(c), 1..=8 | 11 | 12 | 14..=31 | 127)).parse(input)
 }
 
 // text            =       %d1-9 /         ; Characters excluding CR and LF
@@ -24,16 +32,16 @@ fn no_ws_ctl() -> impl Parser<char, char, Error = Cheap<char>> {
 //                         %d12 /
 //                         %d14-127 /
 //                         obs-text
-fn text() -> impl Parser<char, char, Error = Cheap<char>> {
-    filter(|c| matches!(u32::from(*c), 1..=9 | 11 | 12 | 14..=127))
+fn text(input: &str) -> IResult<&str, char> {
+    satisfy(|c| matches!(u32::from(c), 1..=9 | 11 | 12 | 14..=127)).parse(input)
 }
 
 // 3.2.2. Quoted characters
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.2
 
 // quoted-pair     =       ("\" text) / obs-qp
-fn quoted_pair() -> impl Parser<char, char, Error = Cheap<char>> {
-    just('\\').ignore_then(text())
+fn quoted_pair(input: &str) -> IResult<&str, char> {
+    preceded(char('\\'), text).parse(input)
 }
 
 // 3.2.3. Folding white space and comments
@@ -41,17 +49,15 @@ fn quoted_pair() -> impl Parser<char, char, Error = Cheap<char>> {
 
 // FWS             =       ([*WSP CRLF] 1*WSP) /   ; Folding white space
 //                         obs-FWS
-pub(super) fn fws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
-    rfc2234::wsp()
-        .or_not()
-        .then_ignore(rfc2234::wsp().ignored().repeated())
+pub(super) fn fws(input: &str) -> IResult<&str, Option<char>> {
+    terminated(opt(rfc2234::wsp), take_while(|c| c == ' ' || c == '\t')).parse(input)
 }
 
 // CFWS            =       *([FWS] comment) (([FWS] comment) / FWS)
-pub(super) fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
+pub(super) fn cfws(input: &str) -> IResult<&str, Option<char>> {
     // TODO: comment are not currently supported, so for now a cfws is
     // the same as a fws.
-    fws()
+    fws(input)
 }
 
 // 3.2.4. Atom
@@ -68,57 +74,34 @@ pub(super) fn cfws() -> impl Parser<char, Option<char>, Error = Cheap<char>> {
 //                         "`" / "{" /
 //                         "|" / "}" /
 //                         "~"
-pub(super) fn atext() -> impl Parser<char, char, Error = Cheap<char>> {
-    choice((
-        rfc2234::alpha(),
-        rfc2234::digit(),
-        filter(|c| {
-            matches!(
-                *c,
-                '!' | '#'
-                    | '$'
-                    | '%'
-                    | '&'
-                    | '\''
-                    | '*'
-                    | '+'
-                    | '-'
-                    | '/'
-                    | '='
-                    | '?'
-                    | '^'
-                    | '_'
-                    | '`'
-                    | '{'
-                    | '|'
-                    | '}'
-                    | '~'
-            )
-        }),
+pub(super) fn atext(input: &str) -> IResult<&str, char> {
+    alt((
+        rfc2234::alpha,
+        rfc2234::digit,
+        one_of("!#$%&'*+-/=?^_`{|}~"),
         // also allow non ASCII UTF8 chars
-        rfc5336::utf8_non_ascii(),
+        rfc5336::utf8_non_ascii,
     ))
+    .parse(input)
 }
 
 // atom            =       [CFWS] 1*atext [CFWS]
-pub(super) fn atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    cfws().chain(atext().repeated().at_least(1))
+pub(super) fn atom(input: &str) -> IResult<&str, String> {
+    preceded(cfws, map(recognize(many1(atext)), str::to_owned)).parse(input)
 }
 
 // dot-atom        =       [CFWS] dot-atom-text [CFWS]
-pub(super) fn dot_atom() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    cfws().chain(dot_atom_text())
+pub(super) fn dot_atom(input: &str) -> IResult<&str, String> {
+    preceded(cfws, dot_atom_text).parse(input)
 }
 
 // dot-atom-text   =       1*atext *("." 1*atext)
-pub(super) fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    atext().repeated().at_least(1).chain(
-        just('.')
-            .chain(atext().repeated().at_least(1))
-            .repeated()
-            .at_least(1)
-            .flatten(),
+pub(super) fn dot_atom_text(input: &str) -> IResult<&str, String> {
+    map(
+        recognize(pair(many1(atext), many0(pair(char('.'), many1(atext))))),
+        str::to_owned,
     )
+    .parse(input)
 }
 
 // 3.2.5. Quoted strings
@@ -129,122 +112,169 @@ pub(super) fn dot_atom_text() -> impl Parser<char, Vec<char>, Error = Cheap<char
 //                         %d33 /          ; The rest of the US-ASCII
 //                         %d35-91 /       ;  characters not including "\"
 //                         %d93-126        ;  or the quote character
-fn qtext() -> impl Parser<char, char, Error = Cheap<char>> {
-    choice((
-        filter(|c| matches!(u32::from(*c), 33 | 35..=91 | 93..=126)),
-        no_ws_ctl(),
+fn qtext(input: &str) -> IResult<&str, char> {
+    alt((
+        satisfy(|c| matches!(u32::from(c), 33 | 35..=91 | 93..=126)),
+        no_ws_ctl,
     ))
+    .parse(input)
 }
 
 // qcontent        =       qtext / quoted-pair
-pub(super) fn qcontent() -> impl Parser<char, char, Error = Cheap<char>> {
-    choice((qtext(), quoted_pair(), rfc5336::utf8_non_ascii()))
+pub(super) fn qcontent(input: &str) -> IResult<&str, char> {
+    alt((qtext, quoted_pair, rfc5336::utf8_non_ascii)).parse(input)
 }
 
 // quoted-string   =       [CFWS]
 //                         DQUOTE *([FWS] qcontent) [FWS] DQUOTE
 //                         [CFWS]
-fn quoted_string() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    rfc2234::dquote()
-        .ignore_then(fws().chain(qcontent()).repeated().flatten())
-        .then_ignore(text::whitespace())
-        .then_ignore(rfc2234::dquote())
+fn quoted_string(input: &str) -> IResult<&str, String> {
+    delimited(
+        rfc2234::dquote,
+        fold_many0(pair(fws, qcontent), String::new, |mut acc, (ws, c)| {
+            if let Some(ws_char) = ws {
+                acc.push(ws_char);
+            }
+            acc.push(c);
+            acc
+        }),
+        preceded(fws, rfc2234::dquote),
+    )
+    .parse(input)
 }
 
 // 3.2.6. Miscellaneous tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
 
 // word            =       atom / quoted-string
-fn word() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((quoted_string(), atom()))
+fn word(input: &str) -> IResult<&str, String> {
+    alt((quoted_string, atom)).parse(input)
 }
 
 // phrase          =       1*word / obs-phrase
-fn phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((obs_phrase(), word().repeated().at_least(1).flatten()))
+fn phrase(input: &str) -> IResult<&str, String> {
+    alt((obs_phrase, map(many1(word), |words| words.join(" ")))).parse(input)
 }
 
 // 3.4. Address Specification
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4
 
 // mailbox         =       name-addr / addr-spec
-pub(crate) fn mailbox() -> impl Parser<char, (Option<String>, (String, String)), Error = Cheap<char>>
-{
-    choice((name_addr(), addr_spec().map(|addr| (None, addr))))
-        .padded()
-        .then_ignore(end())
+pub(crate) fn mailbox(input: &str) -> IResult<&str, (Option<String>, (String, String))> {
+    delimited(
+        take_while(char::is_whitespace),
+        alt((name_addr, map(addr_spec, |addr| (None, addr)))),
+        (take_while(char::is_whitespace), eof),
+    )
+    .parse(input)
 }
 
 // name-addr       =       [display-name] angle-addr
-fn name_addr() -> impl Parser<char, (Option<String>, (String, String)), Error = Cheap<char>> {
-    display_name().collect().or_not().then(angle_addr())
+fn name_addr(input: &str) -> IResult<&str, (Option<String>, (String, String))> {
+    pair(opt(display_name), angle_addr).parse(input)
 }
 
 // angle-addr      =       [CFWS] "<" addr-spec ">" [CFWS] / obs-angle-addr
-fn angle_addr() -> impl Parser<char, (String, String), Error = Cheap<char>> {
-    addr_spec()
-        .delimited_by(just('<').ignored(), just('>').ignored())
-        .padded()
+fn angle_addr(input: &str) -> IResult<&str, (String, String)> {
+    delimited((cfws, char('<')), addr_spec, (char('>'), cfws)).parse(input)
 }
 
 // display-name    =       phrase
-fn display_name() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    phrase()
+fn display_name(input: &str) -> IResult<&str, String> {
+    phrase(input)
 }
 
 // mailbox-list    =       (mailbox *("," mailbox)) / obs-mbox-list
-pub(crate) fn mailbox_list(
-) -> impl Parser<char, Vec<(Option<String>, (String, String))>, Error = Cheap<char>> {
-    choice((name_addr(), addr_spec().map(|addr| (None, addr))))
-        .separated_by(just(',').padded())
-        .then_ignore(end())
+#[allow(clippy::type_complexity)]
+pub(crate) fn mailbox_list(input: &str) -> IResult<&str, Vec<(Option<String>, (String, String))>> {
+    terminated(
+        separated_list0(
+            delimited(
+                take_while(char::is_whitespace),
+                char(','),
+                take_while(char::is_whitespace),
+            ),
+            alt((name_addr, map(addr_spec, |addr| (None, addr)))),
+        ),
+        eof,
+    )
+    .parse(input)
 }
 
 // 3.4.1. Addr-spec specification
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.4.1
 
 // addr-spec       =       local-part "@" domain
-pub(super) fn addr_spec() -> impl Parser<char, (String, String), Error = Cheap<char>> {
-    local_part()
-        .collect()
-        .then_ignore(just('@'))
-        .then(domain().collect())
+pub(super) fn addr_spec(input: &str) -> IResult<&str, (String, String)> {
+    separated_pair(local_part, char('@'), domain).parse(input)
 }
 
 // local-part      =       dot-atom / quoted-string / obs-local-part
-pub(super) fn local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    choice((dot_atom(), quoted_string(), obs_local_part()))
+pub(super) fn local_part(input: &str) -> IResult<&str, String> {
+    alt((dot_atom, quoted_string, obs_local_part)).parse(input)
 }
 
 // domain          =       dot-atom / domain-literal / obs-domain
-pub(super) fn domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
+pub(super) fn domain(input: &str) -> IResult<&str, String> {
     // NOTE: omitting domain-literal since it may never be used
-    choice((dot_atom(), obs_domain()))
+    alt((dot_atom, obs_domain)).parse(input)
 }
 
 // 4.1. Miscellaneous obsolete tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-4.1
 
 // obs-phrase      =       word *(word / "." / CFWS)
-fn obs_phrase() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    // NOTE: the CFWS is already captured by the word, no need to add
-    // it there.
-    word().chain(
-        choice((word(), just('.').repeated().exactly(1)))
-            .repeated()
-            .flatten(),
+fn obs_phrase(input: &str) -> IResult<&str, String> {
+    map(
+        pair(
+            word,
+            many0(pair(
+                opt(fws),
+                alt((word, map(char('.'), |c| c.to_string()))),
+            )),
+        ),
+        |(mut result, rest)| {
+            for (ws, part) in rest {
+                if ws.flatten().is_some() {
+                    result.push(' ');
+                }
+                result.push_str(&part);
+            }
+            result
+        },
     )
+    .parse(input)
 }
 
 // 4.4. Obsolete Addressing
 // https://datatracker.ietf.org/doc/html/rfc2822#section-4.4
 
 // obs-local-part  =       word *("." word)
-pub(super) fn obs_local_part() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    word().chain(just('.').chain(word()).repeated().flatten())
+pub(super) fn obs_local_part(input: &str) -> IResult<&str, String> {
+    map(
+        pair(word, many0(pair(char('.'), word))),
+        |(mut result, rest)| {
+            for (_, word) in rest {
+                result.push('.');
+                result.push_str(&word);
+            }
+            result
+        },
+    )
+    .parse(input)
 }
 
 // obs-domain      =       atom *("." atom)
-pub(super) fn obs_domain() -> impl Parser<char, Vec<char>, Error = Cheap<char>> {
-    atom().chain(just('.').chain(atom()).repeated().flatten())
+pub(super) fn obs_domain(input: &str) -> IResult<&str, String> {
+    map(
+        pair(atom, many0(pair(char('.'), atom))),
+        |(mut result, rest)| {
+            for (_, atom) in rest {
+                result.push('.');
+                result.push_str(&atom);
+            }
+            result
+        },
+    )
+    .parse(input)
 }

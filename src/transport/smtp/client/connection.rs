@@ -16,7 +16,7 @@ use crate::{
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::{parse_response, Response},
+        response::{Response, parse_response},
     },
 };
 

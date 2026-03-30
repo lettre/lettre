@@ -1,7 +1,7 @@
 [package]
 name = "lettre"
 # remember to update html_root_url and README.md (Cargo.toml example and deps.rs badge)
-version = "0.11.19"
+version = "0.11.20"
 description = "Email client"
 readme = "README.md"
 homepage = "https://lettre.rs"
@@ -10,8 +10,8 @@ license = "MIT"
 authors = ["Alexis Mousset <contact@amousset.me>", "Paolo Barbolini <paolo@paolo565.org>"]
 categories = ["email", "network-programming"]
 keywords = ["email", "smtp", "mailer", "message", "sendmail"]
-edition = "2021"
-rust-version = "1.74"
+edition = "2024"
+rust-version = "1.85"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "lettre/lettre" }
@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 email_address = { version = "0.2.1", default-features = false }
-chumsky = "0.9"
+nom = "8"
 idna = "1"
 
 ## tracing support
@@ -40,7 +40,6 @@ serde = { version = "1.0.110", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 
 # smtp-transport
-nom = { version = "8", optional = true }
 hostname = { version = "0.4", optional = true } # feature
 socket2 = { version = "0.6", optional = true }
 url = { version = "2.4", optional = true }
@@ -52,7 +51,7 @@ rustls = { version = "0.23.18", default-features = false, features = ["logging",
 rustls-platform-verifier = { version = "0.6.0", optional = true }
 rustls-native-certs = { version = "0.8", optional = true }
 webpki-roots = { version = "1.0.0", optional = true }
-boring = { version = "4", optional = true }
+boring = { version = "5", optional = true }
 
 # async
 futures-io = { version = "0.3.7", optional = true }
@@ -67,7 +66,7 @@ futures-rustls = { version = "0.26", default-features = false, features = ["logg
 tokio1_crate = { package = "tokio", version = "1", optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.26", default-features = false, features = ["logging", "tls12"], optional = true }
-tokio1_boring = { package = "tokio-boring", version = "4", optional = true }
+tokio1_boring = { package = "tokio-boring", version = "5", optional = true }
 
 ## dkim
 sha2 = { version = "0.10", features = ["oid"], optional = true }
@@ -80,7 +79,7 @@ web-time = { version = "1.1.0", optional = true }
 
 [dev-dependencies]
 pretty_assertions = "1"
-criterion = "0.5"
+criterion = "0.7"
 tracing = { version = "0.1.16", default-features = false, features = ["std"] }
 tracing-subscriber = "0.3"
 glob = "0.3"
@@ -88,7 +87,7 @@ walkdir = "2"
 tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
 async-std = { version = "1.8", features = ["attributes"] }
 serde_json = "1"
-maud = "0.26"
+maud = "0.27"
 
 [[bench]]
 harness = false
@@ -107,7 +106,7 @@ mime03 = ["dep:mime"]
 file-transport = ["dep:uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
 file-transport-envelope = ["serde", "dep:serde_json", "file-transport"]
 sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
-smtp-transport = ["dep:base64", "dep:nom", "dep:socket2", "dep:url", "dep:percent-encoding", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
+smtp-transport = ["dep:base64", "dep:socket2", "dep:url", "dep:percent-encoding", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
 pool = ["dep:futures-util"]
 

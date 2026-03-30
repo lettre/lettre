@@ -57,8 +57,8 @@
 //! # #[cfg(all(feature = "builder", feature = "smtp-transport"))]
 //! # fn main() -> Result<(), Box<dyn Error>> {
 //! use lettre::{
-//!     message::header::ContentType, transport::smtp::authentication::Credentials, Message,
-//!     SmtpTransport, Transport,
+//!     Message, SmtpTransport, Transport, message::header::ContentType,
+//!     transport::smtp::authentication::Credentials,
 //! };
 //!
 //! let email = Message::builder()

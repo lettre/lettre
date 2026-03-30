@@ -5,7 +5,6 @@ use std::{
     str::FromStr,
 };
 
-use chumsky::prelude::*;
 use email_encoding::headers::writer::EmailWriter;
 
 use super::parsers;
@@ -56,7 +55,7 @@ impl Mailbox {
     /// # Examples
     ///
     /// ```
-    /// use lettre::{message::Mailbox, Address};
+    /// use lettre::{Address, message::Mailbox};
     ///
     /// # use std::error::Error;
     /// # fn main() -> Result<(), Box<dyn Error>> {
@@ -114,7 +113,7 @@ impl FromStr for Mailbox {
     type Err = AddressError;
 
     fn from_str(src: &str) -> Result<Mailbox, Self::Err> {
-        let (name, (user, domain)) = parsers::mailbox().parse(src).map_err(|_errs| {
+        let (_rest, (name, (user, domain))) = parsers::mailbox(src).map_err(|_errs| {
             // TODO: improve error management
             AddressError::InvalidInput
         })?;
@@ -158,8 +157,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -180,8 +179,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -202,8 +201,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -229,8 +228,8 @@ impl Mailboxes {
     ///
     /// ```
     /// use lettre::{
-    ///     message::{Mailbox, Mailboxes},
     ///     Address,
+    ///     message::{Mailbox, Mailboxes},
     /// };
     ///
     /// # use std::error::Error;
@@ -345,7 +344,7 @@ impl FromStr for Mailboxes {
     fn from_str(src: &str) -> Result<Self, Self::Err> {
         let mut mailboxes = Vec::new();
 
-        let parsed_mailboxes = parsers::mailbox_list().parse(src).map_err(|_errs| {
+        let (_rest, parsed_mailboxes) = parsers::mailbox_list(src).map_err(|_errs| {
             // TODO: improve error management
             AddressError::InvalidInput
         })?;
@@ -608,6 +607,17 @@ mod test {
             ("K.".to_owned(), "kayo@example.com".to_owned()).try_into(),
             Ok(Mailbox::new(
                 Some("K.".into()),
+                "kayo@example.com".parse().unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn parse_quoted_display_name_preserves_spaces() {
+        assert_eq!(
+            "\"Last, First\" <kayo@example.com>".parse(),
+            Ok(Mailbox::new(
+                Some("Last, First".into()),
                 "kayo@example.com".parse().unwrap()
             ))
         );

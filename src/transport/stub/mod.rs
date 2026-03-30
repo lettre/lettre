@@ -12,7 +12,7 @@
 //! # #[cfg(feature = "builder")]
 //! # {
 //! use lettre::{
-//!     message::header::ContentType, transport::stub::StubTransport, Message, Transport,
+//!     Message, Transport, message::header::ContentType, transport::stub::StubTransport,
 //! };
 //!
 //! # use std::error::Error;
@@ -51,7 +51,7 @@ use async_trait::async_trait;
 
 #[cfg(any(feature = "tokio1", feature = "async-std1"))]
 use crate::AsyncTransport;
-use crate::{address::Envelope, Transport};
+use crate::{Transport, address::Envelope};
 
 /// An error returned by the stub transport
 #[non_exhaustive]

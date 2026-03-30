@@ -1,6 +1,4 @@
 use std::fmt::Debug;
-#[cfg(feature = "smtp-transport")]
-use std::future::Future;
 #[cfg(feature = "file-transport")]
 use std::io::Result as IoResult;
 #[cfg(feature = "file-transport")]
@@ -16,6 +14,11 @@ use futures_util::future::BoxFuture;
     feature = "smtp-transport",
     any(feature = "tokio1", feature = "async-std1")
 ))]
+use crate::transport::smtp::Error;
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "tokio1", feature = "async-std1")
+))]
 use crate::transport::smtp::client::AsyncSmtpConnection;
 #[cfg(all(
     feature = "smtp-transport",
@@ -27,11 +30,6 @@ use crate::transport::smtp::client::Tls;
     any(feature = "tokio1", feature = "async-std1")
 ))]
 use crate::transport::smtp::extension::ClientId;
-#[cfg(all(
-    feature = "smtp-transport",
-    any(feature = "tokio1", feature = "async-std1")
-))]
-use crate::transport::smtp::Error;
 
 /// Async executor abstraction trait
 ///
@@ -150,10 +148,8 @@ impl Executor for Tokio1Executor {
 
         #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls"))]
         match tls {
-            Tls::Opportunistic(tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
-                }
+            Tls::Opportunistic(tls_parameters) if conn.can_starttls() => {
+                conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             Tls::Required(tls_parameters) => {
                 conn.starttls(tls_parameters.clone(), hello_name).await?;
@@ -248,10 +244,8 @@ impl Executor for AsyncStd1Executor {
 
         #[cfg(feature = "async-std1-rustls")]
         match tls {
-            Tls::Opportunistic(tls_parameters) => {
-                if conn.can_starttls() {
-                    conn.starttls(tls_parameters.clone(), hello_name).await?;
-                }
+            Tls::Opportunistic(tls_parameters) if conn.can_starttls() => {
+                conn.starttls(tls_parameters.clone(), hello_name).await?;
             }
             Tls::Required(tls_parameters) => {
                 conn.starttls(tls_parameters.clone(), hello_name).await?;

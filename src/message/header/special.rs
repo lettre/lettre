@@ -1,6 +1,6 @@
 use crate::{
-    message::header::{Header, HeaderName, HeaderValue},
     BoxError,
+    message::header::{Header, HeaderName, HeaderValue},
 };
 
 /// Message format version, defined in [RFC2045](https://tools.ietf.org/html/rfc2045#section-4)
@@ -69,7 +69,7 @@ impl Default for MimeVersion {
 mod test {
     use pretty_assertions::assert_eq;
 
-    use super::{MimeVersion, MIME_VERSION_1_0};
+    use super::{MIME_VERSION_1_0, MimeVersion};
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
