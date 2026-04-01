@@ -79,12 +79,48 @@
 //!
 //! * **aws-lc-rs**: use [AWS-LC] (via [`aws-lc-rs`]) as the `rustls` crypto backend
 //! * **ring**: use [`ring`] as the `rustls` crypto backend
+//! * **rustls-no-provider**: don't install a default crypto provider, allowing the use
+//!   of a custom one (see [Custom rustls crypto providers](#custom-rustls-crypto-providers) below)
 //!
 //! When enabling `aws-lc-rs`, the `fips` feature can also be enabled to have
 //! rustls use the FIPS certified module of AWS-LC.
 //!
 //! `aws-lc-rs` may require cmake on some platforms to compile.
 //! `fips` always requires cmake and the Go compiler to compile.
+//!
+//! ##### Custom rustls crypto providers
+//!
+//! _Bring your own [`rustls`] crypto provider_
+//!
+//! By enabling the `rustls-no-provider` feature instead of `aws-lc-rs` or `ring`,
+//! you can use any [`rustls`]-compatible crypto provider such as
+//! [`rustls-graviola`], [`rustls-rustcrypto`] or others.
+//!
+//! The provider must be installed before using lettre by calling
+//! [`CryptoProvider::install_default`]:
+//!
+//! ```rust
+//! # mod rustls_graviola {
+//! #     pub struct FakeProvider;
+//! #     impl FakeProvider {
+//! #         pub fn install_default(self) -> Result<(), String> { Ok(()) }
+//! #     }
+//! #     pub fn default_provider() -> FakeProvider { FakeProvider }
+//! # }
+//! // Example using the `rustls-graviola` crypto provider crate.
+//! // Refer to your provider's documentation for the correct setup.
+//! rustls_graviola::default_provider()
+//!     .install_default()
+//!     .expect("Failed to install crypto provider");
+//! ```
+//!
+//! If `aws-lc-rs` or `ring` is enabled alongside `rustls-no-provider`, the
+//! globally installed provider (if any) takes precedence. If none is installed,
+//! lettre falls back to the feature-selected provider.
+//!
+//! [`CryptoProvider::install_default`]: https://docs.rs/rustls/latest/rustls/crypto/struct.CryptoProvider.html#method.install_default
+//! [`rustls-graviola`]: https://crates.io/crates/rustls-graviola
+//! [`rustls-rustcrypto`]: https://crates.io/crates/rustls-rustcrypto
 //!
 //! ##### rustls certificate verification backend
 //!
@@ -204,10 +240,15 @@
 
 #[cfg(not(lettre_ignore_tls_mismatch))]
 mod compiletime_checks {
-    #[cfg(all(feature = "rustls", not(feature = "aws-lc-rs"), not(feature = "ring")))]
+    #[cfg(all(
+        feature = "rustls",
+        not(feature = "aws-lc-rs"),
+        not(feature = "ring"),
+        not(feature = "rustls-no-provider")
+    ))]
     compile_error!(
-        "feature `rustls` also requires either the `aws-lc-rs` or the `ring` feature to
-    be enabled"
+        "feature `rustls` also requires either the `aws-lc-rs`, the `ring` or the `rustls-no-provider` feature to be enabled.
+    When using `rustls-no-provider` a custom `rustls` crypto provider must be installed at runtime by calling `install_default()` on the provider before using lettre, or it will panic."
     );
 
     #[cfg(all(
