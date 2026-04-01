@@ -62,7 +62,7 @@ jobs:
         run: cargo install cargo-hack --debug
 
       - name: Check with cargo hack
-        run: cargo hack check --feature-powerset --depth 3 --at-least-one-of aws-lc-rs,ring --at-least-one-of rustls-native-certs,webpki-roots
+        run: cargo hack check --feature-powerset --depth 3 --at-least-one-of aws-lc-rs,ring,rustls-no-provider --at-least-one-of rustls-native-certs,webpki-roots
 
   test:
     name: test / ${{ matrix.name }}

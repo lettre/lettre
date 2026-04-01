@@ -111,6 +111,7 @@ smtp-transport = ["dep:base64", "dep:socket2", "dep:url", "dep:percent-encoding"
 pool = ["dep:futures-util"]
 
 rustls = ["dep:rustls"]
+rustls-no-provider = ["rustls"]
 aws-lc-rs = ["rustls?/aws-lc-rs"]
 fips = ["aws-lc-rs", "rustls?/fips"]
 ring = ["rustls?/ring"]
