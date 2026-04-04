@@ -1,3 +1,14 @@
+<a name="v0.11.21"></a>
+### v0.11.21 (2026-04-04)
+
+#### Features
+
+* Add `rustls-no-provider` support ([#1134])
+* Add `message_iter` to `AsyncConnection` and `Connection` ([#1116])
+
+[#1116]: https://github.com/lettre/lettre/pull/1116
+[#1134]: https://github.com/lettre/lettre/pull/1134
+
 <a name="v0.11.20"></a>
 ### v0.11.20 (2026-03-28)
 
