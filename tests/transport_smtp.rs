@@ -70,3 +70,47 @@ mod asyncstd_1 {
         sender.send(email).await.unwrap();
     }
 }
+
+#[cfg(test)]
+#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
+mod read_response_caps {
+    use std::{io::Write, net::TcpListener, thread, time::Duration};
+
+    use lettre::transport::smtp::{client::AsyncSmtpConnection, extension::ClientId};
+    use tokio1_crate as tokio;
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn oversized_line_is_bounded() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        thread::spawn(move || {
+            if let Ok((mut sock, _)) = listener.accept() {
+                let mut line = vec![b'x'; 4096];
+                line.extend_from_slice(b"\r\n");
+                let _ = sock.write_all(&line);
+            }
+        });
+
+        let result = tokio::time::timeout(
+            Duration::from_secs(5),
+            AsyncSmtpConnection::connect_tokio1(
+                addr,
+                None,
+                &ClientId::Domain("test".into()),
+                None,
+                None,
+            ),
+        )
+        .await
+        .expect("connect must return within 5s, not hang");
+
+        let err = match result {
+            Ok(_) => panic!("oversized line must surface as an error"),
+            Err(e) => e,
+        };
+        assert!(
+            err.is_response(),
+            "expected response-kind error, got {err:?}"
+        );
+    }
+}

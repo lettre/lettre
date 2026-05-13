@@ -50,6 +50,12 @@ mod connection;
 mod net;
 mod tls;
 
+/// Total bytes cap on an SMTP response (Postfix `smtp_response_limit`).
+pub(super) const MAX_RESPONSE_BYTES: usize = 100_000;
+
+/// Single-line byte cap (Postfix `line_length_limit`).
+pub(super) const MAX_RESPONSE_LINE_BYTES: usize = 1000;
+
 /// The codec used for transparency
 #[derive(Debug)]
 struct ClientCodec {

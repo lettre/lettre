@@ -7,7 +7,9 @@ use std::{
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
-use super::{ClientCodec, NetworkStream, TlsParameters};
+use super::{
+    ClientCodec, MAX_RESPONSE_BYTES, MAX_RESPONSE_LINE_BYTES, NetworkStream, TlsParameters,
+};
 use crate::{
     address::Envelope,
     transport::smtp::{
@@ -282,8 +284,17 @@ impl SmtpConnection {
     /// Gets the SMTP response
     pub fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
+        let mut pre = 0;
 
         while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
+            if buffer.len() - pre > MAX_RESPONSE_LINE_BYTES {
+                return Err(error::response("SMTP response line too long"));
+            }
+            if buffer.len() > MAX_RESPONSE_BYTES {
+                return Err(error::response("SMTP response too large"));
+            }
+            pre = buffer.len();
+
             #[cfg(feature = "tracing")]
             tracing::debug!("<< {}", escape_crlf(&buffer));
             match parse_response(&buffer) {
