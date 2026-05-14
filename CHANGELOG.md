@@ -1,3 +1,22 @@
+<a name="v0.11.22"></a>
+### v0.11.22 (2026-05-14)
+
+#### Security
+
+* Fix inverted TLS hostname verification flag in `boring-tls` backend that silently disabled hostname verification ([f5efffc])
+
+#### Bug Fixes
+
+* Cap `read_response` buffer to prevent unbounded memory growth ([#1143])
+
+#### Misc
+
+* Upgrade `rustls-platform-verifier` to v0.7 ([#1136])
+
+[f5efffc]: https://github.com/lettre/lettre/commit/f5efffc88360dbdbfcef80f465e42d5bce68ca35
+[#1136]: https://github.com/lettre/lettre/pull/1136
+[#1143]: https://github.com/lettre/lettre/pull/1143
+
 <a name="v0.11.21"></a>
 ### v0.11.21 (2026-04-04)
 
@@ -8,6 +27,8 @@
 
 [#1116]: https://github.com/lettre/lettre/pull/1116
 [#1134]: https://github.com/lettre/lettre/pull/1134
+[#1136]: https://github.com/lettre/lettre/pull/1136
+[#1143]: https://github.com/lettre/lettre/pull/1143
 
 <a name="v0.11.20"></a>
 ### v0.11.20 (2026-03-28)

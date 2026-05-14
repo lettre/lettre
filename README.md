@@ -28,8 +28,8 @@
 </div>
 
 <div align="center">
-  <a href="https://deps.rs/crate/lettre/0.11.21">
-    <img src="https://deps.rs/crate/lettre/0.11.21/status.svg"
+  <a href="https://deps.rs/crate/lettre/0.11.22">
+    <img src="https://deps.rs/crate/lettre/0.11.22/status.svg"
       alt="dependency status" />
   </a>
 </div>
