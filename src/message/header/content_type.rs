@@ -108,7 +108,7 @@ mod serde {
         where
             S: Serializer,
         {
-            serializer.serialize_newtype_struct("ContentType", &format!("{}", &self.0))
+            serializer.serialize_newtype_struct("ContentType", &self.0.to_string())
         }
     }
 
