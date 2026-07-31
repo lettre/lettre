@@ -383,10 +383,7 @@ impl AsyncSmtpConnection {
                     return if response.is_positive() {
                         Ok(response)
                     } else {
-                        Err(error::code(
-                            response.code(),
-                            Some(response.message().collect()),
-                        ))
+                        Err(error::code_from_response(&response))
                     };
                 }
                 Err(nom::Err::Failure(e)) => {

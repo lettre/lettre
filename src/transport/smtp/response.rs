@@ -197,6 +197,51 @@ impl Response {
     pub fn message(&self) -> impl Iterator<Item = &str> {
         self.message.iter().map(String::as_str)
     }
+
+    /// The message lines joined with spaces, keeping only the first
+    /// occurrence of a repeated enhanced status code.
+    pub(super) fn message_joined(&self) -> String {
+        let Some((first, rest)) = self.message.split_first() else {
+            return String::new();
+        };
+
+        let repeated = self.enhanced_status_code();
+        let mut joined = String::from(first);
+        for line in rest {
+            joined.push(' ');
+            joined.push_str(match repeated {
+                Some(code) => line
+                    .strip_prefix(code)
+                    .filter(|rest| rest.starts_with(' '))
+                    .map_or(line.as_str(), str::trim_start),
+                None => line.as_str(),
+            });
+        }
+        joined
+    }
+
+    /// The enhanced status code the reply starts with, if it has one.
+    ///
+    /// RFC 2034 section 4: the code must agree with the reply code.
+    fn enhanced_status_code(&self) -> Option<&str> {
+        let expected_class = match self.code.severity {
+            Severity::PositiveCompletion => "2",
+            Severity::TransientNegativeCompletion => "4",
+            Severity::PermanentNegativeCompletion => "5",
+            // RFC 2034 defines classes 2, 4 and 5 only.
+            Severity::PositiveIntermediate => return None,
+        };
+
+        let word = self.first_word()?;
+        let (class, rest) = word.split_once('.')?;
+        let (subject, detail) = rest.split_once('.')?;
+
+        (class == expected_class
+            && [subject, detail].into_iter().all(|part| {
+                (1..=3).contains(&part.len()) && part.bytes().all(|b| b.is_ascii_digit())
+            }))
+        .then_some(word)
+    }
 }
 
 // Parsers (originally from tokio-smtp)
@@ -288,6 +333,66 @@ pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn test_multiline_error_keeps_lines_separated() {
+        // Gmail's reverse-DNS rejection: every line repeats the status code.
+        let raw = "550-5.7.25 [203.0.113.1] The IP address sending this message does not have a\r\n\
+                   550-5.7.25 PTR record setup, or the corresponding forward DNS entry does not\r\n\
+                   550 5.7.25 match the sending IP.\r\n";
+
+        let response: Response = raw.parse().unwrap();
+        let rendered = error::code_from_response(&response).to_string();
+
+        assert!(
+            rendered.ends_with(
+                "5.7.25 [203.0.113.1] The IP address sending this message does not have a \
+                 PTR record setup, or the corresponding forward DNS entry does not \
+                 match the sending IP."
+            ),
+            "unexpected rendering: {rendered}"
+        );
+        assert_eq!(
+            rendered.matches("5.7.25").count(),
+            1,
+            "status code repeated: {rendered}"
+        );
+    }
+
+    #[test]
+    fn test_multiline_message_without_enhanced_code() {
+        let raw = "250-first line\r\n\
+                   250 second line\r\n";
+
+        let response: Response = raw.parse().unwrap();
+        assert_eq!(response.message_joined(), "first line second line");
+    }
+
+    #[test]
+    fn test_status_code_prefixing_a_longer_one_is_kept() {
+        // Stripping "5.7.2" off the second line would leave a stray "5".
+        let raw = "550-5.7.2 first line\r\n\
+                   550 5.7.25 second line\r\n";
+
+        let response: Response = raw.parse().unwrap();
+        assert_eq!(
+            response.message_joined(),
+            "5.7.2 first line 5.7.25 second line"
+        );
+    }
+
+    #[test]
+    fn test_enhanced_code_disagreeing_with_reply_code_is_kept() {
+        // Non-conformant: the classes disagree, so nothing is stripped.
+        let raw = "550-4.7.1 first line\r\n\
+                   550 4.7.1 second line\r\n";
+
+        let response: Response = raw.parse().unwrap();
+        assert_eq!(
+            response.message_joined(),
+            "4.7.1 first line 4.7.1 second line"
+        );
+    }
 
     #[test]
     fn test_severity_fmt() {
