@@ -1,3 +1,17 @@
+<a name="v0.11.23"></a>
+### v0.11.23 (2026-08-03)
+
+#### Bug Fixes
+
+* Separate lines of multiline SMTP error replies ([#1153])
+
+#### Misc
+
+* Upgrade `base64` to v0.23 ([#1152])
+
+[#1152]: https://github.com/lettre/lettre/pull/1152
+[#1153]: https://github.com/lettre/lettre/pull/1153
+
 <a name="v0.11.22"></a>
 ### v0.11.22 (2026-05-14)
 
