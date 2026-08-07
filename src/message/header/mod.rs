@@ -5,6 +5,7 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter, Write},
     ops::Deref,
+    sync::LazyLock,
 };
 
 use email_encoding::headers::writer::EmailWriter;
@@ -43,7 +44,30 @@ pub trait Header: Clone {
 #[derive(Debug, Clone, Default)]
 pub struct Headers {
     headers: Vec<HeaderValue>,
+    allow_duplicate_headers: bool,
 }
+
+/// Certain headers appear more than once in real emails. This is the subset that may only occur
+/// once.
+///
+/// (See [RFC5322 Section 3.6](https://datatracker.ietf.org/doc/html/rfc5322#section-3.6))
+static UNIQUE_HEADERS: LazyLock<[HeaderName; 13]> = LazyLock::new(|| {
+    [
+        Bcc::name(),
+        Cc::name(),
+        ContentTransferEncoding::name(),
+        ContentType::name(),
+        From::name(),
+        InReplyTo::name(),
+        MessageId::name(),
+        MimeVersion::name(),
+        References::name(),
+        ReplyTo::name(),
+        Sender::name(),
+        Subject::name(),
+        To::name(),
+    ]
+});
 
 impl Headers {
     /// Create an empty `Headers`
@@ -53,6 +77,7 @@ impl Headers {
     pub const fn new() -> Self {
         Self {
             headers: Vec::new(),
+            allow_duplicate_headers: false,
         }
     }
 
@@ -63,6 +88,7 @@ impl Headers {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             headers: Vec::with_capacity(capacity),
+            allow_duplicate_headers: false,
         }
     }
 
@@ -72,6 +98,16 @@ impl Headers {
     pub fn get<H: Header>(&self) -> Option<H> {
         self.get_raw(&H::name())
             .and_then(|raw_value| H::parse(raw_value).ok())
+    }
+
+    /// Returns all headers with a specific header name.
+    ///
+    /// Returns an empty Vec if no matches are found
+    pub fn get_all<H: Header>(&self) -> Vec<H> {
+        self.get_all_raw(&H::name())
+            .iter()
+            .filter_map(|header| H::parse(header).ok())
+            .collect()
     }
 
     /// Sets `Header` into `Headers`, overriding `Header` if it
@@ -103,10 +139,44 @@ impl Headers {
         self.find_header(name).map(|value| value.raw_value.as_str())
     }
 
+    /// Retrieve all raw headers from `Headers` that match
+    /// a key. (This is specifically meant for headers
+    /// that may be duplicated in mails).
+    ///
+    /// Returns a Vec<&str> for all headers matching name.
+    pub fn get_all_raw(&self, name: &str) -> Vec<&str> {
+        self.headers
+            .iter()
+            .filter_map(|header| {
+                if header.name == name {
+                    Some(header.raw_value.as_str())
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
     /// Inserts a raw header into `Headers`, overriding `value` if it
     /// was already present in `Headers`.
+    ///
+    /// If `allow_duplicate_headers` is set and it is a header
+    /// that CAN be duplicated, it will be appended again.
     pub fn insert_raw(&mut self, value: HeaderValue) {
+        let allow_duplicate_headers = self.allow_duplicate_headers;
+
         match self.find_header_mut(&value.name) {
+            // If the header is found and it is allowed to be appear more than once
+            // in a mail it is appended otherwise it is replaced.
+            Some(current_value) if allow_duplicate_headers => {
+                if UNIQUE_HEADERS.contains(&value.name) {
+                    *current_value = value;
+                } else {
+                    self.headers.push(value);
+                }
+            }
+            // The old behaviour without the flag remains unchanged, a header that already
+            // exists is replaced.
             Some(current_value) => {
                 *current_value = value;
             }
@@ -123,8 +193,33 @@ impl Headers {
         self.find_header_index(name).map(|i| self.headers.remove(i))
     }
 
+    /// Remove all raw headers from `Headers` that match
+    /// a key. (This is specifically meant for headers
+    /// that may be duplicated in mails).
+    ///
+    /// Returns a Vec<HeaderValue> for all removed values.
+    pub fn remove_all_raw(&mut self, name: &str) -> Vec<HeaderValue> {
+        // Ideally here we would want to use Vec::extract_if(), but
+        // but it is only available on rust version > 1.87
+        // Instead we have to clone the headers out first and then
+        // remove them in the next step.
+        let extracted = self
+            .headers
+            .iter()
+            .filter(|header| header.name == name)
+            .cloned()
+            .collect();
+
+        self.headers.retain(|header| header.name != name);
+        extracted
+    }
+
     pub(crate) fn find_header(&self, name: &str) -> Option<&HeaderValue> {
         self.headers.iter().find(|value| name == value.name)
+    }
+
+    pub fn allow_duplicate_headers(&mut self) {
+        self.allow_duplicate_headers = true;
     }
 
     fn find_header_mut(&mut self, name: &str) -> Option<&mut HeaderValue> {

@@ -247,6 +247,19 @@ impl MessageBuilder {
         }
     }
 
+    /// When building a mail from a parsed mail, you might encounter duplicate headers
+    ///
+    /// This method will allow Trace and Resent headers to be duplicated
+    /// See [RFC5422 section 3.6](https://datatracker.ietf.org/doc/html/rfc5322#section-3.6)
+    ///
+    /// Due to how headers are handled while building mails, the least intrusive way to
+    /// handle this is to allow only duplicates of Trace and Resent fields ONLY and not
+    /// also to Optional-field headers, as the scope would be too wide to control.
+    pub fn allow_duplicate_headers(mut self) -> Self {
+        self.headers.allow_duplicate_headers();
+        self
+    }
+
     /// Set or add mailbox to `From` header
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
@@ -802,5 +815,46 @@ mod test {
         for id in ids {
             assert_eq!(36, id.len());
         }
+    }
+
+    #[test]
+    fn should_disallow_duplicate_trace_headers_when_config_unset() {
+        let header_one = header::Received::from(
+            "from node.example by x.y.test; 21 Nov 1997 10:01:22 -0600".to_owned(),
+        );
+        let header_two = header::Received::from(
+            "from apple.example by node.example; 21 Nov 1997 12:01:22 -0600".to_owned(),
+        );
+        let email = Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .header(header_one)
+            // This header should overwrite the above header
+            .header(header_two.clone());
+
+        let received_headers = email.headers.get_all::<header::Received>();
+
+        assert_eq!(1, received_headers.len());
+        assert_eq!(Some(header_two), received_headers.into_iter().next());
+    }
+
+    #[test]
+    fn should_allow_duplicate_trace_headers_when_config_set() {
+        let email = Message::builder()
+            // The Received header should now be able to be duplicated.
+            // and From should not.
+            .allow_duplicate_headers()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .from("NoBody <somebody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .header(header::Received::from(
+                "from node.example by x.y.test; 21 Nov 1997 10:01:22 -0600".to_owned(),
+            ))
+            .header(header::Received::from(
+                "from apple.example by node.example; 21 Nov 1997 12:01:22 -0600".to_owned(),
+            ));
+
+        assert_eq!(email.headers.get_all::<header::Received>().len(), 2);
+        assert_eq!(email.headers.get_all::<header::From>().len(), 1);
     }
 }
