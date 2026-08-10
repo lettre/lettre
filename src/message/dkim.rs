@@ -102,10 +102,10 @@ impl StdError for DkimSigningKeyError {
 
 /// Describe a signing key to be carried by [`DkimConfig`] struct
 #[derive(Debug)]
-pub struct DkimSigningKey(InnerDkimSigningKey);
+pub struct DkimSigningKey(pub InnerDkimSigningKey);
 
 #[derive(Debug)]
-enum InnerDkimSigningKey {
+pub enum InnerDkimSigningKey {
     Rsa(RsaPrivateKey),
     Ed25519(ed25519_dalek::SigningKey),
 }
