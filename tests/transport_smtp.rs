@@ -114,3 +114,47 @@ mod read_response_caps {
         );
     }
 }
+
+#[cfg(test)]
+#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
+mod operation_timeout {
+    use std::{net::TcpListener, thread, time::Duration};
+
+    use lettre::transport::smtp::{client::AsyncSmtpConnection, extension::ClientId};
+    use tokio1_crate as tokio;
+
+    // A server that accepts the connection but never speaks should not make the
+    // client hang forever: the configured timeout has to apply to reads too, not
+    // just to establishing the connection.
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn silent_server_hits_the_timeout() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        thread::spawn(move || {
+            if let Ok((sock, _)) = listener.accept() {
+                // Hold the connection open without sending the greeting.
+                thread::sleep(Duration::from_secs(10));
+                drop(sock);
+            }
+        });
+
+        let result = tokio::time::timeout(
+            Duration::from_secs(5),
+            AsyncSmtpConnection::connect_tokio1(
+                addr,
+                Some(Duration::from_millis(200)),
+                &ClientId::Domain("test".into()),
+                None,
+                None,
+            ),
+        )
+        .await
+        .expect("connect must return within 5s, not hang");
+
+        let err = match result {
+            Ok(_) => panic!("a silent server must not connect successfully"),
+            Err(e) => e,
+        };
+        assert!(err.is_timeout(), "expected a timeout error, got {err:?}");
+    }
+}

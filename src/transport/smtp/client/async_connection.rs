@@ -9,7 +9,7 @@ use super::escape_crlf;
 #[allow(deprecated)]
 use super::{
     ClientCodec, MAX_RESPONSE_BYTES, MAX_RESPONSE_LINE_BYTES, TlsParameters,
-    async_net::AsyncNetworkStream,
+    async_net::{AsyncNetworkStream, with_timeout},
 };
 use crate::{
     Envelope,
@@ -45,6 +45,8 @@ pub struct AsyncSmtpConnection {
     panic: bool,
     /// Information about the server
     server_info: ServerInfo,
+    /// Timeout applied to each read and write operation, if any
+    timeout: Option<Duration>,
 }
 
 impl AsyncSmtpConnection {
@@ -64,7 +66,7 @@ impl AsyncSmtpConnection {
     ) -> Result<AsyncSmtpConnection, Error> {
         #[allow(deprecated)]
         let stream = AsyncNetworkStream::use_existing_tokio1(stream);
-        Self::connect_impl(stream, hello_name).await
+        Self::connect_impl(stream, hello_name, None).await
     }
 
     /// Connects to the configured server
@@ -110,7 +112,7 @@ impl AsyncSmtpConnection {
         let stream =
             AsyncNetworkStream::connect_tokio1(server, timeout, tls_parameters, local_address)
                 .await?;
-        Self::connect_impl(stream, hello_name).await
+        Self::connect_impl(stream, hello_name, timeout).await
     }
 
     /// Connects to the configured server
@@ -126,19 +128,21 @@ impl AsyncSmtpConnection {
     ) -> Result<AsyncSmtpConnection, Error> {
         #[allow(deprecated)]
         let stream = AsyncNetworkStream::connect_asyncstd1(server, timeout, tls_parameters).await?;
-        Self::connect_impl(stream, hello_name).await
+        Self::connect_impl(stream, hello_name, timeout).await
     }
 
     #[allow(deprecated)]
     async fn connect_impl(
         stream: AsyncNetworkStream,
         hello_name: &ClientId,
+        timeout: Option<Duration>,
     ) -> Result<AsyncSmtpConnection, Error> {
         let stream = BufReader::new(stream);
         let mut conn = AsyncSmtpConnection {
             stream,
             panic: false,
             server_info: ServerInfo::default(),
+            timeout,
         };
         // TODO log
         let _response = conn.read_response().await?;
@@ -340,16 +344,15 @@ impl AsyncSmtpConnection {
 
     /// Writes a string to the server
     async fn write(&mut self, string: &[u8]) -> Result<(), Error> {
-        self.stream
-            .get_mut()
-            .write_all(string)
-            .await
-            .map_err(error::network)?;
-        self.stream
-            .get_mut()
-            .flush()
-            .await
-            .map_err(error::network)?;
+        let runtime = self.stream.get_ref().runtime();
+        let timeout = self.timeout;
+        let stream = self.stream.get_mut();
+        with_timeout(runtime, timeout, async {
+            stream.write_all(string).await?;
+            stream.flush().await
+        })
+        .await?
+        .map_err(error::network)?;
 
         #[cfg(feature = "tracing")]
         tracing::debug!("Wrote: {}", escape_crlf(&String::from_utf8_lossy(string)));
@@ -358,16 +361,18 @@ impl AsyncSmtpConnection {
 
     /// Gets the SMTP response
     pub async fn read_response(&mut self) -> Result<Response, Error> {
+        let runtime = self.stream.get_ref().runtime();
+        let timeout = self.timeout;
         let mut buffer = String::with_capacity(100);
         let mut pre = 0;
 
-        while self
-            .stream
-            .read_line(&mut buffer)
-            .await
-            .map_err(error::network)?
-            > 0
-        {
+        loop {
+            let read = with_timeout(runtime, timeout, self.stream.read_line(&mut buffer))
+                .await?
+                .map_err(error::network)?;
+            if read == 0 {
+                break;
+            }
             if buffer.len() - pre > MAX_RESPONSE_LINE_BYTES {
                 return Err(error::response("SMTP response line too long"));
             }
