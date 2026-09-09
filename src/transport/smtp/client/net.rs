@@ -137,6 +137,8 @@ impl NetworkStream {
         }
 
         let tcp_stream = try_connect(server, timeout, local_addr)?;
+        // Nagle would hold the `\r\n.\r\n` ending a message until the body is acked.
+        tcp_stream.set_nodelay(true).map_err(error::connection)?;
         let mut stream = NetworkStream::new(InnerNetworkStream::Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters)?;
