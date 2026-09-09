@@ -194,6 +194,8 @@ impl AsyncNetworkStream {
         }
 
         let tcp_stream = try_connect(server, timeout, local_addr).await?;
+        // Nagle would hold the `\r\n.\r\n` ending a message until the body is acked.
+        tcp_stream.set_nodelay(true).map_err(error::connection)?;
         let mut stream =
             AsyncNetworkStream::new(InnerAsyncNetworkStream::Tokio1Tcp(Box::new(tcp_stream)));
         if let Some(tls_parameters) = tls_parameters {
@@ -247,6 +249,8 @@ impl AsyncNetworkStream {
                 .map_err(error::connection)?,
         };
 
+        // Nagle would hold the `\r\n.\r\n` ending a message until the body is acked.
+        tcp_stream.set_nodelay(true).map_err(error::connection)?;
         let mut stream = AsyncNetworkStream::new(InnerAsyncNetworkStream::AsyncStd1Tcp(tcp_stream));
         if let Some(tls_parameters) = tls_parameters {
             stream.upgrade_tls(tls_parameters).await?;
