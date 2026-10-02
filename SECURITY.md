@@ -1,8 +1,8 @@
 ## Report a security issue
 
 The lettre project team welcomes security reports and is committed to providing prompt attention to security issues.
-Security issues should be reported privately via [security@lettre.rs](mailto:security@lettre.rs). Security issues
-should not be reported via the public GitHub Issue tracker.
+Security issues should be reported via GitHub's [Private vulnerability reporting](https://github.com/lettre/lettre/security/advisories).
+Security issues should not be reported via the public GitHub Issue tracker.
 
 ## Security advisories
 
