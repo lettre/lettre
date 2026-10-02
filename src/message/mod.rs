@@ -413,8 +413,8 @@ impl MessageBuilder {
         // Check for missing required headers
         // https://tools.ietf.org/html/rfc5322#section-3.6
 
-        // Insert Date if missing
-        let mut res = if self.headers.get::<header::Date>().is_none() {
+        // Insert Date if missing (raw presence: Date::parse only accepts +0000/GMT, #1118)
+        let mut res = if self.headers.get_raw(&header::Date::name()).is_none() {
             self.date_now()
         } else {
             self
@@ -743,6 +743,40 @@ mod test {
                 "Happy new year!"
             )
         );
+    }
+
+    #[test]
+    fn email_raw_date_with_offset_is_kept() {
+        // https://github.com/lettre/lettre/issues/1118
+        let email = Message::builder()
+            .raw_header(header::HeaderValue::new(
+                header::HeaderName::new_from_ascii_str("Date"),
+                "Wed, 01 Jan 2025 00:00:00 +0800".to_owned(),
+            ))
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .body(String::from("Happy new year!"))
+            .unwrap();
+
+        let raw = String::from_utf8(email.formatted()).unwrap();
+        assert!(raw.contains("Date: Wed, 01 Jan 2025 00:00:00 +0800\r\n"));
+        assert_eq!(raw.matches("Date: ").count(), 1);
+    }
+
+    #[test]
+    fn email_missing_date_is_inserted() {
+        let email = Message::builder()
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .body(String::from("Happy new year!"))
+            .unwrap();
+
+        let raw = String::from_utf8(email.formatted()).unwrap();
+        let date_line = raw
+            .lines()
+            .find(|line| line.starts_with("Date: "))
+            .expect("Date header must be auto-inserted when missing");
+        assert!(date_line.ends_with(" +0000"));
     }
 
     #[test]
