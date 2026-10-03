@@ -272,6 +272,13 @@ impl MessageBuilder {
         self.header(header::Date::new(st))
     }
 
+    /// Add `Date` header to message, at a given UTC offset
+    ///
+    /// Shortcut for `self.header(header::Date::new_with_offset(st, offset))`.
+    pub fn date_with_offset(self, st: SystemTime, offset: header::Offset) -> Self {
+        self.header(header::Date::new_with_offset(st, offset))
+    }
+
     /// Set `Date` header using current date/time
     ///
     /// Shortcut for `self.date(SystemTime::now())`, it is automatically inserted
@@ -413,7 +420,7 @@ impl MessageBuilder {
         // Check for missing required headers
         // https://tools.ietf.org/html/rfc5322#section-3.6
 
-        // Insert Date if missing (raw presence: Date::parse only accepts +0000/GMT, #1118)
+        // Insert Date if missing (raw check: Date::parse may reject raw dates, e.g. -0000; #1118)
         let mut res = if self.headers.get_raw(&header::Date::name()).is_none() {
             self.date_now()
         } else {
@@ -760,6 +767,24 @@ mod test {
 
         let raw = String::from_utf8(email.formatted()).unwrap();
         assert!(raw.contains("Date: Wed, 01 Jan 2025 00:00:00 +0800\r\n"));
+        assert_eq!(raw.matches("Date: ").count(), 1);
+    }
+
+    #[test]
+    fn email_date_with_offset_is_formatted() {
+        // Tue, 15 Nov 1994 08:12:31 GMT
+        let email = Message::builder()
+            .date_with_offset(
+                SystemTime::UNIX_EPOCH + Duration::from_secs(784887151),
+                header::Offset::from_minutes(-600).unwrap(),
+            )
+            .from("NoBody <nobody@domain.tld>".parse().unwrap())
+            .to("NoBody <nobody@domain.tld>".parse().unwrap())
+            .body(String::from("Happy new year!"))
+            .unwrap();
+
+        let raw = String::from_utf8(email.formatted()).unwrap();
+        assert!(raw.contains("Date: Mon, 14 Nov 1994 22:12:31 -1000\r\n"));
         assert_eq!(raw.matches("Date: ").count(), 1);
     }
 
