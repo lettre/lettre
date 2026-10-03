@@ -657,6 +657,34 @@ mod test {
         );
     }
 
+    // `Headers` stores each header as a string and re-parses it on
+    // `get`, so `build` can only produce a `Message` for an address
+    // that can round-trip. These addresses are accepted by `Address`,
+    // yet building the message failed with `MissingFrom`/`MissingTo`,
+    // naming the wrong problem entirely.
+    #[test]
+    fn email_with_quoted_local_part_or_domain_literal() {
+        for addr in [
+            r#""has space"@example.com"#,
+            r#""has@at"@example.com"#,
+            "nobody@[192.0.2.1]",
+            "nobody@[IPv6:2001:db8::1]",
+        ] {
+            let address: crate::Address = addr.parse().expect("Address accepts it");
+            let mailbox = Mailbox::new(None, address.clone());
+
+            let email = Message::builder()
+                .from(mailbox.clone())
+                .to(mailbox)
+                .body(String::from("Happy new year!"));
+
+            let email = email
+                .unwrap_or_else(|e| panic!("could not build a Message for {addr}: {e:?}"));
+            assert_eq!(email.envelope().to(), [address.clone()]);
+            assert_eq!(email.envelope().from(), Some(&address));
+        }
+    }
+
     #[test]
     fn email_missing_sender() {
         assert!(

@@ -143,12 +143,28 @@ fn quoted_string(input: &str) -> IResult<&str, String> {
     .parse(input)
 }
 
+// A raw `quoted-string`, quotes and escapes intact.
+//
+// `quoted_string` decodes, which is appropriate for a
+// display-name. `local-part` is the opposite: the quoting makes the
+// local part legal, and `Address` both stores and validates the
+// quoted text, so stripping the quotes there turns a valid address
+// into an invalid one.
+fn quoted_string_raw(input: &str) -> IResult<&str, String> {
+    map(recognize(quoted_string), str::to_owned).parse(input)
+}
+
 // 3.2.6. Miscellaneous tokens
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.6
 
 // word            =       atom / quoted-string
 fn word(input: &str) -> IResult<&str, String> {
     alt((quoted_string, atom)).parse(input)
+}
+
+// `word`, keeping a quoted-string's quoting — see `quoted_string_raw`.
+fn word_raw(input: &str) -> IResult<&str, String> {
+    alt((quoted_string_raw, atom)).parse(input)
 }
 
 // phrase          =       1*word / obs-phrase
@@ -211,13 +227,51 @@ pub(super) fn addr_spec(input: &str) -> IResult<&str, (String, String)> {
 
 // local-part      =       dot-atom / quoted-string / obs-local-part
 pub(super) fn local_part(input: &str) -> IResult<&str, String> {
-    alt((dot_atom, quoted_string, obs_local_part)).parse(input)
+    alt((dot_atom, quoted_string_raw, obs_local_part)).parse(input)
 }
 
 // domain          =       dot-atom / domain-literal / obs-domain
 pub(super) fn domain(input: &str) -> IResult<&str, String> {
-    // NOTE: omitting domain-literal since it may never be used
-    alt((dot_atom, obs_domain)).parse(input)
+    alt((dot_atom, domain_literal, obs_domain)).parse(input)
+}
+
+// 3.4.1 (cont.) Domain literals
+
+// dtext           =       NO-WS-CTL /     ; Non white space controls
+//
+//                         %d33-90 /       ; The rest of the US-ASCII
+//                         %d94-126        ;  characters not including "[",
+//                                         ;  "]", or "\"
+fn dtext(input: &str) -> IResult<&str, char> {
+    alt((
+        satisfy(|c| matches!(u32::from(c), 33..=90 | 94..=126)),
+        no_ws_ctl,
+    ))
+    .parse(input)
+}
+
+// dcontent        =       dtext / quoted-pair
+fn dcontent(input: &str) -> IResult<&str, char> {
+    alt((dtext, quoted_pair)).parse(input)
+}
+
+// domain-literal  =       [CFWS] "[" *([FWS] dcontent) [FWS] "]" [CFWS]
+//
+// The brackets are part of the domain, not delimiters to be stripped: `Address`
+// stores the domain text and validates it as an RFC 5321 `address-literal`.
+fn domain_literal(input: &str) -> IResult<&str, String> {
+    preceded(
+        cfws,
+        map(
+            recognize(delimited(
+                char('['),
+                many0(preceded(fws, dcontent)),
+                preceded(fws, char(']')),
+            )),
+            str::to_owned,
+        ),
+    )
+    .parse(input)
 }
 
 // 4.1. Miscellaneous obsolete tokens
@@ -252,7 +306,7 @@ fn obs_phrase(input: &str) -> IResult<&str, String> {
 // obs-local-part  =       word *("." word)
 pub(super) fn obs_local_part(input: &str) -> IResult<&str, String> {
     map(
-        pair(word, many0(pair(char('.'), word))),
+        pair(word_raw, many0(pair(char('.'), word_raw))),
         |(mut result, rest)| {
             for (_, word) in rest {
                 result.push('.');

@@ -622,4 +622,85 @@ mod test {
             ))
         );
     }
+
+    // RFC 2822 3.4.1: `local-part = dot-atom / quoted-string / obs-local-part`.
+    // The quoting is what makes these local parts legal, so it is part of the
+    // address and must survive parsing.
+    #[test]
+    fn parse_quoted_local_part() {
+        for addr in [
+            r#""has space"@example.com"#,
+            r#""has@at"@example.com"#,
+            r#""a<b"@example.com"#,
+            r#""a,b"@example.com"#,
+        ] {
+            assert_eq!(
+                addr.parse(),
+                Ok(Mailbox::new(None, addr.parse().unwrap())),
+                "failed to parse {addr:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_quoted_local_part_with_display_name() {
+        assert_eq!(
+            r#"K. <"has space"@example.com>"#.parse(),
+            Ok(Mailbox::new(
+                Some("K.".into()),
+                r#""has space"@example.com"#.parse().unwrap()
+            ))
+        );
+    }
+
+    // RFC 2822 3.4.1: `domain = dot-atom / domain-literal / obs-domain`.
+    #[test]
+    fn parse_domain_literal() {
+        for addr in [
+            "kayo@[192.0.2.1]",
+            "kayo@[127.0.0.1]",
+            "kayo@[IPv6:2001:db8::1]",
+        ] {
+            assert_eq!(
+                addr.parse(),
+                Ok(Mailbox::new(None, addr.parse().unwrap())),
+                "failed to parse {addr:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_domain_literal_with_display_name() {
+        assert_eq!(
+            "K. <kayo@[192.0.2.1]>".parse(),
+            Ok(Mailbox::new(
+                Some("K.".into()),
+                "kayo@[192.0.2.1]".parse().unwrap()
+            ))
+        );
+    }
+
+    #[test]
+    fn display_round_trips_through_parse() {
+        for addr in [
+            "kayo@example.com",
+            r#""has space"@example.com"#,
+            r#""has@at"@example.com"#,
+            "kayo@[192.0.2.1]",
+            "kayo@[IPv6:2001:db8::1]",
+        ] {
+            let address: super::Address = addr.parse().unwrap();
+            for mailbox in [
+                Mailbox::new(None, address.clone()),
+                Mailbox::new(Some("K.".into()), address.clone()),
+            ] {
+                let rendered = mailbox.to_string();
+                assert_eq!(
+                    rendered.parse(),
+                    Ok(mailbox.clone()),
+                    "{mailbox} rendered as {rendered:?}, which did not parse back"
+                );
+            }
+        }
+    }
 }
