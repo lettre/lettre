@@ -539,13 +539,11 @@ impl TlsParametersBuilder {
         } else {
             #[cfg(feature = "rustls-platform-verifier")]
             if let Some(extra_roots) = extra_roots {
-                tls.dangerous().with_custom_certificate_verifier(Arc::new(
-                    rustls_platform_verifier::Verifier::new_with_extra_roots(
+                tls.dangerous()
+                    .with_custom_certificate_verifier(Arc::new(platform_verifier(
                         extra_roots,
                         crypto_provider,
-                    )
-                    .map_err(error::tls)?,
-                ))
+                    )?))
             } else {
                 tls.with_root_certificates(root_cert_store)
             }
@@ -789,6 +787,33 @@ impl Identity {
     }
 }
 
+/// The platform verifier, extended by `extra_roots` where the platform allows it.
+///
+/// Android has no `Verifier::new_with_extra_roots`: there the system trust store is used as
+/// is, and extra roots are refused rather than silently ignored.
+#[cfg(feature = "rustls-platform-verifier")]
+fn platform_verifier(
+    extra_roots: Vec<CertificateDer<'static>>,
+    crypto_provider: Arc<CryptoProvider>,
+) -> Result<rustls_platform_verifier::Verifier, Error> {
+    if extra_roots.is_empty() {
+        return rustls_platform_verifier::Verifier::new(crypto_provider).map_err(error::tls);
+    }
+
+    #[cfg(not(target_os = "android"))]
+    {
+        rustls_platform_verifier::Verifier::new_with_extra_roots(extra_roots, crypto_provider)
+            .map_err(error::tls)
+    }
+
+    #[cfg(target_os = "android")]
+    {
+        Err(error::tls(
+            "rustls-platform-verifier cannot add extra root certificates on Android",
+        ))
+    }
+}
+
 #[cfg(feature = "rustls")]
 #[derive(Debug)]
 struct InvalidCertsVerifier {
@@ -858,5 +883,18 @@ impl ServerCertVerifier for InvalidCertsVerifier {
         self.crypto_provider
             .signature_verification_algorithms
             .supported_schemes()
+    }
+}
+
+#[cfg(all(test, feature = "rustls-platform-verifier", feature = "ring"))]
+mod platform_verifier_tests {
+    use std::sync::Arc;
+
+    use super::platform_verifier;
+
+    #[test]
+    fn no_extra_roots_uses_the_plain_platform_verifier() {
+        let provider = Arc::new(rustls::crypto::ring::default_provider());
+        assert!(platform_verifier(Vec::new(), provider).is_ok());
     }
 }
