@@ -105,7 +105,7 @@ mime03 = ["dep:mime"]
 # transports
 file-transport = ["dep:uuid", "tokio1_crate?/fs", "tokio1_crate?/io-util"]
 file-transport-envelope = ["serde", "dep:serde_json", "file-transport"]
-sendmail-transport = ["tokio1_crate?/process", "tokio1_crate?/io-util", "async-std?/unstable"]
+sendmail-transport = []
 smtp-transport = ["dep:base64", "dep:socket2", "dep:url", "dep:percent-encoding", "tokio1_crate?/rt", "tokio1_crate?/time", "tokio1_crate?/net"]
 
 pool = ["dep:futures-util"]
@@ -122,11 +122,11 @@ rustls-tls = ["webpki-roots", "rustls", "ring"]
 boring-tls = ["dep:boring"]
 
 # async
-async-std1 = ["dep:async-std", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
+async-std1 = ["dep:async-std", "dep:async-trait", "dep:futures-io", "dep:futures-util", "async-std?/unstable"]
 async-std1-rustls = ["async-std1", "rustls", "dep:futures-rustls"]
 # deprecated
 async-std1-rustls-tls = ["async-std1-rustls", "rustls-tls"]
-tokio1 = ["dep:tokio1_crate", "dep:async-trait", "dep:futures-io", "dep:futures-util"]
+tokio1 = ["dep:tokio1_crate", "dep:async-trait", "dep:futures-io", "dep:futures-util", "tokio1_crate?/process", "tokio1_crate?/io-util"]
 tokio1-native-tls = ["tokio1", "native-tls", "dep:tokio1_native_tls_crate"]
 tokio1-rustls = ["tokio1", "rustls", "dep:tokio1_rustls"]
 # deprecated
