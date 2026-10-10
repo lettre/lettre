@@ -17,7 +17,9 @@ use crate::{
         commands::{Auth, Data, Ehlo, Mail, Noop, Quit, Rcpt, Starttls},
         error,
         error::Error,
-        extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
+        extension::{
+            ClientId, Extension, MailBodyParameter, MailParameter, RcptParameter, ServerInfo,
+        },
         response::{Response, parse_response},
     },
 };
@@ -112,6 +114,20 @@ impl SmtpConnection {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
+        if let Some(ret) = envelope.dsn_ret() {
+            mail_options.push(MailParameter::Other {
+                keyword: "RET".into(),
+                value: Some(ret.to_string()),
+            });
+        }
+
+        if let Some(envid) = envelope.dsn_envid() {
+            mail_options.push(MailParameter::Other {
+                keyword: "ENVID".into(),
+                value: Some(envid.clone()),
+            });
+        }
+
         try_smtp!(
             self.command(Mail::new(envelope.from().cloned(), mail_options)),
             self
@@ -119,7 +135,22 @@ impl SmtpConnection {
 
         // Recipient
         for to_address in envelope.to() {
-            try_smtp!(self.command(Rcpt::new(to_address.clone(), vec![])), self);
+            let mut rcpt_options = vec![];
+            if let Some(notify) = envelope.dsn_notify() {
+                let notify_str = notify
+                    .iter()
+                    .map(|n| n.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",");
+                rcpt_options.push(RcptParameter::Other {
+                    keyword: "NOTIFY".into(),
+                    value: Some(notify_str),
+                });
+            }
+            try_smtp!(
+                self.command(Rcpt::new(to_address.clone(), rcpt_options)),
+                self
+            );
         }
 
         // Data

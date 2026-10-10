@@ -7,6 +7,6 @@ mod envelope;
 mod types;
 
 pub use self::{
-    envelope::Envelope,
+    envelope::{DsnNotify, DsnRet, Envelope},
     types::{Address, AddressError},
 };
