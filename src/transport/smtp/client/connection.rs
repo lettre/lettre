@@ -43,12 +43,19 @@ pub struct SmtpConnection {
     panic: bool,
     /// Information about the server
     server_info: ServerInfo,
+    /// Whether recipients rejected by the server are tolerated
+    allow_partial_recipients: bool,
 }
 
 impl SmtpConnection {
     /// Get information about the server
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
+    }
+
+    /// Sets whether recipients rejected by the server are tolerated
+    pub(crate) fn set_allow_partial_recipients(&mut self, allow: bool) {
+        self.allow_partial_recipients = allow;
     }
 
     // FIXME add simple connect and rename this one
@@ -69,6 +76,7 @@ impl SmtpConnection {
             stream,
             panic: false,
             server_info: ServerInfo::default(),
+            allow_partial_recipients: false,
         };
         conn.set_timeout(timeout).map_err(error::network)?;
         // TODO log
@@ -118,8 +126,29 @@ impl SmtpConnection {
         );
 
         // Recipient
+        let mut accepted = 0usize;
+        let mut last_rejection = None;
         for to_address in envelope.to() {
-            try_smtp!(self.command(Rcpt::new(to_address.clone(), vec![])), self);
+            match self.command(Rcpt::new(to_address.clone(), vec![])) {
+                Ok(_) => accepted += 1,
+                Err(err)
+                    if self.allow_partial_recipients
+                        && (err.is_transient() || err.is_permanent()) =>
+                {
+                    #[cfg(feature = "tracing")]
+                    tracing::warn!("recipient {} rejected by server: {}", to_address, err);
+                    last_rejection = Some(err);
+                }
+                Err(err) => {
+                    self.abort();
+                    return Err(err);
+                }
+            }
+        }
+        if accepted == 0 {
+            self.abort();
+            return Err(last_rejection
+                .unwrap_or_else(|| error::client("no recipient was accepted by the server")));
         }
 
         // Data

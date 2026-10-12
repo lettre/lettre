@@ -358,6 +358,23 @@ impl SmtpTransportBuilder {
         self
     }
 
+    /// Allow the server to reject some recipients without failing the send
+    ///
+    /// When set to `true`, recipients rejected by the server (a 4xx or 5xx
+    /// reply to `RCPT`) are skipped and the message is still delivered to the
+    /// accepted recipients. Rejections are logged with `tracing` when the
+    /// `tracing` feature is enabled.
+    ///
+    /// When set to `false` (the default), any recipient rejection fails the
+    /// whole send, as before.
+    ///
+    /// Either way transport and protocol errors remain fatal, and an envelope
+    /// with no accepted recipient still fails without sending any message data.
+    pub fn allow_partial_recipients(mut self, allow: bool) -> Self {
+        self.info.allow_partial_recipients = allow;
+        self
+    }
+
     /// Build the transport
     ///
     /// If the `pool` feature is enabled, an `Arc` wrapped pool is created.
@@ -413,6 +430,7 @@ impl SmtpClient {
         if let Some(credentials) = &self.info.credentials {
             conn.auth(&self.info.authentication, credentials)?;
         }
+        conn.set_allow_partial_recipients(self.info.allow_partial_recipients);
         Ok(conn)
     }
 }
