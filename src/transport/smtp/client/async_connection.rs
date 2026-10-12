@@ -45,12 +45,19 @@ pub struct AsyncSmtpConnection {
     panic: bool,
     /// Information about the server
     server_info: ServerInfo,
+    /// Whether recipients rejected by the server are tolerated
+    allow_partial_recipients: bool,
 }
 
 impl AsyncSmtpConnection {
     /// Get information about the server
     pub fn server_info(&self) -> &ServerInfo {
         &self.server_info
+    }
+
+    /// Sets whether recipients rejected by the server are tolerated
+    pub(crate) fn set_allow_partial_recipients(&mut self, allow: bool) {
+        self.allow_partial_recipients = allow;
     }
 
     /// Connects with existing async stream
@@ -139,6 +146,7 @@ impl AsyncSmtpConnection {
             stream,
             panic: false,
             server_info: ServerInfo::default(),
+            allow_partial_recipients: false,
         };
         // TODO log
         let _response = conn.read_response().await?;
@@ -188,11 +196,29 @@ impl AsyncSmtpConnection {
         );
 
         // Recipient
+        let mut accepted = 0usize;
+        let mut last_rejection = None;
         for to_address in envelope.to() {
-            try_smtp!(
-                self.command(Rcpt::new(to_address.clone(), vec![])).await,
-                self
-            );
+            match self.command(Rcpt::new(to_address.clone(), vec![])).await {
+                Ok(_) => accepted += 1,
+                Err(err)
+                    if self.allow_partial_recipients
+                        && (err.is_transient() || err.is_permanent()) =>
+                {
+                    #[cfg(feature = "tracing")]
+                    tracing::warn!("recipient {} rejected by server: {}", to_address, err);
+                    last_rejection = Some(err);
+                }
+                Err(err) => {
+                    self.abort().await;
+                    return Err(err);
+                }
+            }
+        }
+        if accepted == 0 {
+            self.abort().await;
+            return Err(last_rejection
+                .unwrap_or_else(|| error::client("no recipient was accepted by the server")));
         }
 
         // Data

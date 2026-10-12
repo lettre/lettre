@@ -255,6 +255,8 @@ struct SmtpInfo {
     /// Define network timeout
     /// It can be changed later for specific needs (like a different timeout for each SMTP command)
     timeout: Option<Duration>,
+    /// Whether recipients rejected by the server are tolerated
+    allow_partial_recipients: bool,
 }
 
 impl Default for SmtpInfo {
@@ -267,6 +269,7 @@ impl Default for SmtpInfo {
             authentication: DEFAULT_MECHANISMS.into(),
             timeout: Some(DEFAULT_TIMEOUT),
             tls: Tls::None,
+            allow_partial_recipients: false,
         }
     }
 }
