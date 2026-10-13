@@ -82,12 +82,47 @@ text_header! {
     /// defined in [RFC2110](https://tools.ietf.org/html/rfc2110#section-4.3)
     Header(ContentLocation, "Content-Location")
 }
+text_header! {
+    /// `List-Id` header. Identifies the mailing list a message belongs to,
+    /// defined in [RFC2919](https://tools.ietf.org/html/rfc2919#section-3)
+    Header(ListId, "List-Id")
+}
+text_header! {
+    /// `List-Help` header. Contains one or more `<URL>`s pointing at help
+    /// for the list, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.1)
+    Header(ListHelp, "List-Help")
+}
+text_header! {
+    /// `List-Unsubscribe` header. Contains one or more `<URL>`s for removing
+    /// oneself from the list, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.2)
+    Header(ListUnsubscribe, "List-Unsubscribe")
+}
+text_header! {
+    /// `List-Subscribe` header. Contains one or more `<URL>`s for adding
+    /// oneself to the list, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.3)
+    Header(ListSubscribe, "List-Subscribe")
+}
+text_header! {
+    /// `List-Post` header. Contains one or more `<URL>`s for posting to the
+    /// list, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.4)
+    Header(ListPost, "List-Post")
+}
+text_header! {
+    /// `List-Owner` header. Contains one or more `<URL>`s for contacting the
+    /// list owner, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.5)
+    Header(ListOwner, "List-Owner")
+}
+text_header! {
+    /// `List-Archive` header. Contains one or more `<URL>`s pointing at an
+    /// archive of the list, defined in [RFC2369](https://tools.ietf.org/html/rfc2369#section-3.6)
+    Header(ListArchive, "List-Archive")
+}
 
 #[cfg(test)]
 mod test {
     use pretty_assertions::assert_eq;
 
-    use super::Subject;
+    use super::{ListId, ListUnsubscribe, Subject};
     use crate::message::header::{HeaderName, HeaderValue, Headers};
 
     #[test]
@@ -131,6 +166,35 @@ mod test {
         assert_eq!(
             headers.get::<Subject>(),
             Some(Subject("Sample subject".into()))
+        );
+    }
+
+    #[test]
+    fn format_list_headers() {
+        let mut headers = Headers::new();
+        headers.set(ListId("Example <list.example.com>".into()));
+        headers.set(ListUnsubscribe(
+            "<mailto:unsub@example.com>, <https://example.com/unsub>".into(),
+        ));
+
+        assert_eq!(
+            headers.to_string(),
+            "List-Id: Example <list.example.com>\r\n\
+             List-Unsubscribe: <mailto:unsub@example.com>, <https://example.com/unsub>\r\n"
+        );
+    }
+
+    #[test]
+    fn parse_list_id() {
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("List-Id"),
+            "Example <list.example.com>".to_owned(),
+        ));
+
+        assert_eq!(
+            headers.get::<ListId>(),
+            Some(ListId("Example <list.example.com>".into()))
         );
     }
 }
