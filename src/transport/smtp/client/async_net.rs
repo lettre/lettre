@@ -93,6 +93,49 @@ enum InnerAsyncNetworkStream {
     None,
 }
 
+/// Which async runtime a stream is running on, used to pick the matching timer.
+#[derive(Clone, Copy)]
+pub(super) enum AsyncRuntime {
+    #[cfg(feature = "tokio1")]
+    Tokio1,
+    #[cfg(feature = "async-std1")]
+    AsyncStd1,
+}
+
+/// Runs `future`, giving up with a timeout error if it doesn't finish within `timeout`.
+///
+/// When `timeout` is `None` the future is awaited without any limit, so behavior is
+/// unchanged for callers that opted out of timeouts.
+pub(super) async fn with_timeout<F: std::future::Future>(
+    runtime: AsyncRuntime,
+    timeout: Option<Duration>,
+    future: F,
+) -> Result<F::Output, Error> {
+    let Some(timeout) = timeout else {
+        return Ok(future.await);
+    };
+
+    let timed_out = || {
+        error::network(io::Error::new(
+            io::ErrorKind::TimedOut,
+            "the SMTP operation timed out",
+        ))
+    };
+
+    match runtime {
+        #[cfg(feature = "tokio1")]
+        AsyncRuntime::Tokio1 => match tokio1_crate::time::timeout(timeout, future).await {
+            Ok(output) => Ok(output),
+            Err(_) => Err(timed_out()),
+        },
+        #[cfg(feature = "async-std1")]
+        AsyncRuntime::AsyncStd1 => match async_std::future::timeout(timeout, future).await {
+            Ok(output) => Ok(output),
+            Err(_) => Err(timed_out()),
+        },
+    }
+}
+
 #[allow(deprecated)]
 impl AsyncNetworkStream {
     fn new(inner: InnerAsyncNetworkStream) -> Self {
@@ -125,6 +168,35 @@ impl AsyncNetworkStream {
                 Err(IoError::other(
                     "InnerAsyncNetworkStream::None must never be built",
                 ))
+            }
+        }
+    }
+
+    /// Returns the async runtime the underlying stream belongs to.
+    pub(super) fn runtime(&self) -> AsyncRuntime {
+        match &self.inner {
+            #[cfg(feature = "tokio1")]
+            InnerAsyncNetworkStream::Tokio1Tcp(_) => AsyncRuntime::Tokio1,
+            #[cfg(feature = "tokio1-native-tls")]
+            InnerAsyncNetworkStream::Tokio1NativeTls(_) => AsyncRuntime::Tokio1,
+            #[cfg(feature = "tokio1-rustls")]
+            InnerAsyncNetworkStream::Tokio1Rustls(_) => AsyncRuntime::Tokio1,
+            #[cfg(feature = "tokio1-boring-tls")]
+            InnerAsyncNetworkStream::Tokio1BoringTls(_) => AsyncRuntime::Tokio1,
+            #[cfg(feature = "async-std1")]
+            InnerAsyncNetworkStream::AsyncStd1Tcp(_) => AsyncRuntime::AsyncStd1,
+            #[cfg(feature = "async-std1-rustls")]
+            InnerAsyncNetworkStream::AsyncStd1Rustls(_) => AsyncRuntime::AsyncStd1,
+            InnerAsyncNetworkStream::None => {
+                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
+                #[cfg(feature = "tokio1")]
+                {
+                    AsyncRuntime::Tokio1
+                }
+                #[cfg(all(not(feature = "tokio1"), feature = "async-std1"))]
+                {
+                    AsyncRuntime::AsyncStd1
+                }
             }
         }
     }
