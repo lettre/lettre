@@ -256,13 +256,33 @@ impl AsRef<OsStr> for Address {
 }
 
 fn check_address(val: &str) -> Result<usize, AddressError> {
-    let mut parts = val.rsplitn(2, '@');
-    let domain = parts.next().ok_or(AddressError::MissingParts)?;
-    let user = parts.next().ok_or(AddressError::MissingParts)?;
+    // The '@' separating user and domain is the last one outside a
+    // quoted local part or a bracketed domain literal
+    let mut in_quotes = false;
+    let mut in_literal = false;
+    let mut escaped = false;
+    let mut at_start = None;
+    for (i, c) in val.char_indices() {
+        if escaped {
+            escaped = false;
+            continue;
+        }
+        match c {
+            '\\' if in_quotes || in_literal => escaped = true,
+            '"' if !in_literal => in_quotes = !in_quotes,
+            '[' if !in_quotes => in_literal = true,
+            ']' if !in_quotes => in_literal = false,
+            '@' if !in_quotes && !in_literal => at_start = Some(i),
+            _ => {}
+        }
+    }
+    let at_start = at_start.ok_or(AddressError::MissingParts)?;
+    let user = &val[..at_start];
+    let domain = &val[at_start + 1..];
 
     Address::check_user(user)?;
     Address::check_domain(domain)?;
-    Ok(user.len())
+    Ok(at_start)
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -333,6 +353,17 @@ mod tests {
         assert_eq!(addr.domain(), "[2606:4700:4700::1111]");
         assert_eq!(addr2.user(), "something");
         assert_eq!(addr2.domain(), "[2606:4700:4700::1111]");
+    }
+
+    #[test]
+    fn at_sign_inside_domain_literal() {
+        // https://github.com/lettre/lettre/issues/1161
+        let addr_str = "user@[250.250.250.a:@]";
+        let addr = Address::from_str(addr_str).unwrap();
+        let addr2 = Address::new("user", "[250.250.250.a:@]").unwrap();
+        assert_eq!(addr, addr2);
+        assert_eq!(addr.user(), "user");
+        assert_eq!(addr.domain(), "[250.250.250.a:@]");
     }
 
     #[test]
