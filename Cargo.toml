@@ -63,7 +63,7 @@ async-std = { version = "1.8", optional = true }
 futures-rustls = { version = "0.26", default-features = false, features = ["logging", "tls12"], optional = true }
 
 ## tokio
-tokio1_crate = { package = "tokio", version = "1", optional = true }
+tokio1_crate = { package = "tokio", version = "1.18.2", optional = true }
 tokio1_native_tls_crate = { package = "tokio-native-tls", version = "0.3", optional = true }
 tokio1_rustls = { package = "tokio-rustls", version = "0.26", default-features = false, features = ["logging", "tls12"], optional = true }
 tokio1_boring = { package = "tokio-boring", version = "5", optional = true }
@@ -84,7 +84,7 @@ tracing = { version = "0.1.16", default-features = false, features = ["std"] }
 tracing-subscriber = "0.3"
 glob = "0.3"
 walkdir = "2.3"
-tokio1_crate = { package = "tokio", version = "1", features = ["macros", "rt-multi-thread"] }
+tokio1_crate = { package = "tokio", version = "1.18.2", features = ["macros", "rt-multi-thread"] }
 async-std = { version = "1.8", features = ["attributes"] }
 serde_json = "1.0.100"
 maud = "0.27"
