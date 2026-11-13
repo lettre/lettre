@@ -257,7 +257,7 @@ impl SmtpConnection {
             codec.encode(message_part, &mut out_buf);
             self.write(out_buf.as_slice())?;
         }
-        self.write(b"\r\n.\r\n")?;
+        self.write(codec.terminator())?;
 
         self.read_response()
     }

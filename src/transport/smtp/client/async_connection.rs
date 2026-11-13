@@ -327,7 +327,7 @@ impl AsyncSmtpConnection {
             codec.encode(message_part, &mut out_buf);
             self.write(out_buf.as_slice()).await?;
         }
-        self.write(b"\r\n.\r\n").await?;
+        self.write(codec.terminator()).await?;
 
         self.read_response().await
     }
