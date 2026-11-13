@@ -95,6 +95,14 @@ impl ClientCodec {
             }
         }
     }
+
+    /// Returns the sequence ending the mail data, whose first CRLF ends an unterminated last line
+    fn terminator(&self) -> &'static [u8] {
+        match self.status {
+            CodecStatus::StartOfNewLine => b".\r\n",
+            CodecStatus::MiddleOfLine | CodecStatus::StartingNewLine => b"\r\n.\r\n",
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -143,6 +151,24 @@ mod test {
             String::from_utf8(buf).unwrap(),
             "..\r\ntest\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntesttesttest\r\n..test\r\ntest.\r\n"
         );
+    }
+
+    #[test]
+    fn test_codec_terminator() {
+        let terminator = |parts: &[&[u8]]| {
+            let mut codec = ClientCodec::new();
+            for part in parts {
+                codec.encode(part, &mut Vec::new());
+            }
+            codec.terminator()
+        };
+
+        assert_eq!(terminator(&[]), b".\r\n");
+        assert_eq!(terminator(&[b"test\r\n"]), b".\r\n");
+        assert_eq!(terminator(&[b"test\r", b"\n"]), b".\r\n");
+        assert_eq!(terminator(&[b"test"]), b"\r\n.\r\n");
+        assert_eq!(terminator(&[b"test\r"]), b"\r\n.\r\n");
+        assert_eq!(terminator(&[b"test\n"]), b"\r\n.\r\n");
     }
 
     #[test]
