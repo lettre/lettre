@@ -1,15 +1,14 @@
 use std::{
     fmt::Display,
-    io::{self, BufRead, BufReader, Write},
+    io::{self, BufRead, BufReader, Read, Write},
     net::{IpAddr, ToSocketAddrs},
+    str,
     time::Duration,
 };
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
-use super::{
-    ClientCodec, MAX_RESPONSE_BYTES, MAX_RESPONSE_LINE_BYTES, NetworkStream, TlsParameters,
-};
+use super::{ClientCodec, MAX_RESPONSE_BYTES, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
     transport::smtp::{
@@ -283,21 +282,26 @@ impl SmtpConnection {
 
     /// Gets the SMTP response
     pub fn read_response(&mut self) -> Result<Response, Error> {
-        let mut buffer = String::with_capacity(100);
-        let mut pre = 0;
+        let mut raw = Vec::with_capacity(100);
 
-        while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
-            if buffer.len() - pre > MAX_RESPONSE_LINE_BYTES {
-                return Err(error::response("SMTP response line too long"));
+        loop {
+            let limit = (MAX_RESPONSE_BYTES.saturating_sub(raw.len()) + 1) as u64;
+            let read = (&mut self.stream)
+                .take(limit)
+                .read_until(b'\n', &mut raw)
+                .map_err(error::network)?;
+            if read == 0 {
+                break;
             }
-            if buffer.len() > MAX_RESPONSE_BYTES {
+            if raw.len() > MAX_RESPONSE_BYTES {
                 return Err(error::response("SMTP response too large"));
             }
-            pre = buffer.len();
+            let buffer = str::from_utf8(&raw)
+                .map_err(|e| error::network(io::Error::new(io::ErrorKind::InvalidData, e)))?;
 
             #[cfg(feature = "tracing")]
-            tracing::debug!("<< {}", escape_crlf(&buffer));
-            match parse_response(&buffer) {
+            tracing::debug!("<< {}", escape_crlf(buffer));
+            match parse_response(buffer) {
                 Ok((_remaining, response)) => {
                     return if response.is_positive() {
                         Ok(response)
