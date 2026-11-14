@@ -168,7 +168,7 @@ impl SmtpTransport {
     /// | `smtps` | unset                 | `smtps://user:pass@hostname:port`                  | 465          | SMTP over TLS, recommended method                                                                                                     |
     /// | `smtp`  | `required`            | `smtp://user:pass@hostname:port?tls=required`      | 587          | SMTP with STARTTLS required, when SMTP over TLS is not available                                                                      |
     /// | `smtp`  | `opportunistic`       | `smtp://user:pass@hostname:port?tls=opportunistic` | 587          | SMTP with optionally STARTTLS when supported by the server. Not suitable for production use: vulnerable to a man-in-the-middle attack |
-    /// | `smtp`  | unset                 | `smtp://user:pass@hostname:port`                   | 587          | Always unencrypted SMTP. Not suitable for production use: sends all data unencrypted                                                  |
+    /// | `smtp`  | unset                 | `smtp://user:pass@hostname:port`                   | 25           | Always unencrypted SMTP. Not suitable for production use: sends all data unencrypted                                                  |
     ///
     /// IMPORTANT: some parameters like `user` and `pass` cannot simply
     /// be concatenated to construct the final URL because special characters
