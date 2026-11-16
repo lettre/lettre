@@ -245,6 +245,9 @@ impl TlsParametersBuilder {
     /// Add a custom root certificate
     ///
     /// Can be used to safely connect to a server using a self-signed certificate, for example.
+    ///
+    /// On Android, when using the `rustls-platform-verifier` with the default certificate store,
+    /// custom root certificates aren't supported and building the parameters will fail.
     pub fn add_root_certificate(mut self, cert: Certificate) -> Self {
         self.root_certs.push(cert);
         self
@@ -539,13 +542,25 @@ impl TlsParametersBuilder {
         } else {
             #[cfg(feature = "rustls-platform-verifier")]
             if let Some(extra_roots) = extra_roots {
-                tls.dangerous().with_custom_certificate_verifier(Arc::new(
+                let verifier = if extra_roots.is_empty() {
+                    rustls_platform_verifier::Verifier::new(crypto_provider)
+                } else {
+                    // Android only ever trusts the system certificate store
+                    #[cfg(target_os = "android")]
+                    return Err(error::tls(
+                        "custom root certificates aren't supported by rustls-platform-verifier on Android",
+                    ));
+
+                    #[cfg(not(target_os = "android"))]
                     rustls_platform_verifier::Verifier::new_with_extra_roots(
                         extra_roots,
                         crypto_provider,
                     )
-                    .map_err(error::tls)?,
-                ))
+                }
+                .map_err(error::tls)?;
+
+                tls.dangerous()
+                    .with_custom_certificate_verifier(Arc::new(verifier))
             } else {
                 tls.with_root_certificates(root_cert_store)
             }
