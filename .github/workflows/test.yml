@@ -64,6 +64,30 @@ jobs:
       - name: Check with cargo hack
         run: cargo hack check --feature-powerset --depth 3 --at-least-one-of aws-lc-rs,ring,rustls-no-provider --at-least-one-of rustls-native-certs,webpki-roots
 
+  check-android:
+    name: check / android
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install rust
+        run: |
+          rustup update --no-self-update stable
+          rustup target add aarch64-linux-android
+
+      - name: Setup cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check
+        run: |
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
+          NDK_BIN="$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          export CC_aarch64_linux_android="$NDK_BIN/aarch64-linux-android21-clang"
+          export AR_aarch64_linux_android="$NDK_BIN/llvm-ar"
+          cargo check --target aarch64-linux-android --no-default-features --features builder,smtp-transport,tokio1-rustls,aws-lc-rs,rustls-platform-verifier
+
   test:
     name: test / ${{ matrix.name }}
     runs-on: ubuntu-latest
