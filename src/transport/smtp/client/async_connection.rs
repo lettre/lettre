@@ -43,6 +43,9 @@ pub struct AsyncSmtpConnection {
     stream: BufReader<AsyncNetworkStream>,
     /// Panic state
     panic: bool,
+    /// A `send` is in progress. If its future is dropped, the server may be in the
+    /// middle of a mail transaction, so the connection must not be reused.
+    sending: bool,
     /// Information about the server
     server_info: ServerInfo,
 }
@@ -138,6 +141,7 @@ impl AsyncSmtpConnection {
         let mut conn = AsyncSmtpConnection {
             stream,
             panic: false,
+            sending: false,
             server_info: ServerInfo::default(),
         };
         // TODO log
@@ -181,6 +185,7 @@ impl AsyncSmtpConnection {
             mail_options.push(MailParameter::Body(MailBodyParameter::EightBitMime));
         }
 
+        self.sending = true;
         try_smtp!(
             self.command(Mail::new(envelope.from().cloned(), mail_options))
                 .await,
@@ -200,11 +205,12 @@ impl AsyncSmtpConnection {
 
         // Message content
         let result = try_smtp!(self.message(email).await, self);
+        self.sending = false;
         Ok(result)
     }
 
     pub fn has_broken(&self) -> bool {
-        self.panic
+        self.panic || self.sending
     }
 
     pub fn can_starttls(&self) -> bool {
@@ -248,8 +254,9 @@ impl AsyncSmtpConnection {
     }
 
     pub async fn abort(&mut self) {
-        // Only try to quit if we are not already broken
-        if !self.panic {
+        // Only try to quit if we are not already broken, and not in the middle of a
+        // mail transaction, where the server would read QUIT as message content
+        if !self.panic && !self.sending {
             self.panic = true;
             let _ = self.command(Quit).await;
         }
