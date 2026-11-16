@@ -6,7 +6,7 @@ use std::{
 };
 
 use ed25519_dalek::Signer;
-use rsa::{RsaPrivateKey, pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign};
+use rsa::{PrivateKey, pkcs1::DecodeRsaPrivateKey, pkcs1v15::Pkcs1v15Sign};
 use sha2::{Digest, Sha256};
 
 use crate::message::{
@@ -104,7 +104,7 @@ impl StdError for DkimSigningKeyError {
 pub struct DkimSigningKey(InnerDkimSigningKey);
 
 enum InnerDkimSigningKey {
-    Rsa(RsaPrivateKey),
+    Rsa(PrivateKey),
     Ed25519(ed25519_dalek::SigningKey),
 }
 
@@ -115,7 +115,7 @@ impl DkimSigningKey {
     ) -> Result<DkimSigningKey, DkimSigningKeyError> {
         Ok(Self(match algorithm {
             DkimSigningAlgorithm::Rsa => InnerDkimSigningKey::Rsa(
-                RsaPrivateKey::from_pkcs1_pem(private_key)
+                PrivateKey::from_pkcs1_pem(private_key)
                     .map_err(|err| DkimSigningKeyError(InnerDkimSigningKeyError::Rsa(err)))?,
             ),
             DkimSigningAlgorithm::Ed25519 => {
