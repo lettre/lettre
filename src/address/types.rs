@@ -150,7 +150,8 @@ impl Address {
     }
 
     pub(super) fn check_user(user: &str) -> Result<(), AddressError> {
-        if EmailAddress::is_valid_local_part(user) {
+        if EmailAddress::is_valid_local_part(user) && !user.contains(is_non_ascii_space_or_control)
+        {
             Ok(())
         } else {
             Err(AddressError::InvalidUser)
@@ -158,6 +159,10 @@ impl Address {
     }
 
     pub(super) fn check_domain(domain: &str) -> Result<(), AddressError> {
+        if domain.contains(is_non_ascii_space_or_control) {
+            return Err(AddressError::InvalidDomain);
+        }
+
         Address::check_domain_ascii(domain).or_else(|_| {
             domain_to_ascii(domain)
                 .map_err(|_| AddressError::InvalidDomain)
@@ -255,6 +260,15 @@ impl AsRef<OsStr> for Address {
     }
 }
 
+/// White space and control characters outside of ASCII.
+///
+/// The mailbox parser takes the white space around an address as not being
+/// part of it, so an address starting with it would be read back as another
+/// one. `email_address` only rejects these characters up to version 0.2.9.
+fn is_non_ascii_space_or_control(c: char) -> bool {
+    !c.is_ascii() && (c.is_whitespace() || c.is_control())
+}
+
 fn check_address(val: &str) -> Result<usize, AddressError> {
     let mut parts = val.rsplitn(2, '@');
     let domain = parts.next().ok_or(AddressError::MissingParts)?;
@@ -333,6 +347,27 @@ mod tests {
         assert_eq!(addr.domain(), "[2606:4700:4700::1111]");
         assert_eq!(addr2.user(), "something");
         assert_eq!(addr2.domain(), "[2606:4700:4700::1111]");
+    }
+
+    #[test]
+    fn non_ascii_white_space() {
+        // NO-BREAK SPACE, NEXT LINE, LINE SEPARATOR and IDEOGRAPHIC SPACE
+        for c in ['\u{a0}', '\u{85}', '\u{2028}', '\u{3000}'] {
+            assert!(Address::from_str(&format!("{c}something@example.com")).is_err());
+            assert!(Address::from_str(&format!("some{c}thing@example.com")).is_err());
+            assert!(Address::from_str(&format!("\"some{c}thing\"@example.com")).is_err());
+            assert!(Address::new("something", format!("exa{c}mple.com")).is_err());
+            assert!(Address::new("something", format!("[192.0.2.1{c}]")).is_err());
+            // `email_address` up to 0.2.9 rejects all of the above by itself
+            assert!(is_non_ascii_space_or_control(c));
+        }
+
+        // Other characters outside of ASCII, and the white space of ASCII
+        // in a quoted local part, are fine
+        assert!(Address::from_str("s\u{f6}mething@example.com").is_ok());
+        assert!(Address::from_str("\"some thing\"@example.com").is_ok());
+        assert!(!is_non_ascii_space_or_control('\u{f6}'));
+        assert!(!is_non_ascii_space_or_control(' '));
     }
 
     #[test]
