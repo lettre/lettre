@@ -3,7 +3,7 @@
 
 use std::{
     fmt::{Display, Formatter, Result},
-    result,
+    mem, result,
     str::FromStr,
 };
 
@@ -11,8 +11,7 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::streaming::{tag, take_until},
-    combinator::{complete, map, peek},
-    multi::many0,
+    combinator::{map, peek},
     sequence::preceded,
 };
 
@@ -298,44 +297,87 @@ fn parse_detail(i: &str) -> IResult<&str, Detail> {
     .parse(i)
 }
 
-pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
-    let (i, lines) = many0((
-        parse_code,
-        preceded(tag("-"), take_until("\r\n")),
-        tag("\r\n"),
+/// Parses a line of a reply: its code, its text, and whether it's the last
+/// line of the reply
+fn parse_line(i: &str) -> IResult<&str, (Code, &str, bool)> {
+    let (i, code) = parse_code(i)?;
+    let (i, (text, last)) = alt((
+        map(preceded(tag("-"), take_until("\r\n")), |text| (text, false)),
+        map(preceded(tag(" "), take_until("\r\n")), |text| (text, true)),
+        // RFC 5321 section 4.2: `Reply-code [ SP textstring ] CRLF`, so the
+        // final line may end right after the code.
+        map(peek(tag("\r\n")), |_| ("", true)),
     ))
     .parse(i)?;
-    // RFC 5321 section 4.2: `Reply-code [ SP textstring ] CRLF`, so the
-    // final line may end right after the code.
-    let (i, (last_code, last_line)) = (
-        parse_code,
-        alt((
-            preceded(tag(" "), take_until("\r\n")),
-            map(peek(tag("\r\n")), |_| ""),
-        )),
-    )
-        .parse(i)?;
-    let (i, _) = complete(tag("\r\n")).parse(i)?;
+    let (i, _) = tag("\r\n").parse(i)?;
 
-    // Check that all codes are equal.
-    if !lines.iter().all(|&(code, _, _)| code == last_code) {
-        return Err(nom::Err::Failure(nom::error::Error::new(
-            "",
-            nom::error::ErrorKind::Not,
-        )));
+    Ok((i, (code, text, last)))
+}
+
+pub(crate) fn parse_response(mut i: &str) -> IResult<&str, Response> {
+    let mut parser = ResponseParser::default();
+    loop {
+        let (rest, line) = parse_line(i)?;
+        i = rest;
+        if let Some(response) = parser.push(line)? {
+            return Ok((i, response));
+        }
+    }
+}
+
+/// Parses a reply while it is being read, going through each of its lines
+/// once.
+///
+/// Parsing all of what was read again after every line takes quadratic time
+/// on a reply made of many short lines.
+#[derive(Debug, Default)]
+pub(crate) struct ResponseParser {
+    /// Where the line that is being read starts in what was read of the reply
+    line_start: usize,
+    code: Option<Code>,
+    message: Vec<String>,
+}
+
+impl ResponseParser {
+    /// Parses the line that `read` was just extended with. `read` holds what
+    /// was read of the reply so far, up to a `\n`.
+    ///
+    /// Returns the reply after its last line.
+    pub(crate) fn parse(&mut self, read: &str) -> result::Result<Option<Response>, Error> {
+        // Only CRLF ends a line: after a bare `\n` the same line goes on
+        if !read.ends_with("\r\n") {
+            return Ok(None);
+        }
+
+        let line = &read[self.line_start..];
+        self.line_start = read.len();
+        parse_line(line)
+            .and_then(|(_, line)| self.push(line))
+            .map_err(|e| match e {
+                nom::Err::Error(e) | nom::Err::Failure(e) => error::response(e.to_string()),
+                nom::Err::Incomplete(_) => error::response("incomplete response"),
+            })
     }
 
-    // Extract text from lines, and append last line.
-    let mut lines: Vec<String> = lines.into_iter().map(|(_, text, _)| text.into()).collect();
-    lines.push(last_line.into());
+    /// Adds a line to the reply. Returns the reply if that was its last line.
+    fn push<'a>(
+        &mut self,
+        (code, text, last): (Code, &str, bool),
+    ) -> result::Result<Option<Response>, nom::Err<nom::error::Error<&'a str>>> {
+        // Check that all codes are equal.
+        if *self.code.get_or_insert(code) != code {
+            return Err(nom::Err::Failure(nom::error::Error::new(
+                "",
+                nom::error::ErrorKind::Not,
+            )));
+        }
 
-    Ok((
-        i,
-        Response {
-            code: last_code,
-            message: lines,
-        },
-    ))
+        self.message.push(text.into());
+        Ok(last.then(|| Response {
+            code,
+            message: mem::take(&mut self.message),
+        }))
+    }
 }
 
 #[cfg(test)]
@@ -760,5 +802,61 @@ mod test {
             .first_line(),
             Some("")
         );
+    }
+
+    // Feeds `lines` to a `ResponseParser` the way a connection does, a read
+    // up to a `\n` at a time
+    fn parse_lines(lines: &[&str]) -> result::Result<Option<Response>, Error> {
+        let mut parser = ResponseParser::default();
+        let mut read = String::new();
+        for line in lines {
+            read.push_str(line);
+            if let Some(response) = parser.parse(&read)? {
+                return Ok(Some(response));
+            }
+        }
+        Ok(None)
+    }
+
+    #[test]
+    fn test_response_parser() {
+        let response = parse_lines(&["250-first\r\n", "250-\r\n", "250 last\r\n"])
+            .unwrap()
+            .unwrap();
+        assert_eq!(response.code().to_string(), "250");
+        assert_eq!(
+            response.message().collect::<Vec<_>>(),
+            vec!["first", "", "last"]
+        );
+
+        // The last line is still to come
+        assert!(parse_lines(&["250-first\r\n"]).unwrap().is_none());
+        // Nothing is read past the last line
+        assert!(parse_lines(&["250\r\n", "junk\r\n"]).unwrap().is_some());
+    }
+
+    #[test]
+    fn test_response_parser_bare_line_feed() {
+        // Only CRLF ends a line: what follows a bare `\n` belongs to the same
+        // line, whatever it looks like
+        let response = parse_lines(&["250-a\n", "250 b\n", "c\r\n", "250 d\n", "e\r\n"])
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            response.message().collect::<Vec<_>>(),
+            vec!["a\n250 b\nc", "d\ne"]
+        );
+    }
+
+    #[test]
+    fn test_response_parser_invalid() {
+        // Not a reply, a code that changes, a line that goes on after its code
+        for lines in [
+            &["hello\r\n"][..],
+            &["250-a\r\n", "251 b\r\n"],
+            &["250-a\r\n", "250b\r\n"],
+        ] {
+            assert!(parse_lines(lines).is_err(), "{lines:?}");
+        }
     }
 }

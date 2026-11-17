@@ -16,7 +16,7 @@ use crate::{
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::{Response, Severity, parse_response},
+        response::{Response, ResponseParser, Severity},
     },
 };
 
@@ -431,23 +431,15 @@ impl AsyncSmtpConnection {
     /// Gets the SMTP response
     pub async fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
+        let mut parser = ResponseParser::default();
 
         while self.read_response_line(&mut buffer).await? {
-            match parse_response(&buffer) {
-                Ok((_remaining, response)) => {
-                    return if response.is_positive() {
-                        Ok(response)
-                    } else {
-                        Err(error::code_from_response(&response))
-                    };
-                }
-                Err(nom::Err::Failure(e)) => {
-                    return Err(error::response(e.to_string()));
-                }
-                Err(nom::Err::Incomplete(_)) => { /* read more */ }
-                Err(nom::Err::Error(e)) => {
-                    return Err(error::response(e.to_string()));
-                }
+            if let Some(response) = parser.parse(&buffer)? {
+                return if response.is_positive() {
+                    Ok(response)
+                } else {
+                    Err(error::code_from_response(&response))
+                };
             }
         }
 

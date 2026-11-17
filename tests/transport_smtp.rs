@@ -170,7 +170,7 @@ mod read_response_caps {
         io::{BufRead, BufReader, Write},
         net::{SocketAddr, TcpListener},
         thread,
-        time::Duration,
+        time::{Duration, Instant},
     };
 
     use lettre::transport::smtp::{Error, client::SmtpConnection, extension::ClientId};
@@ -205,6 +205,14 @@ mod read_response_caps {
         vec![b'x'; 200 * 1024]
     }
 
+    // About as many lines as a reply can hold. Parsing the whole reply again
+    // after each of them takes quadratic time: several seconds here.
+    fn many_lines() -> Vec<u8> {
+        let mut reply = b"220-\r\n".repeat(16_000);
+        reply.extend_from_slice(b"220 localhost\r\n");
+        reply
+    }
+
     fn connect(addr: SocketAddr) -> Result<SmtpConnection, Error> {
         let hello = ClientId::Domain("test".into());
         SmtpConnection::connect(addr, Some(Duration::from_secs(5)), &hello, None, None)
@@ -219,6 +227,14 @@ mod read_response_caps {
     fn unterminated_line_is_bounded() {
         let err = connect(server(unterminated_line())).err().unwrap();
         assert!(err.is_response(), "{err:?}");
+    }
+
+    #[test]
+    fn many_lines_are_parsed_once() {
+        let start = Instant::now();
+        connect(server(many_lines())).unwrap();
+        let elapsed = start.elapsed();
+        assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
     }
 
     #[cfg(feature = "tokio1")]
@@ -247,6 +263,14 @@ mod read_response_caps {
         async fn unterminated_line_is_bounded() {
             let err = connect(server(unterminated_line())).await.err().unwrap();
             assert!(err.is_response(), "{err:?}");
+        }
+
+        #[tokio::test]
+        async fn many_lines_are_parsed_once() {
+            let start = Instant::now();
+            connect(server(many_lines())).await.unwrap();
+            let elapsed = start.elapsed();
+            assert!(elapsed < Duration::from_secs(2), "{elapsed:?}");
         }
     }
 }
