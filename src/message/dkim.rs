@@ -252,58 +252,60 @@ fn dkim_canonicalize_body(
 }
 
 fn dkim_canonicalize_headers_relaxed(headers: &str) -> String {
-    let mut r = String::with_capacity(headers.len());
-
     fn skip_whitespace(h: &str) -> &str {
-        match h.as_bytes().first() {
-            Some(b' ' | b'\t') => skip_whitespace(&h[1..]),
-            _ => h,
-        }
+        h.trim_start_matches([' ', '\t'])
     }
 
-    fn name(h: &str, out: &mut String) {
-        if let Some(name_end) = h.bytes().position(|c| c == b':') {
-            let (name, rest) = h.split_at(name_end + 1);
-            *out += name;
-            // Space after header colon is stripped.
-            value(skip_whitespace(rest), out);
-        } else {
+    let mut out = String::with_capacity(headers.len());
+
+    // This is a loop, and not a function calling itself for the rest of the
+    // headers, because the depth of that recursion would be the length of
+    // the headers, overflowing the stack unless the compiler optimizes it
+    let mut h = headers;
+    'headers: loop {
+        // Header name.
+        let Some(name_end) = h.bytes().position(|c| c == b':') else {
             // This should never happen.
-            *out += h;
+            out += h;
+            break;
+        };
+        let (name, rest) = h.split_at(name_end + 1);
+        out += name;
+        // Space after header colon is stripped.
+        h = skip_whitespace(rest);
+
+        // Header value.
+        loop {
+            match h.as_bytes() {
+                // Continuation lines.
+                [b'\r', b'\n', b' ' | b'\t', ..] => {
+                    out.push(' ');
+                    h = skip_whitespace(&h[2..]);
+                }
+                // End of header.
+                [b'\r', b'\n', ..] => {
+                    out += "\r\n";
+                    h = &h[2..];
+                    continue 'headers;
+                }
+                // Sequential whitespace.
+                [b' ' | b'\t', b' ' | b'\t' | b'\r', ..] => h = &h[1..],
+                // All whitespace becomes spaces.
+                [b'\t', ..] => {
+                    out.push(' ');
+                    h = &h[1..];
+                }
+                [_, ..] => {
+                    let mut chars = h.chars();
+                    out.push(chars.next().unwrap());
+                    h = chars.as_str();
+                }
+                [] => break 'headers,
+            }
         }
     }
 
-    fn value(h: &str, out: &mut String) {
-        match h.as_bytes() {
-            // Continuation lines.
-            [b'\r', b'\n', b' ' | b'\t', ..] => {
-                out.push(' ');
-                value(skip_whitespace(&h[2..]), out);
-            }
-            // End of header.
-            [b'\r', b'\n', ..] => {
-                *out += "\r\n";
-                name(&h[2..], out);
-            }
-            // Sequential whitespace.
-            [b' ' | b'\t', b' ' | b'\t' | b'\r', ..] => value(&h[1..], out),
-            // All whitespace becomes spaces.
-            [b'\t', ..] => {
-                out.push(' ');
-                value(&h[1..], out);
-            }
-            [_, ..] => {
-                let mut chars = h.chars();
-                out.push(chars.next().unwrap());
-                value(chars.as_str(), out);
-            }
-            [] => {}
-        }
-    }
-
-    name(headers, &mut r);
-
-    r
+    out
 }
 
 /// Canonicalize header tag
@@ -508,6 +510,25 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
             ),
             "from:=?utf-8?b?VGVzdCBPJ0xlYXJ5?= <test+ezrz@example.net>\r\ntest:test test very very long with spaces and extra spaces will be folded to several lines\r\n"
         );
+    }
+
+    #[test]
+    fn test_headers_relaxed_canonicalize_long() {
+        // Used to overflow the stack, unless built with optimizations
+        let message = Message::builder()
+            .from("test@example.net".parse().unwrap())
+            .to("test2@example.org".parse().unwrap())
+            .header(TestHeader("a b\t".repeat(250_000)))
+            .body(String::new())
+            .unwrap();
+
+        let canonicalized = dkim_canonicalize_headers(
+            ["Test"],
+            &message.headers,
+            DkimCanonicalizationType::Relaxed,
+        );
+        let expected = format!("test:{}\r\n", "a b ".repeat(250_000).trim_end());
+        assert!(canonicalized == expected);
     }
 
     #[test]
