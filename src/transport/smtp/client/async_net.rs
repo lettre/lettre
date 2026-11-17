@@ -89,7 +89,7 @@ enum InnerAsyncNetworkStream {
     /// Encrypted Tokio 1.x TCP stream
     #[cfg(feature = "async-std1-rustls")]
     AsyncStd1Rustls(AsyncStd1RustlsStream<AsyncStd1TcpStream>),
-    /// Can't be built
+    /// What is left of the stream when its TLS upgrade fails
     None,
 }
 
@@ -120,12 +120,7 @@ impl AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(s) => s.peer_addr(),
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(s) => s.get_ref().0.peer_addr(),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Err(IoError::other(
-                    "InnerAsyncNetworkStream::None must never be built",
-                ))
-            }
+            InnerAsyncNetworkStream::None => Err(closed()),
         }
     }
 
@@ -471,7 +466,7 @@ impl AsyncNetworkStream {
             }
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(_) => panic!("Unsupported"),
-            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerAsyncNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 
@@ -513,7 +508,7 @@ impl AsyncNetworkStream {
                 .iter()
                 .map(|c| c.to_vec())
                 .collect()),
-            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerAsyncNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 
@@ -560,7 +555,7 @@ impl AsyncNetworkStream {
                 .first()
                 .unwrap()
                 .to_vec()),
-            InnerAsyncNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerAsyncNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 }
@@ -613,10 +608,7 @@ impl FuturesAsyncRead for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(s) => Pin::new(s).poll_read(cx, buf),
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(s) => Pin::new(s).poll_read(cx, buf),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(0))
-            }
+            InnerAsyncNetworkStream::None => Poll::Ready(Ok(0)),
         }
     }
 }
@@ -641,10 +633,7 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(s) => Pin::new(s).poll_write(cx, buf),
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(s) => Pin::new(s).poll_write(cx, buf),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(0))
-            }
+            InnerAsyncNetworkStream::None => Poll::Ready(Err(closed())),
         }
     }
 
@@ -662,10 +651,7 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(s) => Pin::new(s).poll_flush(cx),
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(s) => Pin::new(s).poll_flush(cx),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(()))
-            }
+            InnerAsyncNetworkStream::None => Poll::Ready(Ok(())),
         }
     }
 
@@ -683,10 +669,12 @@ impl FuturesAsyncWrite for AsyncNetworkStream {
             InnerAsyncNetworkStream::AsyncStd1Tcp(s) => Pin::new(s).poll_close(cx),
             #[cfg(feature = "async-std1-rustls")]
             InnerAsyncNetworkStream::AsyncStd1Rustls(s) => Pin::new(s).poll_close(cx),
-            InnerAsyncNetworkStream::None => {
-                debug_assert!(false, "InnerAsyncNetworkStream::None must never be built");
-                Poll::Ready(Ok(()))
-            }
+            InnerAsyncNetworkStream::None => Poll::Ready(Ok(())),
         }
     }
+}
+
+/// The error of an operation on a stream that a failed TLS upgrade closed
+fn closed() -> IoError {
+    IoError::new(io::ErrorKind::NotConnected, "the connection is closed")
 }

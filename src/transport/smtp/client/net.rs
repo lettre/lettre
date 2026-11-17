@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::{
     io::{self, Read, Write},
     mem,
-    net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr, SocketAddrV4, TcpStream, ToSocketAddrs},
+    net::{IpAddr, Shutdown, SocketAddr, TcpStream, ToSocketAddrs},
     time::Duration,
 };
 
@@ -40,7 +40,7 @@ enum InnerNetworkStream {
     Rustls(StreamOwned<ClientConnection, TcpStream>),
     #[cfg(feature = "boring-tls")]
     BoringTls(SslStream<TcpStream>),
-    /// Can't be built
+    /// What is left of the stream when its TLS upgrade fails
     None,
 }
 
@@ -63,13 +63,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(s) => s.get_ref().peer_addr(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.get_ref().peer_addr(),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(SocketAddr::V4(SocketAddrV4::new(
-                    Ipv4Addr::new(127, 0, 0, 1),
-                    80,
-                )))
-            }
+            InnerNetworkStream::None => Err(closed()),
         }
     }
 
@@ -83,10 +77,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(s) => s.get_ref().shutdown(how),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.get_ref().shutdown(how),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
+            InnerNetworkStream::None => Ok(()),
         }
     }
 
@@ -218,10 +209,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(_) => true,
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(_) => true,
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                false
-            }
+            InnerNetworkStream::None => false,
         }
     }
 
@@ -238,7 +226,7 @@ impl NetworkStream {
             InnerNetworkStream::BoringTls(stream) => {
                 stream.ssl().verify_result().map_err(error::tls)
             }
-            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 
@@ -253,7 +241,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(stream) => Ok(stream
                 .conn
                 .peer_certificates()
-                .unwrap()
+                .ok_or_else(no_peer_certificate)?
                 .iter()
                 .map(|c| c.to_vec())
                 .collect()),
@@ -265,7 +253,7 @@ impl NetworkStream {
                 .iter()
                 .map(|c| c.to_der().map_err(error::tls))
                 .collect::<Result<Vec<_>, _>>()?),
-            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 
@@ -288,9 +276,8 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(stream) => Ok(stream
                 .conn
                 .peer_certificates()
-                .unwrap()
-                .first()
-                .unwrap()
+                .and_then(|certificates| certificates.first())
+                .ok_or_else(no_peer_certificate)?
                 .to_vec()),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => Ok(stream
@@ -299,7 +286,7 @@ impl NetworkStream {
                 .unwrap()
                 .to_der()
                 .map_err(error::tls)?),
-            InnerNetworkStream::None => panic!("InnerNetworkStream::None must never be built"),
+            InnerNetworkStream::None => Err(error::client("Connection is closed")),
         }
     }
 
@@ -312,10 +299,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(stream) => stream.get_ref().set_read_timeout(duration),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_read_timeout(duration),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
+            InnerNetworkStream::None => Ok(()),
         }
     }
 
@@ -330,10 +314,7 @@ impl NetworkStream {
             InnerNetworkStream::Rustls(stream) => stream.get_ref().set_write_timeout(duration),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(stream) => stream.get_ref().set_write_timeout(duration),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
+            InnerNetworkStream::None => Ok(()),
         }
     }
 }
@@ -348,10 +329,7 @@ impl Read for NetworkStream {
             InnerNetworkStream::Rustls(s) => s.read(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.read(buf),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(0)
-            }
+            InnerNetworkStream::None => Ok(0),
         }
     }
 }
@@ -366,10 +344,7 @@ impl Write for NetworkStream {
             InnerNetworkStream::Rustls(s) => s.write(buf),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.write(buf),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(0)
-            }
+            InnerNetworkStream::None => Err(closed()),
         }
     }
 
@@ -382,10 +357,7 @@ impl Write for NetworkStream {
             InnerNetworkStream::Rustls(s) => s.flush(),
             #[cfg(feature = "boring-tls")]
             InnerNetworkStream::BoringTls(s) => s.flush(),
-            InnerNetworkStream::None => {
-                debug_assert!(false, "InnerNetworkStream::None must never be built");
-                Ok(())
-            }
+            InnerNetworkStream::None => Ok(()),
         }
     }
 }
@@ -432,4 +404,16 @@ pub(crate) fn resolved_address_filter(
         },
         None => true,
     }
+}
+
+/// The error of an operation on a stream that a failed TLS upgrade closed
+fn closed() -> io::Error {
+    io::Error::new(io::ErrorKind::NotConnected, "the connection is closed")
+}
+
+// rustls does the handshake on the first read or write, so there may have
+// been none yet
+#[cfg(feature = "rustls")]
+fn no_peer_certificate() -> Error {
+    error::client("The TLS handshake did not complete")
 }
