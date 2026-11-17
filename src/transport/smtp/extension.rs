@@ -136,12 +136,12 @@ impl ServerInfo {
         let mut features: HashSet<Extension> = HashSet::new();
 
         for line in response.message() {
-            if line.is_empty() {
-                continue;
-            }
-
             let mut split = line.split_whitespace();
-            match split.next().unwrap() {
+            let Some(keyword) = split.next() else {
+                // Skip empty or whitespace-only lines
+                continue;
+            };
+            match keyword {
                 "8BITMIME" => {
                     features.insert(Extension::EightBitMime);
                 }
@@ -411,5 +411,28 @@ mod test {
         assert!(server_info2.supports_feature(Extension::EightBitMime));
         assert!(server_info2.supports_auth_mechanism(Mechanism::Plain));
         assert!(!server_info2.supports_feature(Extension::StartTls));
+    }
+
+    #[test]
+    fn test_serverinfo_whitespace_only_line() {
+        // A whitespace-only continuation line (e.g. `250-   `) must not panic
+        let response = Response::new(
+            Code::new(
+                Severity::PositiveCompletion,
+                Category::Unspecified4,
+                Detail::One,
+            ),
+            vec!["me".to_owned(), "   ".to_owned(), "8BITMIME".to_owned()],
+        );
+
+        let server_info = ServerInfo::from_response(&response).unwrap();
+        assert_eq!(server_info.name, "me");
+        assert!(server_info.supports_feature(Extension::EightBitMime));
+
+        // The reply parser leaves a stray `\r` as the line in `250 \r\r\n`
+        let response: Response = "250-mail.example\r\n250 \r\r\n".parse().unwrap();
+        let server_info = ServerInfo::from_response(&response).unwrap();
+        assert_eq!(server_info.name, "mail.example");
+        assert!(server_info.features.is_empty());
     }
 }
