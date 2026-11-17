@@ -354,3 +354,132 @@ mod starttls_injection {
         }
     }
 }
+
+// A reply of the wrong class to DATA, or to the message content, means that
+// the replies aren't those to the commands sent: the message must not be sent
+// as commands, nor reported as accepted
+#[cfg(test)]
+#[cfg(feature = "smtp-transport")]
+mod reply_class {
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::{SocketAddr, TcpListener},
+        sync::mpsc,
+        thread,
+        time::Duration,
+    };
+
+    use lettre::{
+        address::Envelope,
+        transport::smtp::{client::SmtpConnection, extension::ClientId},
+    };
+
+    const EMAIL: &[u8] = b"Subject: a\r\n\r\nNOOP\r\n";
+
+    // Answers DATA with `data_reply`, and the message content with a `354`.
+    // Gives back the lines that the client sent after DATA.
+    fn server(data_reply: &'static str) -> (SocketAddr, mpsc::Receiver<Vec<String>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        let (tx, rx) = mpsc::channel();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut lines = BufReader::new(stream.try_clone().unwrap()).lines();
+            stream.write_all(b"220 localhost ESMTP\r\n").unwrap();
+            for _ehlo_mail_rcpt in 0..3 {
+                let _command = lines.next();
+                stream.write_all(b"250 ok\r\n").unwrap();
+            }
+            let _data = lines.next();
+            stream.write_all(data_reply.as_bytes()).unwrap();
+
+            let mut after_data = Vec::new();
+            for line in lines.map_while(Result::ok) {
+                if line == "." {
+                    let _ = stream.write_all(b"354 go ahead\r\n");
+                }
+                after_data.push(line);
+            }
+            let _ = tx.send(after_data);
+        });
+        (addr, rx)
+    }
+
+    fn envelope() -> Envelope {
+        Envelope::new(
+            Some("from@example.com".parse().unwrap()),
+            vec!["to@example.com".parse().unwrap()],
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn completion_reply_to_data_is_rejected() {
+        let (addr, after_data) = server("250 ok\r\n");
+        let hello = ClientId::Domain("test".into());
+        let mut conn =
+            SmtpConnection::connect(addr, Some(Duration::from_secs(5)), &hello, None, None)
+                .unwrap();
+
+        let err = conn.send(&envelope(), EMAIL).unwrap_err();
+        assert!(err.is_response(), "{err:?}");
+        assert!(conn.has_broken());
+        // Neither the message content, nor QUIT
+        assert!(after_data.recv().unwrap().is_empty());
+    }
+
+    #[test]
+    fn intermediate_reply_to_content_is_rejected() {
+        let (addr, _after_data) = server("354 go ahead\r\n");
+        let hello = ClientId::Domain("test".into());
+        let mut conn =
+            SmtpConnection::connect(addr, Some(Duration::from_secs(5)), &hello, None, None)
+                .unwrap();
+
+        let err = conn.send(&envelope(), EMAIL).unwrap_err();
+        assert!(err.is_response(), "{err:?}");
+        assert!(conn.has_broken());
+    }
+
+    #[cfg(feature = "tokio1")]
+    mod tokio_1 {
+        use lettre::transport::smtp::client::AsyncSmtpConnection;
+        use tokio1_crate as tokio;
+
+        use super::*;
+
+        async fn connect(addr: SocketAddr) -> AsyncSmtpConnection {
+            let hello = ClientId::Domain("test".into());
+            AsyncSmtpConnection::connect_tokio1(
+                addr,
+                Some(Duration::from_secs(5)),
+                &hello,
+                None,
+                None,
+            )
+            .await
+            .unwrap()
+        }
+
+        #[tokio::test]
+        async fn completion_reply_to_data_is_rejected() {
+            let (addr, after_data) = server("250 ok\r\n");
+            let mut conn = connect(addr).await;
+
+            let err = conn.send(&envelope(), EMAIL).await.unwrap_err();
+            assert!(err.is_response(), "{err:?}");
+            assert!(conn.has_broken());
+            assert!(after_data.recv().unwrap().is_empty());
+        }
+
+        #[tokio::test]
+        async fn intermediate_reply_to_content_is_rejected() {
+            let (addr, _after_data) = server("354 go ahead\r\n");
+            let mut conn = connect(addr).await;
+
+            let err = conn.send(&envelope(), EMAIL).await.unwrap_err();
+            assert!(err.is_response(), "{err:?}");
+            assert!(conn.has_broken());
+        }
+    }
+}

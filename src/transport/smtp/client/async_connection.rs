@@ -19,7 +19,7 @@ use crate::{
         error,
         error::Error,
         extension::{ClientId, Extension, MailBodyParameter, MailParameter, ServerInfo},
-        response::{Response, parse_response},
+        response::{Response, Severity, parse_response},
     },
 };
 
@@ -222,11 +222,39 @@ impl AsyncSmtpConnection {
         }
 
         // Data
-        try_smtp!(self.command(Data).await, self);
+        let response = try_smtp!(self.command(Data).await, self);
+        try_smtp!(
+            self.expect_reply(&response, Severity::PositiveIntermediate),
+            self
+        );
 
         // Message content
         let result = try_smtp!(self.message(email).await, self);
+        try_smtp!(
+            self.expect_reply(&result, Severity::PositiveCompletion),
+            self
+        );
         Ok(result)
+    }
+
+    /// Checks the class of the positive reply to DATA, or to the message
+    /// content.
+    ///
+    /// A positive reply of another class can only be the reply to a
+    /// different command: the connection is out of sync with the server.
+    /// Going on would have the server read the message content as commands,
+    /// or a message it didn't accept reported as sent.
+    fn expect_reply(&mut self, response: &Response, severity: Severity) -> Result<(), Error> {
+        if response.code().severity == severity {
+            Ok(())
+        } else {
+            // Not to be recycled, and closed without sending QUIT
+            self.panic = true;
+            Err(error::response(format!(
+                "unexpected reply code {}",
+                response.code()
+            )))
+        }
     }
 
     pub fn has_broken(&self) -> bool {
