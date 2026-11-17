@@ -231,7 +231,17 @@ impl SmtpConnection {
 
     /// Checks if the server is connected using the NOOP SMTP command
     pub fn test_connected(&mut self) -> bool {
-        self.command(Noop).is_ok()
+        match self.command(Noop) {
+            Ok(response) if response.has_code(250) => true,
+            _ => {
+                // Maybe not the reply to NOOP, but one that was already
+                // waiting to be read, such as the goodbye of a server that
+                // gave up on an idle connection. Or no reply at all. The
+                // connection may be out of sync: no QUIT when it's dropped.
+                self.panic = true;
+                false
+            }
+        }
     }
 
     /// Sends an AUTH command with the given mechanism, and handles the challenge if needed
