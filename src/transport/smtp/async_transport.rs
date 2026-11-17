@@ -98,7 +98,8 @@ impl AsyncTransport for AsyncSmtpTransport<AsyncStd1Executor> {
 
         let result = conn.send(envelope, email).await?;
 
-        conn.quit().await?;
+        #[cfg(not(feature = "pool"))]
+        conn.abort().await;
 
         Ok(result)
     }
