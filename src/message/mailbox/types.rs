@@ -410,8 +410,14 @@ fn is_valid_atom_char(c: u8) -> bool {
 // https://datatracker.ietf.org/doc/html/rfc2822#section-3.2.5
 fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
     match c {
-        // Can not be encoded.
-        '\n' | '\r' => Err(std::fmt::Error),
+        // CR and LF can not appear in a quoted-string. Render them as a space
+        // rather than returning an error, because `Display` is consumed through
+        // the infallible `Header::display()` path where an error would turn
+        // into a panic. The output is also the raw value of the address
+        // headers, which is parsed again (e.g. to build the envelope), so it
+        // must stay valid; only the display name is affected. The wire value
+        // is RFC 2047 encoded separately (see `Mailbox::encode`).
+        '\n' | '\r' => f.write_char(' '),
 
         // Note, not qcontent but can be put before or after any qcontent.
         '\t' | ' ' => f.write_char(c),
@@ -467,6 +473,24 @@ mod test {
             ),
             "\"K.\" <kayo@example.com>"
         );
+    }
+
+    #[test]
+    fn mailbox_format_name_with_crlf_does_not_panic() {
+        // A display name containing CR/LF must not panic when formatted (the
+        // `Display` impl is reached through the infallible `Header::display()`).
+        // CR/LF are rendered as spaces; the value is not allowed to contain a
+        // raw newline.
+        let formatted = format!(
+            "{}",
+            Mailbox::new(
+                Some("Foo\r\nBar".into()),
+                "kayo@example.com".parse().unwrap()
+            )
+        );
+        assert_eq!(formatted, "\"Foo  Bar\" <kayo@example.com>");
+        assert!(!formatted.contains('\r'));
+        assert!(!formatted.contains('\n'));
     }
 
     #[test]

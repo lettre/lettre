@@ -233,6 +233,30 @@ mod test {
     }
 
     #[test]
+    fn format_name_with_crlf_is_safe() {
+        // A display name with CR/LF (e.g. from untrusted input via Mailbox::new
+        // or serde) must neither panic when the header is rendered nor inject a
+        // raw newline onto the wire.
+        let from = From(
+            vec![Mailbox::new(
+                Some("Foo\r\nBar".to_owned()),
+                "kayo@example.com".parse().unwrap(),
+            )]
+            .into(),
+        );
+
+        let mut headers = Headers::new();
+        headers.set(from);
+
+        let rendered = headers.to_string();
+        assert!(rendered.starts_with("From: "));
+        // The only CRLF is the one terminating the header line.
+        assert!(rendered.ends_with("\r\n"));
+        assert_eq!(rendered.matches('\n').count(), 1);
+        assert_eq!(rendered.matches('\r').count(), 1);
+    }
+
+    #[test]
     fn format_single_with_utf8_name() {
         let from = vec!["Кайо <kayo@example.com>".parse().unwrap()];
 
