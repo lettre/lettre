@@ -101,10 +101,8 @@ impl StdError for DkimSigningKeyError {
 }
 
 /// Describe a signing key to be carried by [`DkimConfig`] struct
-#[derive(Debug)]
 pub struct DkimSigningKey(InnerDkimSigningKey);
 
-#[derive(Debug)]
 enum InnerDkimSigningKey {
     Rsa(RsaPrivateKey),
     Ed25519(ed25519_dalek::SigningKey),
@@ -139,6 +137,15 @@ impl DkimSigningKey {
             InnerDkimSigningKey::Rsa(_) => DkimSigningAlgorithm::Rsa,
             InnerDkimSigningKey::Ed25519(_) => DkimSigningAlgorithm::Ed25519,
         }
+    }
+}
+
+impl fmt::Debug for DkimSigningKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        // The private key must not end up wherever the configuration is logged
+        f.debug_struct("DkimSigningKey")
+            .field("algorithm", &self.get_signing_algorithm())
+            .finish_non_exhaustive()
     }
 }
 
@@ -482,6 +489,21 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
             .header(TestHeader("test  test very very long with spaces and extra spaces   \twill be folded to several lines ".to_owned()))
             .subject("Test with utf-8 ë")
             .body("test\r\n\r\ntest   \ttest\r\n\r\n\r\n".to_owned()).unwrap()
+    }
+
+    #[test]
+    fn test_signing_key_debug() {
+        let signing_key = DkimSigningKey::new(KEY_RSA, DkimSigningAlgorithm::Rsa).unwrap();
+        let config = DkimConfig::default_config(
+            "dkimtest".to_owned(),
+            "example.org".to_owned(),
+            signing_key,
+        );
+
+        let debug = format!("{config:?}");
+        assert!(debug.contains("private_key: DkimSigningKey { algorithm: Rsa, .. }"));
+        // No big number of the key is printed
+        assert!(debug.len() < 500, "{debug}");
     }
 
     #[test]
