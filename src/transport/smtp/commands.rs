@@ -209,13 +209,22 @@ impl Display for Rset {
 }
 
 /// AUTH command
-#[derive(PartialEq, Eq, Clone, Debug)]
+#[derive(PartialEq, Eq, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Auth {
     mechanism: Mechanism,
     credentials: Credentials,
     challenge: Option<String>,
     response: Option<String>,
+}
+
+// Leaves out the response, which is made of the credentials
+impl fmt::Debug for Auth {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Auth")
+            .field("mechanism", &self.mechanism)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Display for Auth {
@@ -293,6 +302,17 @@ mod test {
 
     use super::*;
     use crate::transport::smtp::extension::MailBodyParameter;
+
+    #[test]
+    fn auth_debug_has_no_credentials() {
+        let credentials = Credentials::new("user".to_owned(), "s3cret".to_owned());
+        let auth = Auth::new(Mechanism::Plain, credentials, None).unwrap();
+        let debug = format!("{auth:?}");
+        assert!(
+            !debug.contains("s3cret") && !debug.contains("user"),
+            "{debug}"
+        );
+    }
 
     #[test]
     fn test_display() {
