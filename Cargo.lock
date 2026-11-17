@@ -1184,7 +1184,7 @@ dependencies = [
 
 [[package]]
 name = "lettre"
-version = "0.11.23"
+version = "0.11.24"
 dependencies = [
  "async-std",
  "async-trait",
