@@ -210,8 +210,18 @@ pub(super) fn addr_spec(input: &str) -> IResult<&str, (String, String)> {
 }
 
 // local-part      =       dot-atom / quoted-string / obs-local-part
+//
+// Quoted forms are kept exactly as written (quotes, quoted-pairs and
+// whitespace included): their unescaped content is a different local part,
+// which would make `Mailbox::from_str` disagree with `Address::from_str` on
+// who the recipient is. Only the leading CFWS is not part of the address.
 pub(super) fn local_part(input: &str) -> IResult<&str, String> {
-    alt((dot_atom, quoted_string, obs_local_part)).parse(input)
+    alt((
+        dot_atom,
+        preceded(cfws, map(recognize(quoted_string), str::to_owned)),
+        preceded(cfws, map(recognize(obs_local_part), str::to_owned)),
+    ))
+    .parse(input)
 }
 
 // domain          =       dot-atom / domain-literal / obs-domain

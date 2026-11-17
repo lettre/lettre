@@ -445,7 +445,7 @@ fn write_quoted_string_char(f: &mut Formatter<'_>, c: char) -> FmtResult {
 mod test {
     use pretty_assertions::assert_eq;
 
-    use super::Mailbox;
+    use super::{Address, Mailbox, Mailboxes};
 
     #[test]
     fn mailbox_format_address_only() {
@@ -621,5 +621,35 @@ mod test {
                 "kayo@example.com".parse().unwrap()
             ))
         );
+    }
+
+    // A quoted local part must be kept as written, or the mailbox would
+    // designate a different recipient than the same string parsed as an
+    // `Address` (GHSA-62w5-58xq-p27j)
+    #[test]
+    fn parse_quoted_local_part_matches_address() {
+        for addr in [
+            r#""d "@d"#,
+            r#""\"x\""@y"#,
+            r#""\".\""@A"#,
+            r#""a b"@example.com"#,
+            r#""john..doe"@example.com"#,
+            r#""abc"@example.com"#,
+        ] {
+            let address: Address = addr.parse().unwrap();
+            for src in [
+                addr.to_owned(),
+                format!("<{addr}>"),
+                format!("K. <{addr}>"),
+                format!("\"Q, R\" <  {addr}>"),
+            ] {
+                let mailbox: Mailbox = src.parse().unwrap();
+                assert_eq!(mailbox.email, address, "{src}");
+                assert_eq!(mailbox.to_string().parse(), Ok(mailbox), "{src}");
+
+                let mailboxes: Mailboxes = format!("{src}, x@example.com").parse().unwrap();
+                assert_eq!(mailboxes.iter().next().unwrap().email, address, "{src}");
+            }
+        }
     }
 }
