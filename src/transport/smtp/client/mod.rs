@@ -70,49 +70,51 @@ impl ClientCodec {
         }
     }
 
-    /// Adds transparency
+    /// Adds transparency ("dot stuffing"), as required by RFC 5321 section 4.5.2.
+    ///
+    /// A line of the message body that starts with a `.` gets a second `.`
+    /// prepended. Besides CRLF, a bare CR or a bare LF is also treated as a line
+    /// boundary, so that a body which was not normalized to CRLF (e.g. raw bytes
+    /// containing Unix line endings) cannot smuggle an unstuffed `.` past a
+    /// server that accepts bare line endings as line terminators.
     fn encode(&mut self, frame: &[u8], buf: &mut Vec<u8>) {
         for &b in frame {
-            buf.push(b);
-            match (b, self.status) {
-                (b'\r', _) => {
-                    self.status = CodecStatus::StartingNewLine;
-                }
-                (b'\n', CodecStatus::StartingNewLine) => {
-                    self.status = CodecStatus::StartOfNewLine;
-                }
-                (_, CodecStatus::StartingNewLine) => {
-                    self.status = CodecStatus::MiddleOfLine;
-                }
-                (b'.', CodecStatus::StartOfNewLine) => {
-                    self.status = CodecStatus::MiddleOfLine;
-                    buf.push(b'.');
-                }
-                (_, CodecStatus::StartOfNewLine) => {
-                    self.status = CodecStatus::MiddleOfLine;
-                }
-                _ => {}
+            if b == b'.' && !matches!(self.status, CodecStatus::MiddleOfLine) {
+                buf.push(b'.');
             }
+            buf.push(b);
+            self.status = match (b, self.status) {
+                (b'\r', _) => CodecStatus::StartingNewLine,
+                (b'\n', CodecStatus::StartingNewLine) => CodecStatus::StartOfNewLine,
+                (b'\n', _) => CodecStatus::AfterBareLf,
+                _ => CodecStatus::MiddleOfLine,
+            };
         }
     }
 
     /// Returns the sequence ending the mail data, whose first CRLF ends an unterminated last line
+    ///
+    /// Only a CRLF ends the last line here: a server that doesn't take a bare
+    /// CR or LF for a line ending is still in the middle of a line after one.
     fn terminator(&self) -> &'static [u8] {
         match self.status {
             CodecStatus::StartOfNewLine => b".\r\n",
-            CodecStatus::MiddleOfLine | CodecStatus::StartingNewLine => b"\r\n.\r\n",
+            CodecStatus::MiddleOfLine | CodecStatus::StartingNewLine | CodecStatus::AfterBareLf => {
+                b"\r\n.\r\n"
+            }
         }
     }
 }
 
 #[derive(Debug, Copy, Clone)]
-#[allow(clippy::enum_variant_names)]
 enum CodecStatus {
     /// We are past the first character of the current line
     MiddleOfLine,
     /// We just read a `\r` character
     StartingNewLine,
-    /// We are at the start of a new line
+    /// We just read a `\n` character that wasn't preceded by a `\r`
+    AfterBareLf,
+    /// We are at the start of a new line, after a CRLF
     StartOfNewLine,
 }
 
@@ -149,7 +151,7 @@ mod test {
         codec.encode(b"test.\r\n", &mut buf);
         assert_eq!(
             String::from_utf8(buf).unwrap(),
-            "..\r\ntest\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n.test\ntesttesttest\r\n..test\r\ntest.\r\n"
+            "..\r\ntest\r\ntest\r\n\r\n..\r\n\r\ntestte\r\n..\r\nsttesttest.test\n..test\ntesttesttest\r\n..test\r\ntest.\r\n"
         );
     }
 
@@ -169,6 +171,28 @@ mod test {
         assert_eq!(terminator(&[b"test"]), b"\r\n.\r\n");
         assert_eq!(terminator(&[b"test\r"]), b"\r\n.\r\n");
         assert_eq!(terminator(&[b"test\n"]), b"\r\n.\r\n");
+        // A bare CR or LF starts a line as far as dots go, but it doesn't end
+        // the last line of the data
+        assert_eq!(terminator(&[b"test\r\n\n"]), b"\r\n.\r\n");
+        assert_eq!(terminator(&[b"test\r\n\r"]), b"\r\n.\r\n");
+        assert_eq!(terminator(&[b"test\n\r\n"]), b".\r\n");
+        assert_eq!(terminator(&[b"test\r\r\n"]), b".\r\n");
+    }
+
+    #[test]
+    fn test_codec_bare_lf_is_dot_stuffed() {
+        // A `.` at the start of a line delimited by a bare LF (or bare CR) must
+        // still be dot-stuffed, otherwise `\n.\n` could be interpreted as the
+        // end of DATA by servers that accept bare line endings (SMTP smuggling).
+        let mut buf = Vec::new();
+        let mut codec = ClientCodec::new();
+        codec.encode(b"hello\n.\nworld", &mut buf);
+        assert_eq!(String::from_utf8(buf).unwrap(), "hello\n..\nworld");
+
+        let mut buf = Vec::new();
+        let mut codec = ClientCodec::new();
+        codec.encode(b"hello\r.\rworld", &mut buf);
+        assert_eq!(String::from_utf8(buf).unwrap(), "hello\r..\rworld");
     }
 
     #[test]
