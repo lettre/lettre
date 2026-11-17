@@ -177,6 +177,17 @@ impl SmtpConnection {
             #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
             {
                 try_smtp!(self.command(Starttls), self);
+                // Nothing may follow the STARTTLS reply before the TLS handshake.
+                // Bytes already buffered at this point arrived in plaintext and
+                // would otherwise be read after the upgrade as if they came over
+                // the authenticated TLS channel (STARTTLS response injection).
+                // Give up on the connection without sending anything else in the
+                // clear.
+                if !self.stream.buffer().is_empty() {
+                    self.panic = true;
+                    let _ = self.stream.get_mut().shutdown(std::net::Shutdown::Both);
+                    return Err(error::response("unexpected data after the STARTTLS reply"));
+                }
                 self.stream.get_mut().upgrade_tls(tls_parameters)?;
                 #[cfg(feature = "tracing")]
                 tracing::debug!("connection encrypted");

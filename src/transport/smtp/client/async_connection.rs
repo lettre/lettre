@@ -251,6 +251,17 @@ impl AsyncSmtpConnection {
     ) -> Result<(), Error> {
         if self.server_info.supports_feature(Extension::StartTls) {
             try_smtp!(self.command(Starttls).await, self);
+            // Nothing may follow the STARTTLS reply before the TLS handshake.
+            // Bytes already buffered at this point arrived in plaintext and
+            // would otherwise be read after the upgrade as if they came over
+            // the authenticated TLS channel (STARTTLS response injection).
+            // Give up on the connection without sending anything else in the
+            // clear.
+            if !self.stream.buffer().is_empty() {
+                self.panic = true;
+                let _ = self.stream.close().await;
+                return Err(error::response("unexpected data after the STARTTLS reply"));
+            }
             self.stream.get_mut().upgrade_tls(tls_parameters).await?;
             #[cfg(feature = "tracing")]
             tracing::debug!("connection encrypted");

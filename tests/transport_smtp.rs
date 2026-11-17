@@ -274,3 +274,83 @@ mod data_terminator {
         );
     }
 }
+
+#[cfg(test)]
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "native-tls", feature = "rustls", feature = "boring-tls")
+))]
+mod starttls_injection {
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::{SocketAddr, TcpListener},
+        thread,
+        time::Duration,
+    };
+
+    use lettre::transport::smtp::{
+        client::{SmtpConnection, TlsParameters},
+        extension::ClientId,
+    };
+
+    // Plays a server, or someone in front of it, that appends replies of its
+    // own to the reply to STARTTLS, in the same write
+    fn server() -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut commands = BufReader::new(stream.try_clone().unwrap()).lines();
+            stream.write_all(b"220 localhost ESMTP\r\n").unwrap();
+            let _ehlo = commands.next();
+            stream
+                .write_all(b"250-localhost\r\n250 STARTTLS\r\n")
+                .unwrap();
+            let _starttls = commands.next();
+            stream
+                .write_all(b"220 go ahead\r\n250-forged.example\r\n250 AUTH PLAIN\r\n")
+                .unwrap();
+        });
+        addr
+    }
+
+    #[test]
+    fn plaintext_after_starttls_reply_is_rejected() {
+        let hello = ClientId::Domain("test".into());
+        let mut conn =
+            SmtpConnection::connect(server(), Some(Duration::from_secs(5)), &hello, None, None)
+                .unwrap();
+        let tls = TlsParameters::new("localhost".into()).unwrap();
+
+        let err = conn.starttls(&tls, &hello).unwrap_err();
+        assert!(err.is_response(), "{err:?}");
+        assert!(conn.has_broken());
+    }
+
+    #[cfg(feature = "tokio1")]
+    mod tokio_1 {
+        use lettre::transport::smtp::client::AsyncSmtpConnection;
+        use tokio1_crate as tokio;
+
+        use super::*;
+
+        #[tokio::test]
+        async fn plaintext_after_starttls_reply_is_rejected() {
+            let hello = ClientId::Domain("test".into());
+            let mut conn = AsyncSmtpConnection::connect_tokio1(
+                server(),
+                Some(Duration::from_secs(5)),
+                &hello,
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+            let tls = TlsParameters::new("localhost".into()).unwrap();
+
+            let err = conn.starttls(tls, &hello).await.unwrap_err();
+            assert!(err.is_response(), "{err:?}");
+            assert!(conn.has_broken());
+        }
+    }
+}
