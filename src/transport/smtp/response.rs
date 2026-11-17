@@ -11,7 +11,7 @@ use nom::{
     IResult, Parser,
     branch::alt,
     bytes::streaming::{tag, take_until},
-    combinator::{complete, map},
+    combinator::{complete, map, peek},
     multi::many0,
     sequence::preceded,
 };
@@ -305,8 +305,16 @@ pub(crate) fn parse_response(i: &str) -> IResult<&str, Response> {
         tag("\r\n"),
     ))
     .parse(i)?;
-    let (i, (last_code, last_line)) =
-        (parse_code, preceded(tag(" "), take_until("\r\n"))).parse(i)?;
+    // RFC 5321 section 4.2: `Reply-code [ SP textstring ] CRLF`, so the
+    // final line may end right after the code.
+    let (i, (last_code, last_line)) = (
+        parse_code,
+        alt((
+            preceded(tag(" "), take_until("\r\n")),
+            map(peek(tag("\r\n")), |_| ""),
+        )),
+    )
+        .parse(i)?;
     let (i, _) = complete(tag("\r\n")).parse(i)?;
 
     // Check that all codes are equal.
@@ -599,6 +607,69 @@ mod test {
             .first_word(),
             None
         );
+    }
+
+    #[test]
+    fn test_response_without_text() {
+        // RFC 5321 section 4.2: the text after the reply code is optional.
+        let (remaining, response) = parse_response("250\r\n").unwrap();
+        assert_eq!(remaining, "");
+        assert_eq!(
+            response,
+            Response::new(
+                Code::new(
+                    Severity::PositiveCompletion,
+                    Category::MailSystem,
+                    Detail::Zero,
+                ),
+                vec!["".to_owned()],
+            )
+        );
+        assert_eq!(response.message_joined(), "");
+    }
+
+    #[test]
+    fn test_negative_response_without_text() {
+        let response: Response = "550\r\n".parse().unwrap();
+        assert_eq!(
+            response.code(),
+            Code::new(
+                Severity::PermanentNegativeCompletion,
+                Category::MailSystem,
+                Detail::Zero,
+            )
+        );
+        assert!(!response.is_positive());
+    }
+
+    #[test]
+    fn test_multiline_response_ending_without_text() {
+        let response: Response = "250-first line\r\n250\r\n".parse().unwrap();
+        assert_eq!(
+            response.message().collect::<Vec<_>>(),
+            vec!["first line", ""]
+        );
+    }
+
+    #[test]
+    fn test_response_without_text_incomplete() {
+        for raw_response in ["250", "250\r"] {
+            let res = parse_response(raw_response);
+            match res {
+                Err(nom::Err::Incomplete(_)) => {}
+                _ => panic!("Expected incomplete response for {raw_response:?}, got {res:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_response_code_followed_by_junk() {
+        for raw_response in ["250x\r\n", "250\n"] {
+            assert!(
+                raw_response.parse::<Response>().is_err(),
+                "{raw_response:?} should not parse"
+            );
+        }
     }
 
     #[test]
