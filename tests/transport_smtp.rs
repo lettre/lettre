@@ -71,6 +71,98 @@ mod asyncstd_1 {
     }
 }
 
+// The TLS handshake of STARTTLS can fail, for example because the server
+// closes the connection instead of starting it. The connection is closed
+// from then on: using it, or closing it again, returns an error and must
+// not panic.
+#[cfg(test)]
+#[cfg(all(
+    feature = "smtp-transport",
+    any(feature = "native-tls", feature = "rustls", feature = "boring-tls")
+))]
+mod failed_tls_upgrade {
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::{SocketAddr, TcpListener},
+        thread,
+        time::Duration,
+    };
+
+    use lettre::transport::smtp::{
+        client::{SmtpConnection, TlsParameters},
+        commands::Noop,
+        extension::ClientId,
+    };
+
+    // Accepts STARTTLS, then closes the connection instead of doing the
+    // TLS handshake
+    fn server() -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let addr = listener.local_addr().unwrap();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut commands = BufReader::new(stream.try_clone().unwrap()).lines();
+            stream.write_all(b"220 localhost ESMTP\r\n").unwrap();
+            let _ehlo = commands.next();
+            stream
+                .write_all(b"250-localhost\r\n250 STARTTLS\r\n")
+                .unwrap();
+            let _starttls = commands.next();
+            stream.write_all(b"220 go ahead\r\n").unwrap();
+        });
+        addr
+    }
+
+    #[test]
+    fn closed_connection_does_not_panic() {
+        let hello = ClientId::Domain("test".into());
+        let mut conn =
+            SmtpConnection::connect(server(), Some(Duration::from_secs(5)), &hello, None, None)
+                .unwrap();
+        let tls = TlsParameters::new("localhost".into()).unwrap();
+
+        assert!(conn.starttls(&tls, &hello).is_err());
+        assert!(conn.peer_certificate().is_err());
+        assert!(conn.command(Noop).is_err());
+        conn.abort();
+    }
+
+    #[cfg(all(
+        feature = "tokio1",
+        any(
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls",
+            feature = "tokio1-boring-tls"
+        )
+    ))]
+    mod tokio_1 {
+        use lettre::transport::smtp::client::AsyncSmtpConnection;
+        use tokio1_crate as tokio;
+
+        use super::*;
+
+        #[tokio::test]
+        async fn closed_connection_does_not_panic() {
+            let hello = ClientId::Domain("test".into());
+            let mut conn = AsyncSmtpConnection::connect_tokio1(
+                server(),
+                Some(Duration::from_secs(5)),
+                &hello,
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+            let tls = TlsParameters::new("localhost".into()).unwrap();
+
+            assert!(conn.starttls(tls, &hello).await.is_err());
+            assert!(conn.peer_certificate().is_err());
+            assert!(conn.command(Noop).await.is_err());
+            conn.abort().await;
+        }
+    }
+}
+
 #[cfg(test)]
 #[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
 mod read_response_caps {
