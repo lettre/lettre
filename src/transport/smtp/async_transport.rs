@@ -13,6 +13,7 @@ use super::PoolConfig;
 #[cfg(any(
     feature = "tokio1-native-tls",
     feature = "tokio1-rustls",
+    feature = "tokio1-boring-tls",
     feature = "async-std1-rustls"
 ))]
 use super::Tls;
@@ -123,6 +124,7 @@ where
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls",
+        feature = "tokio1-boring-tls",
         feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
@@ -130,6 +132,7 @@ where
         doc(cfg(any(
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls",
+            feature = "tokio1-boring-tls",
             feature = "async-std1-rustls"
         )))
     )]
@@ -157,6 +160,7 @@ where
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls",
+        feature = "tokio1-boring-tls",
         feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
@@ -164,6 +168,7 @@ where
         doc(cfg(any(
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls",
+            feature = "tokio1-boring-tls",
             feature = "async-std1-rustls"
         )))
     )]
@@ -428,6 +433,7 @@ impl AsyncSmtpTransportBuilder {
     #[cfg(any(
         feature = "tokio1-native-tls",
         feature = "tokio1-rustls",
+        feature = "tokio1-boring-tls",
         feature = "async-std1-rustls"
     ))]
     #[cfg_attr(
@@ -435,6 +441,7 @@ impl AsyncSmtpTransportBuilder {
         doc(cfg(any(
             feature = "tokio1-native-tls",
             feature = "tokio1-rustls",
+            feature = "tokio1-boring-tls",
             feature = "async-std1-rustls"
         )))
     )]
