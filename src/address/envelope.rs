@@ -42,7 +42,10 @@ mod serde_forward_path {
         where
             S: serde::de::SeqAccess<'de>,
         {
-            let mut seq: Vec<Address> = Vec::with_capacity(access.size_hint().unwrap_or(0));
+            // The hint comes from the input, which can declare more elements
+            // than it holds: don't allocate much before reading them
+            let capacity = access.size_hint().unwrap_or(0).min(1024);
+            let mut seq: Vec<Address> = Vec::with_capacity(capacity);
             while let Some(key) = access.next_element()? {
                 seq.push(key);
             }
