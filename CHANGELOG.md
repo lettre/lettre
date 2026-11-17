@@ -1,3 +1,99 @@
+<a name="v0.11.24"></a>
+### v0.11.24 (2026-11-17)
+
+This release fixes security issues in the SMTP transport and in the message
+builder. The most serious ones let a man-in-the-middle forge the replies read
+after `STARTTLS`, let message content with bare CR or LF line endings inject
+SMTP commands, and had messages for an address with a quoted local part sent to
+a different address. The others let a server exhaust memory, keep a CPU core
+busy or cause a panic. We recommend that everyone updates to the latest patch
+release.
+
+To fix them lettre got stricter in the few places listed in the upgrade notes.
+That technically makes for breaking changes, but we expect most projects not to
+be affected by them.
+
+#### Upgrade notes
+
+* Addresses with white space or control characters outside of ASCII are rejected
+* `Mailbox::from_str` keeps a quoted local part as it was written, like `Address::from_str` does: `"d "@example.com` is no longer turned into `d@example.com`. Quoted local parts are now validated the way `Address::from_str` validates them
+* Connecting fails when the server sends anything after its reply to `STARTTLS` and before the TLS handshake
+* Sending fails when the reply to `DATA`, or to the message content, is not of the expected class
+* The `Display` implementation of `Mailbox` writes a CR or LF in the display name as a space
+
+#### Security
+
+* Fix `STARTTLS` response injection, where replies sent in cleartext before the TLS handshake were read as if they came over TLS ([GHSA-q3jf-wmp2-47pg] and [b404122])
+* Fix SMTP command injection through message content with bare CR or LF line endings, which was sent without dot-stuffing ([3d9a6e6])
+* Fix `Mailbox::from_str` changing a quoted local part, which had messages sent to a different address than the one given ([GHSA-62w5-58xq-p27j] and [f4d5abc])
+* Check the class of the replies to `DATA` and to the message content, so that a reply read out of turn can't have the content read as commands or a rejected message reported as sent ([04e3ac3])
+* Fix unbounded memory use reading an SMTP reply line that never ends ([GHSA-pmvc-x69f-5p9f] and [075849f])
+* Fix quadratic time parsing an SMTP reply made of many short lines ([GHSA-pmvc-x69f-5p9f] and [8146136])
+* Fix panic formatting a `Mailbox` with a CR or LF in its display name ([0ad883c])
+* Fix panic on an `EHLO` reply line made of white space only ([GHSA-23wm-4vvw-r7p2] and [4a58794])
+
+#### Features
+
+* Add `allow_partial_recipients` to the SMTP transport builders, to still send a message when the server rejects some of its recipients ([#1169])
+
+#### Bug Fixes
+
+* Keep a raw `Date` header with a timezone other than UTC instead of replacing it with the current date ([#1162])
+* Don't add an empty line to messages ending with CRLF when sending them via SMTP ([#1175])
+* Fix building with `rustls-platform-verifier` on Android ([#1178])
+* Don't close pooled connections after every message with the `async-std` SMTP transport ([#1179])
+* Cap the memory allocated up front when deserializing an `Envelope` ([#1180])
+* Only reuse pooled SMTP connections that reply `250` to `NOOP` ([#1181])
+* Fix TLS with `AsyncSmtpTransport` when `tokio1-boring-tls` is the only TLS feature enabled ([#1183])
+* Fix stack overflow in relaxed DKIM header canonicalization when built without optimizations ([#1184])
+* Keep the private key out of the `Debug` output of `DkimSigningKey` and `DkimConfig` ([#1184])
+* Keep the credentials out of the `Debug` output of the SMTP `Auth` command ([#1184])
+* Accept SMTP replies without text after the reply code ([#1182])
+* Fix panic when using or closing an SMTP connection after its TLS upgrade failed ([#1186])
+* Accept SMTP reply lines longer than 1000 bytes, as sent by Microsoft 365 ([#1168] and [075849f])
+* Reject white space and control characters outside of ASCII in addresses ([b2b3abf])
+
+#### Misc
+
+* Set `TCP_NODELAY` on SMTP connections ([#1159])
+* Fix building with `-Z direct-minimal-versions` ([#1174])
+* Bump minimum supported `email-encoding` to v0.4.3 ([#1174])
+* Bump minimum supported `tokio` to v1.18.2 ([#1174])
+* Fix the default port of `smtp://` URLs in the `from_url` docs ([#1177])
+* Fix stated MSRV in README and crate docs ([4483c42])
+* Report security issues through GitHub's private vulnerability reporting ([#1164])
+
+[4483c42]: https://github.com/lettre/lettre/commit/4483c42681d78a3e9bcd238baf7cb5efc8b54478
+[b404122]: https://github.com/lettre/lettre/commit/b404122f1b51cdfa32662661849aa3a22e02af38
+[3d9a6e6]: https://github.com/lettre/lettre/commit/3d9a6e6a467c6ce00bd39ada6aa1a00e57540a1d
+[f4d5abc]: https://github.com/lettre/lettre/commit/f4d5abc67072c5f35c5cccac6370e94a842cb26c
+[04e3ac3]: https://github.com/lettre/lettre/commit/04e3ac38b7e17de648efc54aa3c97a1657c38f9c
+[075849f]: https://github.com/lettre/lettre/commit/075849fb9f2c956202aaaf2ff73e41f995d02f35
+[8146136]: https://github.com/lettre/lettre/commit/8146136e076950375f56f148f65d0204a175bd2e
+[0ad883c]: https://github.com/lettre/lettre/commit/0ad883cdb20c256ab29c9d002fd4cc55c5d8abfe
+[4a58794]: https://github.com/lettre/lettre/commit/4a58794b672542d5bfea5a40505bb20627122086
+[b2b3abf]: https://github.com/lettre/lettre/commit/b2b3abfa878052121d741780f5e95185e7c01c9c
+[#1159]: https://github.com/lettre/lettre/pull/1159
+[#1162]: https://github.com/lettre/lettre/pull/1162
+[#1164]: https://github.com/lettre/lettre/pull/1164
+[#1168]: https://github.com/lettre/lettre/issues/1168
+[#1169]: https://github.com/lettre/lettre/pull/1169
+[#1174]: https://github.com/lettre/lettre/pull/1174
+[#1175]: https://github.com/lettre/lettre/pull/1175
+[#1177]: https://github.com/lettre/lettre/pull/1177
+[#1178]: https://github.com/lettre/lettre/pull/1178
+[#1179]: https://github.com/lettre/lettre/pull/1179
+[#1180]: https://github.com/lettre/lettre/pull/1180
+[#1181]: https://github.com/lettre/lettre/pull/1181
+[#1182]: https://github.com/lettre/lettre/pull/1182
+[#1183]: https://github.com/lettre/lettre/pull/1183
+[#1184]: https://github.com/lettre/lettre/pull/1184
+[#1186]: https://github.com/lettre/lettre/pull/1186
+[GHSA-23wm-4vvw-r7p2]: https://github.com/lettre/lettre/security/advisories/GHSA-23wm-4vvw-r7p2
+[GHSA-62w5-58xq-p27j]: https://github.com/lettre/lettre/security/advisories/GHSA-62w5-58xq-p27j
+[GHSA-pmvc-x69f-5p9f]: https://github.com/lettre/lettre/security/advisories/GHSA-pmvc-x69f-5p9f
+[GHSA-q3jf-wmp2-47pg]: https://github.com/lettre/lettre/security/advisories/GHSA-q3jf-wmp2-47pg
+
 <a name="v0.11.23"></a>
 ### v0.11.23 (2026-08-03)
 
