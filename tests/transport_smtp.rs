@@ -164,46 +164,90 @@ mod failed_tls_upgrade {
 }
 
 #[cfg(test)]
-#[cfg(all(feature = "smtp-transport", feature = "tokio1"))]
+#[cfg(feature = "smtp-transport")]
 mod read_response_caps {
-    use std::{io::Write, net::TcpListener, thread, time::Duration};
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::{SocketAddr, TcpListener},
+        thread,
+        time::Duration,
+    };
 
-    use lettre::transport::smtp::{client::AsyncSmtpConnection, extension::ClientId};
-    use tokio1_crate as tokio;
+    use lettre::transport::smtp::{Error, client::SmtpConnection, extension::ClientId};
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-    async fn oversized_line_is_bounded() {
+    // Sends `greeting`, answers EHLO if the client gets that far, and keeps
+    // the connection open until the client leaves
+    fn server(greeting: Vec<u8>) -> SocketAddr {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let addr = listener.local_addr().unwrap();
         thread::spawn(move || {
-            if let Ok((mut sock, _)) = listener.accept() {
-                let mut line = vec![b'x'; 4096];
-                line.extend_from_slice(b"\r\n");
-                let _ = sock.write_all(&line);
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut commands = BufReader::new(stream.try_clone().unwrap()).lines();
+            let _ = stream.write_all(&greeting);
+            if commands.next().is_some() {
+                let _ = stream.write_all(b"250 localhost\r\n");
             }
+            let _ = commands.next();
         });
+        addr
+    }
 
-        let result = tokio::time::timeout(
-            Duration::from_secs(5),
-            AsyncSmtpConnection::connect_tokio1(
-                addr,
-                None,
-                &ClientId::Domain("test".into()),
-                None,
-                None,
-            ),
-        )
-        .await
-        .expect("connect must return within 5s, not hang");
+    // A reply line longer than the 512 bytes of RFC 5321, as Microsoft 365
+    // sends them (#1168)
+    fn long_line() -> Vec<u8> {
+        format!("220 {}\r\n", "x".repeat(2_000)).into_bytes()
+    }
 
-        let err = match result {
-            Ok(_) => panic!("oversized line must surface as an error"),
-            Err(e) => e,
-        };
-        assert!(
-            err.is_response(),
-            "expected response-kind error, got {err:?}"
-        );
+    // More than a reply can hold, with no line ending at all: a client that
+    // doesn't bound what it reads buffers all of it, then waits for the rest
+    // of the line
+    fn unterminated_line() -> Vec<u8> {
+        vec![b'x'; 200 * 1024]
+    }
+
+    fn connect(addr: SocketAddr) -> Result<SmtpConnection, Error> {
+        let hello = ClientId::Domain("test".into());
+        SmtpConnection::connect(addr, Some(Duration::from_secs(5)), &hello, None, None)
+    }
+
+    #[test]
+    fn long_line_is_accepted() {
+        connect(server(long_line())).unwrap();
+    }
+
+    #[test]
+    fn unterminated_line_is_bounded() {
+        let err = connect(server(unterminated_line())).err().unwrap();
+        assert!(err.is_response(), "{err:?}");
+    }
+
+    #[cfg(feature = "tokio1")]
+    mod tokio_1 {
+        use lettre::transport::smtp::client::AsyncSmtpConnection;
+        use tokio1_crate as tokio;
+
+        use super::*;
+
+        // With a time limit of its own: without a bound on what is read,
+        // nothing would end the wait for the rest of the line
+        async fn connect(addr: SocketAddr) -> Result<AsyncSmtpConnection, Error> {
+            let hello = ClientId::Domain("test".into());
+            let connect = AsyncSmtpConnection::connect_tokio1(addr, None, &hello, None, None);
+            tokio::time::timeout(Duration::from_secs(5), connect)
+                .await
+                .expect("timed out")
+        }
+
+        #[tokio::test]
+        async fn long_line_is_accepted() {
+            connect(server(long_line())).await.unwrap();
+        }
+
+        #[tokio::test]
+        async fn unterminated_line_is_bounded() {
+            let err = connect(server(unterminated_line())).await.err().unwrap();
+            assert!(err.is_response(), "{err:?}");
+        }
     }
 }
 

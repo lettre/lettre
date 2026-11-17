@@ -1,15 +1,13 @@
 use std::{
     fmt::Display,
-    io::{self, BufRead, BufReader, Write},
+    io::{self, BufRead, BufReader, Read, Write},
     net::{IpAddr, ToSocketAddrs},
     time::Duration,
 };
 
 #[cfg(feature = "tracing")]
 use super::escape_crlf;
-use super::{
-    ClientCodec, MAX_RESPONSE_BYTES, MAX_RESPONSE_LINE_BYTES, NetworkStream, TlsParameters,
-};
+use super::{ClientCodec, MAX_RESPONSE_BYTES, NetworkStream, TlsParameters};
 use crate::{
     address::Envelope,
     transport::smtp::{
@@ -362,19 +360,8 @@ impl SmtpConnection {
     /// Gets the SMTP response
     pub fn read_response(&mut self) -> Result<Response, Error> {
         let mut buffer = String::with_capacity(100);
-        let mut pre = 0;
 
-        while self.stream.read_line(&mut buffer).map_err(error::network)? > 0 {
-            if buffer.len() - pre > MAX_RESPONSE_LINE_BYTES {
-                return Err(error::response("SMTP response line too long"));
-            }
-            if buffer.len() > MAX_RESPONSE_BYTES {
-                return Err(error::response("SMTP response too large"));
-            }
-            pre = buffer.len();
-
-            #[cfg(feature = "tracing")]
-            tracing::debug!("<< {}", escape_crlf(&buffer));
+        while self.read_response_line(&mut buffer)? {
             match parse_response(&buffer) {
                 Ok((_remaining, response)) => {
                     return if response.is_positive() {
@@ -394,6 +381,45 @@ impl SmtpConnection {
         }
 
         Err(error::response("incomplete response"))
+    }
+
+    /// Reads a line of a response and adds it to `buffer`.
+    ///
+    /// `buffer` never grows past `MAX_RESPONSE_BYTES`, also when the line
+    /// has no end: a peer that never sends a line ending can't make it take
+    /// memory without bound.
+    ///
+    /// Returns `false` at the end of the stream.
+    fn read_response_line(&mut self, buffer: &mut String) -> Result<bool, Error> {
+        let limit = MAX_RESPONSE_BYTES - buffer.len();
+        if limit == 0 {
+            return Err(error::response("SMTP response too large"));
+        }
+
+        let mut line = Vec::new();
+        let read = (&mut self.stream)
+            .take(limit as u64)
+            .read_until(b'\n', &mut line)
+            .map_err(error::network)?;
+        if read == 0 {
+            // EOF
+            return Ok(false);
+        }
+        if !line.ends_with(b"\n") {
+            return Err(error::response(if line.len() >= limit {
+                "SMTP response too large"
+            } else {
+                // The connection ended in the middle of a line
+                "incomplete response"
+            }));
+        }
+        let line = std::str::from_utf8(&line).map_err(error::response)?;
+
+        #[cfg(feature = "tracing")]
+        tracing::debug!("<< {}", escape_crlf(line));
+
+        buffer.push_str(line);
+        Ok(true)
     }
 
     /// The X509 certificate of the server (DER encoded)
