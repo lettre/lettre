@@ -132,7 +132,11 @@ impl Executor for Tokio1Executor {
     ) -> Result<AsyncSmtpConnection, Error> {
         #[allow(clippy::match_single_binding)]
         let tls_parameters = match tls {
-            #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls"))]
+            #[cfg(any(
+                feature = "tokio1-native-tls",
+                feature = "tokio1-rustls",
+                feature = "tokio1-boring-tls"
+            ))]
             Tls::Wrapper(tls_parameters) => Some(tls_parameters.clone()),
             _ => None,
         };
@@ -146,7 +150,11 @@ impl Executor for Tokio1Executor {
         )
         .await?;
 
-        #[cfg(any(feature = "tokio1-native-tls", feature = "tokio1-rustls"))]
+        #[cfg(any(
+            feature = "tokio1-native-tls",
+            feature = "tokio1-rustls",
+            feature = "tokio1-boring-tls"
+        ))]
         match tls {
             Tls::Opportunistic(tls_parameters) if conn.can_starttls() => {
                 conn.starttls(tls_parameters.clone(), hello_name).await?;
