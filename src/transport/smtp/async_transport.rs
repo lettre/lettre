@@ -119,7 +119,7 @@ where
     ///
     /// The right option for most SMTP servers.
     ///
-    /// Creates an encrypted transport over submissions port, using the provided domain
+    /// Creates an encrypted transport over the submissions port (465), using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(
         feature = "tokio1-native-tls",
@@ -151,7 +151,7 @@ where
     /// Alternative to [`AsyncSmtpTransport::relay`](#method.relay), for SMTP servers
     /// that don't take SMTPS connections.
     ///
-    /// Creates an encrypted transport over submissions port, by first connecting using
+    /// Creates an encrypted transport over the submission port (587), by first connecting using
     /// an unencrypted connection and then upgrading it with STARTTLS. The provided
     /// domain is used to validate TLS certificates.
     ///
