@@ -1,4 +1,7 @@
-use std::fmt::{Formatter, Result as FmtResult};
+use std::{
+    borrow::Cow,
+    fmt::{Formatter, Result as FmtResult},
+};
 
 use serde::{
     Deserialize, Serialize,
@@ -59,6 +62,12 @@ impl<'de> Deserialize<'de> for Address {
             }
         }
 
+        /// A string that is borrowed from the input when the deserializer
+        /// can lend it, which it can't from a reader or for a string with
+        /// an escape
+        #[derive(Deserialize)]
+        struct CowStr<'a>(#[serde(borrow)] Cow<'a, str>);
+
         struct AddressVisitor;
 
         impl<'de> Visitor<'de> for AddressVisitor {
@@ -87,22 +96,22 @@ impl<'de> Deserialize<'de> for Address {
                             if user.is_some() {
                                 return Err(DeError::duplicate_field("user"));
                             }
-                            let val = map.next_value()?;
-                            Address::check_user(val).map_err(DeError::custom)?;
+                            let CowStr(val) = map.next_value()?;
+                            Address::check_user(&val).map_err(DeError::custom)?;
                             user = Some(val);
                         }
                         Field::Domain => {
                             if domain.is_some() {
                                 return Err(DeError::duplicate_field("domain"));
                             }
-                            let val = map.next_value()?;
-                            Address::check_domain(val).map_err(DeError::custom)?;
+                            let CowStr(val) = map.next_value()?;
+                            Address::check_domain(&val).map_err(DeError::custom)?;
                             domain = Some(val);
                         }
                     }
                 }
-                let user: &str = user.ok_or_else(|| DeError::missing_field("user"))?;
-                let domain: &str = domain.ok_or_else(|| DeError::missing_field("domain"))?;
+                let user = user.ok_or_else(|| DeError::missing_field("user"))?;
+                let domain = domain.ok_or_else(|| DeError::missing_field("domain"))?;
                 Ok(Address::new(user, domain).unwrap())
             }
         }
