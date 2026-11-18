@@ -41,6 +41,7 @@
 //! Date: Sat, 12 Dec 2020 16:33:19 GMT
 //! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
+//! MIME-Version: 1.0
 //!
 //! Be happy!
 //! ```
@@ -460,7 +461,7 @@ impl MessageBuilder {
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
-        self.build(MessageBody::Raw(body.into_vec()))
+        self.mime_1_0().build(MessageBody::Raw(body.into_vec()))
     }
 
     /// Create message using mime body ([`MultiPart`])
@@ -698,6 +699,7 @@ mod test {
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Happy new year!"
             )
@@ -739,6 +741,7 @@ mod test {
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Happy new year!"
             )

@@ -45,6 +45,7 @@ mod sync {
                 "Subject: Happy new year\r\n",
                 "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Be happy!"
             )
@@ -83,6 +84,7 @@ mod sync {
                 "Subject: Happy new year\r\n",
                 "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Be happy!"
             )
@@ -143,6 +145,7 @@ mod tokio_1 {
                 "Subject: Happy new year\r\n",
                 "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Be happy!"
             )
@@ -194,6 +197,7 @@ mod asyncstd_1 {
                 "Subject: Happy new year\r\n",
                 "Date: Tue, 15 Nov 1994 08:12:31 +0000\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Be happy!"
             )
