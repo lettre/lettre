@@ -13,7 +13,7 @@ pub use self::{
     content::*,
     content_disposition::ContentDisposition,
     content_type::{ContentType, ContentTypeErr},
-    date::Date,
+    date::{Date, Offset},
     mailbox::*,
     special::*,
     textual::*,
