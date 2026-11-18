@@ -321,8 +321,8 @@ impl TlsParametersBuilder {
         self
     }
 
-    /// Creates a new `TlsParameters` using native-tls, boring-tls or rustls
-    /// depending on which one is available
+    /// Creates a new `TlsParameters` using rustls if it is enabled,
+    /// otherwise native-tls, otherwise boring-tls
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
@@ -606,8 +606,8 @@ pub(crate) enum InnerTlsParameters {
 }
 
 impl TlsParameters {
-    /// Creates a new `TlsParameters` using native-tls or rustls
-    /// depending on which one is available
+    /// Creates a new `TlsParameters` using rustls if it is enabled,
+    /// otherwise native-tls, otherwise boring-tls
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
