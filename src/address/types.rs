@@ -85,6 +85,12 @@ impl Address {
     ///
     /// Prefer using [`Address::new()`] instead if possible.
     ///
+    /// The message builder reads the addresses of a message back from its
+    /// headers. A header with an address that [`Address::new()`] would
+    /// reject can't be read back: its recipients are left out of the
+    /// envelope made for the message, which is only an error when none is
+    /// left.
+    ///
     /// # Examples
     ///
     /// ```
