@@ -468,9 +468,18 @@ impl MessageBuilder {
 
     /// Create [`Message`] using a [`Vec<u8>`], [`String`], or [`Body`] body
     ///
-    /// Automatically gets encoded with `7bit`, `quoted-printable` or `base64`
-    /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
-    /// for `body`.
+    /// Unless a `Content-Transfer-Encoding` header was set on this builder,
+    /// the body is encoded with `7bit`, `quoted-printable` or `base64`,
+    /// whichever is the most efficient valid encoding for it.
+    ///
+    /// # Panics
+    ///
+    /// If a `Content-Transfer-Encoding` header was set and `body` can't be
+    /// represented in it: `7bit` with characters outside of ASCII, `7bit` or
+    /// `8bit` with a line that is too long, a NUL or a bare CR (or a bare
+    /// LF, in a `Vec<u8>`). Don't set the header for a body you don't
+    /// control, or encode it with [`Body::new_with_encoding`], which returns
+    /// the error, and pass the [`Body`].
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
         let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
