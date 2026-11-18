@@ -32,8 +32,9 @@ impl Body {
     /// If `String` is passed, line endings are converted to `CRLF`.
     ///
     /// If `buf` is valid utf-8 a `String` should be supplied, as `String`s
-    /// can be encoded as `7bit` or `quoted-printable`, while `Vec<u8>` always
-    /// get encoded as `base64`.
+    /// with characters outside of ASCII can be encoded as `quoted-printable`,
+    /// while a `Vec<u8>` with bytes outside of ASCII always gets encoded as
+    /// `base64`.
     pub fn new<B: Into<MaybeString>>(buf: B) -> Self {
         let mut buf: MaybeString = buf.into();
 
