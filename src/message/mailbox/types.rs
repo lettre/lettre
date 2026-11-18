@@ -390,7 +390,7 @@ fn is_valid_atom_char(c: u8) -> bool {
 		b'+' |
 		b'-' |
 		b'/' |
-		b'0'..=b'8' |
+		b'0'..=b'9' |
 		b'=' |
 		b'?' |
 		b'A'..=b'Z' |
