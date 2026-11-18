@@ -13,7 +13,9 @@ use idna::domain_to_ascii;
 
 /// Represents an email address with a user and a domain name.
 ///
-/// This type contains email in canonical form (_user@domain.tld_).
+/// This type holds a valid email address (_user@domain.tld_) as it was
+/// given: it is not brought to a canonical form, so that `a@EXAMPLE.com`
+/// and `a@example.com` are two different addresses.
 ///
 /// **NOTE**: Enable feature "serde" to be able to serialize/deserialize it using [serde](https://serde.rs/).
 ///
