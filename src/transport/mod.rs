@@ -32,7 +32,7 @@
 //! | [`smtp`]     | SMTP     | [`SmtpTransport`]     | [`AsyncSmtpTransport`]     | Uses the SMTP protocol to send emails to a relay server |
 //! | [`sendmail`] | Sendmail | [`SendmailTransport`] | [`AsyncSendmailTransport`] | Uses the `sendmail` command to send emails              |
 //! | [`file`]     | File     | [`FileTransport`]     | [`AsyncFileTransport`]     | Saves the email as an `.eml` file                       |
-//! | [`stub`]     | Debug    | [`StubTransport`]     | [`AsyncStubTransport`]     | Drops the email - Useful for debugging                  |
+//! | [`stub`]     | Debug    | [`StubTransport`]     | [`AsyncStubTransport`]     | Keeps the emails in memory - Useful for testing         |
 //!
 //! ## Building an email
 //!
