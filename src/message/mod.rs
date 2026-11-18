@@ -256,7 +256,7 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.mailbox(header::From(mbox))`.
+    /// Shortcut for `self.mailbox(header::From::from(Mailboxes::from(mbox)))`.
     pub fn from(self, mbox: Mailbox) -> Self {
         self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
@@ -265,7 +265,7 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.header(header::Sender(mbox))`.
+    /// Shortcut for `self.header(header::Sender::from(mbox))`.
     pub fn sender(self, mbox: Mailbox) -> Self {
         self.header(header::Sender::from(mbox))
     }
@@ -289,28 +289,28 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
+    /// Shortcut for `self.mailbox(header::ReplyTo::from(Mailboxes::from(mbox)))`.
     pub fn reply_to(self, mbox: Mailbox) -> Self {
         self.mailbox(header::ReplyTo(mbox.into()))
     }
 
     /// Set or add mailbox to `To` header
     ///
-    /// Shortcut for `self.mailbox(header::To(mbox))`.
+    /// Shortcut for `self.mailbox(header::To::from(Mailboxes::from(mbox)))`.
     pub fn to(self, mbox: Mailbox) -> Self {
         self.mailbox(header::To(mbox.into()))
     }
 
     /// Set or add mailbox to `Cc` header
     ///
-    /// Shortcut for `self.mailbox(header::Cc(mbox))`.
+    /// Shortcut for `self.mailbox(header::Cc::from(Mailboxes::from(mbox)))`.
     pub fn cc(self, mbox: Mailbox) -> Self {
         self.mailbox(header::Cc(mbox.into()))
     }
 
     /// Set or add mailbox to `Bcc` header
     ///
-    /// Shortcut for `self.mailbox(header::Bcc(mbox))`.
+    /// Shortcut for `self.mailbox(header::Bcc::from(Mailboxes::from(mbox)))`.
     pub fn bcc(self, mbox: Mailbox) -> Self {
         self.mailbox(header::Bcc(mbox.into()))
     }
@@ -329,7 +329,7 @@ impl MessageBuilder {
 
     /// Set `Subject` header to message
     ///
-    /// Shortcut for `self.header(header::Subject(subject.into()))`.
+    /// Shortcut for `self.header(header::Subject::from(subject.into()))`.
     pub fn subject<S: Into<String>>(self, subject: S) -> Self {
         let s: String = subject.into();
         self.header(header::Subject::from(s))

@@ -113,7 +113,7 @@ mailbox_header! {
     This header contains [`Mailbox`] associated with sender.
 
     ```no_test
-    header::Sender("Mr. Sender <sender@example.com>".parse().unwrap())
+    header::Sender::from("Mr. Sender <sender@example.com>".parse::<Mailbox>().unwrap())
     ```
      */
     (Sender, "Sender")
