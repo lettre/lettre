@@ -1,5 +1,6 @@
-//! The file transport writes the emails to the given directory. The name of the file will be
-//! `message_id.eml`.
+//! The file transport writes the emails to the given directory, as `<id>.eml`, where `<id>` is
+//! a random UUID made up for each message and returned by `send`. It is not the `Message-ID`
+//! of the message.
 //! It can be useful for testing purposes, or if you want to keep track of sent messages.
 //!
 //! ## Sync example
@@ -131,7 +132,9 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! Content-Type: text/plain; charset=utf-8
-//! Date: Tue, 18 Aug 2020 22:50:17 GMT
+//! Content-Transfer-Encoding: 7bit
+//! MIME-Version: 1.0
+//! Date: Tue, 18 Aug 2020 22:50:17 +0000
 //!
 //! Be happy!
 //! ```
