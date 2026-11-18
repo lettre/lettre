@@ -109,6 +109,18 @@ enum InnerDkimSigningKey {
 }
 
 impl DkimSigningKey {
+    /// Parses a private key
+    ///
+    /// For [`DkimSigningAlgorithm::Rsa`] `private_key` is a PKCS#1 PEM
+    /// document (`-----BEGIN RSA PRIVATE KEY-----`). A PKCS#8 one
+    /// (`-----BEGIN PRIVATE KEY-----`), which is what `openssl genrsa`
+    /// writes since OpenSSL 3.0, is not accepted: `openssl pkey
+    /// -traditional` converts it. `LibreSSL` has no such option: there
+    /// `openssl rsa` converts it.
+    ///
+    /// For [`DkimSigningAlgorithm::Ed25519`] it is the base64 encoding of
+    /// the 32 byte private key and nothing else: no PEM armor and no
+    /// trailing newline.
     pub fn new(
         private_key: &str,
         algorithm: DkimSigningAlgorithm,
