@@ -263,7 +263,10 @@ impl TlsParametersBuilder {
 
     /// Controls whether certificates with an invalid hostname are accepted
     ///
-    /// This option is silently disabled when using `rustls-platform-verifier`.
+    /// With rustls, the `rustls-platform-verifier` feature and the default
+    /// certificate store, this option has no effect unless
+    /// [`dangerous_accept_invalid_certs`](Self::dangerous_accept_invalid_certs)
+    /// is also set.
     ///
     /// Defaults to `false`.
     ///
