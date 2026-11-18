@@ -701,6 +701,10 @@ impl Certificate {
                 .collect::<Result<Vec<_>, pki_types::pem::Error>>()
                 .map_err(|_| error::tls("invalid certificates"))?
         };
+        #[cfg(feature = "rustls")]
+        if rustls_cert.is_empty() {
+            return Err(error::tls("no certificate found"));
+        }
 
         Ok(Self {
             #[cfg(feature = "native-tls")]
