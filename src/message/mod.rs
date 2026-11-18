@@ -348,8 +348,11 @@ impl MessageBuilder {
     ///
     /// Should generally be inserted by the mail relay.
     ///
-    /// If `None` is provided, an id will be generated in the
-    /// `<UUID@HOSTNAME>`.
+    /// If `None` is provided, an id of the form `<RANDOM@HOSTNAME>` is
+    /// generated: 36 random alphanumeric characters and the host name of the
+    /// system, or `localhost` when it can't be read or the `hostname`
+    /// feature is off. A given id is used as it is and has to include the
+    /// angle brackets.
     pub fn message_id(self, id: Option<String>) -> Self {
         match id {
             Some(i) => self.header(header::MessageId::from(i)),
