@@ -315,14 +315,22 @@ impl MessageBuilder {
         self.mailbox(header::Bcc(mbox.into()))
     }
 
-    /// Set or add message id to [`In-Reply-To`
+    /// Set the [`In-Reply-To`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    ///
+    /// Replaces the header if it was already set. `id` is written as it is:
+    /// include the angle brackets (`<id@domain>`), and separate several ids
+    /// with a space.
     pub fn in_reply_to(self, id: String) -> Self {
         self.header(header::InReplyTo::from(id))
     }
 
-    /// Set or add message id to [`References`
+    /// Set the [`References`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    ///
+    /// Replaces the header if it was already set. `id` is written as it is:
+    /// include the angle brackets (`<id@domain>`), and separate several ids
+    /// with a space.
     pub fn references(self, id: String) -> Self {
         self.header(header::References::from(id))
     }
