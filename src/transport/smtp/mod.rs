@@ -9,7 +9,7 @@
 //!
 //! * 8BITMIME ([RFC 6152](https://tools.ietf.org/html/rfc6152))
 //! * AUTH ([RFC 4954](https://tools.ietf.org/html/rfc4954)) with PLAIN, LOGIN and XOAUTH2 mechanisms
-//! * STARTTLS ([RFC 2487](https://tools.ietf.org/html/rfc2487))
+//! * STARTTLS ([RFC 3207](https://tools.ietf.org/html/rfc3207))
 //!
 //! #### SMTP Transport
 //!

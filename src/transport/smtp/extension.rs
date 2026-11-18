@@ -84,7 +84,7 @@ pub enum Extension {
     SmtpUtfEight,
     /// STARTTLS keyword
     ///
-    /// Defined in [RFC 2487](https://tools.ietf.org/html/rfc2487)
+    /// Defined in [RFC 3207](https://tools.ietf.org/html/rfc3207)
     StartTls,
     /// AUTH mechanism
     Authentication(Mechanism),
