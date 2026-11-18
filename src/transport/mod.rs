@@ -36,7 +36,7 @@
 //!
 //! ## Building an email
 //!
-//! Emails can either be built though [`Message`], which is a typed API for constructing emails
+//! Emails can either be built through [`Message`], which is a typed API for constructing emails
 //! (find out more about it by going over the [`message`][crate::message] module),
 //! or via external means.
 //!

@@ -83,7 +83,7 @@ impl Body {
 
     /// Builds a new `Body` using a pre-encoded buffer.
     ///
-    /// **Generally not you want.**
+    /// **Generally not what you want.**
     ///
     /// `buf` shouldn't contain non-ascii characters, lines longer than 1000 characters or nul bytes.
     #[inline]

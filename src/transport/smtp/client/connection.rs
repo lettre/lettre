@@ -424,7 +424,7 @@ impl SmtpConnection {
         self.stream.get_ref().peer_certificate()
     }
 
-    /// Currently this is only avaialable when using Boring TLS and
+    /// Currently this is only available when using Boring TLS and
     /// returns the result of the verification of the TLS certificate
     /// presented by the peer, if any. Only the last error encountered
     /// during verification is presented.

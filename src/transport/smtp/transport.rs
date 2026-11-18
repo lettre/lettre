@@ -159,7 +159,7 @@ impl SmtpTransport {
     /// command. `TLS` controls whether STARTTLS is simply enabled
     /// (`opportunistic` - not enough to prevent man-in-the-middle attacks)
     /// or `required` (require the server to upgrade the connection to
-    /// STARTTLS, otherwise fail on suspicion of main-in-the-middle attempt).
+    /// STARTTLS, otherwise fail on suspicion of man-in-the-middle attempt).
     ///
     /// Use the following table to construct your SMTP url:
     ///

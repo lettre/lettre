@@ -22,7 +22,7 @@ impl ContentDisposition {
     }
 
     /// An attachment which should be displayed inline into the message, but that also
-    /// species the filename in case it is downloaded
+    /// specifies the filename in case it is downloaded
     pub fn inline_with_name(file_name: &str) -> Self {
         Self::with_name("inline", file_name)
     }

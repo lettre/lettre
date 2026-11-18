@@ -18,7 +18,7 @@ use crate::address::{Address, AddressError};
 ///
 /// # Examples
 ///
-/// You can create a `Mailbox` from a string and an [`Address`]:
+/// You can create a `Mailbox` from an optional name and an [`Address`]:
 ///
 /// ```
 /// # use lettre::{Address, message::Mailbox};

@@ -6,7 +6,7 @@ use crate::{
     message::mailbox::{Mailbox, Mailboxes},
 };
 
-/// Header which can contains multiple mailboxes
+/// Header which can contain multiple mailboxes
 pub trait MailboxesHeader {
     fn join_mailboxes(&mut self, other: Self);
 }

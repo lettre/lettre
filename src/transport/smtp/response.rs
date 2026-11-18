@@ -21,7 +21,7 @@ use crate::transport::smtp::{Error, error};
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum Severity {
-    /// 2yx
+    /// 2yz
     PositiveCompletion = 2,
     /// 3yz
     PositiveIntermediate = 3,
@@ -182,7 +182,7 @@ impl Response {
             .and_then(|line| line.split_whitespace().next())
     }
 
-    /// Returns only the line of the message if possible
+    /// Returns only the first line of the message if possible
     pub fn first_line(&self) -> Option<&str> {
         self.message.first().map(String::as_str)
     }
