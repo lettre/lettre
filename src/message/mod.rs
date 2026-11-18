@@ -38,10 +38,10 @@
 //! Reply-To: Yuin <yuin@domain.tld>
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
-//! Date: Sat, 12 Dec 2020 16:33:19 GMT
 //! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //! MIME-Version: 1.0
+//! Date: Sat, 12 Dec 2020 16:33:19 +0000
 //!
 //! Be happy!
 //! ```
@@ -85,16 +85,17 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! MIME-Version: 1.0
-//! Date: Sat, 12 Dec 2020 16:33:19 GMT
-//! Content-Type: multipart/alternative; boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
+//! Date: Sat, 12 Dec 2020 16:33:19 +0000
+//! Content-Type: multipart/alternative;
+//!  boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
 //!
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/plain; charset=utf8
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Hello, world! :)
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/html; charset=utf8
+//! Content-Type: text/html; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! <p><b>Hello</b>, <i>world</i>! <img src="cid:123"></p>
@@ -161,37 +162,40 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! MIME-Version: 1.0
-//! Date: Sat, 12 Dec 2020 16:30:45 GMT
-//! Content-Type: multipart/mixed; boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
+//! Date: Sat, 12 Dec 2020 16:30:45 +0000
+//! Content-Type: multipart/mixed;
+//!  boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
 //!
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: multipart/alternative; boundary="EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk"
+//! Content-Type: multipart/alternative;
+//!  boundary="EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk"
 //!
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk
-//! Content-Type: text/plain; charset=utf8
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Hello, world! :)
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk
-//! Content-Type: multipart/related; boundary="eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr"
+//! Content-Type: multipart/related;
+//!  boundary="eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr"
 //!
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr
-//! Content-Type: text/html; charset=utf8
+//! Content-Type: text/html; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! <p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr
-//! Content-Type: image/png
-//! Content-Disposition: inline
 //! Content-ID: <123>
+//! Content-Disposition: inline
+//! Content-Type: image/png
 //! Content-Transfer-Encoding: base64
 //!
 //! PHNtaWxlLXJhdy1pbWFnZS1kYXRhPg==
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr--
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk--
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/plain; charset=utf8
 //! Content-Disposition: attachment; filename="example.rs"
+//! Content-Type: text/plain
 //! Content-Transfer-Encoding: 7bit
 //!
 //! fn main() { println!("Hello, World!") }
