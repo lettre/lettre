@@ -87,7 +87,7 @@ impl<'de> Deserialize<'de> for Mailbox {
                             if name.is_some() {
                                 return Err(DeError::duplicate_field("name"));
                             }
-                            name = Some(map.next_value()?);
+                            name = Some(map.next_value::<Option<String>>()?);
                         }
                         Field::Email => {
                             if addr.is_some() {
@@ -98,7 +98,7 @@ impl<'de> Deserialize<'de> for Mailbox {
                     }
                 }
                 let addr = addr.ok_or_else(|| DeError::missing_field("email"))?;
-                Ok(Mailbox::new(name, addr))
+                Ok(Mailbox::new(name.flatten(), addr))
             }
         }
 
@@ -170,6 +170,11 @@ mod test {
     fn parse_address_object() {
         let m: Address = from_str(r#"{ "user": "kayo", "domain": "example.com" }"#).unwrap();
         assert_eq!(m, "kayo@example.com".parse().unwrap());
+
+        // The strings can't be borrowed from a reader
+        let json = r#"{ "user": "kayo", "domain": "example.com" }"#;
+        let m: Address = serde_json::from_reader(json.as_bytes()).unwrap();
+        assert_eq!(m, "kayo@example.com".parse().unwrap());
     }
 
     #[test]
@@ -182,6 +187,9 @@ mod test {
     fn parse_mailbox_object_address_string() {
         let m: Mailbox = from_str(r#"{ "name": "Kai", "email": "kayo@example.com" }"#).unwrap();
         assert_eq!(m, "Kai <kayo@example.com>".parse().unwrap());
+
+        let m: Mailbox = from_str(r#"{ "name": null, "email": "kayo@example.com" }"#).unwrap();
+        assert_eq!(m, "kayo@example.com".parse().unwrap());
     }
 
     #[test]

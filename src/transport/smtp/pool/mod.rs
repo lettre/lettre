@@ -22,13 +22,20 @@ impl PoolConfig {
 
     /// Minimum number of idle connections
     ///
+    /// The pool opens connections in the background until this many are
+    /// idle.
+    ///
     /// Defaults to `0`
     pub fn min_idle(mut self, min_idle: u32) -> Self {
         self.min_idle = min_idle;
         self
     }
 
-    /// Maximum number of pooled connections
+    /// Maximum number of idle connections kept in the pool
+    ///
+    /// This doesn't limit how many connections are open at the same time:
+    /// a send that finds no idle connection always opens a new one. A
+    /// connection handed back while this many are idle is closed.
     ///
     /// Defaults to `10`
     pub fn max_size(mut self, max_size: u32) -> Self {
@@ -47,6 +54,10 @@ impl PoolConfig {
     }
 
     /// Connection idle timeout
+    ///
+    /// The pool looks at its idle connections once every `idle_timeout`: a
+    /// connection is closed between one and two times `idle_timeout` after
+    /// it was last used.
     ///
     /// Defaults to `60 seconds`
     pub fn idle_timeout(mut self, idle_timeout: Duration) -> Self {

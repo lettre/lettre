@@ -1,5 +1,10 @@
 //! The sendmail transport sends the email using the local `sendmail` command.
 //!
+//! The sender of the envelope is given to the command with `-f`. For an
+//! envelope without a sender no `-f` is given, which leaves the choice of
+//! the sender to the command: most of them take the user that runs it, where
+//! the SMTP transport sends the empty sender.
+//!
 //! ## Sync example
 //!
 //! ```rust

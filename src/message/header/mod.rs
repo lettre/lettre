@@ -284,6 +284,11 @@ impl HeaderValue {
     /// acceptable for use if `encoded_value` contains only ascii
     /// printable characters and is already line folded.
     ///
+    /// `raw_value` must be what `encoded_value` decodes to: lettre parses
+    /// `raw_value` whenever it reads the header back, for example to derive
+    /// the envelope recipients from `To`, `Cc` and `Bcc`, while
+    /// `encoded_value` is what gets sent.
+    ///
     /// When in doubt, use [`HeaderValue::new`].
     pub fn dangerous_new_pre_encoded(
         name: HeaderName,

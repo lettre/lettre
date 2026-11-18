@@ -50,7 +50,7 @@ use crate::{Envelope, Executor};
 /// emails are sent concurrently, as SMTP does not support multiplexing within a
 /// single connection.
 ///
-/// However, **connection reuse is not possible** if the `SyncSmtpTransport` instance
+/// However, **connection reuse is not possible** if the `AsyncSmtpTransport` instance
 /// is dropped after every email send operation. You must reuse the instance
 /// of this struct for the connection pool to be of any use.
 ///
@@ -119,7 +119,7 @@ where
     ///
     /// The right option for most SMTP servers.
     ///
-    /// Creates an encrypted transport over submissions port, using the provided domain
+    /// Creates an encrypted transport over the submissions port (465), using the provided domain
     /// to validate TLS certificates.
     #[cfg(any(
         feature = "tokio1-native-tls",
@@ -151,7 +151,7 @@ where
     /// Alternative to [`AsyncSmtpTransport::relay`](#method.relay), for SMTP servers
     /// that don't take SMTPS connections.
     ///
-    /// Creates an encrypted transport over submissions port, by first connecting using
+    /// Creates an encrypted transport over the submission port (587), by first connecting using
     /// an unencrypted connection and then upgrading it with STARTTLS. The provided
     /// domain is used to validate TLS certificates.
     ///
@@ -222,7 +222,7 @@ where
     /// command. `TLS` controls whether STARTTLS is simply enabled
     /// (`opportunistic` - not enough to prevent man-in-the-middle attacks)
     /// or `required` (require the server to upgrade the connection to
-    /// STARTTLS, otherwise fail on suspicion of main-in-the-middle attempt).
+    /// STARTTLS, otherwise fail on suspicion of man-in-the-middle attempt).
     ///
     /// Use the following table to construct your SMTP url:
     ///
@@ -292,7 +292,7 @@ where
     ///     .body(String::from("Be happy!"))
     ///     .unwrap();
     ///
-    /// // Open a remote connection to gmail
+    /// // Open a remote connection to the relay
     /// let mailer: AsyncSmtpTransport<Tokio1Executor> =
     ///     AsyncSmtpTransport::<Tokio1Executor>::from_url(
     ///         "smtps://username:password@smtp.example.com:465",

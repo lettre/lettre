@@ -28,7 +28,7 @@
 //!
 //! * **smtp-transport** 📫: Enable the SMTP transport
 //! * **pool** 📫: Connection pool for SMTP transport
-//! * **hostname** 📫: Try to use the actual system hostname for the SMTP `CLIENTID`
+//! * **hostname** 📫: Try to use the actual system hostname as the name sent with `EHLO`
 //!
 //! #### SMTP over TLS via the native-tls crate
 //!
@@ -55,7 +55,7 @@
 //!
 //! #### SMTP over TLS via the boring crate (Boring TLS)
 //!
-//! _Secure SMTP connections using TLS from the `boring-tls` crate_
+//! _Secure SMTP connections using TLS from the `boring` crate_
 //!
 //! * **boring-tls**: TLS support for the synchronous version of the API
 //! * **tokio1-boring-tls**: TLS support for the `tokio1` async version of the API
@@ -198,7 +198,7 @@
 //! [mime 0.3]: https://docs.rs/mime/0.3
 //! [DKIM]: https://datatracker.ietf.org/doc/html/rfc6376
 
-#![doc(html_root_url = "https://docs.rs/crate/lettre/0.11.24")]
+#![doc(html_root_url = "https://docs.rs/lettre/0.11.24")]
 #![doc(html_favicon_url = "https://lettre.rs/favicon.ico")]
 #![doc(html_logo_url = "https://avatars0.githubusercontent.com/u/15113230?v=4")]
 #![forbid(unsafe_code)]

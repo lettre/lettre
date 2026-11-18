@@ -43,11 +43,15 @@ impl Error {
     }
 
     /// Returns true if the error is a transient SMTP error
+    ///
+    /// The server answered a command with a 4yz reply.
     pub fn is_transient(&self) -> bool {
         matches!(self.inner.kind, Kind::Transient(_))
     }
 
     /// Returns true if the error is a permanent SMTP error
+    ///
+    /// The server answered a command with a 5yz reply.
     pub fn is_permanent(&self) -> bool {
         matches!(self.inner.kind, Kind::Permanent(_))
     }

@@ -13,7 +13,9 @@ use idna::domain_to_ascii;
 
 /// Represents an email address with a user and a domain name.
 ///
-/// This type contains email in canonical form (_user@domain.tld_).
+/// This type holds a valid email address (_user@domain.tld_) as it was
+/// given: it is not brought to a canonical form, so that `a@EXAMPLE.com`
+/// and `a@example.com` are two different addresses.
 ///
 /// **NOTE**: Enable feature "serde" to be able to serialize/deserialize it using [serde](https://serde.rs/).
 ///
@@ -82,6 +84,12 @@ impl Address {
     /// Do not use this method if the contents of either `user` or `domain` are unknown and/or obtained from user input.
     ///
     /// Prefer using [`Address::new()`] instead if possible.
+    ///
+    /// The message builder reads the addresses of a message back from its
+    /// headers. A header with an address that [`Address::new()`] would
+    /// reject can't be read back: its recipients are left out of the
+    /// envelope made for the message, which is only an error when none is
+    /// left.
     ///
     /// # Examples
     ///

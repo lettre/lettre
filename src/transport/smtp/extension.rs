@@ -84,7 +84,7 @@ pub enum Extension {
     SmtpUtfEight,
     /// STARTTLS keyword
     ///
-    /// Defined in [RFC 2487](https://tools.ietf.org/html/rfc2487)
+    /// Defined in [RFC 3207](https://tools.ietf.org/html/rfc3207)
     StartTls,
     /// AUTH mechanism
     Authentication(Mechanism),
@@ -107,7 +107,7 @@ impl Display for Extension {
 pub struct ServerInfo {
     /// Server name
     ///
-    /// The name given in the server banner
+    /// The name the server gave in its reply to `EHLO`
     name: String,
     /// ESMTP features supported by the server
     ///
@@ -182,7 +182,7 @@ impl ServerInfo {
         self.features.contains(&keyword)
     }
 
-    /// Checks if the server supports an ESMTP feature
+    /// Checks if the server supports an authentication mechanism
     pub fn supports_auth_mechanism(&self, mechanism: Mechanism) -> bool {
         self.features
             .contains(&Extension::Authentication(mechanism))
@@ -198,7 +198,7 @@ impl ServerInfo {
         None
     }
 
-    /// The name given in the server banner
+    /// The name the server gave in its reply to `EHLO`
     pub fn name(&self) -> &str {
         self.name.as_ref()
     }

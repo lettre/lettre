@@ -63,6 +63,16 @@ impl SinglePartBuilder {
     }
 
     /// Build singlepart using body
+    ///
+    /// Unless a `Content-Transfer-Encoding` header was set on this builder,
+    /// the body is encoded with `7bit`, `quoted-printable` or `base64`,
+    /// whichever is the most efficient valid encoding for it.
+    ///
+    /// # Panics
+    ///
+    /// If a `Content-Transfer-Encoding` header was set and `body` can't be
+    /// represented in it, like
+    /// [`MessageBuilder::body`](super::MessageBuilder::body).
     pub fn body<T: IntoBody>(mut self, body: T) -> SinglePart {
         let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);

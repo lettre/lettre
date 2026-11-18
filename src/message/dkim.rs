@@ -109,6 +109,18 @@ enum InnerDkimSigningKey {
 }
 
 impl DkimSigningKey {
+    /// Parses a private key
+    ///
+    /// For [`DkimSigningAlgorithm::Rsa`] `private_key` is a PKCS#1 PEM
+    /// document (`-----BEGIN RSA PRIVATE KEY-----`). A PKCS#8 one
+    /// (`-----BEGIN PRIVATE KEY-----`), which is what `openssl genrsa`
+    /// writes since OpenSSL 3.0, is not accepted: `openssl pkey
+    /// -traditional` converts it. `LibreSSL` has no such option: there
+    /// `openssl rsa` converts it.
+    ///
+    /// For [`DkimSigningAlgorithm::Ed25519`] it is the base64 encoding of
+    /// the 32 byte private key and nothing else: no PEM armor and no
+    /// trailing newline.
     pub fn new(
         private_key: &str,
         algorithm: DkimSigningAlgorithm,
@@ -606,6 +618,7 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
                 " folded to several lines \r\n",
                 "Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest;\r\n",
                 " c=simple/simple; q=dns/txt; t=0; h=Date:From:Subject:To;\r\n",
                 " bh=f3Zksdcjqa/xRBwdyFzIXWCcgP7XTgxjCgYsXOMKQl4=;\r\n",
@@ -656,6 +669,7 @@ cJ5Ku0OTwRtSMaseRPX+T4EfG1Caa/eunPPN4rh+CSup2BVVarOT
                 " folded to several lines \r\n",
                 "Subject: Test with utf-8 =?utf-8?b?w6s=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "DKIM-Signature: v=1; a=rsa-sha256; d=example.org; s=dkimtest;\r\n",
                 " c=relaxed/relaxed; q=dns/txt; t=0; h=date:from:subject:to;\r\n",
                 " bh=qN8je6qJgWFGSnN2MycC/XKPbN6BOrMJyAX2h4m19Ss=;\r\n",

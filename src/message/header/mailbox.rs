@@ -6,7 +6,7 @@ use crate::{
     message::mailbox::{Mailbox, Mailboxes},
 };
 
-/// Header which can contains multiple mailboxes
+/// Header which can contain multiple mailboxes
 pub trait MailboxesHeader {
     fn join_mailboxes(&mut self, other: Self);
 }
@@ -113,7 +113,7 @@ mailbox_header! {
     This header contains [`Mailbox`] associated with sender.
 
     ```no_test
-    header::Sender("Mr. Sender <sender@example.com>".parse().unwrap())
+    header::Sender::from("Mr. Sender <sender@example.com>".parse::<Mailbox>().unwrap())
     ```
      */
     (Sender, "Sender")

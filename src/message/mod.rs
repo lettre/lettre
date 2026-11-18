@@ -38,9 +38,10 @@
 //! Reply-To: Yuin <yuin@domain.tld>
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
-//! Date: Sat, 12 Dec 2020 16:33:19 GMT
 //! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
+//! MIME-Version: 1.0
+//! Date: Sat, 12 Dec 2020 16:33:19 +0000
 //!
 //! Be happy!
 //! ```
@@ -84,16 +85,17 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! MIME-Version: 1.0
-//! Date: Sat, 12 Dec 2020 16:33:19 GMT
-//! Content-Type: multipart/alternative; boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
+//! Date: Sat, 12 Dec 2020 16:33:19 +0000
+//! Content-Type: multipart/alternative;
+//!  boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
 //!
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/plain; charset=utf8
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Hello, world! :)
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/html; charset=utf8
+//! Content-Type: text/html; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! <p><b>Hello</b>, <i>world</i>! <img src="cid:123"></p>
@@ -160,37 +162,40 @@
 //! To: Hei <hei@domain.tld>
 //! Subject: Happy new year
 //! MIME-Version: 1.0
-//! Date: Sat, 12 Dec 2020 16:30:45 GMT
-//! Content-Type: multipart/mixed; boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
+//! Date: Sat, 12 Dec 2020 16:30:45 +0000
+//! Content-Type: multipart/mixed;
+//!  boundary="0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1"
 //!
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: multipart/alternative; boundary="EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk"
+//! Content-Type: multipart/alternative;
+//!  boundary="EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk"
 //!
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk
-//! Content-Type: text/plain; charset=utf8
+//! Content-Type: text/plain; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! Hello, world! :)
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk
-//! Content-Type: multipart/related; boundary="eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr"
+//! Content-Type: multipart/related;
+//!  boundary="eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr"
 //!
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr
-//! Content-Type: text/html; charset=utf8
+//! Content-Type: text/html; charset=utf-8
 //! Content-Transfer-Encoding: 7bit
 //!
 //! <p><b>Hello</b>, <i>world</i>! <img src=cid:123></p>
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr
-//! Content-Type: image/png
-//! Content-Disposition: inline
 //! Content-ID: <123>
+//! Content-Disposition: inline
+//! Content-Type: image/png
 //! Content-Transfer-Encoding: base64
 //!
 //! PHNtaWxlLXJhdy1pbWFnZS1kYXRhPg==
 //! --eM5Z18WZVOQsqi5GQ71XGAXk6NNvHUA1Xv1FWrXr--
 //! --EyXdAZIgZuyUjAounq4Aj44a6MpJfqCKhm6pE1zk--
 //! --0oVZ2r6AoLAhLlb0gPNSKy6BEqdS2IfwxrcbUuo1
-//! Content-Type: text/plain; charset=utf8
 //! Content-Disposition: attachment; filename="example.rs"
+//! Content-Type: text/plain
 //! Content-Transfer-Encoding: 7bit
 //!
 //! fn main() { println!("Hello, World!") }
@@ -251,7 +256,7 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.mailbox(header::From(mbox))`.
+    /// Shortcut for `self.mailbox(header::From::from(Mailboxes::from(mbox)))`.
     pub fn from(self, mbox: Mailbox) -> Self {
         self.mailbox(header::From::from(Mailboxes::from(mbox)))
     }
@@ -260,7 +265,7 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.header(header::Sender(mbox))`.
+    /// Shortcut for `self.header(header::Sender::from(mbox))`.
     pub fn sender(self, mbox: Mailbox) -> Self {
         self.header(header::Sender::from(mbox))
     }
@@ -284,47 +289,55 @@ impl MessageBuilder {
     ///
     /// Defined in [RFC5322](https://tools.ietf.org/html/rfc5322#section-3.6.2).
     ///
-    /// Shortcut for `self.mailbox(header::ReplyTo(mbox))`.
+    /// Shortcut for `self.mailbox(header::ReplyTo::from(Mailboxes::from(mbox)))`.
     pub fn reply_to(self, mbox: Mailbox) -> Self {
         self.mailbox(header::ReplyTo(mbox.into()))
     }
 
     /// Set or add mailbox to `To` header
     ///
-    /// Shortcut for `self.mailbox(header::To(mbox))`.
+    /// Shortcut for `self.mailbox(header::To::from(Mailboxes::from(mbox)))`.
     pub fn to(self, mbox: Mailbox) -> Self {
         self.mailbox(header::To(mbox.into()))
     }
 
     /// Set or add mailbox to `Cc` header
     ///
-    /// Shortcut for `self.mailbox(header::Cc(mbox))`.
+    /// Shortcut for `self.mailbox(header::Cc::from(Mailboxes::from(mbox)))`.
     pub fn cc(self, mbox: Mailbox) -> Self {
         self.mailbox(header::Cc(mbox.into()))
     }
 
     /// Set or add mailbox to `Bcc` header
     ///
-    /// Shortcut for `self.mailbox(header::Bcc(mbox))`.
+    /// Shortcut for `self.mailbox(header::Bcc::from(Mailboxes::from(mbox)))`.
     pub fn bcc(self, mbox: Mailbox) -> Self {
         self.mailbox(header::Bcc(mbox.into()))
     }
 
-    /// Set or add message id to [`In-Reply-To`
+    /// Set the [`In-Reply-To`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    ///
+    /// Replaces the header if it was already set. `id` is written as it is:
+    /// include the angle brackets (`<id@domain>`), and separate several ids
+    /// with a space.
     pub fn in_reply_to(self, id: String) -> Self {
         self.header(header::InReplyTo::from(id))
     }
 
-    /// Set or add message id to [`References`
+    /// Set the [`References`
     /// header](https://tools.ietf.org/html/rfc5322#section-3.6.4)
+    ///
+    /// Replaces the header if it was already set. `id` is written as it is:
+    /// include the angle brackets (`<id@domain>`), and separate several ids
+    /// with a space.
     pub fn references(self, id: String) -> Self {
         self.header(header::References::from(id))
     }
 
     /// Set `Subject` header to message
     ///
-    /// Shortcut for `self.header(header::Subject(subject.into()))`.
+    /// Shortcut for `self.header(header::Subject::from(subject.into()))`.
     pub fn subject<S: Into<String>>(self, subject: S) -> Self {
         let s: String = subject.into();
         self.header(header::Subject::from(s))
@@ -335,8 +348,11 @@ impl MessageBuilder {
     ///
     /// Should generally be inserted by the mail relay.
     ///
-    /// If `None` is provided, an id will be generated in the
-    /// `<UUID@HOSTNAME>`.
+    /// If `None` is provided, an id of the form `<RANDOM@HOSTNAME>` is
+    /// generated: 36 random alphanumeric characters and the host name of the
+    /// system, or `localhost` when it can't be read or the `hostname`
+    /// feature is off. A given id is used as it is and has to include the
+    /// angle brackets.
     pub fn message_id(self, id: Option<String>) -> Self {
         match id {
             Some(i) => self.header(header::MessageId::from(i)),
@@ -452,15 +468,24 @@ impl MessageBuilder {
 
     /// Create [`Message`] using a [`Vec<u8>`], [`String`], or [`Body`] body
     ///
-    /// Automatically gets encoded with `7bit`, `quoted-printable` or `base64`
-    /// `Content-Transfer-Encoding`, based on the most efficient and valid encoding
-    /// for `body`.
+    /// Unless a `Content-Transfer-Encoding` header was set on this builder,
+    /// the body is encoded with `7bit`, `quoted-printable` or `base64`,
+    /// whichever is the most efficient valid encoding for it.
+    ///
+    /// # Panics
+    ///
+    /// If a `Content-Transfer-Encoding` header was set and `body` can't be
+    /// represented in it: `7bit` with characters outside of ASCII, `7bit` or
+    /// `8bit` with a line that is too long, a NUL or a bare CR (or a bare
+    /// LF, in a `Vec<u8>`). Don't set the header for a body you don't
+    /// control, or encode it with [`Body::new_with_encoding`], which returns
+    /// the error, and pass the [`Body`].
     pub fn body<T: IntoBody>(mut self, body: T) -> Result<Message, EmailError> {
         let maybe_encoding = self.headers.get::<ContentTransferEncoding>();
         let body = body.into_body(maybe_encoding);
 
         self.headers.set(body.encoding());
-        self.build(MessageBody::Raw(body.into_vec()))
+        self.mime_1_0().build(MessageBody::Raw(body.into_vec()))
     }
 
     /// Create message using mime body ([`MultiPart`])
@@ -698,6 +723,7 @@ mod test {
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Happy new year!"
             )
@@ -739,6 +765,7 @@ mod test {
                 "To: \"Pony O.P.\" <pony@domain.tld>\r\n",
                 "Subject: =?utf-8?b?0Y/So9CwINC10Lsg0LHQtdC705nQvSE=?=\r\n",
                 "Content-Transfer-Encoding: 7bit\r\n",
+                "MIME-Version: 1.0\r\n",
                 "\r\n",
                 "Happy new year!"
             )

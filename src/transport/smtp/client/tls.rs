@@ -263,7 +263,10 @@ impl TlsParametersBuilder {
 
     /// Controls whether certificates with an invalid hostname are accepted
     ///
-    /// This option is silently disabled when using `rustls-platform-verifier`.
+    /// With rustls, the `rustls-platform-verifier` feature and the default
+    /// certificate store, this option has no effect unless
+    /// [`dangerous_accept_invalid_certs`](Self::dangerous_accept_invalid_certs)
+    /// is also set.
     ///
     /// Defaults to `false`.
     ///
@@ -318,8 +321,8 @@ impl TlsParametersBuilder {
         self
     }
 
-    /// Creates a new `TlsParameters` using native-tls, boring-tls or rustls
-    /// depending on which one is available
+    /// Creates a new `TlsParameters` using rustls if it is enabled,
+    /// otherwise native-tls, otherwise boring-tls
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
@@ -603,8 +606,8 @@ pub(crate) enum InnerTlsParameters {
 }
 
 impl TlsParameters {
-    /// Creates a new `TlsParameters` using native-tls or rustls
-    /// depending on which one is available
+    /// Creates a new `TlsParameters` using rustls if it is enabled,
+    /// otherwise native-tls, otherwise boring-tls
     #[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
     #[cfg_attr(
         docsrs,
@@ -701,6 +704,10 @@ impl Certificate {
                 .collect::<Result<Vec<_>, pki_types::pem::Error>>()
                 .map_err(|_| error::tls("invalid certificates"))?
         };
+        #[cfg(feature = "rustls")]
+        if rustls_cert.is_empty() {
+            return Err(error::tls("no certificate found"));
+        }
 
         Ok(Self {
             #[cfg(feature = "native-tls")]
