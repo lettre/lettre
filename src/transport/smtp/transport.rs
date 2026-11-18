@@ -436,6 +436,7 @@ impl SmtpClient {
 }
 
 #[cfg(test)]
+#[cfg(any(feature = "native-tls", feature = "rustls", feature = "boring-tls"))]
 mod tests {
     use crate::{
         SmtpTransport,
