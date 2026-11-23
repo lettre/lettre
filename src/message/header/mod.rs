@@ -332,7 +332,10 @@ impl<'a> HeaderValueEncoder<'a> {
 
     fn format(mut self, words_iter: impl Iterator<Item = &'a str>) -> fmt::Result {
         for next_word in words_iter {
-            let allowed = allowed_str(next_word);
+            // Decoders drop whitespace between adjacent encoded words, so whitespace
+            // following an encoded word has to go inside the next encoded word
+            let allowed = allowed_str(next_word)
+                && (self.encode_buf.is_empty() || !next_word.trim().is_empty());
 
             if allowed {
                 // This word only contains allowed characters
@@ -671,6 +674,20 @@ mod tests {
                 " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+ls/CfpbM=?=\r\n",
                 " =?utf-8?b?8J+ls/CfpbPwn6Wz8J+ls/CfpbPwn6Wz8J+lsw==?=\r\n"
             )
+        );
+    }
+
+    #[test]
+    fn format_special_with_multiple_spaces() {
+        let mut headers = Headers::new();
+        headers.insert_raw(HeaderValue::new(
+            HeaderName::new_from_ascii_str("Subject"),
+            "日本  東京  ok".to_owned(),
+        ));
+
+        assert_eq!(
+            headers.to_string(),
+            "Subject: =?utf-8?b?5pel5pysICDmnbHkuqw=?=  ok\r\n"
         );
     }
 
