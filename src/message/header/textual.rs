@@ -82,6 +82,11 @@ text_header! {
     /// defined in [RFC2110](https://tools.ietf.org/html/rfc2110#section-4.3)
     Header(ContentLocation, "Content-Location")
 }
+text_header! {
+    /// `Received` header,
+    /// defined in [RFC5322](https://datatracker.ietf.org/doc/html/rfc5322#section-3.6.7)
+    Header(Received, "Received")
+}
 
 #[cfg(test)]
 mod test {
