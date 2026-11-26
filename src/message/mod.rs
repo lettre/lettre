@@ -227,6 +227,9 @@ const DEFAULT_MESSAGE_ID_DOMAIN: &str = "localhost";
 trait EmailFormat {
     // Use a writer?
     fn format(&self, out: &mut Vec<u8>);
+
+    /// Exact byte length written by [`EmailFormat::format`].
+    fn formatted_len(&self) -> usize;
 }
 
 /// A builder for messages
@@ -521,7 +524,7 @@ impl Message {
 
     /// Get message content formatted for SMTP
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(self.formatted_len());
         self.format(&mut out);
         out
     }
@@ -529,7 +532,11 @@ impl Message {
     #[cfg(feature = "dkim")]
     /// Format body for signing
     pub(crate) fn body_raw(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+        let body_len = match &self.body {
+            MessageBody::Mime(p) => p.format_body_len(),
+            MessageBody::Raw(r) => r.len(),
+        };
+        let mut out = Vec::with_capacity(body_len + 2);
         match &self.body {
             MessageBody::Mime(p) => p.format_body(&mut out),
             MessageBody::Raw(r) => out.extend_from_slice(r),
@@ -614,6 +621,14 @@ impl EmailFormat for Message {
                 out.extend_from_slice(r);
             }
         }
+    }
+
+    fn formatted_len(&self) -> usize {
+        self.headers.formatted_len()
+            + match &self.body {
+                MessageBody::Mime(p) => p.formatted_len(),
+                MessageBody::Raw(r) => 2 + r.len(),
+            }
     }
 }
 
@@ -835,6 +850,53 @@ mod test {
         // Ensure correct length
         for id in ids {
             assert_eq!(36, id.len());
+        }
+    }
+
+    #[test]
+    fn formatted_preallocates_exact_capacity() {
+        let single = SinglePart::plain("hello world".to_owned());
+        let formatted_single = single.formatted();
+        assert_eq!(formatted_single.len(), formatted_single.capacity());
+
+        let nested = MultiPart::mixed()
+            .multipart(MultiPart::alternative_plain_html(
+                "plain body".to_owned(),
+                "<p>html body</p>".to_owned(),
+            ))
+            .singlepart(
+                SinglePart::builder()
+                    .header(header::ContentType::parse("application/octet-stream").unwrap())
+                    .body(vec![0x42u8; 64 * 1024]),
+            );
+        let formatted_multi = nested.formatted();
+        assert_eq!(formatted_multi.len(), formatted_multi.capacity());
+
+        let mime_msg = Message::builder()
+            .from("Alice <alice@example.org>".parse().unwrap())
+            .to("Bob <bob@example.org>".parse().unwrap())
+            .subject("Prealloc test")
+            .multipart(nested)
+            .unwrap();
+        let formatted_mime = mime_msg.formatted();
+        assert_eq!(formatted_mime.len(), formatted_mime.capacity());
+
+        let raw_msg = Message::builder()
+            .from("Alice <alice@example.org>".parse().unwrap())
+            .to("Bob <bob@example.org>".parse().unwrap())
+            .subject("Raw test")
+            .body(vec![b'x'; 16 * 1024])
+            .unwrap();
+        let formatted_raw = raw_msg.formatted();
+        assert_eq!(formatted_raw.len(), formatted_raw.capacity());
+
+        #[cfg(feature = "dkim")]
+        {
+            let mime_body_raw = mime_msg.body_raw();
+            assert_eq!(mime_body_raw.len(), mime_body_raw.capacity());
+
+            let raw_body_raw = raw_msg.body_raw();
+            assert_eq!(raw_body_raw.len(), raw_body_raw.capacity());
         }
     }
 }

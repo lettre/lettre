@@ -138,6 +138,13 @@ impl Headers {
             .find(|(_i, value)| name == value.name)
             .map(|(i, _)| i)
     }
+
+    pub(crate) fn formatted_len(&self) -> usize {
+        self.headers
+            .iter()
+            .map(|value| value.name.len() + 2 + value.encoded_value.len() + 2)
+            .sum()
+    }
 }
 
 impl Display for Headers {
