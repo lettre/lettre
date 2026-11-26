@@ -25,6 +25,14 @@ impl Part {
             Part::Multi(part) => part.format_body(out),
         }
     }
+
+    #[cfg(feature = "dkim")]
+    pub(super) fn format_body_len(&self) -> usize {
+        match self {
+            Part::Single(part) => part.format_body_len(),
+            Part::Multi(part) => part.format_body_len(),
+        }
+    }
 }
 
 impl EmailFormat for Part {
@@ -32,6 +40,13 @@ impl EmailFormat for Part {
         match self {
             Part::Single(part) => part.format(out),
             Part::Multi(part) => part.format(out),
+        }
+    }
+
+    fn formatted_len(&self) -> usize {
+        match self {
+            Part::Single(part) => part.formatted_len(),
+            Part::Multi(part) => part.formatted_len(),
         }
     }
 }
@@ -138,7 +153,7 @@ impl SinglePart {
 
     /// Get message content formatted for sending
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(self.formatted_len());
         self.format(&mut out);
         out
     }
@@ -148,6 +163,10 @@ impl SinglePart {
         out.extend_from_slice(&self.body);
         out.extend_from_slice(b"\r\n");
     }
+
+    fn format_body_len(&self) -> usize {
+        self.body.len() + 2
+    }
 }
 
 impl EmailFormat for SinglePart {
@@ -156,6 +175,10 @@ impl EmailFormat for SinglePart {
             .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
         self.format_body(out);
+    }
+
+    fn formatted_len(&self) -> usize {
+        self.headers.formatted_len() + 2 + self.format_body_len()
     }
 }
 
@@ -384,7 +407,7 @@ impl MultiPart {
 
     /// Get message content formatted for SMTP
     pub fn formatted(&self) -> Vec<u8> {
-        let mut out = Vec::new();
+        let mut out = Vec::with_capacity(self.formatted_len());
         self.format(&mut out);
         out
     }
@@ -404,6 +427,26 @@ impl MultiPart {
         out.extend_from_slice(boundary.as_bytes());
         out.extend_from_slice(b"--\r\n");
     }
+
+    fn format_body_len(&self) -> usize {
+        let boundary_len = self
+            .headers
+            .get::<ContentType>()
+            .unwrap()
+            .as_ref()
+            .get_param("boundary")
+            .unwrap()
+            .as_str()
+            .len();
+
+        let parts_len: usize = self
+            .parts
+            .iter()
+            .map(|part| 2 + boundary_len + 2 + part.formatted_len())
+            .sum();
+
+        parts_len + 2 + boundary_len + 4
+    }
 }
 
 impl EmailFormat for MultiPart {
@@ -412,6 +455,10 @@ impl EmailFormat for MultiPart {
             .expect("A Write implementation panicked while formatting headers");
         out.extend_from_slice(b"\r\n");
         self.format_body(out);
+    }
+
+    fn formatted_len(&self) -> usize {
+        self.headers.formatted_len() + 2 + self.format_body_len()
     }
 }
 
